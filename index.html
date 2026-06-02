@@ -218,7 +218,7 @@ Best regards,`);
                                 <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
                                 <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Operational Diagnostics</a>
                                 <a href="#ecosystem" className="hover:text-white transition-colors duration-200">360° Portfolio</a>
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-950 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
+                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
                                     Book Diagnostic Audit
                                 </a>
                             </nav>
@@ -360,7 +360,7 @@ Best regards,`);
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400 font-light font-medium">Weekly System Delay Loss:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyInefficiencyLoss * 12)} / year</span>
+                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyIneefficiencyLoss * 12)} / year</span>
                                             </div>
                                         </div>
                                     </div>
@@ -388,120 +388,67 @@ Best regards,`);
                         </div>
                     </section>
 
-                    {/* Operational Diagnostics Sprint Deliverables */}
+                    {/* Operational Diagnostics Sprint Deliverables (3-CARD STRATEGY FRAMEWORK APPLIED) */}
                     <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800 font-sans font-semibold">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">The Mandatory Entry Point</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">Operational Diagnostics Audit</h2>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Strategic Discovery Phases</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">Operational Diagnostics Blueprint</h2>
                                 <p className="text-sm text-slate-600 leading-relaxed">
-                                    We do not sell blindly. Every long-term optimization program begins with a structured, intensive diagnostics sprint. Over a highly focused <strong>1 to 2-week timeline</strong>, we align your organization's reality under 6 clear deliverables:
+                                    We do not offer generic software integrations or administrative handbooks. Every long-term optimization program begins with a structured, intensive diagnostics sprint mapped across three highly focused phases:
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
+                            {/* 3 HIGH-IMPACT OUTCOME CARDS (COMPACT DESIGNS, DAYS REMOVED, REDUCED VERTICAL SPACING) */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {/* Phase 1 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-5 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[15.5rem]">
                                     <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 01</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Day 1 – 2</span>
+                                        <div className="flex justify-between items-center mb-2.5">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">PHASE 01</span>
                                         </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Preparation & Onboarding</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Client kickoff, NDA alignment, and secure data room provisioning. We dispatch our custom Information Request List (IRL).
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Discovery & Stakeholder Alignment</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">
+                                            Client kickoff sync, NDA alignment, secure file-sharing setups, and private interviews with 4-6 key leadership and desk managers to map communications channels.
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
+                                    <div className="pt-3 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Operationalized shared workspace, mutual NDA, and finalized roadmap.
+                                        Information Request Log (IRL), discovery workspace, and structured interview catalog.
                                     </div>
                                 </div>
 
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
+                                {/* Phase 2 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-5 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[15.5rem]">
                                     <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-605 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 02</span>
-                                            <span className="text-[11px] font-mono text-slate-505 font-semibold">Timeline: Days 3 – 5</span>
+                                        <div className="flex justify-between items-center mb-2.5">
+                                            <span className="text-[10px] font-mono text-brandBlue-605 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">PHASE 02</span>
                                         </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Stakeholder Discovery Loop</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Compliance Audit</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">
+                                            Active on-site workspace workflow shadowing, step-timing calculations, SaaS stack under-utilization audit, and employment contract reviews against local DOLE compliance standards.
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
+                                    <div className="pt-3 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Interview log registers and synthesized qualitative pain-point catalog.
+                                        Process step-timing spreadsheets, spaghetti diagram, and software SaaS leak report.
                                     </div>
                                 </div>
 
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
+                                {/* Phase 3 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-5 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[15.5rem]">
                                     <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 6 – 8</span>
+                                        <div className="flex justify-between items-center mb-2.5">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">PHASE 03</span>
                                         </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Trace</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Two days of active on-site workspace workflow monitoring, step-timing, and physical asset/information routing audits.
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Risk Matrix & Boardroom Debrief</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">
+                                            Compile raw discovery logs into a prioritized feasibility risk matrix. Presentation to the C-suite and executive sponsors outlining high-ROI quick wins and target multi-phase roadmaps.
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-555 font-medium font-sans">
+                                    <div className="pt-3 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Spaghetti diagram of layouts and operational step-timing matrix sheets.
-                                    </div>
-                                </div>
-
-                                {/* Deliverable 4 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-605 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 04</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 9 – 10</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Compliance & Tech Audit</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against DOLE standards, laying the baseline for future Lark Workspace transition.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Software cost-leakage report and labor compliance risk checklists.
-                                    </div>
-                                </div>
-
-                                {/* Deliverable 5 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 05</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 11 – 12</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Strategic Risk Matrix</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Synthesis of raw observation data into an actionable priority impact-vs-feasibility matrix built on Swiss HERMES gating principles.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-555 font-medium font-sans">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        B2B Impact-vs-Feasibility Operational Risk Matrix.
-                                    </div>
-                                </div>
-
-                                {/* Deliverable 6 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-605 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 06</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 13 – 14</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Boardroom Debriefing</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate quick-wins and multi-phase roadmap scaling options.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-555 font-medium font-sans">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Professional audit presentation deck and strategic roadmap plans.
+                                        B2B Operational Risk Matrix, boardroom presentation deck, and authorized scoping plans.
                                     </div>
                                 </div>
                             </div>
@@ -604,7 +551,7 @@ Best regards,`);
                     </section>
 
                     {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-505 text-xs">
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-550 text-xs">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                             
                             <div className="space-y-2 text-center md:text-left font-sans font-medium">
