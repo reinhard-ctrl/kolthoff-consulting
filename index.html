@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,8 +10,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
+    <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
     <!-- MathJax for rendering LaTeX formulas dynamically with high fidelity -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <!-- Tailwind CSS CDN -->
@@ -24,7 +35,9 @@
                         brandNavy: {
                             950: '#020613', // Ultra-dark corporate space
                             900: '#09111F', // Rich navy base
+                            850: '#0C1626', // High-end dark middle-ground
                             800: '#0F1A2C', // Deep card background
+                            750: '#15233A', // Intermediate dark accent
                             700: '#1B2C46', // Panel borders and dividers
                             600: '#2E4567', // Subdued text and inactive strokes
                         },
@@ -77,6 +90,7 @@
             background: #2563EB;
             cursor: pointer;
             transition: transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         input[type="range"]::-webkit-slider-thumb:hover {
             transform: scale(1.2);
@@ -117,7 +131,7 @@
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
         const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
         const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
         const IconSpinner = () => <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
@@ -142,6 +156,10 @@
             const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
             const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
 
+            // Web3Forms API Key State (Optional integration helper for GitHub Pages hosting)
+            const [web3formsAccessKey, setWeb3formsAccessKey] = useState('');
+            const [showSettings, setShowSettings] = useState(false);
+
             // Inbound Lead Form State
             const [leadName, setLeadName] = useState('');
             const [leadEmail, setLeadEmail] = useState('');
@@ -153,7 +171,7 @@
             // Dynamically calculate the prospect's personalized "Cost of Chaos"
             const chaosFinancials = useMemo(() => {
                 const totalMonthlyPayroll = teamSize * avgMonthlySalary;
-                // Standard 160-hour PH work month -> Hourly cost of labor
+                // Standard 160-hour work month -> Hourly cost of labor
                 const avgHourlyRate = avgMonthlySalary / 160;
                 
                 // Weekly delays * 4.33 weeks/month * team size * hourly cost
@@ -178,7 +196,7 @@
                 return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
             };
 
-            // Programmatic Mailto trigger fallback path - Clean & Direct Simple Structure
+            // Programmatic Mailto trigger fallback path
             const triggerMailtoFallback = () => {
                 const subject = encodeURIComponent(`Operational Audit Request — ${leadCompany || 'PH Enterprise'}`);
                 const body = encodeURIComponent(`Hi Reinhard,
@@ -200,17 +218,15 @@ ${leadName}`);
                 window.location.href = `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
             };
 
-            // Seamless B2B Lead Form Transmittal Handler (Serverless with local client fallback)
+            // Seamless B2B Lead Form Transmittal Handler
             const handleLeadSubmit = async (e) => {
                 e.preventDefault();
                 if (!leadName || !leadEmail) return;
                 setIsSubmitting(true);
                 setSubmitError('');
 
-                // Custom web3forms Key Configuration (Paste your generated key here)
-                const web3formsAccessKey = "YOUR_WEB3FORMS_ACCESS_KEY_HERE";
-
-                if (web3formsAccessKey && web3formsAccessKey !== "YOUR_WEB3FORMS_ACCESS_KEY_HERE") {
+                // Use user-defined Web3Forms Key if available, else default to immediate secure mail fallback client
+                if (web3formsAccessKey && web3formsAccessKey.trim() !== "") {
                     try {
                         const response = await fetch("https://api.web3forms.com/submit", {
                             method: "POST",
@@ -249,29 +265,34 @@ Cost of Chaos Calculator Metrics:
                         }
                     } catch (error) {
                         console.error("Transmission Error:", error);
-                        setSubmitError("Silenced API route error. Triggering direct secure mail fallback client...");
-                        // Delay opening client slightly so user can read message
+                        setSubmitError("API Route Refused. Launching direct mail handler secure fallback...");
                         setTimeout(() => {
                             triggerMailtoFallback();
                             setFormSubmitted(true);
-                        }, 1500);
+                        }, 1200);
                     } finally {
                         setIsSubmitting(false);
                     }
                 } else {
-                    // Fallback to local mailto protocol (100% stable on static Pages)
+                    // Instantly trigger secure programmatic local mailto transmittal (100% stable on serverless platforms like GH pages)
                     triggerMailtoFallback();
                     setFormSubmitted(true);
                     setIsSubmitting(false);
                 }
             };
 
-            // Trigger MathJax re-render whenever the ROI calculations update
+            // Clear typesetting cache and safely typeset the dynamic formula on state change
             useEffect(() => {
-                if (window.MathJax) {
-                    window.MathJax.typesetPromise();
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    const mathElement = document.getElementById('math-roi');
+                    if (mathElement) {
+                        window.MathJax.typesetClear([mathElement]);
+                        window.MathJax.typesetPromise([mathElement]).catch((err) => {
+                            console.warn('MathJax execution ignored during sliding transaction:', err);
+                        });
+                    }
                 }
-            }, [chaosFinancials]);
+            }, [chaosFinancials.firstYearROIPercent]);
 
             return (
                 <div className="font-sans min-h-screen text-slate-300">
@@ -353,7 +374,7 @@ Cost of Chaos Calculator Metrics:
                         <div className="max-w-7xl mx-auto px-6">
                             
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-505">Interactive Assessment Tool</span>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Interactive Assessment Tool</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">The Cost of Operational Chaos</h2>
                                 <p className="text-sm text-slate-600 leading-relaxed">
                                     Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
@@ -377,14 +398,14 @@ Cost of Chaos Calculator Metrics:
                                                 max="150" 
                                                 value={teamSize} 
                                                 onChange={(e) => setTeamSize(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer animate-none"
                                             />
                                         </div>
 
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
                                                 <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconCalculator className="text-brandBlue-505" /> Average Monthly Salary
+                                                    <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
                                             </div>
@@ -402,7 +423,7 @@ Cost of Chaos Calculator Metrics:
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
                                                 <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconClock className="" /> Avg. Delay per Staff Weekly
+                                                    <IconClock /> Avg. Delay per Staff Weekly
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
                                             </div>
@@ -412,7 +433,7 @@ Cost of Chaos Calculator Metrics:
                                                 max="15" 
                                                 value={delayHoursWeekly} 
                                                 onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-505 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-600 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
                                     </div>
@@ -452,8 +473,12 @@ Cost of Chaos Calculator Metrics:
                                             <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
                                         </div>
                                         
-                                        {/* Scientific ROI notation utilizing TeX rendering (fixed with React-safe string interpolation) */}
-                                        <div className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400">
+                                        {/* State key bound element forces a clean DOM replacement before MathJax typesetting */}
+                                        <div 
+                                            id="math-roi" 
+                                            key={chaosFinancials.firstYearROIPercent} 
+                                            className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center"
+                                        >
                                             {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + chaosFinancials.firstYearROIPercent + "\\%$$"}
                                         </div>
                                         
@@ -480,18 +505,18 @@ Cost of Chaos Calculator Metrics:
                                 </p>
                             </div>
 
-                            {/* Deliverables Grid aligned with INITIAL_TASKS */}
+                            {/* Deliverables Grid styled with dynamic responsive boundaries to prevent mobile clippings */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 
                                 {/* Step 1 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 01</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 01</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Day 1 – 2</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Preparation & Onboarding</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             Client kickoff, NDA alignment, and data security workspace provisioning. We dispatch our custom Information Request List (IRL).
                                         </p>
                                     </div>
@@ -502,14 +527,14 @@ Cost of Chaos Calculator Metrics:
                                 </div>
 
                                 {/* Step 2 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 02</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 02</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 3 – 5</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Stakeholder Discovery Loop</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
                                         </p>
                                     </div>
@@ -520,14 +545,14 @@ Cost of Chaos Calculator Metrics:
                                 </div>
 
                                 {/* Step 3 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 6 – 8</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Trace</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             Two days of active on-site workspace workflow monitoring, step-timing, and physical asset mapping within raw environments.
                                         </p>
                                     </div>
@@ -538,14 +563,14 @@ Cost of Chaos Calculator Metrics:
                                 </div>
 
                                 {/* Step 4 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 04</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 04</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 9 – 10</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Compliance & Tech Audit</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against strict local DOLE standards.
                                         </p>
                                     </div>
@@ -556,14 +581,14 @@ Cost of Chaos Calculator Metrics:
                                 </div>
 
                                 {/* Step 5 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 05</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 05</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 11 – 12</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Risk Matrix Formulation</h4>
-                                        <p className="text-xs text-slate-605 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             We synthesize raw metrics and workflow delay timings into an actionable impact-vs-feasibility matrix to highlight quick wins.
                                         </p>
                                     </div>
@@ -574,14 +599,14 @@ Cost of Chaos Calculator Metrics:
                                 </div>
 
                                 {/* Step 6 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 06</span>
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 06</span>
                                             <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 13 – 14 (Handover)</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Boardroom Debriefing</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate options and strategic roadmaps.
                                         </p>
                                     </div>
@@ -680,21 +705,21 @@ Cost of Chaos Calculator Metrics:
                                 
                                 <div className="text-center mb-8 space-y-2">
                                     <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book an Operational Diagnostics Audit</h3>
-                                    <p className="text-xs text-slate-605 max-w-lg mx-auto leading-relaxed">
-                                        Submit your coordinates below to schedule an onboarding baseline review, or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A consulting partner will contact your office within 24 hours.
+                                    <p className="text-xs text-slate-500 max-w-lg mx-auto leading-relaxed">
+                                        Submit your coordinates below to schedule an onboarding baseline review, or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. A consulting partner will contact your office within 24 hours.
                                     </p>
                                 </div>
 
                                 {formSubmitted ? (
-                                    <div className="p-8 bg-brandBlue-50/80 border border-brandBlue-200 rounded-xl text-center space-y-3">
+                                    <div className="p-8 bg-brandBlue-5/80 border border-brandBlue-200 rounded-xl text-center space-y-3">
                                         <div className="w-12 h-12 bg-emerald-500/20 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✓</div>
                                         <h4 className="font-bold text-slate-900 text-lg font-serif">Diagnostics Scoping Request Received</h4>
-                                        <p className="text-xs text-slate-605 max-w-md mx-auto leading-relaxed font-sans font-medium">
+                                        <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
                                             Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via <a href={`mailto:${leadEmail}`} className="text-brandBlue-600 hover:underline font-mono font-medium">{leadEmail}</a> with next-step scheduling instructions.
                                         </p>
                                     </div>
                                 ) : (
-                                    <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium font-sans text-slate-800">
+                                    <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium text-slate-800">
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="text-[10px] font-mono text-slate-500 uppercase font-bold block mb-1">Your Full Name</label>
@@ -703,7 +728,7 @@ Cost of Chaos Calculator Metrics:
                                                     required
                                                     value={leadName}
                                                     onChange={(e) => setLeadName(e.target.value)}
-                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500"
                                                     placeholder="Juan dela Cruz"
                                                 />
                                             </div>
@@ -724,15 +749,16 @@ Cost of Chaos Calculator Metrics:
                                                     type="text" 
                                                     value={leadCompany}
                                                     onChange={(e) => setLeadCompany(e.target.value)}
-                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500"
                                                     placeholder="Acme Corporation PH"
                                                 />
                                             </div>
                                         </div>
+
                                         <button 
                                             type="submit" 
                                             disabled={isSubmitting}
-                                            className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 font-sans disabled:opacity-50"
+                                            className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 disabled:opacity-50"
                                         >
                                             {isSubmitting ? (
                                                 <span><IconSpinner /> Transmitting...</span>
@@ -740,9 +766,40 @@ Cost of Chaos Calculator Metrics:
                                                 <span>Request Diagnostics Onboarding Sync</span>
                                             )}
                                         </button>
+                                        
                                         {submitError && (
                                             <p className="text-[10px] text-rose-500 text-center font-mono font-medium mt-1">{submitError}</p>
                                         )}
+                                        
+                                        {/* Dynamic GitHub Hosting Setup Guide (Helpful collapsible helper for testing automation keys) */}
+                                        <div className="pt-2 border-t border-slate-100">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowSettings(!showSettings)} 
+                                                className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors font-mono uppercase tracking-widest flex items-center justify-between w-full"
+                                            >
+                                                <span>⚡ GitHub Operations Automation Settings</span>
+                                                <span>{showSettings ? '▲ Hide' : '▼ Expand'}</span>
+                                            </button>
+                                            
+                                            {showSettings && (
+                                                <div className="mt-2.5 p-3.5 bg-slate-50 border border-slate-200/80 rounded-lg text-[10px] text-slate-500 space-y-2 leading-relaxed">
+                                                    <p>
+                                                        To receive submissions directly to your inbox while hosting this site on GitHub Pages, input your free <a href="https://web3forms.com" target="_blank" rel="noopener noreferrer" className="text-brandBlue-500 font-semibold underline">Web3Forms Access Key</a> below:
+                                                    </p>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Paste your Access Key here (e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)" 
+                                                        value={web3formsAccessKey}
+                                                        onChange={(e) => setWeb3formsAccessKey(e.target.value)}
+                                                        className="w-full p-2 bg-white border border-slate-300 rounded font-mono text-slate-800 text-[10px] focus:outline-none focus:border-brandBlue-500"
+                                                    />
+                                                    <p className="text-[9px] italic">
+                                                        *If left blank, the submit button will cleanly launch your system's secure native mail application as a default fallback.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </form>
                                 )}
 
@@ -751,13 +808,13 @@ Cost of Chaos Calculator Metrics:
                     </section>
 
                     {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-500 text-xs font-sans">
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-500 text-xs">
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
                             
                             <div className="md:col-span-4 space-y-2">
                                 <div className="flex items-center gap-2">
                                     <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
-                                    <span className="font-sans font-extrabold text-sm uppercase text-slate-300 font-sans font-bold">KOLTHOFF</span>
+                                    <span className="font-sans font-extrabold text-sm uppercase text-slate-300">KOLTHOFF</span>
                                 </div>
                                 <p className="text-[10px] leading-relaxed max-w-xs text-slate-500">
                                     Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
@@ -765,13 +822,13 @@ Cost of Chaos Calculator Metrics:
                                 </p>
                             </div>
 
-                            <div className="md:col-span-4 space-y-1.5 text-center md:text-left font-sans font-medium">
+                            <div className="md:col-span-4 space-y-1.5 text-center md:text-left">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] hover:text-brandBlue-300 transition-colors font-sans">
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
                                     <a href="mailto:contact@kolthoff-consulting.com">contact@kolthoff-consulting.com</a>
                                 </div>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1 hover:text-brandBlue-300 transition-colors font-sans">
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconGlobe className="w-3.5 h-3.5" /> 
                                     <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer">www.kolthoff-consulting.com</a>
                                 </div>
