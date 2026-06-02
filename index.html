@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kolthoff Consulting - Stop Bleeding Cash. Architect Your Scale-Ready Future.</title>
     
-    <!-- Google Fonts: Inter (Highly Legible Sans-Serif for Body) & Playfair Display (Premium Serif for Headings) -->
+    <!-- Google Fonts: Inter (Highly Legible Sans-Serif for Body) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -55,7 +55,7 @@
                         }
                     },
                     fontFamily: {
-                        sans: ['"Inter"', 'sans-serif'],
+                        sans: ['"Montserrat"', 'sans-serif'],
                         serif: ['"Playfair Display"', 'serif'],
                     }
                 }
@@ -130,7 +130,7 @@
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
         const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
         const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
@@ -139,49 +139,32 @@
                 <rect width="16" height="20" x="4" y="2" rx="2"/>
                 <line x1="8" x2="16" y1="6" y2="6"/>
                 <line x1="16" x2="16" y1="14" y2="18"/>
-                <path d="M16 10h.01"/>
-                <path d="M12 10h.01"/>
-                <path d="M8 10h.01"/>
-                <path d="M12 14h.01"/>
-                <path d="M8 14h.01"/>
-                <path d="M12 18h.01"/>
-                <path d="M8 18h.01"/>
+                <path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
             </svg>
         );
 
+        // GLOBAL FORMAT CURRENCY UTILITY DEFINITION
+        const formatCurrency = (val) => {
+            return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+        };
+
         function App() {
-            // Client Interactive Calculator States (Diagnostics ROI Calibration)
+            // Interactive Leakage Calculator States
             const [teamSize, setTeamSize] = useState(30);
             const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
             const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
 
-            // Dynamically calculate the prospect's personalized "Cost of Chaos"
-            const chaosFinancials = useMemo(() => {
+            // Dynamic Calculator Leakage Math
+            const publicCalculatedChaos = useMemo(() => {
                 const totalMonthlyPayroll = teamSize * avgMonthlySalary;
-                // Standard 160-hour work month -> Hourly cost of labor
                 const avgHourlyRate = avgMonthlySalary / 160;
-                
-                // Weekly delays * 4.33 weeks/month * team size * hourly cost
-                const monthlyTurnoverLoss = totalMonthlyPayroll * 0.12; // Mapped turnover frictional loss (frequent exiting)
+                const monthlyTurnoverLoss = totalMonthlyPayroll * 0.12;
                 const monthlyInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate);
                 const annualChaosTotal = Math.round((monthlyTurnoverLoss + monthlyInefficiencyLoss) * 12);
-                
-                // Cost of our benchmark audit (e.g., Diagnostics Audit at base rate)
-                const auditInvestmentEst = 185000; 
-                const firstYearROIPercent = Math.round(((annualChaosTotal - auditInvestmentEst) / auditInvestmentEst) * 100);
+                const firstYearROIPercent = Math.round(((annualChaosTotal - 185000) / 185000) * 100);
 
-                return {
-                    totalMonthlyPayroll,
-                    monthlyTurnoverLoss,
-                    monthlyInefficiencyLoss,
-                    annualChaosTotal,
-                    firstYearROIPercent
-                };
+                return { annualChaosTotal, firstYearROIPercent, monthlyTurnoverLoss, monthlyInefficiencyLoss };
             }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
-
-            const formatCurrency = (val) => {
-                return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
-            };
 
             // Direct mail link generator with custom inquiry body
             const mailtoLink = useMemo(() => {
@@ -193,7 +176,7 @@ I am writing to schedule an Operational Diagnostics Audit to evaluate our workfl
 Below are our current estimated organization metrics:
 - Approximate Team Size: ${teamSize} Employees
 - Average Monthly Salary: ₱${avgMonthlySalary.toLocaleString()}/mo
-- Projected Annual Process Waste: ₱${chaosFinancials.annualChaosTotal.toLocaleString()}
+- Projected Annual Process Waste: ₱${publicCalculatedChaos.annualChaosTotal.toLocaleString()}
 
 Please coordinate with us for an initial onboarding briefing session.
 
@@ -203,20 +186,18 @@ Contact Mobile Number:
 
 Best regards,`);
                 return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
-            }, [teamSize, avgMonthlySalary, chaosFinancials.annualChaosTotal]);
+            }, [teamSize, avgMonthlySalary, publicCalculatedChaos.annualChaosTotal]);
 
-            // Clear typesetting cache and safely typeset the dynamic formula on state change
+            // Trigger MathJax typeset updates cleanly on ROI changes
             useEffect(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     const mathElement = document.getElementById('math-roi');
                     if (mathElement) {
                         window.MathJax.typesetClear([mathElement]);
-                        window.MathJax.typesetPromise([mathElement]).catch((err) => {
-                            console.warn('MathJax execution ignored during sliding transaction:', err);
-                        });
+                        window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
                     }
                 }
-            }, [chaosFinancials.firstYearROIPercent]);
+            }, [publicCalculatedChaos.firstYearROIPercent]);
 
             return (
                 <div className="font-sans min-h-screen text-slate-300">
@@ -238,18 +219,17 @@ Best regards,`);
                                 <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
                                 <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Operational Diagnostics</a>
                                 <a href="#ecosystem" className="hover:text-white transition-colors duration-200">360° Portfolio</a>
-                                <a href="mailto:contact@kolthoff-consulting.com?subject=Inquiry%20-%20Operational%20Diagnostics%20Audit" className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-950 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5">
+                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans">
                                     Book Diagnostic Audit
                                 </a>
                             </nav>
                         </div>
                     </header>
 
-                    {/* Premium Consultative Hero Section (Prestige Dark Hook) */}
+                    {/* Hero Section */}
                     <section className="relative overflow-hidden pt-24 pb-28 border-b border-brandNavy-700/60 bg-brandNavy-950 text-slate-100">
                         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full" />
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                            
                             <div className="lg:col-span-7 space-y-6">
                                 <span className="text-xs font-mono font-bold tracking-[0.3em] text-brandBlue-400 uppercase bg-brandBlue-950/40 border border-brandBlue-900/30 px-3.5 py-1.5 rounded inline-block">
                                     B2B MANAGEMENT ADVISORY
@@ -261,8 +241,8 @@ Best regards,`);
                                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
                                     We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
                                 </p>
-                                <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
+                                <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
+                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Audit Your Financial Waste <IconArrowRight />
                                     </a>
                                     <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -283,20 +263,18 @@ Best regards,`);
                                     <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm">
                                         360
                                     </div>
-                                    <div className="text-xs">
+                                    <div className="text-xs font-sans font-medium">
                                         <span className="font-bold text-white block">Outcome-Based Pricing</span>
                                         <span className="text-slate-400 mt-0.5 block">100% Flat-Rate Guarantees. No hourly scope-creep.</span>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </section>
 
-                    {/* Interactive "Cost of Chaos" Calculator Section (Editorial LIGHT Section) */}
+                    {/* Cost of Chaos Assessment Tool */}
                     <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
-                            
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Interactive Assessment Tool</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">The Cost of Operational Chaos</h2>
@@ -306,7 +284,6 @@ Best regards,`);
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
-                                {/* Left Side: Input Controls */}
                                 <div className="lg:col-span-6 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
                                     <div className="space-y-6">
                                         <div>
@@ -357,36 +334,34 @@ Best regards,`);
                                                 max="15" 
                                                 value={delayHoursWeekly} 
                                                 onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-600 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-605 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-sans">
                                         <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
                                 </div>
 
-                                {/* Right Side: Visual ROI Output */}
                                 <div className="lg:col-span-6 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                                    
                                     <div>
                                         <div className="flex items-center gap-2 mb-4">
                                             <IconTrendingDown />
                                             <span className="text-xs font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Leakage</span>
                                         </div>
                                         <span className="text-4xl sm:text-5xl font-serif font-black text-white leading-none block">
-                                            {formatCurrency(chaosFinancials.annualChaosTotal)}
+                                            {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
                                         </span>
                                         <div className="mt-6 space-y-3.5 border-b border-brandNavy-700/80 pb-6 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400 font-light">Frictional Turnover Loss:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(chaosFinancials.monthlyTurnoverLoss * 12)} / year</span>
+                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyTurnoverLoss * 12)} / year</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-slate-400 font-light">Weekly System Delay Loss:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(chaosFinancials.monthlyInefficiencyLoss * 12)} / year</span>
+                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyInefficiencyLoss * 12)} / year</span>
                                             </div>
                                         </div>
                                     </div>
@@ -397,30 +372,26 @@ Best regards,`);
                                             <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
                                         </div>
                                         
-                                        {/* State key bound element forces a clean DOM replacement before MathJax typesetting */}
                                         <div 
                                             id="math-roi" 
-                                            key={chaosFinancials.firstYearROIPercent} 
+                                            key={publicCalculatedChaos.firstYearROIPercent} 
                                             className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center"
                                         >
-                                            {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + chaosFinancials.firstYearROIPercent + "\\%$$"}
+                                            {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + publicCalculatedChaos.firstYearROIPercent + "\\%$$"}
                                         </div>
                                         
-                                        <p className="text-xs text-slate-300 leading-relaxed font-light">
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light font-sans font-medium">
                                             A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the exact blueprint to recover these lost margins in Year 1.
                                         </p>
                                     </div>
                                 </div>
-
                             </div>
-
                         </div>
                     </section>
 
-                    {/* Operational Diagnostics - Deliverables Timeline (Clean, Crisp WHITE Section) */}
-                    <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800">
+                    {/* Operational Diagnostics Sprint Deliverables */}
+                    <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800 font-sans font-medium">
                         <div className="max-w-7xl mx-auto px-6">
-                            
                             <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">The Mandatory Entry Point</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">Operational Diagnostics Audit</h2>
@@ -429,10 +400,7 @@ Best regards,`);
                                 </p>
                             </div>
 
-                            {/* Deliverables Grid styled with dynamic responsive boundaries to prevent mobile clippings */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                
-                                {/* Step 1 */}
                                 <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
@@ -450,7 +418,6 @@ Best regards,`);
                                     </div>
                                 </div>
 
-                                {/* Step 2 */}
                                 <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
@@ -468,12 +435,11 @@ Best regards,`);
                                     </div>
                                 </div>
 
-                                {/* Step 3 */}
                                 <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
                                             <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 6 – 8</span>
+                                            <span className="text-[11px] font-mono text-slate-505 font-semibold">Timeline: Days 6 – 8</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Trace</h4>
                                         <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
@@ -485,70 +451,13 @@ Best regards,`);
                                         Spaghetti diagram of layouts and operational step-timing matrix sheets.
                                     </div>
                                 </div>
-
-                                {/* Step 4 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 04</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 9 – 10</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Compliance & Tech Audit</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against strict local DOLE standards.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Software cost-leakage report and labor compliance risk checklists.
-                                    </div>
-                                </div>
-
-                                {/* Step 5 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 05</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 11 – 12</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Risk Matrix Formulation</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            We synthesize raw metrics and workflow delay timings into an actionable impact-vs-feasibility matrix to highlight quick wins.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        B2B Impact-vs-Feasibility Operational Risk Matrix.
-                                    </div>
-                                </div>
-
-                                {/* Step 6 */}
-                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[22rem]">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 06</span>
-                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 13 – 14 (Handover)</span>
-                                        </div>
-                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Boardroom Debriefing</h4>
-                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
-                                            Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate options and strategic roadmaps.
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
-                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
-                                        Professional audit presentation deck and strategic roadmap plans.
-                                    </div>
-                                </div>
-
                             </div>
-
                         </div>
                     </section>
 
-                    {/* The 360 Ecosystem Section (Prestige DARK Section) */}
+                    {/* Option Expansion Ecosystem */}
                     <section id="ecosystem" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
                         <div className="max-w-7xl mx-auto px-6">
-                            
                             <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Optional Expansion Modules</h2>
@@ -558,8 +467,6 @@ Best regards,`);
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                
-                                {/* Process Foundations Block */}
                                 <div className="bg-brandNavy-800 border border-brandNavy-750 p-8 rounded-xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
                                         <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">A</div>
@@ -570,15 +477,13 @@ Best regards,`);
                                         <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> Org Structure & RACI Mapping</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Swimlane Work Process Maps</li>
-                                            <li className="flex items-center gap-2"><IconCheck /> DOLE-Compliant handbooks</li>
                                         </ul>
                                     </div>
-                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                    <div className="pt-8 text-xs text-slate-500 font-medium font-sans">
                                         Outcome: Clear reporting accountability and minimized employee turnover friction.
                                     </div>
                                 </div>
 
-                                {/* PMO & Lark Automation */}
                                 <div className="bg-brandNavy-800 border border-brandNavy-750 p-8 rounded-xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
                                         <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">B</div>
@@ -589,15 +494,13 @@ Best regards,`);
                                         <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> HERMES 2022 Implementation</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Lark Workspace Provisioning</li>
-                                            <li className="flex items-center gap-2"><IconCheck /> Live Automated OKR Boards</li>
                                         </ul>
                                     </div>
-                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                    <div className="pt-8 text-xs text-slate-500 font-medium font-sans">
                                         Outcome: Complete visibility over project portfolios and multi-department approvals.
                                     </div>
                                 </div>
 
-                                {/* Fractional Governance Retainers */}
                                 <div className="bg-brandNavy-800 border border-brandNavy-750 p-8 rounded-xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
                                         <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">C</div>
@@ -608,16 +511,13 @@ Best regards,`);
                                         <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> Fractional COO Board Chairs</li>
                                             <li className="flex items-center gap-2"><IconCheck /> IT SLA Support Structures</li>
-                                            <li className="flex items-center gap-2"><IconCheck /> Continuous Optimization Sprints</li>
                                         </ul>
                                     </div>
-                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                    <div className="pt-8 text-xs text-slate-500 font-medium font-sans">
                                         Outcome: CEO relief through continuous executive execution tracking and tech backups.
                                     </div>
                                 </div>
-
                             </div>
-
                         </div>
                     </section>
 
@@ -638,26 +538,24 @@ Best regards,`);
                                 <div className="space-y-4">
                                     <a 
                                         href={mailtoLink}
-                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5"
+                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5 font-sans"
                                     >
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
-                                    
-                                    <p className="text-xs text-slate-500 font-medium font-sans">
-                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
+                                    <p className="text-xs text-slate-505 font-medium font-sans">
+                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
                                     </p>
                                 </div>
-
                             </div>
                         </div>
                     </section>
 
                     {/* Corporate Premium Footer */}
                     <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-500 text-xs">
-                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                             
-                            <div className="md:col-span-4 space-y-2">
-                                <div className="flex items-center gap-2">
+                            <div className="space-y-2 text-center md:text-left font-sans font-medium">
+                                <div className="flex items-center justify-center md:justify-start gap-2">
                                     <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
                                     <span className="font-sans font-extrabold text-sm uppercase text-slate-300">KOLTHOFF</span>
                                 </div>
@@ -667,26 +565,16 @@ Best regards,`);
                                 </p>
                             </div>
 
-                            <div className="md:col-span-4 space-y-1.5 text-center md:text-left">
+                            <div className="space-y-1.5 text-center md:text-right font-sans font-medium font-semibold">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] hover:text-brandBlue-300 transition-colors">
+                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
-                                    <a href="mailto:contact@kolthoff-consulting.com">contact@kolthoff-consulting.com</a>
+                                    <a href="mailto:contact@kolthoff-consulting.com font-medium font-sans">contact@kolthoff-consulting.com</a>
                                 </div>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
+                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
                                     <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer">www.kolthoff-consulting.com</a>
                                 </div>
-                            </div>
-
-                            <div className="md:col-span-4 text-center md:text-right space-y-2">
-                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Portal Resources</span>
-                                <a 
-                                    href="./index.html" 
-                                    className="px-4 py-2 bg-brandNavy-900 border border-brandNavy-700/80 rounded text-slate-300 hover:text-white transition-all inline-block font-mono text-[10px] font-bold uppercase tracking-wider"
-                                >
-                                    Confidential Scope Planner
-                                </a>
                             </div>
 
                         </div>
