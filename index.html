@@ -92,7 +92,7 @@
             </svg>
         );
 
-        // SVG Symbols
+        // SVG Symbols optimized to use React-compliant camelCase attributes
         const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
@@ -564,7 +564,7 @@
                             <div className="text-center mb-8 space-y-2">
                                 <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">Book an Operational Diagnostics Audit</h3>
                                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                                    Submit your coordinates below to schedule an onboarding baseline review. A consulting partner will contact your office within 24 hours.
+                                    Submit your coordinates below to schedule an onboarding baseline review, or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-400 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. A consulting partner will contact your office within 24 hours.
                                 </p>
                             </div>
 
@@ -573,11 +573,11 @@
                                     <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✓</div>
                                     <h4 className="font-bold text-white text-lg">Diagnostics Scoping Request Received</h4>
                                     <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                                        Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via `{leadEmail}` with next-step scheduling instructions.
+                                        Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via <a href={`mailto:${leadEmail}`} className="text-brandBlue-400 hover:underline font-mono">{leadEmail}</a> with next-step scheduling instructions.
                                     </p>
                                 </div>
                             ) : (
-                                <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium">
+                                <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium font-sans">
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
                                             <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Your Full Name</label>
@@ -614,7 +614,7 @@
                                     </div>
                                     <button 
                                         type="submit" 
-                                        className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30"
+                                        className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 font-sans"
                                     >
                                         Request Diagnostics Onboarding Sync
                                     </button>
@@ -641,11 +641,13 @@
 
                             <div className="md:col-span-4 space-y-1 text-center md:text-left">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px]">
-                                    <IconMail className="w-3.5 h-3.5" /> contact@kolthoff-consulting.com
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] hover:text-brandBlue-300 transition-colors">
+                                    <IconMail className="w-3.5 h-3.5" /> 
+                                    <a href="mailto:contact@kolthoff-consulting.com">contact@kolthoff-consulting.com</a>
                                 </div>
-                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1">
-                                    <IconGlobe className="w-3.5 h-3.5" /> www.kolthoff-consulting.com
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
+                                    <IconGlobe className="w-3.5 h-3.5" /> 
+                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer">www.kolthoff-consulting.com</a>
                                 </div>
                             </div>
 
