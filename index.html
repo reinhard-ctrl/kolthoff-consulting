@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kolthoff Consulting - Stop Bleeding Cash. Architect Your Scale-Ready Future.</title>
     
-    <!-- Google Fonts: Inter (Highly Legible Sans-Serif for Body) & Playfair Display (Premium Editorial Serif) -->
+    <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -130,7 +130,7 @@
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
         const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
         const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
@@ -166,27 +166,26 @@
                 return { annualChaosTotal, firstYearROIPercent, monthlyTurnoverLoss, monthlyInefficiencyLoss };
             }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
 
-            // Direct mail link generator with custom inquiry body
+            // Direct mail link generator with custom inquiry body - simplified email template
             const mailtoLink = useMemo(() => {
                 const subject = encodeURIComponent("Operational Diagnostics Audit Request");
                 const body = encodeURIComponent(`Dear Reinhard,
 
-I am writing to schedule an Operational Diagnostics Audit to evaluate our workflow architecture and mitigate process leakage.
+I am writing to request an Operational Diagnostics Audit to evaluate our workflow architecture and mitigate potential operational risks.
 
-Below are our current estimated organization metrics:
-- Approximate Team Size: ${teamSize} Employees
-- Average Monthly Salary: ₱${avgMonthlySalary.toLocaleString()}/mo
-- Projected Annual Process Waste: ₱${publicCalculatedChaos.annualChaosTotal.toLocaleString()}
+Please coordinate with us for an initial briefing session.
 
-Please coordinate with us for an initial onboarding briefing session.
+Our Contact Details:
+- Company Name: 
+- Primary Contact Representative: 
+- Contact Mobile/Email: 
 
-Company Name: 
-Primary Contact Representative: 
-Contact Mobile Number: 
+Optional Pain Point Description (Bottlenecks, delays, or process challenges):
+
 
 Best regards,`);
                 return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
-            }, [teamSize, avgMonthlySalary, publicCalculatedChaos.annualChaosTotal]);
+            }, []);
 
             // Trigger MathJax typeset updates cleanly on ROI changes
             useEffect(() => {
@@ -216,10 +215,10 @@ Best regards,`);
                             </div>
                             
                             <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                                <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
-                                <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Operational Diagnostics</a>
-                                <a href="#ecosystem" className="hover:text-white transition-colors duration-200">360° Portfolio</a>
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans">
+                                <a href="#chaos" className="hover:text-white transition-colors duration-200 font-sans">The Cost of Chaos</a>
+                                <a href="#diagnostics" className="hover:text-white transition-colors duration-200 font-sans">Operational Diagnostics</a>
+                                <a href="#ecosystem" className="hover:text-white transition-colors duration-200 font-sans">360° Portfolio</a>
+                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-950 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans">
                                     Book Diagnostic Audit
                                 </a>
                             </nav>
@@ -236,13 +235,13 @@ Best regards,`);
                                 </span>
                                 <h1 className="text-4xl sm:text-6xl font-serif font-bold text-white leading-tight">
                                     Stop Bleeding Cash. <br />
-                                    <span className="text-brandBlue-400">Fix Your Process Architecture.</span>
+                                    <span className="text-brandBlue-400 font-bold">Fix Your Process Architecture.</span>
                                 </h1>
                                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
                                     We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
+                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Audit Your Financial Waste <IconArrowRight />
                                     </a>
                                     <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -334,12 +333,12 @@ Best regards,`);
                                                 max="15" 
                                                 value={delayHoursWeekly} 
                                                 onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-605 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-sans">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-sans font-medium">
                                         <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
                                 </div>
@@ -356,11 +355,11 @@ Best regards,`);
                                         </span>
                                         <div className="mt-6 space-y-3.5 border-b border-brandNavy-700/80 pb-6 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light">Frictional Turnover Loss:</span>
+                                                <span className="text-slate-400 font-light font-medium">Frictional Turnover Loss:</span>
                                                 <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyTurnoverLoss * 12)} / year</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light">Weekly System Delay Loss:</span>
+                                                <span className="text-slate-400 font-light font-medium">Weekly System Delay Loss:</span>
                                                 <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyInefficiencyLoss * 12)} / year</span>
                                             </div>
                                         </div>
@@ -375,12 +374,12 @@ Best regards,`);
                                         <div 
                                             id="math-roi" 
                                             key={publicCalculatedChaos.firstYearROIPercent} 
-                                            className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center"
+                                            className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center font-semibold"
                                         >
                                             {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + publicCalculatedChaos.firstYearROIPercent + "\\%$$"}
                                         </div>
                                         
-                                        <p className="text-xs text-slate-300 leading-relaxed font-light font-sans font-medium">
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light font-sans font-semibold">
                                             A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the exact blueprint to recover these lost margins in Year 1.
                                         </p>
                                     </div>
@@ -390,7 +389,7 @@ Best regards,`);
                     </section>
 
                     {/* Operational Diagnostics Sprint Deliverables */}
-                    <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800 font-sans font-medium">
+                    <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800 font-sans font-semibold">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">The Mandatory Entry Point</span>
@@ -412,7 +411,7 @@ Best regards,`);
                                             Client kickoff, NDA alignment, and data security workspace provisioning. We dispatch our custom Information Request List (IRL).
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
                                         Operationalized shared workspace, mutual NDA, and finalized roadmap.
                                     </div>
@@ -429,7 +428,7 @@ Best regards,`);
                                             Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
                                         Interview log registers and synthesized qualitative pain-point catalog.
                                     </div>
@@ -439,14 +438,14 @@ Best regards,`);
                                     <div>
                                         <div className="flex justify-between items-center mb-3">
                                             <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-100/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
-                                            <span className="text-[11px] font-mono text-slate-505 font-semibold">Timeline: Days 6 – 8</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 6 – 8</span>
                                         </div>
                                         <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Trace</h4>
                                         <p className="text-xs text-slate-600 leading-relaxed mt-2.5">
                                             Two days of active on-site workspace workflow monitoring, step-timing, and physical asset/information routing audits.
                                         </p>
                                     </div>
-                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-505 font-medium font-sans">
                                         <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
                                         Spaghetti diagram of layouts and operational step-timing matrix sheets.
                                     </div>
@@ -522,7 +521,7 @@ Best regards,`);
                     </section>
 
                     {/* Simple Mailto Call to Action Section (Sophisticated LIGHT Section) */}
-                    <section id="book" className="py-24 bg-slate-50 text-slate-900">
+                    <section id="book" className="py-24 bg-slate-50 text-slate-900 font-semibold">
                         <div className="max-w-4xl mx-auto px-6">
                             <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-2xl shadow-xl relative text-center">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
@@ -530,7 +529,7 @@ Best regards,`);
                                 <div className="max-w-2xl mx-auto space-y-4 mb-8">
                                     <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Secure Channel</span>
                                     <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book Your Operational Diagnostics Audit</h3>
-                                    <p className="text-sm text-slate-600 leading-relaxed">
+                                    <p className="text-sm text-slate-600 leading-relaxed font-sans">
                                         We protect client data privacy and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
                                     </p>
                                 </div>
@@ -542,7 +541,7 @@ Best regards,`);
                                     >
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
-                                    <p className="text-xs text-slate-505 font-medium font-sans">
+                                    <p className="text-xs text-slate-505 font-medium font-sans font-semibold">
                                         Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
                                     </p>
                                 </div>
@@ -569,11 +568,11 @@ Best regards,`);
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
-                                    <a href="mailto:contact@kolthoff-consulting.com font-medium font-sans">contact@kolthoff-consulting.com</a>
+                                    <a href="mailto:contact@kolthoff-consulting.com font-medium font-sans font-semibold">contact@kolthoff-consulting.com</a>
                                 </div>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
-                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer">www.kolthoff-consulting.com</a>
+                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer font-medium font-sans font-semibold">www.kolthoff-consulting.com</a>
                                 </div>
                             </div>
 
