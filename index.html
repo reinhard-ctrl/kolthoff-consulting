@@ -1,434 +1,674 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolthoff Consulting - Stop Bleeding Cash. Architect Your Scale-Ready Future.</title>
     
-    <!-- SEO & Meta Tags -->
-    <title>Kolthoff Consulting | Architecting Your Scale-Up</title>
-    <meta name="description" content="Kolthoff Consulting bridges the gap between systems and people to architect your scale-up and drive sustainable growth.">
-    <meta property="og:title" content="Kolthoff Consulting | Architecting Your Scale-Up">
-    <meta property="og:description" content="We fix the intersection of Systems & People to eliminate friction, empower your team, and drive sustainable, profitable growth.">
-    <meta property="og:type" content="website">
-    
-    <!-- Load Tailwind CSS automatically -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Load Icons automatically -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Inter (Highly Legible Sans-Serif for Body) & Playfair Display (Premium Serif for Headings) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
-    <!-- Custom Styles for Scroll Offset -->
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: {
+                            950: '#020613', // Ultra-dark corporate space
+                            900: '#09111F', // Rich navy base
+                            800: '#0F1A2C', // Deep card background
+                            700: '#1B2C46', // Panel borders and dividers
+                            600: '#2E4567', // Subdued text and inactive strokes
+                        },
+                        brandBlue: {
+                            50: '#F0F6FF',
+                            100: '#E0EDFF',
+                            200: '#C2DBFF',
+                            300: '#99C4FF',
+                            400: '#60A1FA', // Highlighting element
+                            500: '#2563EB', // Premium solid corporate blue
+                            600: '#1D4ED8',
+                            700: '#1E40AF',
+                            850: '#0F2963', // Internal container accents
+                            950: '#0B1731', // Deep glow shadows
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- React and ReactDOM CDNs (Production Builds) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel CDN (Compiles JSX inside the browser dynamically) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <style>
-        /* Prevents the sticky header from covering section titles when anchored */
-        html {
-            scroll-padding-top: 5rem; 
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #0F1A2C; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2563EB; }
+        
+        .luxury-gradient {
+            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
         }
     </style>
 </head>
-<body class="min-h-screen bg-slate-50 font-sans text-slate-900">
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
 
-    <!-- HEADER -->
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
+    <!-- Target mount node for React -->
+    <div id="root"></div>
+
+    <!-- React/Babel Browser compilation block -->
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // HIGH-FIDELITY SHIELD, COGWHEEL, AND CHECKMARK LOGO
+        const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
+            <svg className={`${className} transition-colors duration-250`} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 10 C70 14 86 20 86 20 V54 C86 74 71 87 50 92 C29 87 14 74 14 54 V20 C14 20 30 14 50 10 Z" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round"/>
+                <g className="opacity-90">
+                    <circle cx="50" cy="52" r="22" fill="none" stroke="currentColor" strokeWidth="4.5" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(45 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(90 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(135 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(180 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(225 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(270 50 52)" />
+                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(315 50 52)" />
+                </g>
+                <path d="M38 52 L47 61 L64 39" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        );
+
+        // SVG Symbols
+        const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
+        const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
+        const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
+        const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+        const IconCalculator = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect width="16" height="20" x="4" y="2" rx="2"/>
+                <line x1="8" x2="16" y1="6" y2="6"/>
+                <line x1="16" x2="16" y1="14" y2="18"/>
+                <path d="M16 10h.01"/>
+                <path d="M12 10h.01"/>
+                <path d="M8 10h.01"/>
+                <path d="M12 14h.01"/>
+                <path d="M8 14h.01"/>
+                <path d="M12 18h.01"/>
+                <path d="M8 18h.01"/>
+            </svg>
+        );
+
+        function App() {
+            // Client Interactive Calculator States (Diagnostics ROI Calibration)
+            const [teamSize, setTeamSize] = useState(30);
+            const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
+            const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
+
+            // Inbound Lead Form State
+            const [leadName, setLeadName] = useState('');
+            const [leadEmail, setLeadEmail] = useState('');
+            const [leadCompany, setLeadCompany] = useState('');
+            const [formSubmitted, setFormSubmitted] = useState(false);
+
+            // Dynamically calculate the prospect's personalized "Cost of Chaos"
+            const chaosFinancials = useMemo(() => {
+                const totalMonthlyPayroll = teamSize * avgMonthlySalary;
+                // Standard 160-hour PH work month -> Hourly cost of labor
+                const avgHourlyRate = avgMonthlySalary / 160;
                 
-                <!-- SVG Logo (Dark Version) -->
-                <svg viewBox="0 0 100 100" class="w-11 h-11 drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M50 5 L85 18 V45 C85 70 50 95 50 95 C50 95 15 70 15 45 V18 L50 5 Z" class="fill-slate-900" />
-                    <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" />
-                    <rect x="16" y="46" width="68" height="8" rx="2" class="fill-slate-200" />
-                    <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" transform="rotate(45 50 50)" />
-                    <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" transform="rotate(-45 50 50)" />
-                    <circle cx="50" cy="50" r="26" class="stroke-slate-200" stroke-width="8" />
-                    <circle cx="50" cy="50" r="22" class="fill-slate-900" />
-                    <path d="M35 52 L45 62 L67 38" class="stroke-blue-500" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
-                        KOLTHOFF
-                    </h1>
-                    <h2 class="text-sm font-bold text-blue-600 tracking-widest uppercase mt-0.5">
-                        Consulting
-                    </h2>
-                </div>
-            </div>
-            
-            <!-- Desktop Navigation -->
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="#disconnect" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">The Problem</a>
-                <a href="#approach" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Our Approach</a>
-                <a href="#health-check" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Health Check</a>
-                <a href="#services" class="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">Services</a>
-            </nav>
-
-            <div class="flex items-center gap-4">
-                <a href="mailto:contact@kolthoff-consulting.com" class="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-all shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 text-sm">
-                    <i data-lucide="mail" class="w-4 h-4" aria-hidden="true"></i>
-                    Let's Talk
-                </a>
+                // Weekly delays * 4.33 weeks/month * team size * hourly cost
+                const monthlyTurnoverLoss = totalMonthlyPayroll * 0.12; // Mapped turnover frictional loss (frequent exiting)
+                const monthlyInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate);
+                const annualChaosTotal = Math.round((monthlyTurnoverLoss + monthlyInefficiencyLoss) * 12);
                 
-                <!-- Mobile Menu Toggle Button -->
-                <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600 hover:text-slate-900 focus:outline-none" aria-label="Toggle mobile menu">
-                    <i data-lucide="menu" class="w-6 h-6" id="menu-icon"></i>
-                    <i data-lucide="x" class="w-6 h-6 hidden" id="close-icon"></i>
-                </button>
-            </div>
-        </div>
+                // Cost of our benchmark audit (e.g., Diagnostics Audit at base rate)
+                const auditInvestmentEst = 185000; 
+                const firstYearROIPercent = Math.round(((annualChaosTotal - auditInvestmentEst) / auditInvestmentEst) * 100);
 
-        <!-- Mobile Navigation Dropdown -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200">
-            <nav class="flex flex-col px-4 pt-2 pb-6 space-y-4 shadow-inner">
-                <a href="#disconnect" class="mobile-link text-base font-semibold text-slate-600 hover:text-blue-600 transition-colors">The Problem</a>
-                <a href="#approach" class="mobile-link text-base font-semibold text-slate-600 hover:text-blue-600 transition-colors">Our Approach</a>
-                <a href="#health-check" class="mobile-link text-base font-semibold text-slate-600 hover:text-blue-600 transition-colors">Health Check</a>
-                <a href="#services" class="mobile-link text-base font-semibold text-slate-600 hover:text-blue-600 transition-colors">Services</a>
-                <a href="mailto:contact@kolthoff-consulting.com" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold mt-4">
-                    <i data-lucide="mail" class="w-4 h-4"></i> Let's Talk
-                </a>
-            </nav>
-        </div>
-    </header>
+                return {
+                    totalMonthlyPayroll,
+                    monthlyTurnoverLoss,
+                    monthlyInefficiencyLoss,
+                    annualChaosTotal,
+                    firstYearROIPercent
+                };
+            }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
 
-    <main>
-        <!-- HERO SECTION -->
-        <section class="bg-slate-900 text-white pt-24 pb-32 relative overflow-hidden">
-            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-400 via-slate-900 to-slate-900 pointer-events-none"></div>
-            <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none"></div>
-            
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm font-bold tracking-widest uppercase shadow-inner">
-                    <i data-lucide="activity" class="w-4 h-4" aria-hidden="true"></i> Operations & HR Strategy
-                </div>
-                
-                <h2 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-                    Let's Architect Your <br class="hidden sm:block" />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
-                        Scale-Up
-                    </span>
-                </h2>
-                
-                <p class="text-xl sm:text-2xl text-slate-300 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
-                    We fix the intersection of <strong class="text-white font-semibold">Systems & People</strong> to eliminate friction, empower your team, and drive sustainable, profitable growth.
-                </p>
-                
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="#health-check" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/25">
-                        Request a Diagnostic
-                        <i data-lucide="arrow-right" class="w-5 h-5" aria-hidden="true"></i>
-                    </a>
-                    <a href="#approach" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all border border-slate-700">
-                        Explore Our Approach
-                    </a>
-                </div>
-            </div>
-        </section>
+            const formatCurrency = (val) => {
+                return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+            };
 
-        <!-- STATS BANNER -->
-        <div class="bg-blue-600 relative z-20 -mt-12 max-w-5xl mx-auto rounded-2xl shadow-xl shadow-slate-900/10 border border-blue-500 overflow-hidden mx-4 lg:mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-blue-500 text-white">
-                <div class="p-8 text-center flex flex-col items-center">
-                    <i data-lucide="workflow" class="w-8 h-8 text-blue-300 mb-3" aria-hidden="true"></i>
-                    <div class="text-3xl font-extrabold mb-1">30+ Years</div>
-                    <div class="text-blue-100 font-medium text-sm uppercase tracking-wider">Combined Expertise</div>
-                </div>
-                <div class="p-8 text-center flex flex-col items-center">
-                    <i data-lucide="trending-up" class="w-8 h-8 text-blue-300 mb-3" aria-hidden="true"></i>
-                    <div class="text-3xl font-extrabold mb-1">Dual-Engine</div>
-                    <div class="text-blue-100 font-medium text-sm uppercase tracking-wider">Operations & HR</div>
-                </div>
-                <div class="p-8 text-center flex flex-col items-center">
-                    <i data-lucide="target" class="w-8 h-8 text-blue-300 mb-3" aria-hidden="true"></i>
-                    <div class="text-3xl font-extrabold mb-1">90-Day</div>
-                    <div class="text-blue-100 font-medium text-sm uppercase tracking-wider">Execution Roadmaps</div>
-                </div>
-            </div>
-        </div>
+            const handleLeadSubmit = (e) => {
+                e.preventDefault();
+                if (!leadName || !leadEmail) return;
+                setFormSubmitted(true);
+            };
 
-        <!-- THE DISCONNECT -->
-        <section id="disconnect" class="py-24 bg-slate-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <h3 class="text-blue-600 font-bold tracking-widest uppercase text-sm mb-3">The Disconnect</h3>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">Is Your Growth Stalling?</h2>
-                    <p class="text-lg text-slate-600">
-                        Scaling a business exposes the cracks in your foundation. When systems break down, your people suffer. When your people burn out, your systems fail.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center mb-6">
-                            <i data-lucide="zap" class="w-6 h-6" aria-hidden="true"></i>
-                        </div>
-                        <h4 class="text-xl font-bold text-slate-900 mb-3">Broken Workflows</h4>
-                        <p class="text-slate-600">Processes that used to work are now manual, painfully slow, and highly error-prone, creating bottlenecks at every turn.</p>
-                    </div>
+            return (
+                <div className="font-sans min-h-screen selection:bg-brandBlue-600 selection:text-white">
                     
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center mb-6">
-                            <i data-lucide="users" class="w-6 h-6" aria-hidden="true"></i>
-                        </div>
-                        <h4 class="text-xl font-bold text-slate-900 mb-3">Team Burnout</h4>
-                        <p class="text-slate-600">Your best people are constantly firefighting. The team is disengaged, exhausted, and employee turnover is steadily climbing.</p>
-                    </div>
-
-                    <div class="bg-slate-900 p-8 rounded-2xl shadow-xl text-white relative overflow-hidden flex flex-col justify-center hover:shadow-2xl transition-shadow">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-bl-full blur-2xl pointer-events-none"></div>
-                        <h4 class="text-2xl font-bold mb-4 z-10">We Fix the Intersection</h4>
-                        <p class="text-blue-100 mb-6 z-10">We don't just treat the symptoms. We bridge the gap between your operational systems and your human capital.</p>
-                        <a href="#approach" class="inline-flex items-center text-blue-400 font-semibold hover:text-blue-300 transition-colors z-10">
-                            See our approach <i data-lucide="arrow-right" class="w-4 h-4 ml-2" aria-hidden="true"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- DUAL ENGINE APPROACH -->
-        <section id="approach" class="py-24 bg-white border-t border-slate-100">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid lg:grid-cols-2 gap-16 items-center">
-                    <div>
-                        <h3 class="text-blue-600 font-bold tracking-widest uppercase text-sm mb-3">Our Methodology</h3>
-                        <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">The Dual-Engine Approach</h2>
-                        <p class="text-lg text-slate-600 mb-8 leading-relaxed">
-                            Most consultants look at either your processes OR your people. Our principal team brings <strong>30+ years of combined operations and human resources expertise</strong> to optimize how they work <em>together</em>.
-                        </p>
-                        
-                        <div class="space-y-6">
-                            <div class="flex gap-4">
-                                <div class="flex-shrink-0 w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
-                                    <i data-lucide="settings" class="w-6 h-6" aria-hidden="true"></i>
-                                </div>
+                    {/* High-Status Corporate Header */}
+                    <header className="border-b border-brandNavy-700 bg-brandNavy-900/90 backdrop-blur-md sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
                                 <div>
-                                    <h4 class="text-xl font-bold text-slate-900 mb-2">Engine 1: Process Architecture</h4>
-                                    <p class="text-slate-600">Streamlining workflows, implementing scalable systems, and optimizing your organizational structure for peak efficiency.</p>
+                                    <span className="font-sans font-extrabold tracking-wider text-lg uppercase block text-white">
+                                        KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
+                                    </span>
+                                    <span className="text-[9px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block -mt-1 font-bold">Operational Architecture & Strategy</span>
                                 </div>
                             </div>
                             
-                            <div class="flex gap-4">
-                                <div class="flex-shrink-0 w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
-                                    <i data-lucide="users" class="w-6 h-6" aria-hidden="true"></i>
+                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider">
+                                <a href="#chaos" className="text-slate-300 hover:text-white transition-colors">The Cost of Chaos</a>
+                                <a href="#diagnostics" className="text-slate-300 hover:text-white transition-colors">Operational Diagnostics</a>
+                                <a href="#ecosystem" className="text-slate-300 hover:text-white transition-colors">360° Portfolio</a>
+                                <a href="#book" className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white rounded font-bold transition-all shadow-md shadow-brandBlue-950/40">
+                                    Book Diagnostic Audit
+                                </a>
+                            </nav>
+                        </div>
+                    </header>
+
+                    {/* Premium Consultative Hero Section */}
+                    <section className="relative overflow-hidden pt-20 pb-24 border-b border-brandNavy-700/60">
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full" />
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                            
+                            <div className="lg:col-span-7 space-y-6">
+                                <span className="text-xs font-mono font-bold tracking-[0.3em] text-brandBlue-400 uppercase bg-brandBlue-950/40 border border-brandBlue-900/30 px-3.5 py-1.5 rounded inline-block">
+                                    B2B MANAGEMENT ADVISORY
+                                </span>
+                                <h1 className="text-4xl sm:text-6xl font-serif font-bold text-white leading-tight">
+                                    Stop Bleeding Cash. <br />
+                                    <span className="text-brandBlue-400">Fix Your Process Architecture.</span>
+                                </h1>
+                                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
+                                    We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
+                                </p>
+                                <div className="pt-4 flex flex-col sm:flex-row gap-4">
+                                    <a href="#chaos" className="px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center">
+                                        Audit Your Financial Waste <IconArrowRight />
+                                    </a>
+                                    <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all">
+                                        Explore Diagnostics Audit
+                                    </a>
                                 </div>
-                                <div>
-                                    <h4 class="text-xl font-bold text-slate-900 mb-2">Engine 2: HR Strategy</h4>
-                                    <p class="text-slate-600">Building a resilient culture, developing leadership capability, and aligning talent with your operational goals.</p>
+                            </div>
+
+                            <div className="lg:col-span-5 bg-brandNavy-800/80 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
+                                <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
+                                    <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
+                                </div>
+                                <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">Core Partnership Philosophy</h3>
+                                <p className="font-serif italic text-lg text-slate-100 leading-relaxed mb-6">
+                                    "A business cannot scale if its reporting lines are blurred, its compliance registers are exposed, or its core operational playbook resides inside the minds of single employees."
+                                </p>
+                                <div className="border-t border-brandNavy-700/60 pt-4 flex gap-4 items-center">
+                                    <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold">
+                                        360
+                                    </div>
+                                    <div className="text-xs">
+                                        <span className="font-bold text-white block">Outcome-Based Pricing</span>
+                                        <span className="text-slate-400 mt-0.5 block">100% Flat-Rate Guarantees. No hourly scope-creep.</span>
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
-                    </div>
-                    
-                    <div class="relative">
-                        <div class="absolute inset-0 bg-gradient-to-tr from-blue-100 to-indigo-50 rounded-3xl transform rotate-3 scale-105 -z-10 pointer-events-none"></div>
-                        <div class="bg-white border border-slate-200 p-8 rounded-3xl shadow-xl">
-                            <h4 class="font-bold text-slate-900 text-lg mb-6 border-b border-slate-100 pb-4">Why Choose Kolthoff?</h4>
-                            <ul class="space-y-5">
-                                <li class="flex items-start gap-4">
-                                    <i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true"></i>
-                                    <div>
-                                        <strong class="text-slate-900 block text-lg">Cultural Accelerators</strong>
-                                        <span class="text-slate-600">Unlock your team's true potential and engagement.</span>
+                    </section>
+
+                    {/* Interactive "Cost of Chaos" Calculator Section */}
+                    <section id="chaos" className="py-24 border-b border-brandNavy-700/60 bg-brandNavy-900/30">
+                        <div className="max-w-7xl mx-auto px-6">
+                            
+                            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Interactive Assessment Tool</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">The Cost of Operational Chaos</h2>
+                                <p className="text-sm text-slate-400 leading-relaxed">
+                                    Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
+                                {/* Left Side: Input Controls */}
+                                <div className="lg:col-span-6 bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl shadow-xl flex flex-col justify-between space-y-6">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
+                                                    <IconTarget /> Total Personnel (FTE)
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-400">{teamSize} Employees</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="5" 
+                                                max="150" 
+                                                value={teamSize} 
+                                                onChange={(e) => setTeamSize(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
+                                                    <IconCalculator className="text-brandBlue-400" /> Average Monthly Salary
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-400">₱{avgMonthlySalary.toLocaleString()}</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="15000" 
+                                                max="120000" 
+                                                step="500"
+                                                value={avgMonthlySalary} 
+                                                onChange={(e) => setAvgMonthlySalary(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
+                                                    <IconClock className="" /> Avg. Delay per Staff Weekly
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-400">{delayHoursWeekly} Hours</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1" 
+                                                max="15" 
+                                                value={delayHoursWeekly} 
+                                                onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
                                     </div>
-                                </li>
-                                <li class="flex items-start gap-4">
-                                    <i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true"></i>
-                                    <div>
-                                        <strong class="text-slate-900 block text-lg">Proven Execution Roadmaps</strong>
-                                        <span class="text-slate-600">Get a crystal clear, step-by-step path to growth.</span>
+
+                                    <div className="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/80 text-[11px] text-slate-400 leading-relaxed font-sans">
+                                        <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
-                                </li>
-                                <li class="flex items-start gap-4">
-                                    <i data-lucide="check-circle" class="w-6 h-6 text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+                                </div>
+
+                                {/* Right Side: Visual ROI Output */}
+                                <div className="lg:col-span-6 bg-gradient-to-br from-brandNavy-800 to-brandNavy-900 border-2 border-brandBlue-500/30 p-8 rounded-xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
+                                    
                                     <div>
-                                        <strong class="text-slate-900 block text-lg">Client-Focused Partnership</strong>
-                                        <span class="text-slate-600">Direct, unrestricted access to our leadership team.</span>
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <IconTrendingDown />
+                                            <span className="text-xs font-mono font-bold tracking-wider text-rose-400 uppercase">Estimated Annual Leakage</span>
+                                        </div>
+                                        <span className="text-4xl sm:text-5xl font-serif font-black text-white leading-none block">
+                                            {formatCurrency(chaosFinancials.annualChaosTotal)}
+                                        </span>
+                                        <div className="mt-4 space-y-2 text-xs border-b border-brandNavy-700 pb-5">
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Frictional Turnover Loss:</span>
+                                                <span className="text-slate-200 font-mono">{formatCurrency(chaosFinancials.monthlyTurnoverLoss * 12)} / year</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-slate-400">Weekly System Delay Loss:</span>
+                                                <span className="text-slate-200 font-mono">{formatCurrency(chaosFinancials.monthlyInefficiencyLoss * 12)} / year</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </li>
-                            </ul>
+
+                                    <div className="pt-6">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <IconTrendingUp />
+                                            <span className="text-[10px] font-mono font-bold tracking-wider text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
+                                        </div>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the playbook to recover these lost margins. Based on your inputs, your estimated Year-One Audit Yield is an ROI of:
+                                        </p>
+                                        <div className="text-3xl font-serif font-bold text-emerald-400 mt-3 font-mono">
+                                            +{chaosFinancials.firstYearROIPercent}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    </section>
 
-        <!-- HEALTH CHECK -->
-        <section id="health-check" class="py-24 bg-slate-900 text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-1/2 h-full bg-blue-600/10 blur-[100px] pointer-events-none"></div>
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                
-                <div class="text-center mb-12">
-                    <span class="inline-block py-1 px-3 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold tracking-widest uppercase mb-4 border border-blue-500/30">
-                        Surgical Entry Point
-                    </span>
-                    <h2 class="text-4xl sm:text-5xl font-extrabold mb-6">Our Signature 2-Day Health Check</h2>
-                    <p class="text-xl text-slate-300 max-w-2xl mx-auto">
-                        Before we prescribe, we diagnose. Our rapid-assessment protocol identifies exactly where your business is bleeding time, money, and talent.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-6 mb-10">
-                    <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl hover:border-blue-500 transition-colors group">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-14 h-14 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <i data-lucide="search" class="w-7 h-7" aria-hidden="true"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold">Day 1: The X-Ray</h3>
-                                <p class="text-blue-400 text-sm font-semibold uppercase tracking-wider">Discovery Phase</p>
-                            </div>
-                        </div>
-                        <ul class="space-y-3 text-slate-300">
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-blue-500"></i> On-site leadership interviews</li>
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-blue-500"></i> Comprehensive workflow walks</li>
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-blue-500"></i> Team culture temperature check</li>
-                        </ul>
-                    </div>
-
-                    <div class="bg-slate-800 border border-slate-700 p-8 rounded-2xl hover:border-blue-500 transition-colors group">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-14 h-14 bg-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <i data-lucide="clock" class="w-7 h-7" aria-hidden="true"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold">Day 2: The Diagnosis</h3>
-                                <p class="text-indigo-400 text-sm font-semibold uppercase tracking-wider">Analysis Phase</p>
-                            </div>
-                        </div>
-                        <ul class="space-y-3 text-slate-300">
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-indigo-500"></i> Process friction mapping</li>
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-indigo-500"></i> System vulnerability identification</li>
-                            <li class="flex items-center gap-2"><i data-lucide="chevron-right" class="w-4 h-4 text-indigo-500"></i> Actionable 90-day Roadmap creation</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div>
-                        <span class="font-bold text-blue-200 uppercase tracking-wider text-sm block mb-2">The Outcome</span>
-                        <h4 class="text-2xl font-bold text-white mb-2">The "State of the Union" Report</h4>
-                        <p class="text-blue-100 max-w-lg">
-                            A comprehensive, brutally honest brief outlining critical areas for improvement, complete with your customized execution roadmap.
-                        </p>
-                    </div>
-                    <a href="mailto:contact@kolthoff-consulting.com?subject=Inquiry: 2-Day Diagnostic Health Check" class="whitespace-nowrap bg-white text-blue-900 px-8 py-4 rounded-xl font-extrabold text-lg transition-transform hover:scale-105 shadow-lg w-full md:w-auto text-center">
-                        Book Your Diagnostic
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- SERVICES -->
-        <section id="services" class="py-24 bg-slate-50 border-t border-slate-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center max-w-3xl mx-auto mb-16">
-                    <h3 class="text-blue-600 font-bold tracking-widest uppercase text-sm mb-3">Beyond The Diagnostic</h3>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-6">Comprehensive Consulting</h2>
-                    <p class="text-lg text-slate-600">
-                        After identifying the friction points, we partner with your leadership team to implement the solutions and drive the transformation.
-                    </p>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <i data-lucide="workflow" class="w-10 h-10 text-blue-600 mb-5" aria-hidden="true"></i>
-                        <h4 class="text-xl font-bold text-slate-900 mb-3">Process Architecture</h4>
-                        <p class="text-slate-600 mb-4">Redesigning standard operating procedures to eliminate redundancies, automate manual tasks, and scale seamlessly.</p>
-                    </div>
-                    
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <i data-lucide="building-2" class="w-10 h-10 text-indigo-600 mb-5" aria-hidden="true"></i>
-                        <h4 class="text-xl font-bold text-slate-900 mb-3">Org Design & Alignment</h4>
-                        <p class="text-slate-600 mb-4">Restructuring teams and clarifying roles to ensure the right people are in the right seats, focused on the right metrics.</p>
-                    </div>
-
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                        <i data-lucide="briefcase" class="w-10 h-10 text-slate-800 mb-5" aria-hidden="true"></i>
-                        <h4 class="text-xl font-bold text-slate-900 mb-3">Fractional Leadership</h4>
-                        <p class="text-slate-600 mb-4">Interim executive guidance to bridge leadership gaps, mentor your management tier, and oversee major operational pivots.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-slate-950 text-slate-300 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div class="grid md:grid-cols-2 gap-12 items-center border-b border-slate-800 pb-16 mb-8">
-                <div>
-                    <div class="flex items-center gap-3 mb-6">
+                    {/* Operational Diagnostics - Deliverables Timeline */}
+                    <section id="diagnostics" className="py-24 border-b border-brandNavy-700/60 max-w-7xl mx-auto px-6">
                         
-                        <!-- SVG Logo (Light Version for Dark Footer) -->
-                        <svg viewBox="0 0 100 100" class="w-10 h-10 drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M50 5 L85 18 V45 C85 70 50 95 50 95 C50 95 15 70 15 45 V18 L50 5 Z" class="fill-slate-800" />
-                            <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" />
-                            <rect x="16" y="46" width="68" height="8" rx="2" class="fill-slate-200" />
-                            <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" transform="rotate(45 50 50)" />
-                            <rect x="46" y="16" width="8" height="68" rx="2" class="fill-slate-200" transform="rotate(-45 50 50)" />
-                            <circle cx="50" cy="50" r="26" class="stroke-slate-200" stroke-width="8" />
-                            <circle cx="50" cy="50" r="22" class="fill-slate-800" />
-                            <path d="M35 52 L45 62 L67 38" class="stroke-blue-500" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+                        <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
+                            <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">The Mandatory Entry Point</span>
+                            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Operational Diagnostics Audit</h2>
+                            <p className="text-sm text-slate-400 leading-relaxed">
+                                We do not sell blindly. Every long-term optimization program begins with a structured, intensive diagnostics sprint. Over a highly focused <strong>1 to 2-week timeline</strong>, we align your organization's reality under 6 clear deliverables:
+                            </p>
+                        </div>
 
-                        <span class="text-2xl font-extrabold text-white tracking-tight">KOLTHOFF</span>
-                    </div>
-                    <h3 class="text-3xl font-bold text-white mb-4">Ready to architect your scale-up?</h3>
-                    <p class="text-slate-400 max-w-md">
-                        Stop letting broken processes and team burnout dictate your growth ceiling. Reach out directly to our leadership.
-                    </p>
+                        {/* Deliverables Grid aligned with INITIAL_TASKS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            
+                            {/* Step 1 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 01</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Day 1 – 2</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">Preparation & Onboarding</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        Client kickoff, NDA alignment, and data security workspace provisioning. We dispatch our custom Information Request List (IRL).
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    Operationalized shared workspace, mutual NDA, and finalized roadmap.
+                                </div>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 02</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 3 – 5</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">Stakeholder Discovery Loop</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    Interview log registers and synthesized qualitative pain-point catalog.
+                                </div>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 03</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 6 – 8</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">On-Site Shadowing & Trace</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        Two days of active on-site workspace workflow monitoring, step-timing, and physical asset mapping within raw environments.
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    Spaghetti diagram of layouts and operational step-timing matrix sheets.
+                                </div>
+                            </div>
+
+                            {/* Step 4 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 04</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 9 – 10</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">Compliance & Tech Audit</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against strict local DOLE standards.
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    Software cost-leakage report and labor compliance risk checklists.
+                                </div>
+                            </div>
+
+                            {/* Step 5 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 05</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 11 – 12</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">Risk Matrix Formulation</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        We synthesize raw metrics and workflow delay timings into an actionable impact-vs-feasibility matrix to highlight quick wins.
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    B2B Impact-vs-Feasibility Operational Risk Matrix.
+                                </div>
+                            </div>
+
+                            {/* Step 6 */}
+                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 06</span>
+                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 13 – 14 (Handover)</span>
+                                    </div>
+                                    <h4 className="text-lg font-bold text-white font-serif">Boardroom Debriefing</h4>
+                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
+                                        Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate options and strategic roadmaps.
+                                    </p>
+                                </div>
+                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
+                                    Professional audit presentation deck and strategic roadmap plans.
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    {/* The 360 Ecosystem Section */}
+                    <section id="ecosystem" className="py-24 border-b border-brandNavy-700/60 bg-brandNavy-900/10 font-sans">
+                        <div className="max-w-7xl mx-auto px-6">
+                            
+                            <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Optional Expansion Modules</h2>
+                                <p className="text-sm text-slate-400 leading-relaxed">
+                                    Our operational partnership is fully modular. Following your baseline **Diagnostics Audit**, scale-ready organizations acquire targeted execution packages in any configuration:
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                
+                                {/* Process Foundations Block */}
+                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                    <div className="space-y-4">
+                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">A</div>
+                                        <h3 className="text-xl font-bold text-white font-serif">Process & SOP Foundations</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            Establish clear functional boundaries, department org charts, DOLE-compliant handbooks, and horizontal swimlane process diagrams to safeguard institutional knowledge.
+                                        </p>
+                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                            <li className="flex items-center gap-2"><IconCheck /> Org Structure & RACI Mapping</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> Swimlane Work Process Maps</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> DOLE-Compliant handbooks</li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                        Outcome: Clear reporting accountability and minimized employee turnover friction.
+                                    </div>
+                                </div>
+
+                                {/* PMO & Lark Automation */}
+                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                    <div className="space-y-4">
+                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">B</div>
+                                        <h3 className="text-xl font-bold text-white font-serif">PMO & Tech Automation</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            Equip your team with advanced Swiss-standard PMO framework methodologies (HERMES 2022) and migrate manual procedures into automated cloud workspaces.
+                                        </p>
+                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                            <li className="flex items-center gap-2"><IconCheck /> HERMES 2022 Implementation</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> Lark Workspace Provisioning</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> Live Automated OKR Boards</li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                        Outcome: Complete visibility over project portfolios and multi-department approvals.
+                                    </div>
+                                </div>
+
+                                {/* Fractional Governance Retainers */}
+                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                    <div className="space-y-4">
+                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">C</div>
+                                        <h3 className="text-xl font-bold text-white font-serif">Governance Retainers</h3>
+                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                            Establish continuous, 360° strategic governance with our Fractional COO programs or fully managed cloud and cyber IT SLA infrastructures.
+                                        </p>
+                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                            <li className="flex items-center gap-2"><IconCheck /> Fractional COO Board Chairs</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> IT SLA Support Structures</li>
+                                            <li className="flex items-center gap-2"><IconCheck /> Continuous Optimization Sprints</li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-8 text-xs text-slate-500 font-medium">
+                                        Outcome: CEO relief through continuous executive execution tracking and tech backups.
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </section>
+
+                    {/* Book Audit Lead Form */}
+                    <section id="book" className="py-24 max-w-4xl mx-auto px-6">
+                        <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 sm:p-12 rounded-2xl shadow-2xl relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
+                            
+                            <div className="text-center mb-8 space-y-2">
+                                <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">Book an Operational Diagnostics Audit</h3>
+                                <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+                                    Submit your coordinates below to schedule an onboarding baseline review. A consulting partner will contact your office within 24 hours.
+                                </p>
+                            </div>
+
+                            {formSubmitted ? (
+                                <div className="p-8 bg-brandBlue-500/10 border border-brandBlue-500/30 rounded-xl text-center space-y-3">
+                                    <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✓</div>
+                                    <h4 className="font-bold text-white text-lg">Diagnostics Scoping Request Received</h4>
+                                    <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                                        Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via `{leadEmail}` with next-step scheduling instructions.
+                                    </p>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Your Full Name</label>
+                                            <input 
+                                                type="text" 
+                                                required
+                                                value={leadName}
+                                                onChange={(e) => setLeadName(e.target.value)}
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                placeholder="Juan dela Cruz"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Corporate Email</label>
+                                            <input 
+                                                type="email" 
+                                                required
+                                                value={leadEmail}
+                                                onChange={(e) => setLeadEmail(e.target.value)}
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-mono"
+                                                placeholder="juan@yourcompany.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Company Name</label>
+                                            <input 
+                                                type="text" 
+                                                value={leadCompany}
+                                                onChange={(e) => setLeadCompany(e.target.value)}
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                placeholder="Acme Corporation PH"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="submit" 
+                                        className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30"
+                                    >
+                                        Request Diagnostics Onboarding Sync
+                                    </button>
+                                </form>
+                            )}
+
+                        </div>
+                    </section>
+
+                    {/* Corporate Premium Footer */}
+                    <footer className="border-t border-brandNavy-700/60 bg-brandNavy-950/85 py-12 text-slate-500 text-xs font-sans">
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+                            
+                            <div className="md:col-span-4 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
+                                    <span className="font-sans font-extrabold text-sm uppercase text-slate-300">KOLTHOFF</span>
+                                </div>
+                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-500">
+                                    Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
+                                    © 2026 Kolthoff Consulting. All rights reserved.
+                                </p>
+                            </div>
+
+                            <div className="md:col-span-4 space-y-1 text-center md:text-left">
+                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px]">
+                                    <IconMail className="w-3.5 h-3.5" /> contact@kolthoff-consulting.com
+                                </div>
+                                <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] mt-1">
+                                    <IconGlobe className="w-3.5 h-3.5" /> www.kolthoff-consulting.com
+                                </div>
+                            </div>
+
+                            <div className="md:col-span-4 text-center md:text-right space-y-2">
+                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Portal Resources</span>
+                                <a 
+                                    href="./index.html" 
+                                    className="px-4 py-2 bg-brandNavy-900 border border-brandNavy-700 rounded text-slate-300 hover:text-white transition-all inline-block font-mono text-[10px] font-bold uppercase tracking-wider"
+                                >
+                                    Confidential Scope Planner
+                                </a>
+                            </div>
+
+                        </div>
+                    </footer>
+
                 </div>
-                
-                <div class="flex md:justify-end">
-                    <a href="mailto:contact@kolthoff-consulting.com" class="inline-flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 text-white px-8 py-5 rounded-xl font-bold transition-all shadow-lg hover:shadow-blue-500/25 w-full sm:w-auto text-lg">
-                        <i data-lucide="mail" class="w-6 h-6" aria-hidden="true"></i>
-                        contact@kolthoff-consulting.com
-                    </a>
-                </div>
-            </div>
-            
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-                <div>
-                    &copy; <span id="current-year"></span> Kolthoff Consulting. All rights reserved.
-                </div>
-                <div class="flex flex-wrap justify-center gap-6">
-                    <a href="#disconnect" class="hover:text-blue-400 transition-colors">The Problem</a>
-                    <a href="#approach" class="hover:text-blue-400 transition-colors">Approach</a>
-                    <a href="#health-check" class="hover:text-blue-400 transition-colors">Health Check</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+            );
+        }
 
-    <!-- Initialize Scripts -->
-    <script>
-        // Start Lucide Icons
-        lucide.createIcons();
-        
-        // Set copyright year automatically
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-
-        // Mobile Menu Toggle Logic
-        const btn = document.getElementById('mobile-menu-btn');
-        const menu = document.getElementById('mobile-menu');
-        const menuIcon = document.getElementById('menu-icon');
-        const closeIcon = document.getElementById('close-icon');
-        const mobileLinks = document.querySelectorAll('.mobile-link');
-
-        btn.addEventListener('click', () => {
-            menu.classList.toggle('hidden');
-            menuIcon.classList.toggle('hidden');
-            closeIcon.classList.toggle('hidden');
-        });
-
-        // Close mobile menu when a link is clicked
-        mobileLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                menu.classList.add('hidden');
-                menuIcon.classList.remove('hidden');
-                closeIcon.classList.add('hidden');
-            });
-        });
+        // Render the public landing page in the DOM target
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
     </script>
 </body>
 </html>
