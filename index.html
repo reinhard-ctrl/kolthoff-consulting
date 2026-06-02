@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
+    <!-- MathJax for rendering LaTeX formulas dynamically with high fidelity -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -62,16 +66,31 @@
         .luxury-gradient {
             background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
         }
+        
+        /* Premium custom range slider stylings */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
     </style>
 </head>
-<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
+<body class="bg-brandNavy-950 text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
 
     <!-- Target mount node for React -->
     <div id="root"></div>
 
     <!-- React/Babel Browser compilation block -->
     <script type="text/babel">
-        const { useState, useMemo } = React;
+        const { useState, useMemo, useEffect } = React;
 
         // HIGH-FIDELITY SHIELD, COGWHEEL, AND CHECKMARK LOGO
         const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
@@ -95,10 +114,10 @@
         // SVG Symbols optimized to use React-compliant camelCase attributes
         const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
-        const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
         const IconCalculator = ({ className }) => (
@@ -162,35 +181,42 @@
                 setFormSubmitted(true);
             };
 
+            // Trigger MathJax re-render whenever the ROI calculations update
+            useEffect(() => {
+                if (window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }, [chaosFinancials]);
+
             return (
-                <div className="font-sans min-h-screen selection:bg-brandBlue-600 selection:text-white">
+                <div className="font-sans min-h-screen text-slate-300">
                     
                     {/* High-Status Corporate Header */}
-                    <header className="border-b border-brandNavy-700 bg-brandNavy-900/90 backdrop-blur-md sticky top-0 z-50">
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
                                 <div>
-                                    <span className="font-sans font-extrabold tracking-wider text-lg uppercase block text-white">
+                                    <span className="font-sans font-extrabold tracking-wider text-base sm:text-lg uppercase block text-white">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
                                     <span className="text-[9px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block -mt-1 font-bold">Operational Architecture & Strategy</span>
                                 </div>
                             </div>
                             
-                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider">
-                                <a href="#chaos" className="text-slate-300 hover:text-white transition-colors">The Cost of Chaos</a>
-                                <a href="#diagnostics" className="text-slate-300 hover:text-white transition-colors">Operational Diagnostics</a>
-                                <a href="#ecosystem" className="text-slate-300 hover:text-white transition-colors">360° Portfolio</a>
-                                <a href="#book" className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white rounded font-bold transition-all shadow-md shadow-brandBlue-950/40">
+                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                                <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
+                                <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Operational Diagnostics</a>
+                                <a href="#ecosystem" className="hover:text-white transition-colors duration-200">360° Portfolio</a>
+                                <a href="#book" className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white rounded font-bold transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5">
                                     Book Diagnostic Audit
                                 </a>
                             </nav>
                         </div>
                     </header>
 
-                    {/* Premium Consultative Hero Section */}
-                    <section className="relative overflow-hidden pt-20 pb-24 border-b border-brandNavy-700/60">
+                    {/* Premium Consultative Hero Section (Prestige Dark Hook) */}
+                    <section className="relative overflow-hidden pt-24 pb-28 border-b border-brandNavy-700/60 bg-brandNavy-950 text-slate-100">
                         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full" />
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                             
@@ -202,20 +228,20 @@
                                     Stop Bleeding Cash. <br />
                                     <span className="text-brandBlue-400">Fix Your Process Architecture.</span>
                                 </h1>
-                                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
+                                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
                                     We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                                    <a href="#chaos" className="px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center">
+                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Audit Your Financial Waste <IconArrowRight />
                                     </a>
-                                    <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all">
+                                    <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
                                         Explore Diagnostics Audit
                                     </a>
                                 </div>
                             </div>
 
-                            <div className="lg:col-span-5 bg-brandNavy-800/80 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
+                            <div className="lg:col-span-5 bg-brandNavy-900/90 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
                                 <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
                                     <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
                                 </div>
@@ -224,7 +250,7 @@
                                     "A business cannot scale if its reporting lines are blurred, its compliance registers are exposed, or its core operational playbook resides inside the minds of single employees."
                                 </p>
                                 <div className="border-t border-brandNavy-700/60 pt-4 flex gap-4 items-center">
-                                    <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold">
+                                    <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm">
                                         360
                                     </div>
                                     <div className="text-xs">
@@ -237,28 +263,28 @@
                         </div>
                     </section>
 
-                    {/* Interactive "Cost of Chaos" Calculator Section */}
-                    <section id="chaos" className="py-24 border-b border-brandNavy-700/60 bg-brandNavy-900/30">
+                    {/* Interactive "Cost of Chaos" Calculator Section (Editorial LIGHT Section) */}
+                    <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
                             
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Interactive Assessment Tool</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">The Cost of Operational Chaos</h2>
-                                <p className="text-sm text-slate-400 leading-relaxed">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-500 uppercase">Interactive Assessment Tool</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">The Cost of Operational Chaos</h2>
+                                <p className="text-sm text-slate-600 leading-relaxed">
                                     Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
                                 {/* Left Side: Input Controls */}
-                                <div className="lg:col-span-6 bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl shadow-xl flex flex-col justify-between space-y-6">
+                                <div className="lg:col-span-6 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
                                     <div className="space-y-6">
                                         <div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconTarget /> Total Personnel (FTE)
                                                 </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-400">{teamSize} Employees</span>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{teamSize} Employees</span>
                                             </div>
                                             <input 
                                                 type="range" 
@@ -266,34 +292,34 @@
                                                 max="150" 
                                                 value={teamSize} 
                                                 onChange={(e) => setTeamSize(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
 
                                         <div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
-                                                    <IconCalculator className="text-brandBlue-400" /> Average Monthly Salary
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
+                                                    <IconCalculator className="text-brandBlue-505" /> Average Monthly Salary
                                                 </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-400">₱{avgMonthlySalary.toLocaleString()}</span>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
                                             </div>
                                             <input 
                                                 type="range" 
                                                 min="15000" 
                                                 max="120000" 
-                                                step="500"
+                                                step="5000"
                                                 value={avgMonthlySalary} 
                                                 onChange={(e) => setAvgMonthlySalary(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
 
                                         <div>
-                                            <div className="flex justify-between items-center mb-2">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconClock className="" /> Avg. Delay per Staff Weekly
                                                 </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-400">{delayHoursWeekly} Hours</span>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
                                             </div>
                                             <input 
                                                 type="range" 
@@ -301,51 +327,54 @@
                                                 max="15" 
                                                 value={delayHoursWeekly} 
                                                 onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-400 bg-brandNavy-950 h-2 rounded-lg cursor-pointer"
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/80 text-[11px] text-slate-400 leading-relaxed font-sans">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
                                         <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
                                 </div>
 
                                 {/* Right Side: Visual ROI Output */}
-                                <div className="lg:col-span-6 bg-gradient-to-br from-brandNavy-800 to-brandNavy-900 border-2 border-brandBlue-500/30 p-8 rounded-xl shadow-xl flex flex-col justify-between relative overflow-hidden">
+                                <div className="lg:col-span-6 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
                                     
                                     <div>
                                         <div className="flex items-center gap-2 mb-4">
                                             <IconTrendingDown />
-                                            <span className="text-xs font-mono font-bold tracking-wider text-rose-400 uppercase">Estimated Annual Leakage</span>
+                                            <span className="text-xs font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Leakage</span>
                                         </div>
                                         <span className="text-4xl sm:text-5xl font-serif font-black text-white leading-none block">
                                             {formatCurrency(chaosFinancials.annualChaosTotal)}
                                         </span>
-                                        <div className="mt-4 space-y-2 text-xs border-b border-brandNavy-700 pb-5">
+                                        <div className="mt-6 space-y-3.5 border-b border-brandNavy-700/80 pb-6 text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-slate-400">Frictional Turnover Loss:</span>
-                                                <span className="text-slate-200 font-mono">{formatCurrency(chaosFinancials.monthlyTurnoverLoss * 12)} / year</span>
+                                                <span className="text-slate-400 font-light">Frictional Turnover Loss:</span>
+                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(chaosFinancials.monthlyTurnoverLoss * 12)} / year</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-slate-400">Weekly System Delay Loss:</span>
-                                                <span className="text-slate-200 font-mono">{formatCurrency(chaosFinancials.monthlyInefficiencyLoss * 12)} / year</span>
+                                                <span className="text-slate-400 font-light">Weekly System Delay Loss:</span>
+                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(chaosFinancials.monthlyInefficiencyLoss * 12)} / year</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-6">
-                                        <div className="flex items-center gap-2 mb-2">
+                                    <div className="pt-6 space-y-4">
+                                        <div className="flex items-center gap-2 mb-1">
                                             <IconTrendingUp />
-                                            <span className="text-[10px] font-mono font-bold tracking-wider text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
+                                            <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
                                         </div>
-                                        <p className="text-xs text-slate-300 leading-relaxed">
-                                            A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the playbook to recover these lost margins. Based on your inputs, your estimated Year-One Audit Yield is an ROI of:
+                                        
+                                        {/* Scientific ROI notation utilizing TeX rendering (fixed with React-safe string interpolation) */}
+                                        <div className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400">
+                                            {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + chaosFinancials.firstYearROIPercent + "\\%$$"}
+                                        </div>
+                                        
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light">
+                                            A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the exact blueprint to recover these lost margins in Year 1.
                                         </p>
-                                        <div className="text-3xl font-serif font-bold text-emerald-400 mt-3 font-mono">
-                                            +{chaosFinancials.firstYearROIPercent}%
-                                        </div>
                                     </div>
                                 </div>
 
@@ -354,140 +383,142 @@
                         </div>
                     </section>
 
-                    {/* Operational Diagnostics - Deliverables Timeline */}
-                    <section id="diagnostics" className="py-24 border-b border-brandNavy-700/60 max-w-7xl mx-auto px-6">
-                        
-                        <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
-                            <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">The Mandatory Entry Point</span>
-                            <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Operational Diagnostics Audit</h2>
-                            <p className="text-sm text-slate-400 leading-relaxed">
-                                We do not sell blindly. Every long-term optimization program begins with a structured, intensive diagnostics sprint. Over a highly focused <strong>1 to 2-week timeline</strong>, we align your organization's reality under 6 clear deliverables:
-                            </p>
-                        </div>
-
-                        {/* Deliverables Grid aligned with INITIAL_TASKS */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* Operational Diagnostics - Deliverables Timeline (Clean, Crisp WHITE Section) */}
+                    <section id="diagnostics" className="py-24 border-b border-slate-200 bg-white text-slate-800">
+                        <div className="max-w-7xl mx-auto px-6">
                             
-                            {/* Step 1 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 01</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Day 1 – 2</span>
-                                    </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">Preparation & Onboarding</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        Client kickoff, NDA alignment, and data security workspace provisioning. We dispatch our custom Information Request List (IRL).
-                                    </p>
-                                </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    Operationalized shared workspace, mutual NDA, and finalized roadmap.
-                                </div>
+                            <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">The Mandatory Entry Point</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">Operational Diagnostics Audit</h2>
+                                <p className="text-sm text-slate-600 leading-relaxed">
+                                    We do not sell blindly. Every long-term optimization program begins with a structured, intensive diagnostics sprint. Over a highly focused <strong>1 to 2-week timeline</strong>, we align your organization's reality under 6 clear deliverables:
+                                </p>
                             </div>
 
-                            {/* Step 2 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 02</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 3 – 5</span>
+                            {/* Deliverables Grid aligned with INITIAL_TASKS */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                
+                                {/* Step 1 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 01</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Day 1 – 2</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Preparation & Onboarding</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            Client kickoff, NDA alignment, and data security workspace provisioning. We dispatch our custom Information Request List (IRL).
+                                        </p>
                                     </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">Stakeholder Discovery Loop</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
-                                    </p>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        Operationalized shared workspace, mutual NDA, and finalized roadmap.
+                                    </div>
                                 </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    Interview log registers and synthesized qualitative pain-point catalog.
-                                </div>
-                            </div>
 
-                            {/* Step 3 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 03</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 6 – 8</span>
+                                {/* Step 2 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 02</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 3 – 5</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Stakeholder Discovery Loop</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            Friction-adjusted interviews with 4 to 6 key operational sponsors, executive leads, and desk managers to map communication flow gaps.
+                                        </p>
                                     </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">On-Site Shadowing & Trace</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        Two days of active on-site workspace workflow monitoring, step-timing, and physical asset mapping within raw environments.
-                                    </p>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        Interview log registers and synthesized qualitative pain-point catalog.
+                                    </div>
                                 </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    Spaghetti diagram of layouts and operational step-timing matrix sheets.
-                                </div>
-                            </div>
 
-                            {/* Step 4 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 04</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 9 – 10</span>
+                                {/* Step 3 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 03</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 6 – 8</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">On-Site Shadowing & Trace</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            Two days of active on-site workspace workflow monitoring, step-timing, and physical asset mapping within raw environments.
+                                        </p>
                                     </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">Compliance & Tech Audit</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against strict local DOLE standards.
-                                    </p>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        Spaghetti diagram of layouts and operational step-timing matrix sheets.
+                                    </div>
                                 </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    Software cost-leakage report and labor compliance risk checklists.
-                                </div>
-                            </div>
 
-                            {/* Step 5 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 05</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 11 – 12</span>
+                                {/* Step 4 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 04</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 9 – 10</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Compliance & Tech Audit</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            A comprehensive audit of software subscription under-utilization (SaaS sprawl) alongside key employment structures against strict local DOLE standards.
+                                        </p>
                                     </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">Risk Matrix Formulation</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        We synthesize raw metrics and workflow delay timings into an actionable impact-vs-feasibility matrix to highlight quick wins.
-                                    </p>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        Software cost-leakage report and labor compliance risk checklists.
+                                    </div>
                                 </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    B2B Impact-vs-Feasibility Operational Risk Matrix.
-                                </div>
-                            </div>
 
-                            {/* Step 6 */}
-                            <div className="bg-brandNavy-800 border border-brandNavy-700 p-6 rounded-xl hover:border-brandBlue-500/40 transition-all flex flex-col justify-between h-80">
-                                <div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-mono text-brandBlue-400 font-bold uppercase tracking-wider bg-brandBlue-950/40 px-2.5 py-1 rounded">DELIVERABLE 06</span>
-                                        <span className="text-[11px] font-mono text-slate-500 font-medium">Timeline: Days 13 – 14 (Handover)</span>
+                                {/* Step 5 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 05</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 11 – 12</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Risk Matrix Formulation</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            We synthesize raw metrics and workflow delay timings into an actionable impact-vs-feasibility matrix to highlight quick wins.
+                                        </p>
                                     </div>
-                                    <h4 className="text-lg font-bold text-white font-serif">Boardroom Debriefing</h4>
-                                    <p className="text-xs text-slate-300 leading-relaxed mt-2 line-clamp-3">
-                                        Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate options and strategic roadmaps.
-                                    </p>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        B2B Impact-vs-Feasibility Operational Risk Matrix.
+                                    </div>
                                 </div>
-                                <div className="pt-4 border-t border-brandNavy-700/60 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-200 block mb-0.5">Key Handover:</span>
-                                    Professional audit presentation deck and strategic roadmap plans.
+
+                                {/* Step 6 */}
+                                <div className="group bg-slate-50 border border-slate-200/80 p-7 rounded-2xl hover:border-brandBlue-500/30 hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-80">
+                                    <div>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-mono text-brandBlue-600 font-bold uppercase tracking-wider bg-brandBlue-5/80 px-2.5 py-1 rounded">DELIVERABLE 06</span>
+                                            <span className="text-[11px] font-mono text-slate-500 font-semibold">Timeline: Days 13 – 14 (Handover)</span>
+                                        </div>
+                                        <h4 className="text-lg font-bold text-slate-900 font-serif group-hover:text-brandBlue-600 transition-colors">Boardroom Debriefing</h4>
+                                        <p className="text-xs text-slate-600 leading-relaxed mt-2.5 line-clamp-3">
+                                            Boardroom presentation to the executive team, COO, and primary project sponsors, presenting immediate options and strategic roadmaps.
+                                        </p>
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-medium">
+                                        <span className="font-bold text-slate-700 block mb-0.5">Key Handover:</span>
+                                        Professional audit presentation deck and strategic roadmap plans.
+                                    </div>
                                 </div>
+
                             </div>
 
                         </div>
-
                     </section>
 
-                    {/* The 360 Ecosystem Section */}
-                    <section id="ecosystem" className="py-24 border-b border-brandNavy-700/60 bg-brandNavy-900/10 font-sans">
+                    {/* The 360 Ecosystem Section (Prestige DARK Section) */}
+                    <section id="ecosystem" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
                         <div className="max-w-7xl mx-auto px-6">
                             
                             <div className="max-w-3xl mx-auto text-center mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Optional Expansion Modules</h2>
-                                <p className="text-sm text-slate-400 leading-relaxed">
+                                <p className="text-sm text-slate-400 leading-relaxed font-light">
                                     Our operational partnership is fully modular. Following your baseline **Diagnostics Audit**, scale-ready organizations acquire targeted execution packages in any configuration:
                                 </p>
                             </div>
@@ -495,14 +526,14 @@
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 
                                 {/* Process Foundations Block */}
-                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                <div className="bg-brandNavy-800 border border-brandNavy-700/50 p-8 rounded-2xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
-                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">A</div>
+                                        <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">A</div>
                                         <h3 className="text-xl font-bold text-white font-serif">Process & SOP Foundations</h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light">
                                             Establish clear functional boundaries, department org charts, DOLE-compliant handbooks, and horizontal swimlane process diagrams to safeguard institutional knowledge.
                                         </p>
-                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                        <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> Org Structure & RACI Mapping</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Swimlane Work Process Maps</li>
                                             <li className="flex items-center gap-2"><IconCheck /> DOLE-Compliant handbooks</li>
@@ -514,14 +545,14 @@
                                 </div>
 
                                 {/* PMO & Lark Automation */}
-                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                <div className="bg-brandNavy-800 border border-brandNavy-700/50 p-8 rounded-2xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
-                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">B</div>
+                                        <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">B</div>
                                         <h3 className="text-xl font-bold text-white font-serif">PMO & Tech Automation</h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light">
                                             Equip your team with advanced Swiss-standard PMO framework methodologies (HERMES 2022) and migrate manual procedures into automated cloud workspaces.
                                         </p>
-                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                        <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> HERMES 2022 Implementation</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Lark Workspace Provisioning</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Live Automated OKR Boards</li>
@@ -533,14 +564,14 @@
                                 </div>
 
                                 {/* Fractional Governance Retainers */}
-                                <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between">
+                                <div className="bg-brandNavy-800 border border-brandNavy-700/50 p-8 rounded-2xl flex flex-col justify-between shadow-xl">
                                     <div className="space-y-4">
-                                        <div className="w-12 h-12 rounded-lg bg-brandBlue-500/15 flex items-center justify-center text-brandBlue-400 font-bold font-mono">C</div>
+                                        <div className="w-12 h-12 rounded-xl bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 font-bold font-mono">C</div>
                                         <h3 className="text-xl font-bold text-white font-serif">Governance Retainers</h3>
-                                        <p className="text-xs text-slate-300 leading-relaxed">
+                                        <p className="text-xs text-slate-300 leading-relaxed font-light">
                                             Establish continuous, 360° strategic governance with our Fractional COO programs or fully managed cloud and cyber IT SLA infrastructures.
                                         </p>
-                                        <ul className="text-xs space-y-2 text-slate-300 pt-2 font-medium">
+                                        <ul className="text-xs space-y-2.5 text-slate-300 pt-2 font-medium">
                                             <li className="flex items-center gap-2"><IconCheck /> Fractional COO Board Chairs</li>
                                             <li className="flex items-center gap-2"><IconCheck /> IT SLA Support Structures</li>
                                             <li className="flex items-center gap-2"><IconCheck /> Continuous Optimization Sprints</li>
@@ -556,76 +587,78 @@
                         </div>
                     </section>
 
-                    {/* Book Audit Lead Form */}
-                    <section id="book" className="py-24 max-w-4xl mx-auto px-6">
-                        <div className="bg-brandNavy-800 border border-brandNavy-700 p-8 sm:p-12 rounded-2xl shadow-2xl relative">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                            
-                            <div className="text-center mb-8 space-y-2">
-                                <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">Book an Operational Diagnostics Audit</h3>
-                                <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                                    Submit your coordinates below to schedule an onboarding baseline review, or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-400 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. A consulting partner will contact your office within 24 hours.
-                                </p>
-                            </div>
-
-                            {formSubmitted ? (
-                                <div className="p-8 bg-brandBlue-500/10 border border-brandBlue-500/30 rounded-xl text-center space-y-3">
-                                    <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✓</div>
-                                    <h4 className="font-bold text-white text-lg">Diagnostics Scoping Request Received</h4>
-                                    <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                                        Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via <a href={`mailto:${leadEmail}`} className="text-brandBlue-400 hover:underline font-mono">{leadEmail}</a> with next-step scheduling instructions.
+                    {/* Book Audit Lead Form (Sophisticated LIGHT Section) */}
+                    <section id="book" className="py-24 bg-slate-50 text-slate-900">
+                        <div className="max-w-4xl mx-auto px-6">
+                            <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-2xl shadow-xl relative">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
+                                
+                                <div className="text-center mb-8 space-y-2">
+                                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book an Operational Diagnostics Audit</h3>
+                                    <p className="text-xs text-slate-605 max-w-lg mx-auto leading-relaxed">
+                                        Submit your coordinates below to schedule an onboarding baseline review, or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. A consulting partner will contact your office within 24 hours.
                                     </p>
                                 </div>
-                            ) : (
-                                <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium font-sans">
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Your Full Name</label>
-                                            <input 
-                                                type="text" 
-                                                required
-                                                value={leadName}
-                                                onChange={(e) => setLeadName(e.target.value)}
-                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-sans"
-                                                placeholder="Juan dela Cruz"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Corporate Email</label>
-                                            <input 
-                                                type="email" 
-                                                required
-                                                value={leadEmail}
-                                                onChange={(e) => setLeadEmail(e.target.value)}
-                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-mono"
-                                                placeholder="juan@yourcompany.com"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Company Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={leadCompany}
-                                                onChange={(e) => setLeadCompany(e.target.value)}
-                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-slate-200 focus:outline-none focus:border-brandBlue-500 font-sans"
-                                                placeholder="Acme Corporation PH"
-                                            />
-                                        </div>
-                                    </div>
-                                    <button 
-                                        type="submit" 
-                                        className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 font-sans"
-                                    >
-                                        Request Diagnostics Onboarding Sync
-                                    </button>
-                                </form>
-                            )}
 
+                                {formSubmitted ? (
+                                    <div className="p-8 bg-brandBlue-50/80 border border-brandBlue-200 rounded-xl text-center space-y-3">
+                                        <div className="w-12 h-12 bg-emerald-500/20 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✓</div>
+                                        <h4 className="font-bold text-slate-900 text-lg font-serif">Diagnostics Scoping Request Received</h4>
+                                        <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                                            Thank you, {leadName}. We have logged your request on behalf of {leadCompany || "your company"}. A lead consulting partner will reach out to you via <a href={`mailto:${leadEmail}`} className="text-brandBlue-600 hover:underline font-mono font-medium">{leadEmail}</a> with next-step scheduling instructions.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleLeadSubmit} className="space-y-4 text-xs font-medium font-sans text-slate-800">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-500 uppercase font-bold block mb-1">Your Full Name</label>
+                                                <input 
+                                                    type="text" 
+                                                    required
+                                                    value={leadName}
+                                                    onChange={(e) => setLeadName(e.target.value)}
+                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                    placeholder="Juan dela Cruz"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-500 uppercase font-bold block mb-1">Corporate Email</label>
+                                                <input 
+                                                    type="email" 
+                                                    required
+                                                    value={leadEmail}
+                                                    onChange={(e) => setLeadEmail(e.target.value)}
+                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500 font-mono"
+                                                    placeholder="juan@yourcompany.com"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-500 uppercase font-bold block mb-1">Company Name</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={leadCompany}
+                                                    onChange={(e) => setLeadCompany(e.target.value)}
+                                                    className="w-full bg-slate-50 border border-slate-300 rounded p-3 text-slate-900 focus:outline-none focus:border-brandBlue-500 font-sans"
+                                                    placeholder="Acme Corporation PH"
+                                                />
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="submit" 
+                                            className="w-full py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 font-sans"
+                                        >
+                                            Request Diagnostics Onboarding Sync
+                                        </button>
+                                    </form>
+                                )}
+
+                            </div>
                         </div>
                     </section>
 
                     {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-700/60 bg-brandNavy-950/85 py-12 text-slate-500 text-xs font-sans">
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-500 text-xs font-sans">
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
                             
                             <div className="md:col-span-4 space-y-2">
@@ -639,7 +672,7 @@
                                 </p>
                             </div>
 
-                            <div className="md:col-span-4 space-y-1 text-center md:text-left">
+                            <div className="md:col-span-4 space-y-1.5 text-center md:text-left">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
                                 <div className="flex items-center justify-center md:justify-start gap-1.5 text-brandBlue-400 font-semibold text-[11px] hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
@@ -655,7 +688,7 @@
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Portal Resources</span>
                                 <a 
                                     href="./index.html" 
-                                    className="px-4 py-2 bg-brandNavy-900 border border-brandNavy-700 rounded text-slate-300 hover:text-white transition-all inline-block font-mono text-[10px] font-bold uppercase tracking-wider"
+                                    className="px-4 py-2 bg-brandNavy-900 border border-brandNavy-700/80 rounded text-slate-300 hover:text-white transition-all inline-block font-mono text-[10px] font-bold uppercase tracking-wider"
                                 >
                                     Confidential Scope Planner
                                 </a>
