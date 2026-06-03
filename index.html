@@ -1,16 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kolthoff Consulting - Stop Bleeding Cash. Architect Your Scale-Ready Future.</title>
+    <title>Kolthoff Consulting - Internal Pricing Engine</title>
     
-    <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
-    <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
         window.MathJax = {
             tex: {
@@ -22,10 +20,8 @@
             }
         };
     </script>
-    <!-- MathJax for rendering LaTeX formulas dynamically with high fidelity -->
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -35,9 +31,9 @@
                         brandNavy: {
                             950: '#020613', // Ultra-dark corporate space
                             900: '#09111F', // Rich navy base
-                            850: '#0C1626', // High-end dark middle-ground
+                            850: '#0C1626', // Elegant deep dark
                             800: '#0F1A2C', // Deep card background
-                            750: '#15233A', // Intermediate dark accent
+                            750: '#15233A', // Panel intermediate accent
                             700: '#1B2C46', // Panel borders and dividers
                             600: '#2E4567', // Subdued text and inactive strokes
                         },
@@ -63,50 +59,90 @@
         }
     </script>
     
-    <!-- React and ReactDOM CDNs (Production Builds) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     
-    <!-- Babel CDN (Compiles JSX inside the browser dynamically) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
+        /* Custom scrollbar adjustments matching brand navy palette */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020613; }
         ::-webkit-scrollbar-thumb { background: #0F1A2C; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #2563EB; }
         
+        /* Premium Soft Radial Background Gradient */
         .luxury-gradient {
             background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
         }
-        
-        /* Premium custom range slider stylings */
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #2563EB;
-            cursor: pointer;
-            transition: transform 0.1s ease-in-out;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
+
+        /* Print Media CSS Overrides for Pristine PDF Export */
+        @media print {
+            /* Strip paddings, margins, borders, and shadows from outer layout wrappers to remove the SOW card frame */
+            body, #root, #root > div, .animate-fade-in, .print-card {
+                background: white !important;
+                color: #0f172a !important;
+                font-family: "Montserrat", sans-serif !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                border-width: 0px !important;
+                border-style: none !important;
+                border-radius: 0px !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .luxury-gradient {
+                background: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .print-card * {
+                color: #0f172a !important;
+                border-color: #cbd5e1 !important;
+                text-shadow: none !important;
+                box-shadow: none !important;
+            }
+            .print-card-header {
+                border-bottom: 2px solid #1e40af !important;
+                padding-bottom: 1rem !important;
+                margin-bottom: 1.5rem !important;
+                margin-top: 0 !important;
+            }
+            .print-pill {
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+                color: #1e40af !important;
+            }
+            .print-accent {
+                color: #1e40af !important;
+            }
+            .print-divider {
+                border-color: #cbd5e1 !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            @page {
+                size: portrait;
+                margin: 18mm 15mm;
+            }
         }
     </style>
 </head>
-<body class="bg-brandNavy-950 text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
 
-    <!-- Target mount node for React -->
     <div id="root"></div>
 
-    <!-- React/Babel Browser compilation block -->
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
 
-        // HIGH-FIDELITY SHIELD, COGWHEEL, AND CHECKMARK LOGO
+        // HIGH FIDELITY LOGO
         const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
             <svg className={`${className} transition-colors duration-250`} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M50 10 C70 14 86 20 86 20 V54 C86 74 71 87 50 92 C29 87 14 74 14 54 V20 C14 20 30 14 50 10 Z" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round"/>
@@ -121,19 +157,23 @@
                     <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(270 50 52)" />
                     <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(315 50 52)" />
                 </g>
-                <path d="M38 52 L47 61 L64 39" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M38 52 L47 61 L64 39" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" className="print-accent"/>
             </svg>
         );
 
-        // SVG Symbols optimized to use React-compliant camelCase attributes
-        const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
-        const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
-        const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><polyline points="20 6 9 17 4 12"/></svg>;
-        const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
-        const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+        const IconCheckSquare = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400">
+                <path d="m9 11 3 3 7-7"/>
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+            </svg>
+        );
+
+        const IconSquare = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500">
+                <rect width="18" height="18" x="3" y="3" rx="2"/>
+            </svg>
+        );
+
         const IconCalculator = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 <rect width="16" height="20" x="4" y="2" rx="2"/>
@@ -143,465 +183,1578 @@
             </svg>
         );
 
-        // GLOBAL FORMAT CURRENCY UTILITY DEFINITION
-        const formatCurrency = (val) => {
+        const IconClock = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        );
+
+        const IconTrash = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+            </svg>
+        );
+
+        const IconPlus = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+        );
+
+        const IconCopy = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+        );
+
+        const IconCheckCircle = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 text-brandBlue-500">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+            </svg>
+        );
+
+        const IconPrint = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/>
+            </svg>
+        );
+
+        const IconEdit = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+            </svg>
+        );
+
+        const IconFileText = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>
+            </svg>
+        );
+
+        const IconMail = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect width="20" height="16" x="2" y="4" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+        );
+
+        const IconGlobe = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                <path d="M2 12h20" />
+            </svg>
+        );
+
+        const IconCheck = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
+        );
+
+        // HOISTED UTILITY FUNCTIONS DECLARED BEFORE COMPONENT EVALUATION SCRIPT
+        function formatCurrency(val) {
             return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
-        };
+        }
+
+        function loadSavedData(key, fallback) {
+            try {
+                const saved = localStorage.getItem(key);
+                return saved ? JSON.parse(saved) : fallback;
+            } catch (e) {
+                console.error("Local storage lookup failed safely. Using fallback.", e);
+                return fallback;
+            }
+        }
+
+        function getTodayDateString() {
+            const today = new Date();
+            return today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        const INITIAL_TASKS = [
+            { 
+                id: 'diag-1', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'Preparation & Onboarding', 
+                description: 'Client kickoff meeting, data security brief, and initial corporate baseline data acquisition.', 
+                estHours: 4, 
+                tier: 'associate', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Establish secure virtual data room; host kickoff alignment sync; dispatch comprehensive Information Request List (IRL).",
+                    expectations: "Client to assign an internal project coordinator (POC) and upload requested high-level charts & records within 3 business days.",
+                    output: "Operationalized shared workspace, mutual NDA, and finalized discovery roadmap calendar."
+                }
+            },
+            { 
+                id: 'diag-2', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'Stakeholder Discovery', 
+                description: 'Friction-Adjusted discovery loop (structured interviews with 4-6 key leadership roles, accounts, and desk operators).', 
+                estHours: 8, 
+                tier: 'associate', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Conduct structured 1-on-1 interviews with 4-6 designated leadership, account, and operational roles to map processes.",
+                    expectations: "Sponsors to ensure designated stakeholders are cleared of operational duties for their scheduled 60-minute interview blocks.",
+                    output: "Synthesized interview transcript summaries, bottleneck log, and operational pain-point catalog."
+                }
+            },
+            { 
+                id: 'diag-3', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'On-Site Observation Audit', 
+                description: 'In-person workflow shadowing, step-timing, and bottleneck mapping.', 
+                estHours: 16, 
+                tier: 'senior', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Two days of continuous on-site workflow shadowing, step-timing, and physical asset/information routing audits.",
+                    expectations: "On-site access permissions for consultants; staff briefed to show standard work without modifying behaviors.",
+                    output: "Step-timing metrics table, spaghetti diagrams of physical movements, and immediate bottleneck maps."
+                }
+            },
+            { 
+                id: 'diag-4', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'DOLE Exposure Assessment & SaaS License Rationalization Review', 
+                description: 'Comprehensive audit of regulatory labor compliance (DOLE exposures) and technology software stack/subscription under-utilization to eliminate duplicate software licenses.', 
+                estHours: 8, 
+                tier: 'senior', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Audit active software subscriptions (unused licenses, SaaS sprawl) and verify HR records against standard DOLE compliance policies.",
+                    expectations: "Provide admin-level software access list, sample employment contracts, pay structures, and leave record logs.",
+                    output: "Software license overlap savings matrix and DOLE compliance audit checklist showing risk levels."
+                }
+            },
+            { 
+                id: 'diag-5', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'Risk Matrix Formulation', 
+                description: 'Synthesis of raw observation data into a highly prioritized B2B Operational Risk Matrix.', 
+                estHours: 6, 
+                tier: 'senior', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Compile raw research and shadow data into an actionable, prioritized impact-vs-feasibility matrix.",
+                    expectations: "Consultants analyze internally; no client participation required during this compilation phase.",
+                    output: "B2B Operational Risk Matrix highlighting instant 'quick wins' vs. strategic multi-phase projects."
+                }
+            },
+            { 
+                id: 'diag-6', 
+                category: 'MOD 0 - Diagnostics', 
+                deliverable: 'Debrief & Roadmap Handover', 
+                description: 'Boardroom-ready presentation of audit discoveries, immediate quick wins, and strategic options.', 
+                estHours: 6, 
+                tier: 'principal', 
+                selected: true,
+                scopeDetails: {
+                    activities: "Host an executive-level board meeting to present findings, walk through the risk matrix, and evaluate proposed solutions.",
+                    expectations: "Presence of the primary project sponsors, COO, and key executive decision-makers for a 90-minute debrief.",
+                    output: "Finished audit slide deck, strategic roadmap options, and authorized scoping priorities."
+                }
+            },
+            { 
+                id: 'sop-1', 
+                category: 'MOD I - SOPs & RACI', 
+                deliverable: 'Org Structure & RACI Mapping', 
+                description: 'Systematic mapping of operational reporting lines, functional hierarchies, and cross-departmental RACI matrices.', 
+                estHours: 12, 
+                tier: 'senior', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Analyze current reporting lines and design high-leverage RACI matrices to clarify task ownership and remove functional duplicates.",
+                    expectations: "Department heads to review and validate proposed functional boundaries during a 1-hour workshop.",
+                    output: "Clean functional organigram and cross-departmental RACI Matrix."
+                }
+            },
+            { 
+                id: 'sop-2', 
+                category: 'MOD I - SOPs & RACI', 
+                deliverable: 'Swimlane Process Mapping', 
+                description: 'Friction-Adjusted mapping of high-fidelity, cross-functional swimlane diagrams (up to 5 core business workflows).', 
+                estHours: 40, 
+                tier: 'senior', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Develop process maps using horizontal swimlanes to detail exact handoffs, decision gates, and systems links for up to 5 core business paths.",
+                    expectations: "Active participation of department champions during iterative process validation reviews.",
+                    output: "Visual, high-resolution Swimlane Process Diagrams (PDF/Miro format)."
+                }
+            },
+            { 
+                id: 'sop-3', 
+                category: 'MOD I - SOPs & RACI', 
+                deliverable: 'HR Templates & Compliance', 
+                description: 'Reviewing local contract standards, drafting standard employment templates and onboarding forms.', 
+                estHours: 12, 
+                tier: 'associate', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Standardize operational employment contracts, modern onboarding checklists, and formal employee file compliance indexes.",
+                    expectations: "Provide current HR policy files and existing contract templates for professional alignment reviews.",
+                    output: "Pack of DOLE-aligned employment contracts, checklists, and 201 file management standards."
+                }
+            },
+            { 
+                id: 'sop-4', 
+                category: 'MOD I - SOPs & RACI', 
+                deliverable: 'DOLE-Aligned Operational Code of Conduct & GLS Manual', 
+                description: 'Friction-Adjusted compilation of compliant behavioral regulations, local leaves, statutory benefits, and code of conduct manuals protecting against local labor litigation.', 
+                estHours: 16, 
+                tier: 'senior', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Compile local labor rules, statutory benefits, leaves, code of conduct, and disciplinary actions into a unified company manual.",
+                    expectations: "Management review of proposed handbook sections to ensure alignment with corporate culture and values.",
+                    output: "Draft Employee Handbook Document ready for corporate distribution."
+                }
+            },
+            { 
+                id: 'trans-1', 
+                category: 'MOD II - PMO & Automation', 
+                deliverable: 'Value Stream Mapping (VSM)', 
+                description: 'Hosting dedicated value stream workshops to expose administrative and operational waste.', 
+                estHours: 16, 
+                tier: 'senior', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Lead intensive value stream mapping workshops to trace physical/informational paths and flag lean process wastes.",
+                    expectations: "Assembling cross-functional team members for a continuous 4-hour mapping session.",
+                    output: "High-fidelity current and future state Value Stream Maps."
+                }
+            },
+            { 
+                id: 'trans-2', 
+                category: 'MOD II - PMO & Automation', 
+                deliverable: 'Cycle-Time Bottleneck Sprint', 
+                description: 'Targeted tactical sprints focusing on reducing administrative waste and re-routing slow paths.', 
+                estHours: 16, 
+                tier: 'senior', 
+                selected: false,
+                scopeDetails: {
+                    activities: "Run rapid improvement sprints targeting high-rework paths and operational bottleneck traces.",
+                    expectations: "Operational team leads authorized to test modified workflows under direct consultant guidance.",
+                    output: "Elimination of targeted rework steps and documented speed improvements."
+                }
+            },
+            { 
+                id: 'coo-1', 
+                category: 'MOD III - COO & Retainers', 
+                deliverable: 'Operations Alignment Governance', 
+                description: 'Directing weekly leadership alignment loops, metrics tracking, and project accountability.', 
+                estHours: 8, 
+                tier: 'principal', 
+                selected: false,
+                isMonthlyRetainer: true,
+                scopeDetails: {
+                    activities: "Chair weekly team leadership alignment syncs to track metrics, review blockers, and manage operational accountability.",
+                    expectations: "Mandatory attendance of department leads with updated weekly metrics sheets.",
+                    output: "Weekly meeting action items, progress log, and active blocker tracker."
+                }
+            },
+            { 
+                id: 'coo-2', 
+                category: 'MOD III - COO & Retainers', 
+                deliverable: 'KPI & OKR Metric Governance Board', 
+                description: 'Evaluating monthly departmental execution scores and managing core governance KPIs.', 
+                estHours: 8, 
+                tier: 'principal', 
+                selected: false,
+                isMonthlyRetainer: true,
+                scopeDetails: {
+                    activities: "Conduct formal monthly reviews of team performance scores, auditing results against targets.",
+                    expectations: "Provide operational raw data logs 48 hours prior to the monthly governance meeting.",
+                    output: "Monthly performance audit scorecard and variance mitigation plan."
+                }
+            },
+            {
+                id: 'lark-1',
+                category: 'MOD II - PMO & Automation',
+                deliverable: 'Lark Workspace Architecture & Provisioning',
+                description: 'Configuring multi-departmental structures, permission groups, and centralized cloud document repositories.',
+                estHours: 8, 
+                tier: 'senior',
+                selected: false,
+                scopeDetails: {
+                    activities: "Design tailored folder taxonomies; set up advanced admin structures; align security clearance rules; provision enterprise domain mapping.",
+                    expectations: "Provide full organizational roster, role directories, and authorized domain administrator access credentials.",
+                    output: "Fully provisioned, secure, and structurally aligned enterprise Lark workspace directory."
+                }
+            },
+            {
+                id: 'pm-1',
+                category: 'MOD II - PMO & Automation',
+                deliverable: 'HERMES 2022 Methodology Implementation',
+                description: 'Structured onboarding covering project lifecycles, phase gates, role assignments, and scenario simulations.',
+                estHours: 12, 
+                tier: 'senior',
+                selected: false,
+                scopeDetails: {
+                    activities: "Deliver four (4) interactive workshops covering Swiss HERMES 2022 project gating; conduct mock case execution trials.",
+                    expectations: "Select and clear calendars for 3 to 5 internal project champions to attend all coaching cycles.",
+                    output: "Onboarded project execution leads with certified understanding of HERMES 2022 delivery lifecycle paths."
+                }
+            },
+            {
+                id: 'msp-1',
+                category: 'MOD III - COO & Retainers',
+                deliverable: 'Active Cyber & Network Security Monitoring Retainer',
+                description: 'Continuous endpoint threat detection, automated backups, and proactive firewall audits. Delivered and executed by Kolthoff Consulting’s authorized strategic infrastructure partner.',
+                estHours: 10, 
+                tier: 'partner',
+                selected: false,
+                isMonthlyRetainer: true,
+                scopeDetails: {
+                    activities: "Deploy lightweight network security monitors; program daily cloud backups; conduct firewall vulnerability audits.",
+                    expectations: "Authorize temporary network administrative privileges; facilitate basic hardware asset log mapping.",
+                    output: "Live, proactive threat containment report and operational network uptime dashboard under master SLA governance."
+                }
+            }
+        ];
 
         function App() {
-            // Interactive Leakage Calculator States
-            const [teamSize, setTeamSize] = useState(30);
-            const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
-            const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
+            const [view, setView] = useState('sandbox');
+            const [copied, setCopied] = useState(false);
+            const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-            // Dynamic Calculator Leakage Math
-            const publicCalculatedChaos = useMemo(() => {
-                const totalMonthlyPayroll = teamSize * avgMonthlySalary;
-                const avgHourlyRate = avgMonthlySalary / 160;
-                const monthlyTurnoverLoss = totalMonthlyPayroll * 0.12;
-                const monthlyInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate);
-                const annualChaosTotal = Math.round((monthlyTurnoverLoss + monthlyInefficiencyLoss) * 12);
-                const firstYearROIPercent = Math.round(((annualChaosTotal - 185000) / 185000) * 100);
+            // 1. STATE INITIALIZATION DELEGATED TO LOCAL STORAGE
+            const [tasks, setTasks] = useState(() => loadSavedData('kc_planner_tasks', INITIAL_TASKS));
 
-                return { annualChaosTotal, firstYearROIPercent, monthlyTurnoverLoss, monthlyInefficiencyLoss };
-            }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
+            const savedRates = useMemo(() => loadSavedData('kc_planner_rates', {
+                principal: 3500,
+                senior: 2500,
+                associate: 1500,
+                partner: 2000
+            }), []);
 
-            // Direct mail link generator with custom inquiry body - simplified email template
-            const mailtoLink = useMemo(() => {
-                const subject = encodeURIComponent("Operational Diagnostics Audit Request");
-                const body = encodeURIComponent(`Dear Reinhard,
+            const [principalRate, setPrincipalRate] = useState(savedRates.principal);
+            const [seniorRate, setSeniorRate] = useState(savedRates.senior);
+            const [associateRate, setAssociateRate] = useState(savedRates.associate);
+            const [partnerRate, setPartnerRate] = useState(savedRates.partner);
 
-I am writing to request an Operational Diagnostics Audit to evaluate our workflow architecture and mitigate potential operational risks.
+            // CACHED ACTIVE PRESETS RESTORATION
+            const [activePresets, setActivePresets] = useState(() => loadSavedData('kc_planner_active_presets', ['mod0']));
 
-Please coordinate with us for an initial briefing session.
+            const savedMeta = useMemo(() => loadSavedData('kc_planner_meta', {
+                clientCompany: 'Acme Corporation PH',
+                clientRep: 'Juan dela Cruz',
+                quoteId: 'KC-2026-4402',
+                quoteDate: getTodayDateString(),
+                quoteValidity: '30 Days',
+                annualInactionCost: 1200000,
+                includeTax: false,
+                preparedBy: 'Reinhard Ludwig A. Kolthoff',
+                preparerTitle: 'Principal Consultant',
+                targetStartDate: 'July 1, 2026',
+                proposalObjectives: 'Build clean process architecture, mitigate regulatory labor compliance risks, and establish scalable workflows to support regional SME expansion.',
+                proposalSponsor: 'Chief Operating Officer / VP of Human Resources',
+                preDiagnosticList: "• Current Organizational Chart (existing structural hierarchies & operational divisions)\n• Process Documents (any previous flowcharts, checklists, templates, or manuals)\n• Human Resources Baseline (active payroll registries, standard contract templates, and active employee handbook)\n• Technical Infrastructure Map (inventory of software licenses, user seats, and database systems)\n• Representative Operational Reports (sample daily/weekly logs, billing sheets, and client onboarding forms)",
+                frictionBuffer: 15,
+                principalToSeniorDelegate: 20,
+                seniorToAssociateDelegate: 40
+            }), []);
 
-Our Contact Details:
-- Company Name: 
-- Primary Contact Representative: 
-- Contact Mobile/Email: 
+            const [clientCompany, setClientCompany] = useState(savedMeta.clientCompany);
+            const [clientRep, setClientRep] = useState(savedMeta.clientRep);
+            const [quoteId, setQuoteId] = useState(savedMeta.quoteId);
+            const [quoteDate, setQuoteDate] = useState(savedMeta.quoteDate);
+            const [quoteValidity, setQuoteValidity] = useState(savedMeta.quoteValidity);
+            const [annualInactionCost, setAnnualInactionCost] = useState(savedMeta.annualInactionCost);
+            const [includeTax, setIncludeTax] = useState(savedMeta.includeTax);
 
-Optional Pain Point Description (Bottlenecks, delays, or process challenges):
+            const [preparedBy, setPreparedBy] = useState(savedMeta.preparedBy);
+            const [preparerTitle, setPreparerTitle] = useState(savedMeta.preparerTitle);
+            const [targetStartDate, setTargetStartDate] = useState(savedMeta.targetStartDate);
 
+            const [proposalObjectives, setProposalObjectives] = useState(savedMeta.proposalObjectives);
+            const [proposalSponsor, setProposalSponsor] = useState(savedMeta.proposalSponsor);
+            const [preDiagnosticList, setPreDiagnosticList] = useState(savedMeta.preDiagnosticList);
 
-Best regards,`);
-                return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
-            }, []);
+            const [frictionBuffer, setFrictionBuffer] = useState(savedMeta.frictionBuffer);
+            const [principalToSeniorDelegate, setPrincipalToSeniorDelegate] = useState(savedMeta.principalToSeniorDelegate);
+            const [seniorToAssociateDelegate, setSeniorToAssociateDelegate] = useState(savedMeta.seniorToAssociateDelegate);
 
-            // Trigger MathJax typeset updates cleanly on ROI changes
+            // Placeholder states for custom input structures
+            const [newTaskCategory, setNewTaskCategory] = useState('MOD 0 - Diagnostics');
+            const [newTaskDeliv, setNewTaskDeliv] = useState('');
+            const [newTaskDesc, setNewTaskDesc] = useState('');
+            const [newTaskHours, setNewTaskHours] = useState(12);
+            const [newTaskTier, setNewTaskTier] = useState('associate');
+            
+            const [newTaskActivities, setNewTaskActivities] = useState('');
+            const [newTaskExpectations, setNewTaskExpectations] = useState('');
+            const [newTaskOutput, setNewTaskOutput] = useState('');
+
+            // Helper for dynamic tier-to-rate lookup (DECLARED FIRST & HOISTED WITHIN COMPONENT TO RESOLVE TDZ EXCEPTIONS)
+            function getRateForTier(tier) {
+                switch(tier) {
+                    case 'principal': return principalRate;
+                    case 'senior': return seniorRate;
+                    case 'associate': return associateRate;
+                    case 'partner': return partnerRate;
+                    default: return associateRate;
+                }
+            }
+
+            // 2. EFFECT HOOK WRITERS - CONTINUOUS BACKUP TO LOCAL STORAGE
             useEffect(() => {
-                if (window.MathJax && window.MathJax.typesetPromise) {
-                    const mathElement = document.getElementById('math-roi');
-                    if (mathElement) {
-                        window.MathJax.typesetClear([mathElement]);
-                        window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
+                localStorage.setItem('kc_planner_tasks', JSON.stringify(tasks));
+            }, [tasks]);
+
+            useEffect(() => {
+                localStorage.setItem('kc_planner_rates', JSON.stringify({
+                    principal: principalRate,
+                    senior: seniorRate,
+                    associate: associateRate,
+                    partner: partnerRate
+                }));
+            }, [principalRate, seniorRate, associateRate, partnerRate]);
+
+            useEffect(() => {
+                localStorage.setItem('kc_planner_active_presets', JSON.stringify(activePresets));
+            }, [activePresets]);
+
+            useEffect(() => {
+                localStorage.setItem('kc_planner_meta', JSON.stringify({
+                    clientCompany,
+                    clientRep,
+                    quoteId,
+                    quoteDate,
+                    quoteValidity,
+                    annualInactionCost,
+                    includeTax,
+                    preparedBy,
+                    preparerTitle,
+                    targetStartDate,
+                    proposalObjectives,
+                    proposalSponsor,
+                    preDiagnosticList,
+                    frictionBuffer,
+                    principalToSeniorDelegate,
+                    seniorToAssociateDelegate
+                }));
+            }, [
+                clientCompany, clientRep, quoteId, quoteDate, quoteValidity, annualInactionCost,
+                includeTax, preparedBy, preparerTitle, targetStartDate, proposalObjectives,
+                proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate,
+                seniorToAssociateDelegate
+            ]);
+
+            // Custom secure state reset logic (Iframe safe, no window.confirm alerts used)
+            const executeResetWorkbook = () => {
+                localStorage.removeItem('kc_planner_tasks');
+                localStorage.removeItem('kc_planner_rates');
+                localStorage.removeItem('kc_planner_active_presets');
+                localStorage.removeItem('kc_planner_meta');
+                window.location.reload();
+            };
+
+            const toggleTask = (id) => {
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t));
+            };
+
+            const updateTaskHours = (id, value) => {
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, estHours: Number(value) } : t));
+            };
+
+            const updateTaskTier = (id, tier) => {
+                setTasks(prev => prev.map(t => t.id === id ? { ...t, tier: tier } : t));
+            };
+
+            const addNewTask = (e) => {
+                e.preventDefault();
+                if (!newTaskDeliv) return;
+                
+                const newTask = {
+                    id: `custom-${Date.now()}`,
+                    category: newTaskCategory,
+                    deliverable: newTaskDeliv,
+                    description: newTaskDesc || 'Bespoke client scope requirement.',
+                    estHours: Number(newTaskHours),
+                    tier: newTaskTier,
+                    selected: true,
+                    isMonthlyRetainer: newTaskCategory === 'MOD III - COO & Retainers',
+                    scopeDetails: {
+                        activities: newTaskActivities || "Execute planned task steps and deliverable milestones in coordination with designated managers.",
+                        expectations: newTaskExpectations || "Provide timely inputs, process data access, and constructive feedback on drafted materials.",
+                        output: newTaskOutput || "Finished deliverable asset aligned with custom SOW scope specifications."
+                    }
+                };
+
+                setTasks(prev => [...prev, newTask]);
+                setNewTaskDeliv('');
+                setNewTaskDesc('');
+                setNewTaskActivities('');
+                setNewTaskExpectations('');
+                setNewTaskOutput('');
+            };
+
+            const removeTask = (id) => {
+                setTasks(prev => prev.filter(t => t.id !== id));
+            };
+
+            // HIGH-STATUS FORMULA-DRIVEN TIMELINE ENGINE (DERIVED DIRECTLY FROM THE ADVISORY ARCHITECTURE REPORT)
+            const calculatedTimeline = useMemo(() => {
+                const selectedTasks = tasks.filter(t => t.selected);
+                if (selectedTasks.length === 0) return "N/A";
+                
+                const projectTasks = selectedTasks.filter(t => !t.isMonthlyRetainer);
+                const retainerTasks = selectedTasks.filter(t => t.isMonthlyRetainer);
+                
+                // Mathematical Core Architecture: T_hours = Sum(H_base * (1 + B_risk))
+                const totalProjectHours = projectTasks.reduce((acc, curr) => acc + curr.estHours, 0) * (1 + frictionBuffer / 100);
+                
+                let timelineStr = "";
+                if (projectTasks.length > 0) {
+                    // Delivery Velocity Parameter Cap (V_delivery = 32 hours per week productive client capacity)
+                    const deliveryVelocity = 32;
+                    const exactWeeks = totalProjectHours / deliveryVelocity;
+                    
+                    // Apply explicit corporate ceiling rounding functionality
+                    const ceilingWeeks = Math.ceil(exactWeeks);
+                    
+                    if (ceilingWeeks <= 1) {
+                        timelineStr = "1 - 2 Weeks"; // Hard floor minimum for onboarding
+                    } else if (ceilingWeeks <= 2) {
+                        timelineStr = "2 - 3 Weeks";
+                    } else {
+                        timelineStr = `${ceilingWeeks - 1} - ${ceilingWeeks} Weeks`;
                     }
                 }
-            }, [publicCalculatedChaos.firstYearROIPercent]);
+                
+                if (retainerTasks.length > 0) {
+                    return projectTasks.length > 0 ? `${timelineStr} + Ongoing Retainer` : "Ongoing Retainer";
+                }
+                
+                return timelineStr;
+            }, [tasks, frictionBuffer]);
+
+            // SUMMARY CALCULATIONS WITH STRATEGIC PARTNER COST ARBITRAGE & WATERFALL DELEGATION
+            const updatedSummary = useMemo(() => {
+                const selectedTasks = tasks.filter(t => t.selected);
+                const estHoursTotal = selectedTasks.reduce((acc, curr) => acc + curr.estHours, 0);
+                const bufferMultiplier = 1 + (frictionBuffer / 100);
+                
+                // Base cost derived from tier configuration rates
+                const subtotalCost = Math.round(selectedTasks.reduce((acc, curr) => {
+                    const rate = getRateForTier(curr.tier);
+                    return acc + (curr.estHours * rate);
+                }, 0) * bufferMultiplier);
+                
+                const taxValue = includeTax ? Math.round(subtotalCost * 0.12) : 0;
+                const totalCost = subtotalCost + taxValue;
+
+                // Extract base hours per tier with buffer multiplier applied
+                const principalBaseHours = Math.round(selectedTasks.filter(t => t.tier === 'principal').reduce((acc, curr) => acc + curr.estHours, 0) * bufferMultiplier);
+                const seniorBaseHours = Math.round(selectedTasks.filter(t => t.tier === 'senior').reduce((acc, curr) => acc + curr.estHours, 0) * bufferMultiplier);
+                const associateBaseHours = Math.round(selectedTasks.filter(t => t.tier === 'associate').reduce((acc, curr) => acc + curr.estHours, 0) * bufferMultiplier);
+                const partnerBaseHours = Math.round(selectedTasks.filter(t => t.tier === 'partner').reduce((acc, curr) => acc + curr.estHours, 0) * bufferMultiplier);
+
+                // Apply dynamic delegation waterfall
+                const principalDelegatedHours = Math.round(principalBaseHours * (principalToSeniorDelegate / 100));
+                const principalFinalHours = principalBaseHours - principalDelegatedHours;
+
+                const seniorWorkingPool = seniorBaseHours + principalDelegatedHours;
+                const seniorDelegatedHours = Math.round(seniorWorkingPool * (seniorToAssociateDelegate / 100));
+                const seniorFinalHours = seniorWorkingPool - seniorDelegatedHours;
+
+                const associateFinalHours = associateBaseHours + seniorDelegatedHours;
+                const partnerFinalHours = partnerBaseHours;
+
+                // Execution Costs per hour to deliver work internally
+                const principalExecutionRate = 1500;
+                const seniorExecutionRate = 800;
+                const associateExecutionRate = 350;
+                const partnerExecutionRate = 1200; 
+
+                const internalCost = Math.round(
+                    (principalFinalHours * principalExecutionRate) +
+                    (seniorFinalHours * seniorExecutionRate) +
+                    (associateFinalHours * associateExecutionRate) +
+                    (partnerFinalHours * partnerExecutionRate)
+                );
+
+                const netProfit = subtotalCost - internalCost;
+                const profitMarginPercent = subtotalCost > 0 ? Math.round((netProfit / subtotalCost) * 100) : 0;
+                
+                const netFirstYearSavings = Math.max(0, annualInactionCost - totalCost);
+                const projectROI = totalCost > 0 ? Math.round((netFirstYearSavings / totalCost) * 100) : 0;
+                const isRetainerOnly = selectedTasks.length > 0 && selectedTasks.every(t => t.isMonthlyRetainer);
+
+                const bufferedTotalHours = Math.round(estHoursTotal * bufferMultiplier);
+
+                return { count: selectedTasks.length, rawEstHours: estHoursTotal, estHours: bufferedTotalHours, subtotalCost, taxValue, totalCost, internalCost, netProfit, profitMarginPercent, netFirstYearSavings, projectROI, isRetainerOnly, partnerHours: partnerFinalHours, principalFinalHours, seniorFinalHours, associateFinalHours, partnerFinalHours };
+            }, [tasks, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, annualInactionCost, includeTax, principalRate, seniorRate, associateRate, partnerRate]);
+
+            // DECOUPLED PROJECT VS RETAINER FINANCIAL DIVISION FOR DYNAMIC SOW BILLING
+            const projectCostPart = useMemo(() => {
+                const selectedProjTasks = tasks.filter(t => t.selected && !t.isMonthlyRetainer);
+                const bufferMultiplier = 1 + (frictionBuffer / 100);
+                const base = Math.round(selectedProjTasks.reduce((acc, curr) => {
+                    return acc + (curr.estHours * getRateForTier(curr.tier));
+                }, 0) * bufferMultiplier);
+                return base + (includeTax ? Math.round(base * 0.12) : 0);
+            }, [tasks, frictionBuffer, includeTax, principalRate, seniorRate, associateRate, partnerRate]);
+
+            const retainerCostPart = useMemo(() => {
+                const selectedRetTasks = tasks.filter(t => t.selected && t.isMonthlyRetainer);
+                const bufferMultiplier = 1 + (frictionBuffer / 100);
+                const base = Math.round(selectedRetTasks.reduce((acc, curr) => {
+                    return acc + (curr.estHours * getRateForTier(curr.tier));
+                }, 0) * bufferMultiplier);
+                return base + (includeTax ? Math.round(base * 0.12) : 0);
+            }, [tasks, frictionBuffer, includeTax, principalRate, seniorRate, associateRate, partnerRate]);
+
+            // DYNAMIC METRIC TO DETECT PROJECT TIMELINE THRESHOLD FOR BILLING MILESTONES (SAFE NOW BELOW UPDATEDSUMMARY)
+            const isUnder4Weeks = useMemo(() => {
+                if (updatedSummary.isRetainerOnly) return false;
+                const lowerTimeline = calculatedTimeline.toLowerCase();
+                if (lowerTimeline.includes('monthly') || lowerTimeline.includes('ongoing')) return false;
+                const matches = lowerTimeline.match(/(\d+)/g);
+                if (matches && lowerTimeline.includes('week')) {
+                    const weekMatch = lowerTimeline.match(/(\d+)\s*(?:-\s*(\d+))?\s*week/);
+                    if (weekMatch) {
+                        return Math.max(parseInt(weekMatch[1], 10), weekMatch[2] ? parseInt(weekMatch[2], 10) : parseInt(weekMatch[1], 10)) <= 4; 
+                    }
+                }
+                return false;
+            }, [calculatedTimeline, updatedSummary.isRetainerOnly]);
+
+            // Preset Trigger Logic
+            const handleTogglePreset = (presetName) => {
+                let updatedPresets = activePresets.includes(presetName) 
+                    ? activePresets.filter(p => p !== presetName) 
+                    : [...activePresets, presetName];
+                
+                setActivePresets(updatedPresets);
+
+                setTasks(prev => prev.map(t => {
+                    let matchesAnyActive = false;
+                    if (presetName === 'mod0' && t.category === 'MOD 0 - Diagnostics') matchesAnyActive = true;
+                    if (presetName === 'mod1' && t.category === 'MOD I - SOPs & RACI') matchesAnyActive = true;
+                    if (presetName === 'mod2' && t.category === 'MOD II - PMO & Automation') matchesAnyActive = true;
+                    if (presetName === 'mod3' && t.category === 'MOD III - COO & Retainers') matchesAnyActive = true;
+                    
+                    // Fallback to preserve selections if toggling unrelated presets
+                    if (activePresets.includes('mod0') && t.category === 'MOD 0 - Diagnostics') matchesAnyActive = true;
+                    if (activePresets.includes('mod1') && t.category === 'MOD I - SOPs & RACI') matchesAnyActive = true;
+                    if (activePresets.includes('mod2') && t.category === 'MOD II - PMO & Automation') matchesAnyActive = true;
+                    if (activePresets.includes('mod3') && t.category === 'MOD III - COO & Retainers') matchesAnyActive = true;
+
+                    // Apply current toggle change state
+                    if (presetName === 'mod0' && t.category === 'MOD 0 - Diagnostics') matchesAnyActive = !activePresets.includes('mod0');
+                    if (presetName === 'mod1' && t.category === 'MOD I - SOPs & RACI') matchesAnyActive = !activePresets.includes('mod1');
+                    if (presetName === 'mod2' && t.category === 'MOD II - PMO & Automation') matchesAnyActive = !activePresets.includes('mod2');
+                    if (presetName === 'mod3' && t.category === 'MOD III - COO & Retainers') matchesAnyActive = !activePresets.includes('mod3');
+
+                    return { ...t, selected: matchesAnyActive };
+                }));
+            };
+
+            const handleSelectAllPresets = () => {
+                const all = ['mod0', 'mod1', 'mod2', 'mod3'];
+                setActivePresets(all);
+                setTasks(prev => prev.map(t => ({ ...t, selected: true })));
+            };
+
+            const handleClearAllPresets = () => {
+                setActivePresets([]);
+                setTasks(prev => prev.map(t => ({ ...t, selected: false })));
+            };
+
+            const proposalSummaryText = useMemo(() => {
+                const activeOnes = tasks.filter(t => t.selected);
+                let output = `### PROPOSAL SUMMARY - KOLTHOFF CONSULTING\n`;
+                output += `* **Total Selected Tasks**: ${updatedSummary.count}\n`;
+                output += `* **Effort Base Effort**: ${updatedSummary.estHours} Estimated Hours (Includes Operational Risk Contingency Reserve)\n`;
+                output += `* **Estimated Project Timeline**: ${calculatedTimeline}\n`;
+                output += `* **Total Project Investment**: ${formatCurrency(updatedSummary.totalCost)} (PHP ${includeTax ? 'Inc. 12% VAT' : 'Ex-Tax'})\n\n`;
+                output += `#### SCOPE OF INCLUDED WORK ITEMS:\n`;
+                let currentCat = '';
+                activeOnes.forEach(t => {
+                    if (t.category !== currentCat) {
+                        currentCat = t.category;
+                        output += `\n**${currentCat.toUpperCase()}**\n`;
+                    }
+                    output += `- [x] **${t.deliverable}**: ${t.description} (Approx. ${Math.round(t.estHours * (1 + frictionBuffer/100))} hrs)\n`;
+                });
+                return output;
+            }, [tasks, updatedSummary, frictionBuffer, calculatedTimeline, includeTax]);
+
+            // Individual category selectors for SOW mapping
+            const activeDiag = tasks.some(t => t.category === 'MOD 0 - Diagnostics' && t.selected);
+            const activeSOP = tasks.some(t => t.category === 'MOD I - SOPs & RACI' && t.selected);
+            const activePMO = tasks.some(t => t.category === 'MOD II - PMO & Automation' && t.selected);
+            const activeGov = tasks.some(t => t.category === 'MOD III - COO & Retainers' && t.selected);
+
+            // SOW Markdown Copy block
+            const copyToClipboard = () => {
+                const el = document.createElement('textarea');
+                el.value = proposalSummaryText;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            const handlePrint = () => {
+                window.print();
+            };
 
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
                     
-                    {/* High-Status Corporate Header (STREAMLINED: CONTACT COORDINATES REMOVED FROM VIEWPORT HEADER) */}
-                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md font-sans">
-                        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    {/* Header: Isolated Navigation (STREAMLINED: CONTACT COORDINATES REMOVED FROM VIEWPORT HEADER) */}
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print">
+                        <div className="max-w-[1600px] mx-auto px-6 sm:px-8 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
                                 <div>
                                     <span className="font-sans font-extrabold tracking-wider text-base sm:text-lg uppercase block text-white leading-none">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
-                                    <span className="text-[9px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Architecture & Strategy</span>
+                                    <span className="text-[9px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Internal Partner Operations Portal</span>
                                 </div>
                             </div>
                             
-                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                                <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
-                                <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Scale-Up Lifecycle</a>
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
-                                    Book Diagnostic Audit
-                                </a>
+                            <nav className="flex items-center gap-4 sm:gap-6">
+                                <button onClick={() => setView('sandbox')} className={`px-4 py-2 rounded font-mono text-[10px] uppercase font-bold border tracking-wider transition-all ${view === 'sandbox' ? 'bg-brandBlue-500 text-slate-955 border-brandBlue-500 font-extrabold shadow-lg shadow-brandBlue-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-750 hover:bg-brandNavy-800 font-bold'}`}>1. Sandbox</button>
+                                <button onClick={() => setView('proposal')} className={`px-4 py-2 rounded font-mono text-[10px] uppercase font-bold border tracking-wider transition-all ${view === 'proposal' ? 'bg-brandBlue-500 text-slate-955 border-brandBlue-500 font-extrabold shadow-lg shadow-brandBlue-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-750 hover:bg-brandNavy-800 font-bold'}`}>2. SOW Proposal</button>
+                                <button onClick={() => setView('quotation')} className={`px-4 py-2 rounded font-mono text-[10px] uppercase font-bold border tracking-wider transition-all ${view === 'quotation' ? 'bg-brandBlue-500 text-slate-955 border-brandBlue-500 font-extrabold shadow-lg shadow-brandBlue-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-750 hover:bg-brandNavy-800 font-bold'}`}>3. Quote Sheet</button>
                             </nav>
                         </div>
                     </header>
 
-                    {/* Hero Section */}
-                    <section className="relative overflow-hidden pt-24 pb-28 border-b border-brandNavy-700/60 bg-brandNavy-950 text-slate-100">
-                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full" />
-                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                            <div className="lg:col-span-7 space-y-6">
-                                <span className="text-xs font-mono font-bold tracking-[0.3em] text-brandBlue-400 uppercase bg-brandBlue-950/40 border border-brandBlue-900/30 px-3.5 py-1.5 rounded inline-block">
-                                    B2B MANAGEMENT ADVISORY
-                                </span>
-                                <h1 className="text-4xl sm:text-6xl font-serif font-bold text-white leading-tight">
-                                    Stop Bleeding Cash. <br />
-                                    <span className="text-brandBlue-400 font-bold">Fix Your Process Architecture.</span>
-                                </h1>
-                                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
-                                    We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
-                                </p>
-                                <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
-                                        Audit Your Financial Waste <IconArrowRight />
-                                    </a>
-                                    <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
-                                        Explore Scale-Up Roadmap
-                                    </a>
-                                </div>
-                            </div>
-
-                            {/* CORE PARTNERSHIP PHILOSOPHY - ACCENT TRUTH-MODE ENHANCEMENT */}
-                            <div className="lg:col-span-5 bg-brandNavy-900/90 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
-                                <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
-                                    <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
-                                </div>
-                                <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">Core Partnership Philosophy</h3>
-                                <p className="font-serif italic text-lg text-slate-100 leading-relaxed mb-6">
-                                    "Scale is an architectural consequence, not an accident. An enterprise cannot grow if its accountability lines are blurred, its statutory compliance is exposed, or its core intellectual property remains trapped inside the tribal knowledge of single employees."
-                                </p>
-                                <div className="border-t border-brandNavy-700/60 pt-4 flex gap-4 items-center">
-                                    <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm">
-                                        360
-                                    </div>
-                                    <div className="text-xs font-sans font-medium">
-                                        <span className="font-bold text-white block">Outcome-Based Pricing</span>
-                                        <span className="text-slate-400 mt-0.5 block">100% Flat-Rate Guarantees. No hourly scope-creep.</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Cost of Chaos Assessment Tool */}
-                    <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
-                        <div className="max-w-7xl mx-auto px-6">
-                            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Interactive Assessment Tool</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">The Cost of Operational Chaos</h2>
-                                <p className="text-sm text-slate-600 leading-relaxed">
-                                    Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
-                                <div className="lg:col-span-6 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
-                                    <div className="space-y-6">
-                                        <div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconTarget /> Total Personnel (FTE)
-                                                </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{teamSize} Employees</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="5" 
-                                                max="150" 
-                                                value={teamSize} 
-                                                onChange={(e) => setTeamSize(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-705 font-bold flex items-center gap-1.5">
-                                                    <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
-                                                </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="15000" 
-                                                max="120000" 
-                                                step="5000"
-                                                value={avgMonthlySalary} 
-                                                onChange={(e) => setAvgMonthlySalary(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconClock /> Avg. Delay per Staff Weekly
-                                                </label>
-                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
-                                            </div>
-                                            <input 
-                                                type="range" 
-                                                min="1" 
-                                                max="15" 
-                                                value={delayHoursWeekly} 
-                                                onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
-                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-sans font-medium">
-                                        <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
-                                    </div>
-                                </div>
-
-                                <div className="lg:col-span-6 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
+                    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto animate-fade-in">
+                        {view === 'sandbox' && (
+                            <div className="no-print space-y-8">
+                                
+                                {/* TIERED RATE CONFIGURATION CARD */}
+                                <div className="bg-brandNavy-900 border border-brandNavy-700/80 p-6 rounded-xl shadow-2xl relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <IconTrendingDown />
-                                            <span className="text-xs font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Leakage</span>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2.5 rounded-lg bg-brandBlue-500/10 text-brandBlue-400 border border-brandBlue-500/20">
+                                            <IconCalculator />
                                         </div>
-                                        <span className="text-4xl sm:text-5xl font-serif font-black text-white leading-none block">
-                                            {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
-                                        </span>
-                                        <div className="mt-6 space-y-3.5 border-b border-brandNavy-700/80 pb-6 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light font-medium">Frictional Turnover Loss:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyTurnoverLoss * 12)} / year</span>
-                                            </div>
-                                            {/* SYSTEM INEFFICIENCY LEAKAGE - LABEL & VALUE STANDARDIZED */}
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light font-medium">System Inefficiency Leakage:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyInefficiencyLoss * 12)} / year</span>
-                                            </div>
+                                        <div>
+                                            <h3 className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase">Interactive B2B Rate Card Configuration</h3>
+                                            <p className="text-xs text-slate-505 mt-0.5">Define hourly billing values per tier via horizontal sliders. Individual deliverables automatically query this table to calculate pricing.</p>
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 space-y-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <IconTrendingUp />
-                                            <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+                                        <div className="bg-brandNavy-950 p-4 rounded-lg border border-brandNavy-700">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold font-sans">Principal Strategy Advisor</span>
+                                                <span className="text-xs font-mono font-bold text-brandBlue-300">₱{principalRate.toLocaleString()} / hr</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1000" 
+                                                max="5000" 
+                                                step="100"
+                                                value={principalRate} 
+                                                onChange={(e) => setPrincipalRate(Number(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-900 h-1 rounded-lg cursor-pointer"
+                                            />
                                         </div>
-                                        
-                                        <div 
-                                            id="math-roi" 
-                                            className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center font-semibold"
-                                        >
-                                            {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + publicCalculatedChaos.firstYearROIPercent + "\\%$$"}
+                                        <div className="bg-brandNavy-950 p-4 rounded-lg border border-brandNavy-700 bg-brandNavy-950">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold font-sans">Senior Systems Architect</span>
+                                                <span className="text-xs font-mono font-bold text-brandBlue-300">₱{seniorRate.toLocaleString()} / hr</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1000" 
+                                                max="5000" 
+                                                step="100"
+                                                value={seniorRate} 
+                                                onChange={(e) => setSeniorRate(Number(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-900 h-1 rounded-lg cursor-pointer"
+                                            />
                                         </div>
-                                        
-                                        <p className="text-xs text-slate-300 leading-relaxed font-light font-sans font-semibold">
-                                            A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the exact blueprint to recover these lost margins in Year 1.
-                                        </p>
+                                        <div className="bg-brandNavy-950 p-4 rounded-lg border border-brandNavy-700">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold font-sans">Operations Advisor</span>
+                                                <span className="text-xs font-mono font-bold text-brandBlue-300">₱{associateRate.toLocaleString()} / hr</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1000" 
+                                                max="5000" 
+                                                step="100"
+                                                value={associateRate} 
+                                                onChange={(e) => setAssociateRate(Number(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-900 h-1 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+                                        <div className="bg-brandNavy-950 p-4 rounded-lg border border-brandNavy-700 bg-brandNavy-950">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <div className="flex gap-1.5 items-center">
+                                                    <span className="text-[10px] font-mono text-slate-400 uppercase font-bold font-sans">Strategic IT Partner</span>
+                                                    <span className="text-[8px] text-emerald-400 bg-emerald-500/10 px-1.5 rounded uppercase font-mono font-bold font-sans">Arbitrage</span>
+                                                </div>
+                                                <span className="text-xs font-mono font-bold text-brandBlue-300">₱{partnerRate.toLocaleString()} / hr</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1000" 
+                                                max="5000" 
+                                                step="100"
+                                                value={partnerRate} 
+                                                onChange={(e) => setPartnerRate(Number(e.target.value))}
+                                                className="w-full accent-brandBlue-400 bg-brandNavy-900 h-1 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </section>
 
-                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (MERGED OPERATIONAL DIAGNOSTICS & MODULE ECOSYSTEM SECTIONS) */}
-                    <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
-                        <div className="max-w-7xl mx-auto px-6 space-y-16">
-                            
-                            {/* Section Header */}
-                            <div className="max-w-3xl mx-auto text-center space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
-                                <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Every strategic partnership begins with our high-velocity Diagnostics Audit (MOD 0). By exposing workflow leaks and compliance exposures, we design the exact blueprints that feed into subsequent scale foundations, lark automations, and fractional governance modules.
-                                </p>
-                            </div>
-
-                            {/* MODULE 0: FLAGSHIP DIAGNOSTICS AUDIT & 3-PHASE DISCOVERY ENGINE (FEATURED MASTER CARD) */}
-                            <div className="bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 sm:p-10 rounded-2xl shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                                
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-                                    
-                                    {/* Left Module Spec Column (4-Cols) */}
-                                    <div className="lg:col-span-4 flex flex-col justify-between space-y-6 border-b lg:border-b-0 lg:border-r border-brandNavy-700/60 pb-8 lg:pb-0 lg:pr-8">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD 0</div>
-                                                <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 font-bold uppercase">2 - 3 Weeks</span>
+                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                                    <div className="xl:col-span-9 bg-brandNavy-900/30 border border-brandNavy-700/80 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm">
+                                        <div className="p-5 bg-brandNavy-950/80 border-b border-brandNavy-700/80 flex flex-col gap-4">
+                                            <div className="flex items-center justify-between border-b border-brandNavy-700/50 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-brandBlue-500 animate-pulse"></span>
+                                                    <span className="text-xs font-mono tracking-wider text-slate-300 uppercase font-semibold">Contract Preset Profiles (Modules Aligned)</span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {/* ALIGNED SELECT ALL BUTTON BACKGROUND COLOR WITH DESIGN PALETTE */}
+                                                    <button onClick={handleSelectAllPresets} className="px-2.5 py-1 text-[10px] font-bold rounded transition-all bg-brandBlue-500 text-slate-955 border border-brandBlue-500/20 hover:bg-brandBlue-600 font-sans font-bold">Select All Modules</button>
+                                                    <button onClick={handleClearAllPresets} className="px-2.5 py-1 text-[10px] font-bold rounded transition-all bg-brandNavy-900 text-slate-400 border border-brandNavy-700 hover:text-slate-200 font-sans">Clear All</button>
+                                                </div>
                                             </div>
-                                            <h3 className="text-2xl font-bold font-serif text-white">Operational Diagnostics Audit</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                A mandated, concentrated diagnostic sprint. We analyze step-timing bottleneck frictions, run the SaaS License Overlap Rationalization, and evaluate local DOLE HR contract compliancy to immediately arrest operational capital leaks.
-                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {[
+                                                    { name: 'mod0', label: 'MOD 0 - Diagnostics' },
+                                                    { name: 'mod1', label: 'MOD I - SOPs & RACI' },
+                                                    { name: 'mod2', label: 'MOD II - PMO & Automation' },
+                                                    { name: 'mod3', label: 'MOD III - COO & Retainers' }
+                                                ].map(preset => {
+                                                    const isActive = activePresets.includes(preset.name);
+                                                    return (
+                                                        <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={`px-3.5 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 ${isActive ? 'bg-brandBlue-500 text-slate-955 shadow-md font-extrabold border border-brandBlue-400' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700 hover:bg-brandNavy-800'}`}>
+                                                            {isActive ? <IconCheck className="w-3 h-3 text-slate-955 font-bold" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" />}
+                                                            {preset.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                        <div className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/40 text-[11px] text-slate-400 font-sans leading-relaxed">
-                                            <strong className="text-slate-200 block mb-1">Target Handover Assets:</strong>
-                                            B2B Operational Risk Matrix, Boardroom presentation, and verified Year-1 ROI scoping blueprints.
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse min-w-[1000px] table-fixed">
+                                                <thead>
+                                                    <tr className="bg-brandNavy-950/80 text-[10px] uppercase font-mono tracking-wider text-slate-400 border-b border-brandNavy-700">
+                                                        <th className="py-4 px-5 text-center w-[6%]">Active</th>
+                                                        <th className="py-4 px-4 w-[24%]">Category Module</th>
+                                                        <th className="py-4 px-4 w-[29%]">Deliverable Specifications</th>
+                                                        <th className="py-4 px-4 text-center w-[10%]">Est. Hours</th>
+                                                        <th className="py-4 px-4 text-center w-[14%]">Professional Tier</th>
+                                                        <th className="py-4 px-4 text-center w-[10%]">Rate Basis</th>
+                                                        <th className="py-4 px-5 text-right w-[13%] font-bold text-brandBlue-400 font-mono">Base Price</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-brandNavy-700/40">
+                                                    {tasks.map((task) => {
+                                                        const rate = getRateForTier(task.tier);
+                                                        return (
+                                                            <tr key={task.id} className={`transition-all duration-150 ${task.selected ? 'bg-brandNavy-900/40' : 'bg-brandNavy-950/10 opacity-30 hover:opacity-60'}`}>
+                                                                <td className="py-4 px-5 text-center">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <button onClick={() => toggleTask(task.id)} className="p-1 rounded text-slate-400 hover:text-brandBlue-500 inline-flex transition-colors">
+                                                                            {task.selected ? <IconCheckSquare /> : <IconSquare />}
+                                                                        </button>
+                                                                        {task.id.startsWith('custom-') && <button onClick={() => removeTask(task.id)} className="p-1 text-rose-500 hover:text-rose-400 rounded transition-colors"><IconTrash className="w-3.5 h-3.5" /></button>}
+                                                                    </div>
+                                                                </td>
+                                                                {/* DYNAMIC CATEGORY AND PARTICULARS RE-ALIGNMENT WITH CLEAN MODULE HEADERS */}
+                                                                <td className="py-4 px-4">
+                                                                    <span className="text-[10px] font-mono bg-brandNavy-950 px-2.5 py-1.5 rounded border border-brandNavy-700/80 text-brandBlue-400 font-bold block text-center truncate">{task.category}</span>
+                                                                </td>
+                                                                <td className="py-4 px-4">
+                                                                    <h4 className="font-bold text-sm text-slate-200">{task.deliverable}</h4>
+                                                                    <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed line-clamp-2">{task.description}</p>
+                                                                </td>
+                                                                <td className="py-4 px-4 text-center">
+                                                                    <input type="number" min="0" value={task.estHours} onChange={(e) => updateTaskHours(task.id, e.target.value)} className="w-16 bg-brandNavy-950 border border-brandNavy-700 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-slate-200 focus:border-brandBlue-500 focus:outline-none" disabled={!task.selected} />
+                                                                </td>
+                                                                <td className="py-4 px-4 text-center">
+                                                                    <select value={task.tier} onChange={(e) => updateTaskTier(task.id, e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded py-1 px-1.5 text-xs text-slate-200 font-mono uppercase focus:outline-none focus:border-brandBlue-500" disabled={!task.selected}>
+                                                                        <option value="associate">Associate</option>
+                                                                        <option value="senior">Senior Architect</option>
+                                                                        <option value="principal">Principal</option>
+                                                                        <option value="partner">Strategic Partner</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className="py-4 px-4 text-center font-mono text-xs text-slate-400 font-bold">
+                                                                    ₱{rate.toLocaleString()}
+                                                                </td>
+                                                                <td className="py-4 px-5 text-right">
+                                                                    <span className="text-xs font-mono font-bold text-slate-100 whitespace-nowrap">{formatCurrency(task.estHours * rate)}</span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div className="p-6 bg-brandNavy-950/80 border-t border-brandNavy-700 space-y-4">
+                                            <span className="text-xs font-mono font-bold tracking-widest text-brandBlue-400 uppercase block">➕ Add Custom Work Deliverable</span>
+                                            <form onSubmit={addNewTask} className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                                                    <div className="md:col-span-3">
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Target Category</label>
+                                                        <select value={newTaskCategory} onChange={(e) => setNewTaskCategory(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-1.5 px-2 text-xs text-slate-200 focus:outline-none focus:border-brandBlue-500">
+                                                            <option value="MOD 0 - Diagnostics">MOD 0 - Diagnostics</option>
+                                                            <option value="MOD I - SOPs & RACI">MOD I - SOPs & RACI</option>
+                                                            <option value="MOD II - PMO & Automation">MOD II - PMO & Automation</option>
+                                                            <option value="MOD III - COO & Retainers">MOD III - COO & Retainers</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="md:col-span-3">
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">New Task / Deliverable</label>
+                                                        <input type="text" placeholder="e.g. Advanced ERP Alignment" value={newTaskDeliv} onChange={(e) => setNewTaskDeliv(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-1.5 px-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brandBlue-500" required />
+                                                    </div>
+                                                    <div className="md:col-span-3">
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">SOW Brief Description</label>
+                                                        <input type="text" placeholder="Brief workflow summary..." value={newTaskDesc} onChange={(e) => setNewTaskDesc(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-1.5 px-3 text-xs text-slate-205 placeholder-slate-650 focus:outline-none focus:border-brandBlue-505" />
+                                                    </div>
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Billing Tier</label>
+                                                        <select value={newTaskTier} onChange={(e) => setNewTaskTier(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-1.5 px-2 text-xs text-slate-205 focus:outline-none focus:border-brandBlue-505 font-mono">
+                                                            <option value="associate">Associate</option>
+                                                            <option value="senior">Senior</option>
+                                                            <option value="principal">Principal</option>
+                                                            <option value="partner">Partner (IT)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="md:col-span-1">
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-center">Hours</label>
+                                                        <input type="number" value={newTaskHours} onChange={(e) => setNewTaskHours} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-1.5 text-center text-xs text-slate-205 focus:outline-none focus:border-brandBlue-505 font-mono font-bold" />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Consultant Activities</label>
+                                                        <input type="text" placeholder="e.g. Set up custom secure folder maps..." value={newTaskActivities} onChange={(e) => setNewTaskActivities(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-2 px-3 text-xs text-slate-205 placeholder-slate-650 focus:outline-none focus:border-brandBlue-505" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Client Action Required</label>
+                                                        <input type="text" placeholder="e.g. Provide access credentials to drive..." value={newTaskExpectations} onChange={(e) => setNewTaskExpectations(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-2 px-3 text-xs text-slate-205 placeholder-slate-655 focus:outline-none focus:border-brandBlue-505" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Handover Output Asset</label>
+                                                        <input type="text" placeholder="e.g. Indexed file taxonomy folder tree..." value={newTaskOutput} onChange={(e) => setNewTaskOutput(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded py-2 px-3 text-xs text-slate-200 placeholder-slate-650 focus:outline-none focus:border-brandBlue-505" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end pt-2"><button type="submit" className="px-6 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold rounded text-xs tracking-wider uppercase transition-all flex items-center gap-1.5"><IconPlus /> Add custom task</button></div>
+                                            </form>
                                         </div>
                                     </div>
 
-                                    {/* Right 3-Phase Discovery Blueprint Column (8-Cols) */}
-                                    <div className="lg:col-span-8 flex flex-col justify-center space-y-6">
-                                        <h4 className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block mb-2">MOD 0 Tactical Execution Steps:</h4>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {/* Right Sidebar: Waterfall Delegation summary */}
+                                    <div className="xl:col-span-3 space-y-6">
+                                        <div className="bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-sm">
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-brandBlue-500/5 blur-2xl rounded-full" />
+                                            <h3 className="text-xs font-bold tracking-wider text-brandBlue-400 uppercase font-mono mb-4 flex items-center gap-2"><IconCalculator /> Internal Scoping Audit</h3>
                                             
-                                            {/* Step 1 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
-                                                <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 01</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">Discovery & Alignment</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        Virtual data room onboarding, IRL file distribution, and private 1-on-1 interviews with key operational champions.
-                                                    </p>
+                                            <div className="space-y-4 pb-6 border-b border-brandNavy-700 text-xs text-slate-200">
+                                                <div className="flex justify-between items-center"><span>Total Tasks Selected:</span><span className="font-bold font-mono bg-brandNavy-950 px-2 py-0.5 rounded">{updatedSummary.count} / {tasks.length}</span></div>
+                                                <div className="flex justify-between items-center"><span>Cumulative Effort:</span><span className="font-bold font-mono flex items-center gap-1"><IconClock /> {updatedSummary.estHours} Target Hrs</span></div>
+                                                {/* TIMELINE DISPLAYED IN THE SANDBOX SUMMARY PANEL */}
+                                                <div className="flex justify-between items-center"><span>Estimated Duration:</span><span className="font-bold font-mono text-brandBlue-400">{calculatedTimeline}</span></div>
+                                                <div className="flex justify-between items-center text-slate-555 text-[10px]"><span>Base hours (unbuffered):</span><span>{updatedSummary.rawEstHours} hrs</span></div>
+                                            </div>
+
+                                            <div className="py-4 border-b border-brandNavy-700">
+                                                <div className="flex justify-between items-center mb-1.5"><span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold">Strategic Operational Risk Contingency</span><span className="text-xs font-mono font-bold text-brandBlue-300">+{frictionBuffer}%</span></div>
+                                                <input type="range" min="0" max="30" step="5" value={frictionBuffer} onChange={(e) => setFrictionBuffer(parseInt(e.target.value))} className="w-full accent-brandBlue-400 bg-brandNavy-950 h-1 rounded-lg cursor-pointer" />
+                                                <span className="text-[9px] text-slate-555 block leading-relaxed mt-1 font-mono">Converts to "Operational Risk Contingency Reserve" on SOW.</span>
+                                            </div>
+
+                                            {/* WATERFALL DELEGATION SLIDERS */}
+                                            <div className="py-4 border-b border-brandNavy-700 space-y-4">
+                                                <h4 className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Execution Delegation Sprints</h4>
+                                                
+                                                {/* Principal to Senior */}
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] text-slate-300 font-medium font-sans">Principal ➔ Senior Architect</span>
+                                                        <span className="text-xs font-mono font-bold text-brandBlue-300">{principalToSeniorDelegate}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="100" 
+                                                        step="5"
+                                                        value={principalToSeniorDelegate} 
+                                                        onChange={(e) => setPrincipalToSeniorDelegate(parseInt(e.target.value))}
+                                                        className="w-full accent-brandBlue-400 bg-brandNavy-950 h-1 rounded-lg cursor-pointer"
+                                                    />
                                                 </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: IRL & Interview Catalog
+
+                                                {/* Senior to Associate */}
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-[10px] text-slate-300 font-medium font-sans">Senior Architect ➔ Associate</span>
+                                                        <span className="text-xs font-mono font-bold text-brandBlue-300">{seniorToAssociateDelegate}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="100" 
+                                                        step="5"
+                                                        value={seniorToAssociateDelegate} 
+                                                        onChange={(e) => setSeniorToAssociateDelegate(parseInt(e.target.value))}
+                                                        className="w-full accent-brandBlue-400 bg-brandNavy-950 h-1 rounded-lg cursor-pointer"
+                                                    />
+                                                </div>
+
+                                                {/* Post-Delegation Allocation Table */}
+                                                <div className="mt-3 space-y-1.5 text-[11px] text-slate-300 font-sans border-t border-brandNavy-750 pt-3">
+                                                    <span className="text-[9px] font-mono tracking-widest text-slate-400 uppercase block mb-1">Active Effort Allocation (Cost Rate)</span>
+                                                    <div className="flex justify-between">
+                                                        <span>Principal Strategy (₱1,500/hr):</span>
+                                                        <span className="font-bold font-mono text-slate-200">{updatedSummary.principalFinalHours} hrs</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Senior Architect (₱800/hr):</span>
+                                                        <span className="font-bold font-mono text-slate-200">{updatedSummary.seniorFinalHours} hrs</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Operations Advisor (₱350/hr):</span>
+                                                        <span className="font-bold font-mono text-slate-200">{updatedSummary.associateFinalHours} hrs</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span>Strategic IT Partner (₱1,200/hr):</span>
+                                                        <span className="font-bold font-mono text-slate-200">{updatedSummary.partnerFinalHours} hrs</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-slate-455 border-t border-brandNavy-750 pt-1.5 mt-1.5 font-bold">
+                                                        <span>Total Execution Cost:</span>
+                                                        <span className="font-mono text-rose-400">{formatCurrency(updatedSummary.internalCost)}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            {/* Step 2 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
-                                                <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 02</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">SaaS & DOLE Audits</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        On-site workspace step-timing observation, General Labor contract exposure check, and duplicative software license leak tracking.
-                                                    </p>
+                                            <div className="py-4 border-b border-brandNavy-700 space-y-1.5 text-xs">
+                                                <div className="flex justify-between"><span>Scope Net Subtotal:</span><span className="font-mono font-semibold">{formatCurrency(updatedSummary.subtotalCost)}</span></div>
+                                                {includeTax && <div className="flex justify-between text-slate-400"><span>12% Philippine VAT:</span><span className="font-mono">{formatCurrency(updatedSummary.taxValue)}</span></div>}
+                                                <div className="flex justify-between font-bold text-slate-100 pt-1.5"><span>Total Investment:</span><span className="text-brandBlue-300 font-mono font-bold">{formatCurrency(updatedSummary.totalCost)}</span></div>
+                                            </div>
+                                            
+                                            <div className="pt-4 pb-2 border-b border-brandNavy-700">
+                                                <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase block">Confidential Gross Profit ({updatedSummary.profitMarginPercent}%)</span>
+                                                <span className="text-2xl font-bold text-emerald-400 mt-1 block font-mono">{formatCurrency(updatedSummary.netProfit)}</span>
+                                            </div>
+
+                                            {/* CUSTOM SECURE RESET WORKSPACE (IFRAME-SAFE INLINE CONFIRMATION MATRIX) */}
+                                            <div className="pt-4">
+                                                {!showResetConfirm ? (
+                                                    <button 
+                                                        onClick={() => setShowResetConfirm(true)} 
+                                                        className="w-full py-2 bg-brandNavy-950 hover:bg-brandNavy-800 text-slate-400 hover:text-slate-200 text-[10px] tracking-wider font-mono font-semibold uppercase border border-brandNavy-700 rounded transition-all"
+                                                    >
+                                                        Reset All Saved Cache
+                                                    </button>
+                                                ) : (
+                                                    <div className="bg-rose-950/20 border border-rose-900/40 p-3 rounded-lg space-y-2 text-center animate-fade-in">
+                                                        <span className="text-[10px] font-mono font-bold text-rose-400 uppercase block">Confirm Complete Reset?</span>
+                                                        <p className="text-[9px] text-slate-400 leading-normal">This will wipe out all custom tasks, rates, SOW edits, and local storage backups.</p>
+                                                        <div className="flex justify-center gap-3 pt-1">
+                                                            <button 
+                                                                onClick={executeResetWorkbook} 
+                                                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-[9px] font-mono font-bold uppercase transition-all"
+                                                            >
+                                                                Yes, Reset
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setShowResetConfirm(false)} 
+                                                                className="px-3 py-1.5 bg-brandNavy-950 hover:bg-brandNavy-800 text-slate-300 rounded text-[9px] font-mono font-bold uppercase border border-brandNavy-700 transition-all"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl space-y-4 backdrop-blur-sm">
+                                            <div className="flex justify-between items-center"><h3 className="text-xs font-bold tracking-wider text-slate-300 uppercase font-mono">SOW Generator</h3><button onClick={copyToClipboard} className="px-3 py-1.5 bg-brandNavy-950 hover:bg-brandNavy-800 rounded text-xs font-bold flex items-center text-brandBlue-400 border border-brandBlue-900/40">{copied ? <IconCheckCircle /> : <IconCopy />} Copy SOW</button></div>
+                                            <div className="bg-brandNavy-950 rounded p-4 border border-brandNavy-700/80 text-[11px] text-slate-400 font-mono overflow-y-auto max-h-48 whitespace-pre-line leading-relaxed">{proposalSummaryText}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'proposal' && (
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start animate-fade-in">
+                                <div className="xl:col-span-4 bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5">
+                                    <h3 className="text-sm font-bold tracking-wider text-brandBlue-400 uppercase font-mono flex items-center gap-2"><IconEdit /> Draft Proposal Settings</h3>
+                                    <div className="space-y-4 text-xs">
+                                        {/* RESET ALL SETTING FIELDS TO bg-brandNavy-950 MATCHING THE CARD BACKGROUND PERFECTION */}
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Client Company Name</label><input type="text" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200 font-semibold focus:outline-none focus:border-brandBlue-500" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Client Representative</label><input type="text" value={clientRep} onChange={(e) => setClientRep(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200 font-semibold focus:outline-none focus:border-brandBlue-500" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Project Sponsor Role</label><input type="text" value={proposalSponsor} onChange={(e) => setProposalSponsor(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200 font-semibold focus:outline-none focus:border-brandBlue-500" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Target Start Date</label><input type="text" value={targetStartDate} onChange={(e) => setTargetStartDate(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-200 font-mono font-semibold focus:outline-none focus:border-brandBlue-505" /></div>
+                                        {/* TIMELINE FIELD IN SETTINGS (READ-ONLY AUTO SYNCED FROM CORE CALCULATOR) */}
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Calculated Timeline (Auto)</label><input type="text" value={calculatedTimeline} disabled className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-400 font-mono font-semibold cursor-not-allowed" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Pre-Diagnostic Requirements</label><textarea rows="4" value={preDiagnosticList} onChange={(e) => setPreDiagnosticList(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200 text-xs font-semibold leading-relaxed focus:outline-none focus:border-brandBlue-505" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Core SOW Objectives</label><textarea rows="3" value={proposalObjectives} onChange={(e) => setProposalObjectives(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200 resize-none text-xs font-semibold leading-relaxed focus:outline-none focus:border-brandBlue-505" /></div>
+                                    </div>
+                                    <button onClick={handlePrint} className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-400 text-slate-955 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center shadow-lg"><IconPrint className="w-4 h-4 mr-1.5" /> Print Scope Proposal</button>
+                                </div>
+
+                                <div className="xl:col-span-8 bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card font-sans font-medium">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandBlue-500 mb-8 print-card-header gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 bg-gradient-to-tr from-brandBlue-700 to-brandBlue-500 rounded flex items-center justify-center shrink-0"><IconWebsiteLogo className="w-10 h-10 text-white" /></div>
+                                            <div>
+                                                <h1 className="font-sans font-black tracking-wider text-xl uppercase text-slate-900 leading-none">KOLTHOFF <span className="text-brandBlue-600 print-accent font-black">CONSULTING</span></h1>
+                                                <span className="text-[9px] text-slate-555 tracking-widest uppercase block mt-1 font-mono font-bold leading-relaxed">Operational Architecture & Strategy</span>
+                                                {/* HIGH STATUS STATIONERY CONTACT LETTERHEAD INTEGRATION */}
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono text-slate-500 mt-2 font-semibold">
+                                                    <span className="flex items-center gap-1"><IconMail className="w-3.5 h-3.5 text-brandBlue-600 print-accent" /> contact@kolthoff-consulting.com</span>
+                                                    <span className="flex items-center gap-1"><IconGlobe className="w-3.5 h-3.5 text-brandBlue-600 print-accent" /> www.kolthoff-consulting.com</span>
                                                 </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: SaaS Overlap & Timing Maps
+                                            </div>
+                                        </div>
+                                        <div className="text-left sm:text-right font-mono text-[11px] text-slate-600 space-y-1">
+                                            <div className="text-slate-900 font-bold text-sm tracking-wide font-sans">SCOPE PROPOSAL (SOW)</div>
+                                            <div>Reference: <span className="font-bold text-slate-955">{quoteId}-DRAFT</span></div>
+                                            <div>Date Issued: {quoteDate}</div>
+                                            <div>Timeline: <span className="font-bold text-slate-955">{calculatedTimeline}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-sm border-b border-slate-250 pb-6 print-divider font-semibold">
+                                        <div className="space-y-1.5"><span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Prepared For:</span><div className="font-bold text-slate-955 text-base">{clientRep}</div><div className="text-slate-705 font-bold font-sans">{clientCompany}</div><div className="text-xs text-slate-600"><span className="font-semibold text-slate-800">Key Sponsor:</span> {proposalSponsor}</div></div>
+                                        <div className="space-y-1.5 md:text-right"><span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Prepared By:</span><div className="font-bold text-slate-955 text-base">{preparedBy}</div><div className="text-slate-550">{preparerTitle}, Kolthoff Consulting</div><div className="text-xs text-slate-400">Date: {quoteDate}</div></div>
+                                    </div>
+
+                                    <div className="mb-8"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">1. Engagement Objectives & Focus Strategy</h4><p className="text-xs text-slate-800 leading-relaxed bg-slate-50 p-4 rounded border border-slate-100 print-pill">{proposalObjectives}</p></div>
+                                    
+                                    {/* STRATEGIC LIFECYCLE ROADMAP - OPTIONAL EXPANSION MODULES GRID (ALIGNED TO LANDING PAGE SCREENSHOT WITH ELEVATED NAMES) */}
+                                    <div className="mb-8 page-break">
+                                        <div className="text-center max-w-xl mx-auto mb-6">
+                                            <span className="text-[9px] font-mono font-bold tracking-[0.2em] text-brandBlue-600 uppercase block mb-1">360° Scale-Up Lifecycle</span>
+                                            <h4 className="text-base font-sans font-bold text-slate-900 leading-tight">Optional Expansion Modules Roadmap</h4>
+                                            <p className="text-[10px] text-slate-505 leading-relaxed mt-1 font-sans">
+                                                Following your baseline Diagnostics Audit, scale-ready organizations acquire targeted execution packages in any modular configuration.
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-sans">
+                                            {/* Card MOD 0 - Diagnostics */}
+                                            <div className={`border rounded-xl p-4 flex flex-col justify-between min-h-[17.5rem] transition-all ${
+                                                activeDiag
+                                                    ? 'border-brandBlue-500 bg-brandBlue-50/20 shadow-md text-slate-900' 
+                                                    : 'border-dashed border-slate-300 bg-slate-50/30 text-slate-400 opacity-60'
+                                            }`}>
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold font-sans text-[10px] tracking-wider ${
+                                                            activeDiag ? 'bg-brandBlue-500/10 text-brandBlue-600 border border-brandBlue-200' : 'bg-slate-100 text-slate-455 border border-slate-250'
+                                                        }`}>MOD 0</div>
+                                                        <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                            activeDiag ? 'bg-brandBlue-100 text-brandBlue-700' : 'bg-slate-200 text-slate-500'
+                                                        }`}>{activeDiag ? 'ACTIVE IN SOW' : 'UPCOMING ROADMAP'}</span>
+                                                    </div>
+                                                    <h3 className={`text-xs font-bold ${activeDiag ? 'text-slate-900 font-extrabold' : 'text-slate-500'}`}>Diagnostics</h3>
+                                                    <p className="text-[10px] leading-relaxed font-semibold">
+                                                        Conduct partner-led discover interviews, trace step-shadow bottlenecks, audit DOLE labor compliant records, and prioritized risks.
+                                                    </p>
+                                                    <ul className="text-[10px] space-y-2 pt-1 font-semibold">
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'diag-2')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'diag-2')?.selected && activeDiag ? 'text-slate-800' : 'text-slate-400 font-normal'}>Discovery Stakeholder Loop</span>
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'diag-5')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'diag-5')?.selected && activeDiag ? 'text-slate-800' : 'text-slate-400 font-normal'}>Risk Feasibility Formulation</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div className={`pt-4 border-t text-[9px] font-sans font-semibold ${activeDiag ? 'border-slate-200 text-slate-555 font-bold' : 'border-slate-200/50 text-slate-400'}`}>
+                                                    Outcome: Raw leakage mapped instantly to prioritizing quick wins.
                                                 </div>
                                             </div>
 
-                                            {/* Step 3 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
+                                            {/* Card MOD I - SOPs & RACI */}
+                                            <div className={`border rounded-xl p-4 flex flex-col justify-between min-h-[17.5rem] transition-all ${
+                                                activeSOP
+                                                    ? 'border-brandBlue-500 bg-brandBlue-50/20 shadow-md text-slate-900' 
+                                                    : 'border-dashed border-slate-300 bg-slate-50/30 text-slate-400 opacity-60'
+                                            }`}>
                                                 <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 03</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">Boardroom Debrief</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        Consolidate observations into a feasibility matrix, outline immediate high-value wins, and present targets to executives.
+                                                    <div className="flex justify-between items-center">
+                                                        <div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold font-sans text-[10px] tracking-wider ${
+                                                            activeSOP ? 'bg-brandBlue-500/10 text-brandBlue-600 border border-brandBlue-200' : 'bg-slate-100 text-slate-455 border border-slate-250'
+                                                        }`}>MOD I</div>
+                                                        <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                            activeSOP ? 'bg-brandBlue-100 text-brandBlue-700' : 'bg-slate-200 text-slate-500'
+                                                        }`}>{activeSOP ? 'ACTIVE IN SOW' : 'UPCOMING ROADMAP'}</span>
+                                                    </div>
+                                                    <h3 className={`text-xs font-bold ${activeSOP ? 'text-slate-900 font-extrabold' : 'text-slate-500'}`}>SOPs & RACI</h3>
+                                                    <p className="text-[10px] leading-relaxed font-semibold">
+                                                        Establish clear functional boundaries, department org charts, DOLE-compliant handbooks, and horizontal swimlane process diagrams to safeguard institutional knowledge.
                                                     </p>
+                                                    <ul className="text-[10px] space-y-2 pt-1 font-semibold">
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'sop-1')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'sop-1')?.selected && activeSOP ? 'text-slate-800' : 'text-slate-400 font-normal'}>Org Structure & RACI Mapping</span>
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'sop-2')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'sop-2')?.selected && activeSOP ? 'text-slate-800' : 'text-slate-400 font-normal'}>Swimlane Work Process Maps</span>
+                                                        </li>
+                                                    </ul>
                                                 </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: Risk Matrix & Deck Handover
+                                                <div className={`pt-4 border-t text-[9px] font-sans font-semibold ${activeSOP ? 'border-slate-200 text-slate-555 font-bold' : 'border-slate-200/50 text-slate-400'}`}>
+                                                    Outcome: Clear reporting accountability and minimized employee turnover friction.
                                                 </div>
                                             </div>
 
+                                            {/* Card MOD II - PMO & Automation */}
+                                            <div className={`border rounded-xl p-4 flex flex-col justify-between min-h-[17.5rem] transition-all ${
+                                                activePMO
+                                                    ? 'border-brandBlue-500 bg-brandBlue-50/20 shadow-md text-slate-900' 
+                                                    : 'border-dashed border-slate-300 bg-slate-50/30 text-slate-400 opacity-60'
+                                            }`}>
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold font-sans text-[10px] tracking-wider ${
+                                                            activePMO ? 'bg-brandBlue-500/10 text-brandBlue-600 border border-brandBlue-200' : 'bg-slate-100 text-slate-455 border border-slate-250'
+                                                        }`}>MOD II</div>
+                                                        <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                            activePMO ? 'bg-brandBlue-100 text-brandBlue-700' : 'bg-slate-200 text-slate-500'
+                                                        }`}>{activePMO ? 'ACTIVE IN SOW' : 'UPCOMING ROADMAP'}</span>
+                                                    </div>
+                                                    <h3 className={`text-xs font-bold ${activePMO ? 'text-slate-900 font-extrabold' : 'text-slate-500'}`}>PMO & Automation</h3>
+                                                    <p className="text-[10px] leading-relaxed font-semibold">
+                                                        Equip your team with Swiss-standard PMO framework methodologies (HERMES 2022) and migrate manual procedures into automated Lark Suite cloud workspaces.
+                                                    </p>
+                                                    <ul className="text-[10px] space-y-2 pt-1 font-semibold">
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'pm-1')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'pm-1')?.selected && activePMO ? 'text-slate-800' : 'text-slate-400 font-normal'}>HERMES 2022 Implementation</span>
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'lark-1')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'lark-1')?.selected && activePMO ? 'text-slate-800' : 'text-slate-400 font-normal'}>Lark Workspace Provisioning</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div className={`pt-4 border-t text-[9px] font-sans font-semibold ${activePMO ? 'border-slate-200 text-slate-555 font-bold' : 'border-slate-200/50 text-slate-400'}`}>
+                                                    Outcome: Complete visibility over project portfolios and multi-department approvals.
+                                                </div>
+                                            </div>
+
+                                            {/* Card MOD III - COO & Retainers */}
+                                            <div className={`border rounded-xl p-4 flex flex-col justify-between min-h-[17.5rem] transition-all ${
+                                                activeGov
+                                                    ? 'border-brandBlue-500 bg-brandBlue-50/20 shadow-md text-slate-900' 
+                                                    : 'border-dashed border-slate-300 bg-slate-50/30 text-slate-400 opacity-60'
+                                            }`}>
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold font-sans text-[10px] tracking-wider ${
+                                                            activeGov ? 'bg-brandBlue-500/10 text-brandBlue-600 border border-brandBlue-200' : 'bg-slate-100 text-slate-455 border border-slate-250'
+                                                        }`}>MOD III</div>
+                                                        <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                                                            activeGov ? 'bg-brandBlue-100 text-brandBlue-700' : 'bg-slate-200 text-slate-500'
+                                                        }`}>{activeGov ? 'ACTIVE IN SOW' : 'UPCOMING ROADMAP'}</span>
+                                                    </div>
+                                                    <h3 className={`text-xs font-bold ${activeGov ? 'text-slate-900 font-extrabold' : 'text-slate-500'}`}>COO & Retainers</h3>
+                                                    <p className="text-[10px] leading-relaxed font-semibold">
+                                                        Establish continuous, 360° strategic governance with our Fractional COO advisory programs or fully managed cybersecurity SLA support infrastructures.
+                                                    </p>
+                                                    <ul className="text-[10px] space-y-2 pt-1 font-semibold">
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.category === 'MOD III - COO & Retainers' && t.id.startsWith('coo-') && t.selected) ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.category === 'MOD III - COO & Retainers' && t.id.startsWith('coo-') && t.selected) && activeGov ? 'text-slate-800' : 'text-slate-400 font-normal'}>Fractional COO Board Chairs</span>
+                                                        </li>
+                                                        <li className="flex items-center gap-2">
+                                                            {tasks.find(t => t.id === 'msp-1')?.selected ? <IconCheckCircle /> : <span className="text-slate-300">○</span>}
+                                                            <span className={tasks.find(t => t.id === 'msp-1')?.selected && activeGov ? 'text-slate-800' : 'text-slate-400 font-normal'}>IT & Cyber Retainers (Strategic Partner)</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                                <div className={`pt-4 border-t text-[9px] font-sans font-semibold ${activeGov ? 'border-slate-200 text-slate-555 font-bold' : 'border-slate-200/50 text-slate-400'}`}>
+                                                    Outcome: CEO relief through continuous executive execution tracking and tech backups.
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                </div>
-                            </div>
+                                    <div className="mb-8"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">3. Pre-Diagnostic Information Requirements</h4><div className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-5 rounded border border-slate-150 print-pill whitespace-pre-wrap font-semibold font-sans">{preDiagnosticList}</div></div>
 
-                            {/* SUBSEQUENT EXPANSION PATHWAYS (MOD I, II, AND III CARD GRID) */}
-                            <div className="space-y-8">
-                                <div className="text-center md:text-left space-y-1">
-                                    <span className="text-[10px] font-mono font-bold tracking-widest text-brandBlue-400 uppercase">Subsequent Scaling Tracks</span>
-                                    <h4 className="text-xl font-bold font-serif text-white">Post-Audit Strategic Modules</h4>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {/* MOD I */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD I</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Structural SOP & RACI Foundations</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Establish clear functional boundaries, department org charts, horizontal process swimlanes, and DOLE-aligned company codes of conduct acting as litigation shields.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Clean accountability and minimized employee turnover friction.
+                                    <div className="mb-8 page-break">
+                                        <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4">4. Detailed Scoping Particulars & Action Items</h4>
+                                        <div className="space-y-5">
+                                            {tasks.filter(t => t.selected).map((task) => {
+                                                const details = task.scopeDetails || { activities: "Execute planned task steps and deliverable milestones in coordination with designated managers.", expectations: "Provide timely inputs, process data access, and constructive feedback on drafted materials.", output: "Finished deliverable asset aligned with custom SOW scope specifications." };
+                                                return (
+                                                    <div key={task.id} className="border border-slate-200 rounded-lg p-5 bg-slate-50/40 shadow-sm print-pill">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 mb-3 gap-2">
+                                                            <h5 className="font-bold text-sm text-brandBlue-600 print-accent">{task.deliverable}</h5>
+                                                            <span className="text-[9px] font-mono uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md self-start print-pill font-bold">{task.category}</span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-600 leading-relaxed mb-4">{task.description}</p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 text-[11px] font-semibold text-slate-800">
+                                                            <div className="space-y-1"><span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Consultant Execution Tasks:</span><p className="leading-relaxed">{details.activities}</p></div>
+                                                            <div className="space-y-1"><span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Client Action Required:</span><p className="leading-relaxed">{details.expectations}</p></div>
+                                                            <div className="space-y-1"><span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Expected Handover Asset:</span><p className="leading-relaxed">{details.output}</p></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 
-                                    {/* MOD II */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD II</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Enterprise PMO & Tech Automation</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Equip your project leads with Swiss HERMES PMO gating and migrate slow legacy procedures into automated, approvals-enabled Lark Suite team collaboration workspaces.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Total portfolio transparency and automated approval workflows.
-                                        </div>
-                                    </div>
-
-                                    {/* MOD III */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD III</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Fractional COO & Infrastructure SLA</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Lock in continuous board-level operational oversight paired with managed cyber-security monitoring retainers driven by strategic partner infrastructure.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Direct executive relief and active threat protection.
+                                    <div className="pt-8 border-t border-slate-200 print-divider text-xs">
+                                        <div className="grid grid-cols-2 gap-12 sm:gap-24">
+                                            <div className="space-y-12 flex flex-col justify-between">
+                                                <p className="text-slate-655 font-bold font-sans">Scope Confirmed & Accepted by:</p>
+                                                <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5 font-sans">
+                                                    <div className="font-bold text-slate-900">{clientRep}</div>
+                                                    <div className="text-slate-505">Representative, {clientCompany}</div>
+                                                    <div className="text-slate-400">Date: ________________________</div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-12 flex flex-col justify-between">
+                                                <p className="text-slate-655 font-bold font-sans">Submitted by:</p>
+                                                <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5">
+                                                    <div className="font-bold text-slate-900 font-sans">{preparedBy}</div>
+                                                    <div className="text-slate-550">{preparerTitle}, Kolthoff Consulting</div>
+                                                    <div className="text-slate-400">Date: {quoteDate}</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        )}
 
-                        </div>
-                    </section>
-
-                    {/* Simple Mailto Call to Action Section (Sophisticated LIGHT Section) */}
-                    <section id="book" className="py-24 bg-slate-50 text-slate-900 font-semibold">
-                        <div className="max-w-4xl mx-auto px-6">
-                            <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-2xl shadow-xl relative text-center">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                                
-                                <div className="max-w-2xl mx-auto space-y-4 mb-8">
-                                    <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Secure Channel</span>
-                                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book Your Operational Diagnostics Audit</h3>
-                                    <p className="text-sm text-slate-600 leading-relaxed font-sans">
-                                        We protect client data privacy and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
-                                    </p>
+                        {view === 'quotation' && (
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start animate-fade-in">
+                                <div className="xl:col-span-4 bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5">
+                                    <h3 className="text-sm font-bold tracking-wider text-brandBlue-400 uppercase font-mono flex items-center gap-2"><IconEdit /> Customize Quotation Fields</h3>
+                                    <div className="space-y-4 text-xs font-sans font-medium">
+                                        <div className="flex items-center justify-between bg-brandNavy-950 border border-brandNavy-700 p-3 rounded-lg">
+                                            <span className="text-[10px] font-mono tracking-wider uppercase text-slate-400 font-bold">Include 12% PH VAT</span>
+                                            <button onClick={() => setIncludeTax(!includeTax)} className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all duration-300 ${includeTax ? 'bg-brandBlue-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}><span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ${includeTax ? 'translate-x-4' : 'translate-x-0'}`} /></button>
+                                        </div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Client Company Name</label><input type="text" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200" /></div>
+                                        <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Client Representative</label><input type="text" value={clientRep} onChange={(e) => setClientRep(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-slate-200" /></div>
+                                        <div>
+                                            <label className="text-[10px] font-mono text-brandBlue-400 uppercase block mb-1 font-bold">Annual Inaction Leakage</label>
+                                            <div className="relative">
+                                                <span className="absolute left-2.5 top-2.5 text-slate-555 font-mono text-xs">₱</span>
+                                                <input type="number" value={annualInactionCost} onChange={(e) => setAnnualInactionCost(Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 pl-7 text-xs text-slate-200 font-mono font-medium" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Quote ID</label><input type="text" value={quoteId} onChange={(e) => setQuoteId(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-200 font-mono" /></div>
+                                            <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Quote Date</label><input type="text" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-200 font-mono" /></div>
+                                        </div>
+                                    </div>
+                                    <button onClick={handlePrint} className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-400 text-slate-950 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center"><IconPrint className="w-4 h-4 mr-1.5" /> Print or Save as PDF</button>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <a 
-                                        href={mailtoLink}
-                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5 font-sans"
-                                    >
-                                        <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
-                                    </a>
-                                    <p className="text-xs text-slate-550 font-medium font-sans font-semibold">
-                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
-                                    </p>
+                                {/* Right Side: Stationery Client Quotation Sheet */}
+                                <div className="xl:col-span-8 bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card font-sans font-medium">
+                                    
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandBlue-500 mb-8 print-card-header gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 bg-gradient-to-tr from-brandBlue-700 to-brandBlue-500 rounded flex items-center justify-center shrink-0"><IconWebsiteLogo className="w-10 h-10 text-white" /></div>
+                                            <div>
+                                                <h1 className="font-sans font-black tracking-wider text-xl uppercase text-slate-900 leading-none">KOLTHOFF <span className="text-brandBlue-600 print-accent font-black">CONSULTING</span></h1>
+                                                <span className="text-[9px] text-slate-500 tracking-widest uppercase block mt-1 font-mono font-bold">Operational Architecture & Strategy</span>
+                                                {/* HIGH STATUS STATIONERY CONTACT LETTERHEAD INSERTION */}
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono text-slate-500 mt-2 font-semibold">
+                                                    <span className="flex items-center gap-1"><IconMail className="w-3.5 h-3.5 text-brandBlue-600 print-accent" /> contact@kolthoff-consulting.com</span>
+                                                    <span className="flex items-center gap-1"><IconGlobe className="w-3.5 h-3.5 text-brandBlue-600 print-accent" /> www.kolthoff-consulting.com</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-left sm:text-right font-mono text-[11px] text-slate-600 space-y-1">
+                                            <div className="text-slate-900 font-bold text-sm tracking-wide font-sans">OFFICIAL QUOTATION</div>
+                                            <div>Reference: <span className="font-bold text-slate-955">{quoteId}</span></div>
+                                            <div>Date Issued: {quoteDate}</div>
+                                            <div>Validity: {quoteValidity}</div>
+                                            <div>Timeline: <span className="font-bold text-slate-955">{calculatedTimeline}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-sm font-sans font-medium">
+                                        <div className="space-y-1.5"><span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Prepared For:</span><div className="font-bold text-slate-955 text-base">{clientRep}</div><div className="text-slate-705 font-semibold font-sans">{clientCompany}</div></div>
+                                        <div className="space-y-1.5 md:text-right"><span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Prepared By:</span><div className="font-bold text-slate-955 text-base">{preparedBy}</div><div className="text-slate-705 font-semibold text-xs">{preparerTitle}</div></div>
+                                    </div>
+
+                                    <div className="text-xs text-slate-505 mb-6 italic leading-relaxed font-sans">
+                                        We are pleased to submit our formal scope proposal and flat-rate pricing estimates for the operational and systemic optimization of your organization's workflows:
+                                    </div>
+
+                                    {/* Scope Itemized Table (Lump-sum; No individual prices shown) */}
+                                    <div className="border border-slate-200 rounded-lg overflow-hidden mb-8 print-divider font-sans">
+                                        <table className="w-full text-left border-collapse text-xs table-fixed font-sans">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-mono text-[9px] tracking-wider font-bold font-sans font-extrabold">
+                                                    <th className="py-3 px-4 w-[30%]">Service Category</th>
+                                                    <th className="py-3 px-4 w-[70%]">SOW Deliverables & Objectives</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-medium">
+                                                {tasks.filter(t => t.selected).map((task) => {
+                                                    return (
+                                                        <tr key={task.id}>
+                                                            <td className="py-3 px-4 align-top font-bold text-slate-755 text-[10px] uppercase font-sans">
+                                                                {task.tier === 'partner' ? 'Strategic Partner Managed' : task.category}
+                                                            </td>
+                                                            <td className="py-3 px-4 align-top text-slate-800"><div className="font-bold text-slate-900 font-sans">{task.deliverable}</div><div className="text-[10px] text-slate-505 mt-0.5 leading-relaxed font-sans">{task.description}</div></td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Quote Totals block */}
+                                    <div className="flex flex-col sm:flex-row sm:justify-between items-end gap-6 py-6 border-t border-b border-slate-200 mb-8 print-divider text-sm bg-slate-50/50 p-4 rounded-xl font-semibold">
+                                        <div className="text-xs text-slate-555 max-w-md leading-relaxed text-left font-sans font-medium">
+                                            <strong className="text-slate-700 block mb-1 font-bold font-sans">Fixed Flat-Rate Guarantee:</strong> All pricing is flat-rate and outcome-driven, ensuring zero scope-creep modifications or hourly calculation overruns.
+                                            
+                                            {frictionBuffer > 0 && (
+                                                <div className="mt-2 text-slate-555 text-[10px] font-sans">
+                                                    * Grand total includes a built-in <strong className="text-slate-700 font-sans font-bold">+{frictionBuffer}% Operational Risk Contingency Reserve</strong> to cover potential timeline and requirements variance during client discovery sprint loops.
+                                                </div>
+                                            )}
+
+                                            <div className="mt-4 pt-3 border-t border-slate-200"><strong className="text-brandBlue-600 print-accent block mb-1 uppercase tracking-wider text-[10px] font-mono font-bold font-sans">B2B Financial ROI Projection:</strong><span className="text-xs text-slate-755 leading-normal">Estimated Annual Corporate Leakage: <strong className="text-slate-900 font-mono font-bold">{formatCurrency(annualInactionCost)}</strong>. Expected Year 1 Profit Recovery: <strong className="text-emerald-600 font-mono font-bold">{formatCurrency(updatedSummary.netFirstYearSavings)}</strong> (ROI of <strong className="text-emerald-600 font-mono font-bold">{updatedSummary.projectROI}%</strong>).</span></div>
+                                        </div>
+                                        <div className="text-right space-y-1.5 shrink-0 min-w-[250px] border-l border-slate-200 pl-6 flex flex-col justify-center">
+                                            <div className="flex justify-between items-center text-slate-605 font-mono text-xs mb-1"><span>Estimated Duration:</span><span className="font-bold text-slate-900">{calculatedTimeline}</span></div>
+                                            <div className="flex justify-between items-center text-xs text-slate-605 border-t border-slate-200 pt-2 font-mono"><span>Scope Net Subtotal:</span><span className="font-bold text-slate-900">{formatCurrency(updatedSummary.subtotalCost)}</span></div>
+                                            {includeTax && <div className="flex justify-between items-center text-xs text-slate-500 font-mono"><span>Philippine VAT (12%):</span><span className="font-bold">{formatCurrency(updatedSummary.taxValue)}</span></div>}
+                                            <div className="flex justify-between items-center text-base font-bold text-slate-955 pt-2 border-t border-slate-200"><span>Total Investment:</span><span className="text-brandBlue-600 print-accent text-lg font-serif font-black">{formatCurrency(updatedSummary.totalCost)}{updatedSummary.isRetainerOnly && " / Month"}</span></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Milestone Billing Grid */}
+                                    <div className="mb-8 font-semibold">
+                                        <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3 font-sans">Structured Billing Schedule</h4>
+                                        
+                                        {/* RETAINER PORTION RUNNING CONCURRENTLY */}
+                                        {retainerCostPart > 0 && (
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 print-pill mb-4">
+                                                <div className="flex justify-between items-center font-bold text-slate-800 text-sm">
+                                                    <span>MOD III - Ongoing Monthly Retainer Service</span>
+                                                    <span className="text-brandBlue-600 print-accent font-mono font-bold">{formatCurrency(retainerCostPart)} / Month</span>
+                                                </div>
+                                                <p className="text-[11px] text-slate-555 mt-2 leading-relaxed">
+                                                    This operational service covers continuous fractional COO governance and partner-managed network SLA retainers. Billing is conducted flat-rate at the beginning of each active service month with a defined initial commitment period of <strong>six (6) months</strong>.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* PROJECT-BASED MODULE BILLING PIPELINE */}
+                                        {projectCostPart > 0 && (
+                                            <div>
+                                                {/* CASE A: ONLY DIAGNOSTICS (MOD 0) SELECTED */}
+                                                {!activeSOP && !activePMO ? (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans font-medium">
+                                                        <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                                                            <div className="font-bold text-slate-800 font-sans font-semibold">1. MOD 0 Kickoff & Mobilization (50%)</div>
+                                                            <span className="font-mono text-brandBlue-600 print-accent font-bold mt-1 block">{formatCurrency(projectCostPart * 0.5)}</span>
+                                                        </div>
+                                                        <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                                                            <div className="font-bold text-slate-800 font-sans font-semibold">2. MOD 0 Handover & Boardroom Debrief (50%)</div>
+                                                            <span className="font-mono text-brandBlue-600 print-accent font-bold mt-1 block">{formatCurrency(projectCostPart * 0.5)}</span>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    /* CASE B: MULTI-MODULE ENGAGEMENT (MOD 0 + MOD I / MOD II) */
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-sans font-medium">
+                                                        <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                                                            <div className="font-bold text-slate-800 font-sans font-semibold">1. MOD 0 Mobilization & Discovery (30%)</div>
+                                                            <span className="font-mono text-brandBlue-600 print-accent font-bold mt-1 block">{formatCurrency(projectCostPart * 0.3)}</span>
+                                                        </div>
+                                                        <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                                                            <div className="font-bold text-slate-800 font-sans font-semibold">2. MOD I SOP & RACI Handover (40%)</div>
+                                                            <span className="font-mono text-brandBlue-600 print-accent font-bold mt-1 block">{formatCurrency(projectCostPart * 0.4)}</span>
+                                                        </div>
+                                                        <div className="p-3 bg-slate-50 rounded border border-slate-200">
+                                                            <div className="font-bold text-slate-800 font-sans font-semibold">3. MOD II Systems Training Sign-off (30%)</div>
+                                                            <span className="font-mono text-brandBlue-600 print-accent font-bold mt-1 block">{formatCurrency(projectCostPart * 0.3)}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Standard terms of service */}
+                                    <div className="text-[9px] text-slate-555 space-y-2 pb-6 border-b border-slate-200 mb-8 print-divider leading-relaxed">
+                                        <strong className="text-slate-700 block text-[10px] uppercase font-mono font-bold font-sans font-semibold font-bold font-sans font-extrabold">Standard Professional Terms</strong>
+                                        <p>1. <strong>Scope of Services & Scope Variations:</strong> Services are strictly limited to the SOW items selected. Any modifications requested by the Client shall require a signed Change Order specifying additional hours and timeline extensions.</p>
+                                        <p>2. <strong>Client Cooperation & Operational Timelines:</strong> Project timelines remain suspended if critical data dependencies or stakeholder calendars are delayed by the Client by more than 5 business days.</p>
+                                        <p>3. <strong>Professional Compensation, Taxes, and Late Payments:</strong> Total professional fees are ex-VAT. Invoice settlement is required within seven (7) business days of receipt.</p>
+                                        <p>4. <strong>Intellectual Property Rights:</strong> Upon receipt of full and final payment, the Client shall own all custom playbooks, handbooks, and process maps drafted specifically for this engagement.</p>
+                                        <p>5. <strong>Strategic Partner Managed IT Clause:</strong> Continuous cybersecurity, endpoint monitoring, network audits, and IT infrastructure SLA operations under MOD III - COO & Retainers are executed and maintained by Kolthoff Consulting's authorized strategic technology partner under direct principal supervision, governed strictly under our master corporate Service Level Agreement (SLA).</p>
+                                        <p>6. <strong>Limitation of Liability & Operational Indemnity:</strong> In no event shall Kolthoff Consulting's liability exceed the total fees paid by the Client under this quotation.</p>
+                                        <p>7. <strong>Dispute Resolution & Jurisdiction:</strong> Disputes arising from this contract shall fall under the exclusive jurisdiction of the courts of Taytay, Rizal, Calabarzon.</p>
+                                        <div className="mt-4 pt-3 border-t border-slate-100">
+                                            <strong className="text-slate-700 block text-[10px] uppercase font-mono font-bold font-sans font-semibold font-bold font-sans font-extrabold">Settlement & Bank Details</strong>
+                                            <div className="ml-4 pl-3 border-l-2 border-brandBlue-500 font-mono text-[9px] text-slate-755 space-y-0.5 bg-slate-50 py-1.5 rounded">
+                                                <div>Bank Name: <strong>BDO Unibank Inc.</strong></div>
+                                                <div>Account Name: <strong>Reinhard Ludwig A. Kolthoff</strong></div>
+                                                <div>Account Number: <strong>0039 5019 0761</strong></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-8 text-xs font-sans font-semibold">
+                                        <div className="grid grid-cols-2 gap-12 sm:gap-24">
+                                            <div className="space-y-12 flex flex-col justify-between">
+                                                <p className="text-slate-655 font-bold font-sans">Approved and Accepted by:</p>
+                                                <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5 font-sans">
+                                                    <div className="font-bold text-slate-900">{clientRep}</div>
+                                                    <div className="text-slate-505">Representative, {clientCompany}</div>
+                                                    <div className="text-slate-400">Date: ________________________</div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-12 flex flex-col justify-between">
+                                                <p className="text-slate-655 font-bold font-sans">Submitted by:</p>
+                                                <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5">
+                                                    <div className="font-bold text-slate-900 font-sans">{preparedBy}</div>
+                                                    <div className="text-slate-550">{preparerTitle}, Kolthoff Consulting</div>
+                                                    <div className="text-slate-400">Date: {quoteDate}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </section>
-
-                    {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-555 text-xs">
-                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-                            
-                            <div className="space-y-2 text-center md:text-left font-sans font-medium">
-                                <div className="flex items-center justify-center md:justify-start gap-2">
-                                    <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
-                                    <span className="font-sans font-extrabold text-sm uppercase text-slate-300">
-                                        KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
-                                    </span>
-                                </div>
-                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-500">
-                                    Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
-                                    © 2026 Kolthoff Consulting. All rights reserved.
-                                </p>
-                            </div>
-
-                            <div className="space-y-1.5 text-center md:text-right font-sans font-medium font-semibold">
-                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
-                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
-                                    <IconMail className="w-3.5 h-3.5" /> 
-                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-medium font-sans font-semibold">contact@kolthoff-consulting.com</a>
-                                </div>
-                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
-                                    <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
-                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-medium font-sans font-semibold">www.kolthoff-consulting.com</a>
-                                </div>
-                            </div>
-
-                        </div>
-                    </footer>
-
+                        )}
+                    </div>
                 </div>
             );
         }
 
-        // Render the public landing page in the DOM target
+        // Render the virtual DOM mount standard
         const root = ReactDOM.createRoot(document.getElementById("root"));
-        root.render(<App />);
+        root.render((<App />));
     </script>
 </body>
 </html>
