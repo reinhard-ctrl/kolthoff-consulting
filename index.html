@@ -131,7 +131,7 @@
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
         const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
         const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
         const IconCalculator = ({ className }) => (
@@ -158,13 +158,46 @@
             const publicCalculatedChaos = useMemo(() => {
                 const totalMonthlyPayroll = teamSize * avgMonthlySalary;
                 const avgHourlyRate = avgMonthlySalary / 160;
-                const monthlyTurnoverLoss = totalMonthlyPayroll * 0.12;
-                const monthlyInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate);
-                const annualChaosTotal = Math.round((monthlyTurnoverLoss + monthlyInefficiencyLoss) * 12);
-                const firstYearROIPercent = Math.round(((annualChaosTotal - 185000) / 185000) * 100);
+                
+                // 12% baseline frictional recruitment/onboarding loss per annum
+                const annualTurnoverLoss = Math.round(totalMonthlyPayroll * 0.12 * 12);
+                // System friction hours wasted per year
+                const annualInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate * 12);
+                
+                const annualChaosTotal = annualTurnoverLoss + annualInefficiencyLoss;
+                const dailyChaosBleed = Math.round(annualChaosTotal / 365);
+                const hourlyChaosBleed = exactHourBleed(annualChaosTotal);
 
-                return { annualChaosTotal, firstYearROIPercent, monthlyTurnoverLoss, monthlyInefficiencyLoss };
+                // Invisible "Chaos Tax" percentage on total payroll overhead
+                const annualPayrollOverhead = totalMonthlyPayroll * 12;
+                const chaosTaxRate = Math.round((annualChaosTotal / annualPayrollOverhead) * 100);
+                const workforceEfficiency = 100 - chaosTaxRate;
+
+                // Lost Opportunity Equivalents (B2B Visceral Assets)
+                const seniorDeveloperSalary = 80000 * 12; // ₱80k per month + overhead
+                const lostFTEEquivalent = Math.round((annualChaosTotal / seniorDeveloperSalary) * 10) / 10;
+                const primeOfficeRent = 120000; // ₱120k monthly rent
+                const lostOfficeRentMonths = Math.round(annualChaosTotal / primeOfficeRent);
+                const macbookProCost = 140000; // Premium corporate hardware
+                const lostWorkstations = Math.round(annualChaosTotal / macbookProCost);
+
+                return { 
+                    annualChaosTotal, 
+                    dailyChaosBleed, 
+                    hourlyChaosBleed, 
+                    chaosTaxRate, 
+                    workforceEfficiency,
+                    lostFTEEquivalent,
+                    lostOfficeRentMonths,
+                    lostWorkstations,
+                    annualTurnoverLoss,
+                    annualInefficiencyLoss
+                };
             }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
+
+            function exactHourBleed(annual) {
+                return Math.round(annual / (365 * 8)); // Assumes 8 active business hours per day
+            }
 
             // Direct mail link generator with custom inquiry body - simplified email template
             const mailtoLink = useMemo(() => {
@@ -196,7 +229,7 @@ Best regards,`);
                         window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
                     }
                 }
-            }, [publicCalculatedChaos.firstYearROIPercent]);
+            }, [publicCalculatedChaos.workforceEfficiency]);
 
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
@@ -240,7 +273,7 @@ Best regards,`);
                                     We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
+                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Audit Your Financial Waste <IconArrowRight />
                                     </a>
                                     <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -249,7 +282,7 @@ Best regards,`);
                                 </div>
                             </div>
 
-                            {/* CORE PARTNERSHIP PHILOSOPHY - ACCENT TRUTH-MODE ENHANCEMENT */}
+                            {/* CORE PARTNERSHIP PHILOSOPHY */}
                             <div className="lg:col-span-5 bg-brandNavy-900/90 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
                                 <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
                                     <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
@@ -271,7 +304,7 @@ Best regards,`);
                         </div>
                     </section>
 
-                    {/* Cost of Chaos Assessment Tool */}
+                    {/* Cost of Chaos Assessment Section */}
                     <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -282,12 +315,14 @@ Best regards,`);
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
-                                <div className="lg:col-span-6 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                                
+                                {/* Left Column: Inputs & Settings Sliders + Anchor Note inside a single unified container */}
+                                <div className="lg:col-span-5 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
                                     <div className="space-y-6">
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-700 font-bold flex items-center gap-1.5">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconTarget /> Total Personnel (FTE)
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{teamSize} Employees</span>
@@ -304,7 +339,7 @@ Best regards,`);
 
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-705 font-bold flex items-center gap-1.5">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-705 font-bold flex items-center gap-1.5">
                                                     <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
@@ -322,7 +357,7 @@ Best regards,`);
 
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-wider text-slate-700 font-bold flex items-center gap-1.5">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconClock /> Avg. Delay per Staff Weekly
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
@@ -338,57 +373,102 @@ Best regards,`);
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-sans font-medium">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
                                         <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
                                 </div>
 
-                                <div className="lg:col-span-6 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <IconTrendingDown />
-                                            <span className="text-xs font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Leakage</span>
-                                        </div>
-                                        <span className="text-4xl sm:text-5xl font-serif font-black text-white leading-none block">
-                                            {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
-                                        </span>
-                                        <div className="mt-6 space-y-3.5 border-b border-brandNavy-700/80 pb-6 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light font-medium">Frictional Turnover Loss:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyTurnoverLoss * 12)} / year</span>
+                                {/* Right Column: High-Impact calculations and B2B equivalents (Single Card - No duplication) */}
+                                <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 sm:p-10 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full" />
+                                    
+                                    <div className="space-y-8 z-10 w-full">
+                                        
+                                        {/* Row 1: Estimated Annual capital waste */}
+                                        <div className="border-b border-brandNavy-800 pb-6">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <IconTrendingDown />
+                                                <span className="text-[10px] font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Capital Waste</span>
                                             </div>
-                                            {/* SYSTEM INEFFICIENCY LEAKAGE - LABEL & VALUE STANDARDIZED */}
-                                            <div className="flex justify-between">
-                                                <span className="text-slate-400 font-light font-medium">System Inefficiency Leakage:</span>
-                                                <span className="text-slate-100 font-semibold font-mono">{formatCurrency(publicCalculatedChaos.monthlyInefficiencyLoss * 12)} / year</span>
-                                            </div>
+                                            <span className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-white leading-none block">
+                                                {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-light block mt-3 leading-relaxed">
+                                                This represents direct capital lost through cumulative daily process bottlenecks, software seat duplication, and regulatory compliance frictions.
+                                            </span>
                                         </div>
-                                    </div>
 
-                                    <div className="pt-6 space-y-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <IconTrendingUp />
-                                            <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400 uppercase">Diagnostics Audit ROI Projection</span>
+                                        {/* Row 2: Invisible "Chaos Tax" Gauge */}
+                                        <div className="bg-brandNavy-950/80 p-5 rounded-xl border border-brandNavy-800 space-y-3">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase font-bold">Invisible "Chaos Tax" Rate</span>
+                                                <span className="text-rose-400 font-mono font-bold">{publicCalculatedChaos.chaosTaxRate}% of Payroll Overhead</span>
+                                            </div>
+                                            
+                                            {/* Glowing Progress Gauge */}
+                                            <div className="w-full bg-brandNavy-800 rounded-full h-3.5 overflow-hidden flex">
+                                                <div 
+                                                    style={{ width: `${publicCalculatedChaos.workforceEfficiency}%` }} 
+                                                    className="bg-brandBlue-500 h-full transition-all duration-300"
+                                                    title={`Workforce Efficiency: ${publicCalculatedChaos.workforceEfficiency}%`}
+                                                />
+                                                <div 
+                                                    style={{ width: `${publicCalculatedChaos.chaosTaxRate}%` }} 
+                                                    className="bg-rose-500 h-full transition-all duration-300"
+                                                    title={`Chaos Waste: ${publicCalculatedChaos.chaosTaxRate}%`}
+                                                />
+                                            </div>
+
+                                            <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                                                <span>Payroll Effectiveness: {publicCalculatedChaos.workforceEfficiency}%</span>
+                                                <span>Friction Loss: {publicCalculatedChaos.chaosTaxRate}%</span>
+                                            </div>
                                         </div>
-                                        
-                                        <div 
-                                            id="math-roi" 
-                                            className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/50 text-[11px] font-mono text-slate-400 min-h-[50px] flex items-center justify-center text-center font-semibold"
-                                        >
-                                            {"$$\\text{ROI} = \\frac{\\text{Chaos Leakage} - \\text{Audit Fee}}{\\text{Audit Fee}} \\times 100 \\approx +" + publicCalculatedChaos.firstYearROIPercent + "\\%$$"}
+
+                                        {/* Row 3: Opportunity Equivalencies (Lost Assets) */}
+                                        <div className="space-y-3">
+                                            <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Annual Loss Equivalents:</span>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {/* Card A: Headcount */}
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostFTEEquivalent}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1">
+                                                        Fully funded senior staff members performing with 0% productive output.
+                                                    </span>
+                                                </div>
+
+                                                {/* Card B: Rent */}
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostOfficeRentMonths} Months
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1">
+                                                        Prime executive office space rental wasted in central BGC/Ortigas hubs.
+                                                    </span>
+                                                </div>
+
+                                                {/* Card C: Hardware */}
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostWorkstations}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1">
+                                                        Top-tier corporate MacBook Pro workstations lost to administrative friction.
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        
-                                        <p className="text-xs text-slate-300 leading-relaxed font-light font-sans font-semibold">
-                                            A standard **Operational Diagnostics Audit** identifies and maps these leakage sources, giving you the exact blueprint to recover these lost margins in Year 1.
-                                        </p>
+
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (MERGED OPERATIONAL DIAGNOSTICS & MODULE ECOSYSTEM SECTIONS) */}
+                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (1-ROW MODULE ALIGNMENT MIRRORING THE SOW PROPOSAL TEMPLATE) */}
                     <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
                         <div className="max-w-7xl mx-auto px-6 space-y-16">
                             
@@ -397,140 +477,138 @@ Best regards,`);
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Every strategic partnership begins with our high-velocity Diagnostics Audit (MOD 0). By exposing workflow leaks and compliance exposures, we design the exact blueprints that feed into subsequent scale foundations, lark automations, and fractional governance modules.
+                                    Our operational partnership is fully integrated. From baseline Diagnostics (MOD 0) through ongoing Retainers (MOD III), acquire targeted execution packages mapped to your corporate scale requirements.
                                 </p>
                             </div>
 
-                            {/* MODULE 0: FLAGSHIP DIAGNOSTICS AUDIT & 3-PHASE DISCOVERY ENGINE (FEATURED MASTER CARD) */}
-                            <div className="bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 sm:p-10 rounded-2xl shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full" />
+                            {/* 4-CARD MODULAR ROADMAP LAYOUT (1 ROW ALIGNMENT SIMILAR TO WORKBOOK PROPOSAL) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
                                 
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-                                    
-                                    {/* Left Module Spec Column (4-Cols) */}
-                                    <div className="lg:col-span-4 flex flex-col justify-between space-y-6 border-b lg:border-b-0 lg:border-r border-brandNavy-700/60 pb-8 lg:pb-0 lg:pr-8">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD 0</div>
-                                                <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 font-bold uppercase">3 - 4 Weeks</span>
-                                            </div>
-                                            <h3 className="text-2xl font-bold font-serif text-white">Operational Diagnostics Audit</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                A mandated, concentrated diagnostic sprint. We analyze step-timing bottleneck frictions, run the SaaS License Overlap Rationalization, and evaluate local DOLE HR contract compliancy to immediately arrest operational capital leaks.
-                                            </p>
+                                {/* MOD 0 CARD */}
+                                <div className="border border-brandBlue-500 bg-brandBlue-50/10 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all shadow-md">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <div className="w-14 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center font-bold text-[10px] tracking-wider text-brandBlue-400 border border-brandBlue-200/20">MOD 0</div>
+                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brandBlue-100 text-brandBlue-700">1 - 2 Weeks</span>
                                         </div>
-                                        <div className="bg-brandNavy-950/80 p-4 rounded-xl border border-brandNavy-700/40 text-[11px] text-slate-400 font-sans leading-relaxed">
-                                            <strong className="text-slate-200 block mb-1">Target Handover Assets:</strong>
-                                            B2B Operational Risk Matrix, Boardroom presentation, and verified Year-1 ROI scoping blueprints.
-                                        </div>
+                                        <h3 className="text-base font-bold text-white font-serif">Operational Diagnostics Audit</h3>
+                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
+                                            A mandated discovery sprint mapping your baseline organizational friction.
+                                        </p>
+                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Stakeholder Discovery Loop</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>SaaS Stack overlap Audit</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>DOLE compliance analysis</span>
+                                            </li>
+                                        </ul>
                                     </div>
-
-                                    {/* Right 3-Phase Discovery Blueprint Column (8-Cols) */}
-                                    <div className="lg:col-span-8 flex flex-col justify-center space-y-6">
-                                        <h4 className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block mb-2">MOD 0 Tactical Execution Steps:</h4>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                            
-                                            {/* Step 1 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
-                                                <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 01</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">Discovery & Alignment</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        Virtual data room onboarding, IRL file distribution, and private 1-on-1 interviews with key operational champions.
-                                                    </p>
-                                                </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: IRL & Interview Catalog
-                                                </div>
-                                            </div>
-
-                                            {/* Step 2 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
-                                                <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 02</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">SaaS & DOLE Audits</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        On-site workspace step-timing observation, General Labor contract exposure check, and duplicative software license leak tracking.
-                                                    </p>
-                                                </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: SaaS Overlap & Timing Maps
-                                                </div>
-                                            </div>
-
-                                            {/* Step 3 */}
-                                            <div className="bg-brandNavy-950/40 border border-brandNavy-800 p-5 rounded-xl flex flex-col justify-between">
-                                                <div className="space-y-3">
-                                                    <span className="text-[10px] font-mono text-brandBlue-400 font-bold block">PHASE 03</span>
-                                                    <h5 className="font-bold text-sm text-white font-serif">Boardroom Debrief</h5>
-                                                    <p className="text-[11px] text-slate-400 leading-normal font-light">
-                                                        Consolidate observations into a feasibility matrix, outline immediate high-value wins, and present targets to executives.
-                                                    </p>
-                                                </div>
-                                                <div className="text-[9px] text-slate-500 font-mono mt-4 pt-3 border-t border-brandNavy-800">
-                                                    Log: Risk Matrix & Deck Handover
-                                                </div>
-                                            </div>
-
-                                        </div>
+                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
+                                        Outcome: Prioritized B2B Feasibility Risk Matrix & debrief blueprints.
                                     </div>
-
                                 </div>
+
+                                {/* MOD I CARD */}
+                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD I</div>
+                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">4 - 8 Weeks</span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-white font-serif">Structural SOP & RACI Foundations</h3>
+                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
+                                            Establish clear functional boundaries, organigrams, and compliant workflow playbooks.
+                                        </p>
+                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Org Structure & RACI Maps</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Swimlane process playbooks</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>DOLE HR General Manuals</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
+                                        Outcome: Mitigated labor litigation risks and protected tribal IP.
+                                    </div>
+                                </div>
+
+                                {/* MOD II CARD */}
+                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD II</div>
+                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">3 - 4 Weeks</span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-white font-serif">Enterprise PMO & Tech Automation</h3>
+                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
+                                            Deploy Swiss-standard HERMES project controls and configure Lark workspace automations.
+                                        </p>
+                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>HERMES 2022 Methodologies</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Lark approval workflows</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Cloud document repositories</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
+                                        Outcome: Automated approvals, zero legacy paperwork sprawl.
+                                    </div>
+                                </div>
+
+                                {/* MOD III CARD */}
+                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD III</div>
+                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">Ongoing</span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-white font-serif">Fractional COO & Infrastructure Retainers</h3>
+                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
+                                            Continuous executive governance oversight paired with managed cyber SLA monitoring.
+                                        </p>
+                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Weekly metrics alignment loops</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Sponsor accountability briefs</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <IconCheck />
+                                                <span>Partner IT & cyber security</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
+                                        Outcome: CEO operational relief and proactive baseline protection.
+                                    </div>
+                                </div>
+
                             </div>
-
-                            {/* SUBSEQUENT EXPANSION PATHWAYS (MOD I, II, AND III CARD GRID) */}
-                            <div className="space-y-8">
-                                <div className="text-center md:text-left space-y-1">
-                                    <span className="text-[10px] font-mono font-bold tracking-widest text-brandBlue-400 uppercase">Subsequent Scaling Tracks</span>
-                                    <h4 className="text-xl font-bold font-serif text-white">Post-Audit Strategic Modules</h4>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {/* MOD I */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD I</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Structural SOP & RACI Foundations</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Establish clear functional boundaries, department org charts, horizontal process swimlanes, and DOLE-aligned company codes of conduct acting as litigation shields.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Clean accountability and minimized employee turnover friction.
-                                        </div>
-                                    </div>
-
-                                    {/* MOD II */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD II</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Enterprise PMO & Tech Automation</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Equip your project leads with Swiss HERMES PMO gating and migrate slow legacy procedures into automated, approvals-enabled Lark Suite team collaboration workspaces.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Total portfolio transparency and automated approval workflows.
-                                        </div>
-                                    </div>
-
-                                    {/* MOD III */}
-                                    <div className="bg-brandNavy-800 border border-brandNavy-750 p-6 rounded-xl flex flex-col justify-between shadow-xl min-h-[17.5rem]">
-                                        <div className="space-y-4">
-                                            <div className="w-16 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center text-brandBlue-400 border border-brandBlue-900/40 font-bold font-sans text-xs tracking-wider">MOD III</div>
-                                            <h3 className="text-lg font-bold text-white font-serif">Fractional COO & Infrastructure SLA</h3>
-                                            <p className="text-xs text-slate-350 leading-relaxed font-light">
-                                                Lock in continuous board-level operational oversight paired with managed cyber-security monitoring retainers driven by strategic partner infrastructure.
-                                            </p>
-                                        </div>
-                                        <div className="pt-6 border-t border-brandNavy-700/65 text-xs text-slate-500 font-semibold font-sans">
-                                            Outcome: Direct executive relief and active threat protection.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </section>
 
@@ -555,7 +633,7 @@ Best regards,`);
                                     >
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
-                                    <p className="text-xs text-slate-550 font-medium font-sans font-semibold">
+                                    <p className="text-xs text-slate-555 font-medium font-sans font-semibold">
                                         Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
                                     </p>
                                 </div>
@@ -574,7 +652,7 @@ Best regards,`);
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
                                 </div>
-                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-500">
+                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-505">
                                     Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
                                     © 2026 Kolthoff Consulting. All rights reserved.
                                 </p>
