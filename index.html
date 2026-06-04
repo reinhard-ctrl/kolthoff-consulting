@@ -8,7 +8,14 @@
     <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght=0,100..900;1,100..900&family=Playfair+Display:ital,wght=0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <!-- React and ReactDOM CDNs (Production Builds) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel CDN (Compiles JSX inside the browser dynamically) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -63,13 +70,6 @@
         }
     </script>
     
-    <!-- React and ReactDOM CDNs (Production Builds) -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
-    <!-- Babel CDN (Compiles JSX inside the browser dynamically) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020613; }
@@ -148,13 +148,15 @@
             return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
         };
 
+        // Static formula mapped safely in string format to bypass Babel JSX Parser curly brace constraints
+        const latexFormula = "$$\\text{Chaos Loss} = \\Delta_{\\text{Turnover}} + \\left( T_{\\text{FTE}} \\times H_{\\text{Delay}} \\times R_{\\text{Hourly}} \\times 52 \\right)$$";
+
         function App() {
             // Interactive Leakage Calculator States
             const [teamSize, setTeamSize] = useState(30);
             const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
             const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
 
-            // Dynamic Calculator Leakage Math
             const publicCalculatedChaos = useMemo(() => {
                 const totalMonthlyPayroll = teamSize * avgMonthlySalary;
                 const avgHourlyRate = avgMonthlySalary / 160;
@@ -199,7 +201,7 @@
                 return Math.round(annual / (365 * 8)); // Assumes 8 active business hours per day
             }
 
-            // Direct mail link generator with custom inquiry body - simplified email template
+            // Direct mail link generator with custom inquiry body
             const mailtoLink = useMemo(() => {
                 const subject = encodeURIComponent("Operational Diagnostics Audit Request");
                 const body = encodeURIComponent(`Dear Reinhard,
@@ -220,22 +222,22 @@ Best regards,`);
                 return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
             }, []);
 
-            // Trigger MathJax typeset updates cleanly on ROI changes
+            // Trigger MathJax typeset updates cleanly once on load to prevent slider dragging lag
             useEffect(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
                     const mathElement = document.getElementById('math-roi');
                     if (mathElement) {
-                        window.MathJax.typesetClear([mathElement]);
                         window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
                     }
                 }
-            }, [publicCalculatedChaos.workforceEfficiency]);
+            }, []);
 
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
                     
-                    {/* High-Status Corporate Header (STREAMLINED: CONTACT COORDINATES REMOVED FROM VIEWPORT HEADER) */}
-                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md font-sans">
+                    {}
+                    {/* High-Status Corporate Header */}
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
@@ -250,7 +252,7 @@ Best regards,`);
                             <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
                                 <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
                                 <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Scale-Up Lifecycle</a>
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
+                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-500/20 hover:-translate-y-0.5 uppercase text-center">
                                     Book Diagnostic Audit
                                 </a>
                             </nav>
@@ -273,7 +275,7 @@ Best regards,`);
                                     We audit and re-engineer workflows for mid-sized enterprises and corporate groups in the Philippines. By eliminating process chaos and institutional delays, we return clear margin profits directly to your bottom line.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
+                                    <a href="#chaos" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded transition-all shadow-lg shadow-brandBlue-500/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Audit Your Financial Waste <IconArrowRight />
                                     </a>
                                     <a href="#diagnostics" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -282,7 +284,7 @@ Best regards,`);
                                 </div>
                             </div>
 
-                            {/* CORE PARTNERSHIP PHILOSOPHY */}
+                            {/* Core Partnership Philosophy */}
                             <div className="lg:col-span-5 bg-brandNavy-900/90 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative">
                                 <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
                                     <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
@@ -295,7 +297,7 @@ Best regards,`);
                                     <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm">
                                         360
                                     </div>
-                                    <div className="text-xs font-sans font-medium">
+                                    <div className="text-xs font-sans">
                                         <span className="font-bold text-white block">Outcome-Based Pricing</span>
                                         <span className="text-slate-400 mt-0.5 block">100% Flat-Rate Guarantees. No hourly scope-creep.</span>
                                     </div>
@@ -304,6 +306,7 @@ Best regards,`);
                         </div>
                     </section>
 
+                    {}
                     {/* Cost of Chaos Assessment Section */}
                     <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
@@ -317,7 +320,7 @@ Best regards,`);
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                                 
-                                {/* Left Column: Inputs & Settings Sliders + Anchor Note inside a single unified container */}
+                                {/* Left Column: Inputs & Settings Sliders */}
                                 <div className="lg:col-span-5 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
                                     <div className="space-y-6">
                                         <div>
@@ -339,7 +342,7 @@ Best regards,`);
 
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-705 font-bold flex items-center gap-1.5">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
@@ -373,18 +376,18 @@ Best regards,`);
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed font-semibold">
                                         <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
                                     </div>
                                 </div>
 
-                                {/* Right Column: High-Impact calculations and B2B equivalents (Single Card - No duplication) */}
+                                {/* Right Column: Calculations and Asset equivalents */}
                                 <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 sm:p-10 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
                                     <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full" />
                                     
                                     <div className="space-y-8 z-10 w-full">
                                         
-                                        {/* Row 1: Estimated Annual capital waste */}
+                                        {/* Estimated Annual capital waste */}
                                         <div className="border-b border-brandNavy-800 pb-6">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <IconTrendingDown />
@@ -398,8 +401,8 @@ Best regards,`);
                                             </span>
                                         </div>
 
-                                        {/* Row 2: Invisible "Chaos Tax" Gauge */}
-                                        <div className="bg-brandNavy-950/80 p-5 rounded-xl border border-brandNavy-800 space-y-3">
+                                        {/* Invisible "Chaos Tax" Gauge & Integrated MathJax Formula Container */}
+                                        <div className="bg-brandNavy-950/80 p-5 rounded-xl border border-brandNavy-800 space-y-4">
                                             <div className="flex justify-between items-center text-xs">
                                                 <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase font-bold">Invisible "Chaos Tax" Rate</span>
                                                 <span className="text-rose-400 font-mono font-bold">{publicCalculatedChaos.chaosTaxRate}% of Payroll Overhead</span>
@@ -423,14 +426,18 @@ Best regards,`);
                                                 <span>Payroll Effectiveness: {publicCalculatedChaos.workforceEfficiency}%</span>
                                                 <span>Friction Loss: {publicCalculatedChaos.chaosTaxRate}%</span>
                                             </div>
+
+                                            {/* TARGETED MATHJAX ELEMENT: Safe static reference string renders beautifully with zero compilation issues */}
+                                            <div id="math-roi" className="pt-3 border-t border-brandNavy-800 text-center overflow-x-auto text-xs text-slate-400 select-none">
+                                                {latexFormula}
+                                            </div>
                                         </div>
 
-                                        {/* Row 3: Opportunity Equivalencies (Lost Assets) */}
+                                        {/* Opportunity Equivalencies (Lost Assets) */}
                                         <div className="space-y-3">
                                             <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Annual Loss Equivalents:</span>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {/* Card A: Headcount */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
                                                         {publicCalculatedChaos.lostFTEEquivalent}
@@ -440,7 +447,6 @@ Best regards,`);
                                                     </span>
                                                 </div>
 
-                                                {/* Card B: Rent */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
                                                         {publicCalculatedChaos.lostOfficeRentMonths} Months
@@ -450,7 +456,6 @@ Best regards,`);
                                                     </span>
                                                 </div>
 
-                                                {/* Card C: Hardware */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
                                                         {publicCalculatedChaos.lostWorkstations}
@@ -468,11 +473,10 @@ Best regards,`);
                         </div>
                     </section>
 
-                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (1-ROW MODULE ALIGNMENT MIRRORING THE SOW PROPOSAL TEMPLATE) */}
-                    <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
+                    {}
+                    {/* Scale-Up Lifecycle Roadmap */}
+                    <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
                         <div className="max-w-7xl mx-auto px-6 space-y-16">
-                            
-                            {/* Section Header */}
                             <div className="max-w-3xl mx-auto text-center space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
@@ -481,8 +485,8 @@ Best regards,`);
                                 </p>
                             </div>
 
-                            {/* 4-CARD MODULAR ROADMAP LAYOUT (1 ROW ALIGNMENT SIMILAR TO WORKBOOK PROPOSAL) */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
+                            {/* 4-Card Modular Roadmap Layout */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 
                                 {/* MOD 0 CARD */}
                                 <div className="border border-brandBlue-500 bg-brandBlue-50/10 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all shadow-md">
@@ -497,16 +501,13 @@ Best regards,`);
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Stakeholder Discovery Loop</span>
+                                                <IconCheck /> <span>Stakeholder Discovery Loop</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>SaaS Stack overlap Audit</span>
+                                                <IconCheck /> <span>SaaS Stack overlap Audit</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>DOLE compliance analysis</span>
+                                                <IconCheck /> <span>DOLE compliance analysis</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -520,7 +521,6 @@ Best regards,`);
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD I</div>
-                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">4 - 8 Weeks</span>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Structural SOP & RACI Foundations</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
@@ -528,16 +528,13 @@ Best regards,`);
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Org Structure & RACI Maps</span>
+                                                <IconCheck /> <span>Org Structure & RACI Maps</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Swimlane process playbooks</span>
+                                                <IconCheck /> <span>Swimlane process playbooks</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>DOLE HR General Manuals</span>
+                                                <IconCheck /> <span>DOLE HR General Manuals</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -551,7 +548,6 @@ Best regards,`);
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD II</div>
-                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">3 - 4 Weeks</span>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Enterprise PMO & Tech Automation</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
@@ -559,16 +555,13 @@ Best regards,`);
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>HERMES 2022 Methodologies</span>
+                                                <IconCheck /> <span>HERMES 2022 Methodologies</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Lark approval workflows</span>
+                                                <IconCheck /> <span>Lark approval workflows</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Cloud document repositories</span>
+                                                <IconCheck /> <span>Cloud document repositories</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -582,24 +575,20 @@ Best regards,`);
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD III</div>
-                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">Ongoing</span>
                                         </div>
-                                        <h3 className="text-base font-bold text-white font-serif">Fractional COO & Infrastructure Retainers</h3>
+                                        <h3 className="text-base font-bold text-white font-serif">Fractional COO & Retainers</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
                                             Continuous executive governance oversight paired with managed cyber SLA monitoring.
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Weekly metrics alignment loops</span>
+                                                <IconCheck /> <span>Weekly metrics alignment loops</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Sponsor accountability briefs</span>
+                                                <IconCheck /> <span>Sponsor accountability briefs</span>
                                             </li>
                                             <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Partner IT & cyber security</span>
+                                                <IconCheck /> <span>Partner IT & cyber security</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -612,8 +601,9 @@ Best regards,`);
                         </div>
                     </section>
 
-                    {/* Simple Mailto Call to Action Section (Sophisticated LIGHT Section) */}
-                    <section id="book" className="py-24 bg-slate-50 text-slate-900 font-semibold">
+                    {}
+                    {/* Secure Call to Action Section */}
+                    <section id="book" className="py-24 bg-slate-50 text-slate-900">
                         <div className="max-w-4xl mx-auto px-6">
                             <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-2xl shadow-xl relative text-center">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full" />
@@ -629,12 +619,12 @@ Best regards,`);
                                 <div className="space-y-4">
                                     <a 
                                         href={mailtoLink}
-                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5 font-sans"
+                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5"
                                     >
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
-                                    <p className="text-xs text-slate-555 font-medium font-sans font-semibold">
-                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
+                                    <p className="text-xs text-slate-500 font-semibold font-sans">
+                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-mono">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
                                     </p>
                                 </div>
                             </div>
@@ -642,31 +632,31 @@ Best regards,`);
                     </section>
 
                     {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-555 text-xs">
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-400 text-xs">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                             
-                            <div className="space-y-2 text-center md:text-left font-sans font-medium">
+                            <div className="space-y-2 text-center md:text-left font-sans">
                                 <div className="flex items-center justify-center md:justify-start gap-2">
                                     <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
                                     <span className="font-sans font-extrabold text-sm uppercase text-slate-300">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
                                 </div>
-                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-505">
+                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-500">
                                     Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
                                     © 2026 Kolthoff Consulting. All rights reserved.
                                 </p>
                             </div>
 
-                            <div className="space-y-1.5 text-center md:text-right font-sans font-medium font-semibold">
+                            <div className="space-y-1.5 text-center md:text-right font-sans font-semibold">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
-                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-medium font-sans font-semibold">contact@kolthoff-consulting.com</a>
+                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-sans font-semibold">contact@kolthoff-consulting.com</a>
                                 </div>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
-                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-medium font-sans font-semibold">www.kolthoff-consulting.com</a>
+                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-sans font-semibold">www.kolthoff-consulting.com</a>
                                 </div>
                             </div>
 
