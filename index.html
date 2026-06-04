@@ -129,9 +129,9 @@
         const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
         const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-505 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
         const IconCalculator = ({ className }) => (
@@ -234,12 +234,10 @@ Best regards,`);
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
                     
-                    {/* */}
-                    {/* High-Status Corporate Header (STREAMLINED & REPOSITIONED NAV CHANNELS) */}
+                    {/* High-Status Corporate Header (STREAMLINED: CONTACT COORDINATES REMOVED FROM VIEWPORT HEADER) */}
                     <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md font-sans">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                            {/* Left Brand Identity */}
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-3">
                                 <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
                                 <div>
                                     <span className="font-sans font-extrabold tracking-wider text-base sm:text-lg uppercase block text-white leading-none">
@@ -249,18 +247,13 @@ Best regards,`);
                                 </div>
                             </div>
                             
-                            {/* Center Nav Anchors (REPOSITIONED APART FROM PRIMARY BUTTON) */}
-                            <nav className="hidden md:flex items-center gap-10 text-xs font-semibold uppercase tracking-widest text-slate-400">
+                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
                                 <a href="#chaos" className="hover:text-white transition-colors duration-200">The Cost of Chaos</a>
                                 <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Scale-Up Lifecycle</a>
-                            </nav>
-
-                            {/* Right Action Trigger */}
-                            <div className="hidden md:block shrink-0">
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold rounded text-xs transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase tracking-wider inline-block">
+                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-slate-955 font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
                                     Book Diagnostic Audit
                                 </a>
-                            </div>
+                            </nav>
                         </div>
                     </header>
 
@@ -380,8 +373,8 @@ Best regards,`);
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-555 leading-relaxed font-sans font-semibold">
-                                        <strong>Diagnostic Anchor Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation for backfills, onboarding delays, and lost institutional productivity following exiting staff.
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
+                                        <strong>Diagnostic Security & Tax Compliance Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation. All calculations are governed in strict compliance with the **Data Privacy Act of 2012 (RA 10173)**. Any subsequent scoping operations are billed via EOPT-mandated **VAT Sales Invoices**.
                                     </div>
                                 </div>
 
@@ -475,7 +468,6 @@ Best regards,`);
                         </div>
                     </section>
 
-                    {/* */}
                     {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (1-ROW MODULE ALIGNMENT MIRRORING THE SOW PROPOSAL TEMPLATE) */}
                     <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
                         <div className="max-w-7xl mx-auto px-6 space-y-16">
@@ -485,36 +477,36 @@ Best regards,`);
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 0) through ongoing Strategic Advisory & Systems Retainers (MOD III), acquire targeted execution packages mapped to your corporate scale requirements.
+                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 0) through ongoing Strategic Advisory & Systems Retainers (MOD III), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
                                 </p>
                             </div>
 
-                            {/* 4-CARD MODULAR ROADMAP LAYOUT (TIMELINE COMPRESSED ONLY TO MOD 0 CARD AS REQUESTED) */}
+                            {/* 4-CARD MODULAR ROADMAP LAYOUT (1 ROW ALIGNMENT SIMILAR TO WORKBOOK PROPOSAL) */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
                                 
-                                {/* MOD 0 CARD (TIMELINE RETAINED) */}
+                                {/* MOD 0 CARD */}
                                 <div className="border border-brandBlue-500 bg-brandBlue-50/10 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all shadow-md">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
                                             <div className="w-14 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center font-bold text-[10px] tracking-wider text-brandBlue-400 border border-brandBlue-200/20">MOD 0</div>
-                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brandBlue-100 text-brandBlue-700"> 2-3 Weeks</span>
+                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brandBlue-100 text-brandBlue-700 font-extrabold">3 Weeks</span>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Operational Diagnostics</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            A mandated discovery sprint mapping your baseline organizational friction.
+                                            A mandated discovery sprint mapping your baseline organizational friction in strict compliance with RA 10173 (Data Privacy Act of 2012).
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
                                                 <IconCheck />
-                                                <span>Stakeholder Discovery Loop</span>
+                                                <span>DPA-Compliant Discovery Onboarding</span>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <IconCheck />
-                                                <span>On-Site Observation Shadows</span>
+                                                <span>SaaS Stack Overlap Audit</span>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <IconCheck />
-                                                <span>B2B Risk Matrix & Debrief</span>
+                                                <span>DOLE compliant record analysis</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -523,7 +515,7 @@ Best regards,`);
                                     </div>
                                 </div>
 
-                                {/* MOD I CARD (TIMELINE REMOVED) */}
+                                {/* MOD I CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
@@ -531,7 +523,7 @@ Best regards,`);
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Process Architecture</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            Establish functional reporting boundaries, organigrams, and compliant workflow playbooks.
+                                            Establish functional reporting boundaries, organigrams, and compliant workflow playbooks in strict alignment with DOLE General Labor Standards (GLS).
                                         </p>
                                         <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
                                             <li className="flex items-center gap-2">
@@ -540,11 +532,11 @@ Best regards,`);
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <IconCheck />
-                                                <span>Org Structure & RACI Governance</span>
+                                                <span>DOLE-Aligned Onboarding Packs</span>
                                             </li>
                                             <li className="flex items-center gap-2">
                                                 <IconCheck />
-                                                <span>Swimlane process playbooks</span>
+                                                <span>GLS Code of Conduct & Handbooks</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -553,7 +545,7 @@ Best regards,`);
                                     </div>
                                 </div>
 
-                                {/* MOD II CARD (TIMELINE REMOVED) */}
+                                {/* MOD II CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
@@ -583,7 +575,7 @@ Best regards,`);
                                     </div>
                                 </div>
 
-                                {/* MOD III CARD (TIMELINE REMOVED) */}
+                                {/* MOD III CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
@@ -627,7 +619,7 @@ Best regards,`);
                                     <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Secure Channel</span>
                                     <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book Your Operational Diagnostics Audit</h3>
                                     <p className="text-sm text-slate-600 leading-relaxed font-sans">
-                                        We protect client data privacy and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
+                                        We protect client data privacy under **Republic Act No. 10173** and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
                                     </p>
                                 </div>
 
@@ -639,7 +631,7 @@ Best regards,`);
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
                                     <p className="text-xs text-slate-555 font-medium font-sans font-semibold">
-                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. A principal advisor will contact your office within 24 hours.
+                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono font-sans font-medium">contact@kolthoff-consulting.com</a>. All personal information received is strictly processed under the National Privacy Commission guidelines.
                                     </p>
                                 </div>
                             </div>
@@ -657,7 +649,7 @@ Best regards,`);
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
                                 </div>
-                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-555">
+                                <p className="text-[10px] leading-relaxed max-w-xs text-slate-505">
                                     Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
                                     © 2026 Kolthoff Consulting. All rights reserved.
                                 </p>
