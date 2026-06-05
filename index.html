@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kolthoff Consulting - Stop Bleeding Cash. Architect Your Scale-Ready Future.</title>
+    <title>Kolthoff Consulting - Get Your Business Running on Autopilot. Organize Your Daily Operations.</title>
     
     <!-- Custom SVG Logo Favicon (High-Fidelity Vector Shield & Checkmark) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C70 14 86 20 86 20 V54 C86 74 71 87 50 92 C29 87 14 74 14 54 V20 C14 20 30 14 50 10 Z' fill='%232563EB'/><path d='M38 52 L47 61 L64 39' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
@@ -267,24 +267,24 @@
 
             // Direct mail link generator with custom inquiry body
             const mailtoLink = useMemo(() => {
-                const subject = encodeURIComponent("Operational Diagnostics Audit Request - Kolthoff");
+                const subject = encodeURIComponent("Requesting a Free Business Workflow Review - Kolthoff");
                 const body = encodeURIComponent(`Dear Reinhard,
 
-I am writing to initiate our Operational Diagnostics Audit (MOD 1) to evaluate our workflow architecture, eliminate system drag, and lock in our scale-ready infrastructure.
+I would like to get a simple review of our daily operations to see where we can save time, cut down on chat chaos, and get our processes organized.
 
-I have completed the preliminary diagnostic parameters on your landing page. Here are our indicators:
+Here are some quick details about our team:
 
-1. Operational Metrics:
-- Estimated FTEs Wasted: ${publicCalculatedChaos.lostFTEEquivalent} staff
-- Wasted Capacity: ${publicCalculatedChaos.chaosTaxRate}% of payroll
-- Potential Bleed: ₱${publicCalculatedChaos.annualChaosTotal.toLocaleString()}/year
+1. Our Team Indicators:
+- Wasted Hours Equivalent: Around ${publicCalculatedChaos.lostFTEEquivalent} staff members' worth of time
+- Monthly Payroll Lost: ${publicCalculatedChaos.chaosTaxRate}% wasted due to messy workflows
+- Estimated Annual Loss: ₱${publicCalculatedChaos.annualChaosTotal.toLocaleString()}/year
 
-2. Smart Intake Preliminary Assessment:
-- Core Bottleneck Identified: ${bottleneck || 'Unspecified'}
-- Current Documentation Status: ${documentation || 'Unspecified'}
-- Core Collaboration Engine: ${toolstack || 'Unspecified'}
+2. Our Current Challenges:
+- Biggest Problem: ${bottleneck === 'tribal-knowledge' ? 'One person knows everything (Solo Expert trap)' : bottleneck === 'approval-drag' ? 'Chasing people for approvals' : bottleneck === 'tool-bloat' ? 'App chaos & manual copying' : 'Unspecified'}
+- Playbooks & SOPs: ${documentation === 'undocumented' ? 'None, we rely on verbal instructions' : documentation === 'outdated-docs' ? 'Outdated or scattered documents' : documentation === 'fully-standardized' ? 'We have SOPs, but tracking is still manual' : 'Unspecified'}
+- Where we talk: ${toolstack === 'slack-lark' ? 'Messaging apps (constant pings & chat chaos)' : toolstack === 'email-piles' ? 'Endless email threads or Viber groups' : toolstack === 'pmo-boards' ? 'We tried task trackers but gave up' : 'Unspecified'}
 
-Please secure our queue position and deliver the secure MOD 1 Intake Document so we can submit our detailed architecture.
+Please reach out to let us know how we can start simplifying our daily operations.
 
 Best regards,
 [Name]
@@ -295,13 +295,23 @@ Best regards,
 
             // Copy to clipboard fallback function as required
             const handleCopyToClipboard = (text) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => showToast('Summary copied to clipboard!'))
+                        .catch(() => fallbackCopyToClipboard(text));
+                } else {
+                    fallbackCopyToClipboard(text);
+                }
+            };
+
+            const fallbackCopyToClipboard = (text) => {
                 const tempTextArea = document.createElement('textarea');
                 tempTextArea.value = text;
                 document.body.appendChild(tempTextArea);
                 tempTextArea.select();
                 try {
                     document.execCommand('copy');
-                    showToast('Diagnostics copied to clipboard!');
+                    showToast('Summary copied to clipboard!');
                 } catch (err) {
                     showToast('Unable to copy automatically.');
                 }
@@ -327,51 +337,51 @@ Best regards,
             // Lifecycle roadmap modules configuration with arrow structural styles
             const modulesData = {
                 1: {
-                    title: "Operational Diagnostics",
+                    title: "Workflow Audit & Cleanup",
                     duration: "3 Weeks",
-                    desc: "A mandated discovery sprint mapping your baseline organizational friction in strict compliance with RA 10173 (Data Privacy Act of 2012). Delivered completely asynchronously.",
+                    desc: "We look at how your team currently works. We map out your group chats, list the apps you pay for, and identify exactly where you are losing hours every day—completely asynchronously, without disturbing your team's routine.",
                     deliverables: [
-                        "DPA-Compliant Smart Intake & System Map",
-                        "SaaS Stack Overlap & Duplicate Seats Audit",
-                        "Priority Action Roadmap Blueprint"
+                        "Mapping of your current messy workflows",
+                        "List of unused or overlapping software seats",
+                        "A clear step-by-step cleanup plan"
                     ],
-                    outcome: "Detailed Operational Risk Matrix & 10m walkthrough video.",
+                    outcome: "An easy-to-read map of your operational risks and a 10-minute video explaining how to fix them.",
                     shapeClass: "arrow-card-first"
                 },
                 2: {
-                    title: "Process Architecture",
+                    title: "Clear Team SOPs",
                     duration: "4 Weeks",
-                    desc: "Establish functional reporting boundaries, organigrams, and compliant workflow playbooks in strict alignment with DOLE General Labor Standards (GLS).",
+                    desc: "We help you build simple, clear, and updated Standard Operating Procedures (SOPs). We make sure they are simple enough for anyone on your team to follow, and fully compliant with local labor standards.",
                     deliverables: [
-                        "Macro Value Stream Maps (VSM)",
-                        "DOLE-Aligned Onboarding Packs",
-                        "GLS Code of Conduct & Employee Handbooks"
+                        "Visual workflow checklists for daily tasks",
+                        "Simple, structured onboarding guides",
+                        "A centralized, easy-to-search team handbook"
                     ],
-                    outcome: "Mitigated labor litigation risks and protected tribal IP.",
+                    outcome: "Protect your business's core knowledge so work doesn't stop when someone is on leave.",
                     shapeClass: "arrow-card-mid"
                 },
                 3: {
-                    title: "Workflow Automation",
+                    title: "App Syncing & Automation",
                     duration: "5 Weeks",
-                    desc: "Deploy Swiss-standard HERMES project controls and configure Lark/Notion workspace automations to eliminate manual copying and tracking tasks.",
+                    desc: "We connect your daily apps (like Lark, Slack, Viber, or Gmail) so your team stops wasting time copying and pasting data. We set up simple, automatic task trackers so you always know who is doing what.",
                     deliverables: [
-                        "Enterprise Lark/Slack Workspace Hub Integration",
-                        "HERMES PMO Framework Config & Templates",
-                        "Asynchronous Progress Dashboards"
+                        "Automated approval workflows (no more chasing on chat)",
+                        "Simple project tracking templates",
+                        "A central dashboard to view all ongoing work at a glance"
                     ],
-                    outcome: "Automated approvals, zero legacy paperwork sprawl.",
+                    outcome: "Fewer daily status meetings and zero lost follow-ups.",
                     shapeClass: "arrow-card-mid"
                 },
                 4: {
-                    title: "Strategic Advisory Retainer",
+                    title: "Operations Partner Retainer",
                     duration: "Ongoing",
-                    desc: "Continuous executive governance oversight paired with managed cyber SLA monitoring to protect baseline configurations.",
+                    desc: "Think of us as your on-call Operations Manager. We check in regularly to make sure your team is still following the playbooks, help you onboard new hires, and fix any software issues.",
                     deliverables: [
-                        "Fractional COO Governance Strategy Syncs",
-                        "Managed Admin Services & Custom Integrations",
-                        "Semi-Annual Process Drift Audits"
+                        "Regular operations check-ins with the owner",
+                        "Help setting up new software or integrations",
+                        "Twice-a-year process reviews to keep things clean"
                     ],
-                    outcome: "CEO operational relief and proactive baseline protection.",
+                    outcome: "Peace of mind for the business owner, knowing operations are running smoothly.",
                     shapeClass: "arrow-card-last"
                 }
             };
@@ -380,9 +390,9 @@ Best regards,
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950 pb-12">
                     
                     {/* Compliance Header Banner (EOPT & DPA) */}
-                    <div className="bg-gradient-to-r from-brandBlue-950 via-brandBlue-850 to-brandBlue-950 border-b border-brandBlue-500/20 py-2 px-6 text-center text-[10px] sm:text-xs text-brandBlue-200 flex justify-center items-center gap-2.5 font-medium select-none z-50 relative">
+                    <div className="bg-gradient-to-r from-brandBlue-950 via-brandBlue-850 to-brandBlue-950 border-b border-brandBlue-500/20 py-2.5 px-6 text-center text-[10px] sm:text-xs text-brandBlue-200 flex justify-center items-center gap-2.5 font-medium select-none z-50 relative">
                         <IconShieldAlert />
-                        <span>Registered System Security: Fully Compliant with <strong>RA 10173 (Data Privacy Act of 2012)</strong> & <strong>BIR EOPT Audit mandates</strong></span>
+                        <span>Fully compliant with the <strong>Data Privacy Act of 2012 (RA 10173)</strong> &amp; BIR <strong>Ease of Paying Taxes (EOPT) Act</strong></span>
                     </div>
 
                     {/* Symmetrical Centered Header Navigation */}
@@ -396,22 +406,22 @@ Best regards,
                                     <span className="font-sans font-extrabold tracking-wider text-sm sm:text-base uppercase block text-white leading-none">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
-                                    <span className="text-[8px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Architecture & Strategy</span>
+                                    <span className="text-[8px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Simple Workflows for Growing Teams</span>
                                 </div>
                             </div>
                             
                             {/* Centered Navigation Links (Middle 50%) */}
                             <nav className="hidden lg:flex items-center justify-center gap-12 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex-1">
-                                <a href="#philosophy" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">The Model</a>
-                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Cost of Chaos</a>
-                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Intake Preview</a>
-                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Roadmap</a>
+                                <a href="#philosophy" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Our Approach</a>
+                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Calculate Waste</a>
+                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Diagnostic Demo</a>
+                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">The Roadmap</a>
                             </nav>
 
                             {/* Action CTA Onboarding Button (Right 25%) */}
                             <div className="flex justify-end lg:w-1/4 shrink-0">
-                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-955/40 hover:-translate-y-0.5 font-sans uppercase">
-                                    Start Onboarding
+                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
+                                    Get a Free Review
                                 </a>
                             </div>
                         </div>
@@ -423,21 +433,21 @@ Best regards,
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                             <div className="lg:col-span-7 space-y-6">
                                 <span className="text-xs font-mono font-bold tracking-[0.3em] text-brandBlue-400 uppercase bg-brandBlue-950/40 border border-brandBlue-900/30 px-3.5 py-1.5 rounded inline-block">
-                                    ZERO-MEETING PROCESS AUDITING
+                                    No Endless Status Meetings. No Jargon.
                                 </span>
                                 <h1 className="text-4xl sm:text-6xl font-serif font-bold text-white leading-tight">
-                                    Stop Bleeding Cash. <br />
-                                    <span className="text-brandBlue-400 font-bold">Fix Your Operations Asynchronously.</span>
+                                    Stop Chasing Updates. <br />
+                                    <span className="text-brandBlue-400 font-bold">Get Your Business Running Smoothly.</span>
                                 </h1>
                                 <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light font-sans">
-                                    We re-engineer workflows for mid-sized enterprises in the Philippines without calendar-clogging status meetings or endless Zoom circles. Complete our hyper-efficient intake system, receive your deep operational diagnostics, and scale with absolute structural clarity.
+                                    We help growing Filipino companies organize their daily workflows, clean up messy group chats, and build clear team playbooks. We work entirely in the background, so your team doesn't have to waste hours in endless Zoom and Viber loops.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
-                                        Test Drive Smart Intake <IconArrowRight />
+                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
+                                        Try the Workflow Audit <IconArrowRight />
                                     </a>
                                     <a href="#chaos" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-lg border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
-                                        Calculate Financial Leakage
+                                        Calculate Lost Payroll
                                     </a>
                                 </div>
                             </div>
@@ -447,17 +457,17 @@ Best regards,
                                 <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
                                     <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
                                 </div>
-                                <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Asynchronous Standard</h3>
+                                <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">Our Practical Viewpoint</h3>
                                 <p className="font-serif italic text-lg text-slate-100 leading-relaxed mb-6">
-                                    "Your calendar is not a negotiation table. True process efficiency isn't discovered in high-level exploratory calls; it is built on structured, unmanipulated data and highly organized, manual analytical breakdowns."
+                                    "You didn't start your business to spend all day on Viber or Zoom. Getting your team organized shouldn't require complex software or corporate slide presentations—just clean playbooks and simple, clear-cut daily habits."
                                 </p>
                                 <div className="border-t border-brandNavy-700/60 pt-4 flex gap-4 items-center">
                                     <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm shrink-0">
                                         0H
                                     </div>
                                     <div className="text-xs font-sans font-medium">
-                                        <span className="font-bold text-white block">Zero Exploratory Call Burden</span>
-                                        <span className="text-slate-400 mt-0.5 block">We prioritize your time. We ask questions via smart matrices; we deliver solutions via cinematic walk-throughs and detailed diagnostic reports.</span>
+                                        <span className="font-bold text-white block">We Don't Waste Your Time</span>
+                                        <span className="text-slate-400 mt-0.5 block">We don't do daily alignment calls. We analyze your processes through simple checklists and send you clear, rewatchable 10-minute video solutions.</span>
                                     </div>
                                 </div>
                             </div>
@@ -469,10 +479,10 @@ Best regards,
                         <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-500/5 blur-[100px] rounded-full pointer-events-none" />
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">A Higher Standard of advisory</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Why Smart Executives Reject Traditional Consulting</h2>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">A Better Way to Work</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Why Growing Teams Hate "Corporate" Consultants</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Endless 'alignment workshops' and bloated hourly scoping meetings are designed to mask a lack of delivery frameworks. Here is how we challenge the traditional model:
+                                    Most consultants make you sit through hours of "exploratory meetings" only to hand you a 100-page slide deck you will never read. Here is how we do things differently:
                                 </p>
                             </div>
 
@@ -481,34 +491,34 @@ Best regards,
                                 {/* Traditional card */}
                                 <div className="bg-brandNavy-950 border border-brandNavy-700/60 p-8 rounded-2xl space-y-6 relative overflow-hidden transition-all duration-300 hover:border-rose-500/30">
                                     <div className="absolute top-0 right-0 bg-rose-500/10 text-rose-400 text-[10px] font-mono tracking-widest uppercase font-bold px-4 py-1.5 rounded-bl-xl">
-                                        Legacy Model
+                                        Traditional Consultants
                                     </div>
                                     <h3 className="text-xl font-bold font-serif text-slate-200 flex items-center gap-2">
-                                        <span className="text-rose-400 text-2xl font-black">×</span> Traditional System Integration
+                                        <span className="text-rose-400 text-2xl font-black">×</span> Heavy Corporate Consulting
                                     </h3>
                                     <p className="text-slate-400 text-xs leading-relaxed">
-                                        Designed to trade consultant hours for client budgets. High scheduling friction, meeting fatigue, and a high reliance on generic, template-driven "exploratory" chats.
+                                        Designed to sound complicated to justify high hourly rates. Expect lots of meetings, confusing jargon, and heavy tools that your team will abandon in a month.
                                     </p>
                                     <div className="space-y-4 pt-2">
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-rose-400 font-bold shrink-0">■</span>
                                             <div>
-                                                <span className="text-slate-200 font-bold block">Calendar Tetris:</span>
-                                                <span className="text-slate-400 text-[11px] block mt-0.5">3-5 meetings needed just to align schedules and outline baseline organizational scope.</span>
+                                                <span className="text-slate-200 font-bold block">Meeting Fatigue:</span>
+                                                <span className="text-slate-400 text-[11px] block mt-0.5">Endless Zoom calls just to figure out what needs to be fixed.</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-rose-400 font-bold shrink-0">■</span>
                                             <div>
-                                                <span className="text-slate-200 font-bold block">Fictional Scope Creep:</span>
-                                                <span className="text-slate-400 text-[11px] block mt-0.5">Open-ended billing hours that extend projects indefinitely past their estimated target dates.</span>
+                                                <span className="text-slate-200 font-bold block">Complicated Tools:</span>
+                                                <span className="text-slate-400 text-[11px] block mt-0.5">Forcing you to use expensive enterprise software that your team finds hard to learn.</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-rose-400 font-bold shrink-0">■</span>
                                             <div>
-                                                <span className="text-slate-200 font-bold block">"Facetime" Bloat:</span>
-                                                <span className="text-slate-400 text-[11px] block mt-0.5">Two-hour slide presentations summarizing points that could have been delivered as a structured 5-page report.</span>
+                                                <span className="text-slate-200 font-bold block">Vague Deliverables:</span>
+                                                <span className="text-slate-400 text-[11px] block mt-0.5">Heavy PDF reports full of advice but zero actual hands-on setup support.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -517,34 +527,34 @@ Best regards,
                                 {/* Kolthoff card */}
                                 <div className="bg-brandNavy-900 border-2 border-brandBlue-500/30 p-8 rounded-2xl space-y-6 relative overflow-hidden transition-all duration-300 hover:border-brandBlue-500/60 glass-panel">
                                     <div className="absolute top-0 right-0 bg-brandBlue-500/20 text-brandBlue-300 text-[10px] font-mono tracking-widest uppercase font-bold px-4 py-1.5 rounded-bl-xl">
-                                        Asynchronous Model
+                                        Our Simple Model
                                     </div>
                                     <h3 className="text-xl font-bold font-serif text-white flex items-center gap-2">
-                                        <span className="text-brandBlue-400 text-2xl font-black">✓</span> Kolthoff Async Consulting
+                                        <span className="text-brandBlue-400 text-2xl font-black">✓</span> Practical Operations Help
                                     </h3>
                                     <p className="text-slate-300 text-xs leading-relaxed">
-                                        Designed strictly for deep analytical accuracy and high-speed delivery. We gather deep data points via friction-free intelligent matrices and deliver highly optimized reports with accompanying video walkthroughs.
+                                        Built specifically for busy SME owners. We run our reviews in the background, write simple SOP checklists, and set up daily apps you already know how to use.
                                     </p>
                                     <div className="space-y-4 pt-2">
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
                                             <div>
-                                                <span className="text-white font-bold block">Respect For Executive Schedules:</span>
-                                                <span className="text-slate-300 text-[11px] block mt-0.5">No meeting slots to arrange. Fill out the smart intake dynamically on your own time when the data is fresh.</span>
+                                                <span className="text-white font-bold block">No Wasted Meetings:</span>
+                                                <span className="text-slate-300 text-[11px] block mt-0.5">Fill out our simple checklist whenever you have 5 free minutes. We handle the rest.</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
                                             <div>
-                                                <span className="text-white font-bold block">Zero-Bust Fixed Pricing:</span>
-                                                <span className="text-slate-300 text-[11px] block mt-0.5">Know your precise diagnostic expenses upfront. No hourly adjustments or retrospective scope creep invoices.</span>
+                                                <span className="text-white font-bold block">Fixed, Affordable Pricing:</span>
+                                                <span className="text-slate-300 text-[11px] block mt-1">Know your exact investment upfront. No surprise hourly charges or hidden costs.</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
                                             <div>
-                                                <span className="text-white font-bold block">10-Minute Video walkthroughs:</span>
-                                                <span className="text-slate-300 text-[11px] block mt-0.5">Receive your high-fidelity, actionable operational blueprint paired with a detailed screen-share walk-through video you can replay at any speed.</span>
+                                                <span className="text-white font-bold block">Rewatchable Video Guides:</span>
+                                                <span className="text-slate-300 text-[11px] block mt-1">You get simple SOP files accompanied by short videos that you can play anytime to train new hires.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -558,10 +568,10 @@ Best regards,
                     <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Interactive Assessment Tool</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">The Cost of Operational Chaos</h2>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Quick Estimate Tool</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">How Much Money is Messy Work Wasting?</h2>
                                 <p className="text-sm text-slate-600 leading-relaxed font-light font-sans">
-                                    Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
+                                    Move the sliders below to estimate how much money your business is losing every year to manual mistakes, messy chat updates, and employee turnover.
                                 </p>
                                 
                                 {/* Dynamic popup link positioning */}
@@ -570,7 +580,7 @@ Best regards,
                                         onClick={() => setIsMathModalOpen(true)}
                                         className="inline-flex items-center gap-2 text-xs font-mono text-brandBlue-600 hover:text-brandBlue-700 font-bold uppercase tracking-wider bg-brandBlue-50/70 border border-brandBlue-100 hover:border-brandBlue-200 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm"
                                     >
-                                        <IconCalculator className="w-3.5 h-3.5" /> View Mathematical Proof &amp; Operational Logic
+                                        <IconCalculator className="w-3.5 h-3.5" /> View Math &amp; Calculation Logic
                                     </button>
                                 </div>
                             </div>
@@ -583,7 +593,7 @@ Best regards,
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
                                                 <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconTarget /> Total Personnel (FTE)
+                                                    <IconTarget /> Total Team Members
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{teamSize} Employees</span>
                                             </div>
@@ -618,7 +628,7 @@ Best regards,
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
                                                 <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
-                                                    <IconClock /> Avg. Delay per Staff Weekly
+                                                    <IconClock /> Hours Wasted per Staff Weekly
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
                                             </div>
@@ -633,8 +643,8 @@ Best regards,
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
-                                        <strong>Diagnostic Security &amp; Tax Compliance Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation. All calculations are governed in strict compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>. Any subsequent scoping operations are billed via EOPT-mandated <strong>VAT Sales Invoices</strong>.
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/85 text-[11px] text-slate-600 leading-relaxed font-sans font-medium">
+                                        <strong>Note on Calculations:</strong> We assume a standard 160-hour work month. The formula accounts for time spent re-doing tasks, looking for files, and training replacement staff. All inquiries are kept strictly confidential under the <strong>Data Privacy Act (RA 10173)</strong>.
                                     </div>
                                 </div>
 
@@ -648,21 +658,21 @@ Best regards,
                                         <div className="border-b border-brandNavy-800 pb-6">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <IconTrendingDown />
-                                                <span className="text-[10px] font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Capital Waste</span>
+                                                <span className="text-[10px] font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Loss</span>
                                             </div>
                                             <span className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-white leading-none block">
                                                 {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
                                             </span>
                                             <span className="text-xs text-slate-400 font-light block mt-3 leading-relaxed">
-                                                This represents direct capital lost through cumulative daily process bottlenecks, software seat duplication, and regulatory compliance frictions.
+                                                This is the estimated amount of payroll value being spent on messy updates, repeated tasks, and manual copy-pasting instead of actual productive work.
                                             </span>
                                         </div>
 
                                         {/* Row 2: Invisible "Chaos Tax" Gauge */}
                                         <div className="bg-brandNavy-950/80 p-5 rounded-xl border border-brandNavy-800 space-y-3">
                                             <div className="flex justify-between items-center text-xs">
-                                                <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase font-bold">Invisible "Chaos Tax" Rate</span>
-                                                <span className="text-rose-400 font-mono font-bold">{publicCalculatedChaos.chaosTaxRate}% of Payroll Overhead</span>
+                                                <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase font-bold">Lost Payroll Value</span>
+                                                <span className="text-rose-400 font-mono font-bold">{publicCalculatedChaos.chaosTaxRate}% of Monthly Payroll Wasted</span>
                                             </div>
                                             
                                             {/* Glowing Progress Gauge */}
@@ -670,53 +680,53 @@ Best regards,
                                                 <div 
                                                     style={{ width: `${publicCalculatedChaos.workforceEfficiency}%` }} 
                                                     className="bg-brandBlue-500 h-full transition-all duration-300"
-                                                    title={`Workforce Efficiency: ${publicCalculatedChaos.workforceEfficiency}%`}
+                                                    title={`Effective Work: ${publicCalculatedChaos.workforceEfficiency}%`}
                                                 />
                                                 <div 
                                                     style={{ width: `${publicCalculatedChaos.chaosTaxRate}%` }} 
                                                     className="bg-rose-500 h-full transition-all duration-300"
-                                                    title={`Chaos Waste: ${publicCalculatedChaos.chaosTaxRate}%`}
+                                                    title={`Messy Work Loss: ${publicCalculatedChaos.chaosTaxRate}%`}
                                                 />
                                             </div>
 
                                             <div className="flex justify-between text-[10px] font-mono text-slate-500">
-                                                <span>Payroll Effectiveness: {publicCalculatedChaos.workforceEfficiency}%</span>
-                                                <span>Friction Loss: {publicCalculatedChaos.chaosTaxRate}%</span>
+                                                <span>Productive Work: {publicCalculatedChaos.workforceEfficiency}%</span>
+                                                <span>Work Lost to Chaos: {publicCalculatedChaos.chaosTaxRate}%</span>
                                             </div>
                                         </div>
 
                                         {/* Row 3: Opportunity Equivalencies (Lost Assets) */}
                                         <div className="space-y-3">
-                                            <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Annual Loss Equivalents:</span>
+                                            <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">What This Wasted Money Could Have Paid For:</span>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 {/* Card A: Headcount */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
-                                                        {publicCalculatedChaos.lostFTEEquivalent}
+                                                        {publicCalculatedChaos.lostFTEEquivalent} Staff
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
-                                                        Fully funded staff members performing with 0% productive output.
+                                                        The equivalent number of full-time team salaries lost to administrative clutter.
                                                     </span>
                                                 </div>
 
                                                 {/* Card B: Rent */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
-                                                        {publicCalculatedChaos.lostOfficeRentMonths} Mo.
+                                                        {publicCalculatedChaos.lostOfficeRentMonths} Months
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
-                                                        Prime executive office space rental wasted in central BGC/Ortigas hubs.
+                                                        Of commercial office rent in major business hubs (estimated at ₱120k/mo).
                                                     </span>
                                                 </div>
 
                                                 {/* Card C: Hardware */}
                                                 <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
                                                     <span className="text-2xl font-black text-slate-100 block font-mono">
-                                                        {publicCalculatedChaos.lostWorkstations}
+                                                        {publicCalculatedChaos.lostWorkstations} Laptops
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
-                                                        Top-tier corporate MacBook Pro workstations lost to administrative friction.
+                                                        Brand new premium laptops for your team that could be bought with the savings.
                                                     </span>
                                                 </div>
                                             </div>
@@ -732,10 +742,10 @@ Best regards,
                     <section id="intake-demo" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">The Smart Onboarding Experience</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Experience Our Asynchronous Intake System</h2>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Self-Guided Checklist</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Find Your Bottlenecks in 30 Seconds</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light font-sans">
-                                    Unlike traditional consultants who lock you in exploratory sessions, we collect diagnostics directly. Answer these 3 preview questions to dynamically generate an instant report preview.
+                                    Answer these 3 simple questions to see how messy workflows affect your team and generate a free instant overview.
                                 </p>
                             </div>
 
@@ -744,7 +754,7 @@ Best regards,
                                 {/* Stepper Form Element */}
                                 <div className="lg:col-span-5 bg-brandNavy-900 border border-brandNavy-700/80 p-8 rounded-2xl shadow-xl space-y-6 glass-panel">
                                     <div className="flex items-center justify-between border-b border-brandNavy-800 pb-4">
-                                        <span className="text-xs font-mono text-brandBlue-400 uppercase tracking-widest font-bold">Smart Intake Stepper</span>
+                                        <span className="text-xs font-mono text-brandBlue-400 uppercase tracking-widest font-bold">Workflow Checklist</span>
                                         <span className="text-xs text-slate-400 font-mono font-bold">Step {intakeStep} of 3</span>
                                     </div>
 
@@ -752,7 +762,7 @@ Best regards,
                                     {intakeStep === 1 && (
                                         <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
-                                                1. What is currently holding back your daily operational output?
+                                                1. What is currently slowing down your daily work the most?
                                             </h4>
                                             <div className="space-y-3 pt-2">
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tribal-knowledge' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -765,8 +775,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Tribal Knowledge Drift</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Processes are locked inside the heads of key personnel, stalling execution when they leave.</span>
+                                                        <strong className="text-white block font-semibold">"Solo Expert" Trap (One person knows everything)</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Work halts or slows down when key people take leaves or resign.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'approval-drag' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -779,8 +789,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Admin &amp; Compliance Approval Drag</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Multi-layered corporate signoffs or BIR compliance filings take days to clear internally.</span>
+                                                        <strong className="text-white block font-semibold">Chasing People for Approvals</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Waiting days for simple sign-offs over Viber, Viber loops, or emails.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tool-bloat' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -793,8 +803,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">SaaS Stack Bloat &amp; Manual Copying</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Too many disjointed apps, requiring staff to manually transcribe or sync metrics across hubs.</span>
+                                                        <strong className="text-white block font-semibold">App Chaos &amp; Manual Copy-Pasting</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Your team manually copies the same information across multiple sheets and apps.</span>
                                                     </div>
                                                 </label>
                                             </div>
@@ -803,7 +813,7 @@ Best regards,
                                                 onClick={() => setIntakeStep(2)}
                                                 className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                             >
-                                                Continue to Step 2
+                                                Next Question
                                             </button>
                                         </div>
                                     )}
@@ -812,7 +822,7 @@ Best regards,
                                     {intakeStep === 2 && (
                                         <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
-                                                2. How would you describe your company's playbooks and SOPs?
+                                                2. How are your team's playbooks and SOPs organized?
                                             </h4>
                                             <div className="space-y-3 pt-2">
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'undocumented' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -825,8 +835,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Entirely Undocumented (Oral History)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">We rely on verbal instruction. Operational drift happens naturally with each onboarding cycle.</span>
+                                                        <strong className="text-white block font-semibold">No SOPs, just "how we do things"</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We rely on verbal instructions and teaching new hires on the fly.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'outdated-docs' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -839,8 +849,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Outdated or Scattered Documents</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">We have some Google Docs or spreadsheets, but they are seldom updated and hard to find.</span>
+                                                        <strong className="text-white block font-semibold">Messy Google Drive / Scattered Files</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We have some Google Docs, but they are seldom updated and hard to find.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'fully-standardized' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -853,8 +863,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Fully Standardized &amp; Audited</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Everything is in centralized wikis. However, operational tracking remains manual.</span>
+                                                        <strong className="text-white block font-semibold">We have SOPs, but nobody reads them</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Everything is documented in wikis, but daily tracking is still messy.</span>
                                                     </div>
                                                 </label>
                                             </div>
@@ -870,7 +880,7 @@ Best regards,
                                                     onClick={() => setIntakeStep(3)}
                                                     className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                                 >
-                                                    Step 3
+                                                    Last Question
                                                 </button>
                                             </div>
                                         </div>
@@ -880,7 +890,7 @@ Best regards,
                                     {intakeStep === 3 && (
                                         <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
-                                                3. Which system acts as your team's primary collaboration engine?
+                                                3. Where does your team discuss daily tasks the most?
                                             </h4>
                                             <div className="space-y-3 pt-1">
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'slack-lark' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -893,8 +903,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Messaging Heavy (Lark, Slack, Teams)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Processes are run through active group messages and pings, making task prioritization chaotic.</span>
+                                                        <strong className="text-white block font-semibold">Chat Apps (Lark, Slack, MS Teams)</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Everyone talks through threads and active groups, making it hard to track actual tasks.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'email-piles' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -907,8 +917,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Legacy Admin (Heavy Email Chains)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">Tasks are assigned via email or Viber notes. Finding baseline task states requires scouring records.</span>
+                                                        <strong className="text-white block font-semibold">Email Threads or Viber/Messenger</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Work is assigned via chat groups or email. Updates get lost in long message histories.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'pmo-boards' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -921,8 +931,8 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Task Trackers (Trello, ClickUp, Notion)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1">We track work in systems but suffer from outdated tasks, ghost tickets, and low configuration standards.</span>
+                                                        <strong className="text-white block font-semibold">We tried task trackers but gave up</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We set up Trello, ClickUp, or Notion, but nobody keeps them updated.</span>
                                                     </div>
                                                 </label>
                                             </div>
@@ -937,7 +947,7 @@ Best regards,
                                                         className="mt-1 rounded text-brandBlue-500 focus:ring-brandBlue-400 focus:ring-offset-brandNavy-950 accent-brandBlue-500"
                                                     />
                                                     <span className="text-[10px] leading-relaxed text-slate-400 font-sans font-semibold">
-                                                        I consent to the secure handling of my metrics under <strong>RA 10173</strong> and agree to receive my asynchronous MOD 1 diagnostic reports at the email provided.
+                                                        I agree to share these basic team metrics under <strong>RA 10173 (Data Privacy Act)</strong> to generate my quick operations overview.
                                                     </span>
                                                 </label>
                                             </div>
@@ -954,7 +964,7 @@ Best regards,
                                                     onClick={() => setIsDemoSubmitted(true)}
                                                     className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all shadow-lg"
                                                 >
-                                                    Render My Report Preview
+                                                    Show My Results
                                                 </button>
                                             </div>
                                         </div>
@@ -970,62 +980,62 @@ Best regards,
                                             <div className="w-14 h-14 bg-brandNavy-800 border border-brandNavy-700 text-brandBlue-400 flex items-center justify-center rounded-2xl mx-auto shadow-inner animate-pulse">
                                                 <IconCalculator className="w-6 h-6" />
                                             </div>
-                                            <h4 className="text-base font-serif font-bold text-white">Diagnostic Blueprint Preview Loading</h4>
+                                            <h4 className="text-base font-serif font-bold text-white">Your Operations Summary Will Appear Here</h4>
                                             <p className="text-[11px] text-slate-400 leading-relaxed font-light">
-                                                Complete the three intake stepper steps on the left to watch our system instantly compile an actionable operational risk matrix for your business profile.
+                                                Complete the 3 quick questions on the left. Our system will instantly analyze your answers and generate a simple operations cleanup plan.
                                             </p>
                                         </div>
                                     ) : (
                                         <div className="space-y-6 z-10 w-full animate-fadeIn">
                                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-brandNavy-800 pb-4 gap-4">
                                                 <div>
-                                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Kolthoff Diagnostic Sandbox</span>
-                                                    <h3 className="text-lg font-serif font-bold text-white mt-0.5">Custom MOD 1 Risk Assessment</h3>
+                                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Sandbox Result</span>
+                                                    <h3 className="text-lg font-serif font-bold text-white mt-0.5">Your Business Workflow Summary</h3>
                                                 </div>
                                                 <span className="text-[9px] font-mono bg-brandBlue-500/10 text-brandBlue-400 border border-brandBlue-500/30 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
-                                                    Status: Sandbox Output
+                                                    Estimated Daily Bleed: {formatCurrency(publicCalculatedChaos.dailyChaosBleed)}
                                                 </span>
                                             </div>
 
                                             {/* Simulated Report Card block */}
                                             <div className="space-y-4 bg-brandNavy-950/80 p-6 rounded-xl border border-brandNavy-800 relative">
                                                 <button 
-                                                    onClick={() => handleCopyToClipboard(`Vulnerability: ${bottleneck === 'tribal-knowledge' ? 'High Key-Person Dependency' : bottleneck === 'approval-drag' ? 'High SLA Latency' : 'SaaS Stack Bloat'}\nChaos Tax: ${publicCalculatedChaos.chaosTaxRate}%\nDaily Bleed: ${formatCurrency(publicCalculatedChaos.dailyChaosBleed)}`)}
+                                                    onClick={() => handleCopyToClipboard(`Business Vulnerability: ${bottleneck === 'tribal-knowledge' ? 'High dependency on single expert' : bottleneck === 'approval-drag' ? 'Approval bottlenecks' : 'App chaos and manual copy-pasting'}\nLoss Rate: ${publicCalculatedChaos.chaosTaxRate}% of payroll\nDaily Loss: ${formatCurrency(publicCalculatedChaos.dailyChaosBleed)}`)}
                                                     className="absolute top-4 right-4 p-2 rounded bg-brandNavy-900 hover:bg-brandNavy-800 border border-brandNavy-750 transition-colors flex items-center gap-1.5 text-[10px] text-slate-300 font-mono"
                                                     title="Copy metrics summary"
                                                 >
-                                                    <IconCopy /> Copy
+                                                    <IconCopy /> Copy Details
                                                 </button>
                                                 
                                                 <div className="space-y-2 pr-16">
-                                                    <span className="text-[9px] font-mono font-bold tracking-wider text-rose-400 uppercase block">Critical Vulnerability Detected:</span>
+                                                    <span className="text-[9px] font-mono font-bold tracking-wider text-rose-400 uppercase block">Biggest Area to Improve:</span>
                                                     <h4 className="text-sm font-bold text-white font-serif">
-                                                        {bottleneck === 'tribal-knowledge' && "Critical Risk: High Key-Person Dependency Pattern"}
-                                                        {bottleneck === 'approval-drag' && "Frictional Risk: High SLA Process approval Latency"}
-                                                        {bottleneck === 'tool-bloat' && "System Risk: Scattered Data Sinks &amp; Operational Swarm"}
+                                                        {bottleneck === 'tribal-knowledge' && "One person knows everything (Solo Expert trap)"}
+                                                        {bottleneck === 'approval-drag' && "Delayed Sign-offs & Approval Bottlenecks"}
+                                                        {bottleneck === 'tool-bloat' && "App Chaos & Manual Copy-pasting"}
                                                     </h4>
                                                     <p className="text-[11px] text-slate-400 leading-relaxed font-light">
-                                                        {bottleneck === 'tribal-knowledge' && "Your processes are siloed in individual minds. If key personnel resign, your operations face immediate degradation. Standardizing this information is your absolute #1 scaling priority."}
-                                                        {bottleneck === 'approval-drag' && "Manual approval bottlenecks are delaying client deliverables. By mapping structures into programmatic workflows, we can cut review cycles from days to minutes."}
-                                                        {bottleneck === 'tool-bloat' && "Your staff are wasting expensive payroll hours copying data between mismatched platforms. Streamlining this workflow will instantly free up massive structural headcount."}
+                                                        {bottleneck === 'tribal-knowledge' && "Your processes are siloed in individual minds. If key employees are on leave or resign, work slows down to a crawl. Getting these tasks written down into simple checkable SOPs is your absolute #1 priority."}
+                                                        {bottleneck === 'approval-drag' && "Chasing approvals over Viber chat or email is delaying client work. By mapping simple checklists inside your workspace, we can make approvals take minutes instead of days."}
+                                                        {bottleneck === 'tool-bloat' && "Your team is wasting expensive daily hours copying information between mismatched tools and spreadsheets. Connecting these apps will instantly save you hours of unnecessary work."}
                                                     </p>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-brandNavy-850">
                                                     <div>
-                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Documentation Level:</span>
+                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Current Playbook State:</span>
                                                         <span className="text-xs font-bold text-slate-200 block mt-1 font-sans">
-                                                            {documentation === 'undocumented' && "Level 0: Oral Lore"}
-                                                            {documentation === 'outdated-docs' && "Level 1: Outdated/Scattered Doc Fragment"}
-                                                            {documentation === 'fully-standardized' && "Level 2: Standardized (No-Automation)"}
+                                                            {documentation === 'undocumented' && "No playbooks, relying on memory"}
+                                                            {documentation === 'outdated-docs' && "Outdated docs & scattered sheets"}
+                                                            {documentation === 'fully-standardized' && "Has SOPs but manual tracking"}
                                                         </span>
                                                     </div>
                                                     <div>
-                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Collab Channel Drag:</span>
+                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Communication Channel State:</span>
                                                         <span className="text-xs font-bold text-slate-200 block mt-1 font-sans">
-                                                            {toolstack === 'slack-lark' && "Chat Dependency (Task Chaos)"}
-                                                            {toolstack === 'email-piles' && "Viber/Email Over-Dependency"}
-                                                            {toolstack === 'pmo-boards' && "Unoptimized PMO System Sprawl"}
+                                                            {toolstack === 'slack-lark' && "Chat heavy (constant pings)"}
+                                                            {toolstack === 'email-piles' && "Viber & Email Overload"}
+                                                            {toolstack === 'pmo-boards' && "Abandoned task boards"}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1034,7 +1044,7 @@ Best regards,
                                             {/* Dynamic Call to action mapping based on sandbox metrics */}
                                             <div className="space-y-4 pt-4 border-t border-brandNavy-800">
                                                 <p className="text-[11px] text-slate-300 leading-relaxed font-light font-sans">
-                                                    Your calculated operational drag sits at <strong className="text-rose-400 font-bold">{publicCalculatedChaos.chaosTaxRate}% capacity waste</strong>. This means you are bleeding roughly <strong className="text-white font-bold">{formatCurrency(publicCalculatedChaos.dailyChaosBleed)} daily</strong> just to coordinate workflows. Let's build a dedicated, audited structure to lock in high efficiencies.
+                                                    With your current setup, you are losing roughly <strong className="text-rose-400 font-bold">{publicCalculatedChaos.chaosTaxRate}% of your payroll value</strong>. That's about <strong className="text-white font-bold">{formatCurrency(publicCalculatedChaos.dailyChaosBleed)} wasted daily</strong> just on manual coordination and chat clutter. Let's build a simple operational structure to stop this waste.
                                                 </p>
                                                 
                                                 <div className="flex flex-col sm:flex-row gap-4">
@@ -1042,7 +1052,7 @@ Best regards,
                                                         href={mailtoLink}
                                                         className="w-full sm:w-auto text-center px-6 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded font-sans transition-all shadow-lg"
                                                     >
-                                                        Submit Diagnostic &amp; Book Audit
+                                                        Get My Free Cleanup Plan
                                                     </a>
                                                     <button 
                                                         onClick={() => {
@@ -1055,7 +1065,7 @@ Best regards,
                                                         }}
                                                         className="w-full sm:w-auto px-6 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all border border-brandNavy-750"
                                                     >
-                                                        Restart Demo
+                                                        Reset Checklist
                                                     </button>
                                                 </div>
                                             </div>
@@ -1072,15 +1082,14 @@ Best regards,
                             
                             {/* Section Header */}
                             <div className="max-w-3xl mx-auto text-center space-y-3">
-                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
-                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Our Step-by-Step Method</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">How We Organize Your Business Operations</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Click any stage along our pipeline to interactively inspect its compliance variables, execution timeframes, and deliverables.
+                                    Click on any stage below to see how we help your team clean up chats, organize playbooks, and automate basic tasks.
                                 </p>
                             </div>
 
                             {/* 4-CARD ARROW PIPELINE SEQUENCE GRID */}
-                            {}
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-0 font-sans items-stretch">
                                 {Object.entries(modulesData).map(([key, data]) => {
                                     const num = parseInt(key);
@@ -1111,7 +1120,7 @@ Best regards,
                                                             <span className={`text-[10px] font-mono tracking-widest uppercase font-black px-2 py-0.5 rounded ${
                                                                 isActive ? 'bg-brandBlue-500/20 text-brandBlue-300' : 'bg-brandNavy-800 text-slate-400'
                                                             }`}>
-                                                                MOD {num}
+                                                                Phase {num}
                                                             </span>
                                                         </div>
 
@@ -1123,7 +1132,7 @@ Best regards,
 
                                                     {/* Outcomes Summary footer */}
                                                     <div className="pt-2 border-t border-brandNavy-800/80 text-[10px] sm:text-[11px] leading-snug font-semibold text-slate-400 mt-2 flex justify-between items-center">
-                                                        <span>Inspect Phase Specs</span>
+                                                        <span>View Details</span>
                                                         <svg className={`w-3.5 h-3.5 transition-transform group-hover:translate-x-1 ${isActive ? 'text-brandBlue-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                                         </svg>
@@ -1136,17 +1145,16 @@ Best regards,
                             </div>
 
                             {/* DYNAMIC PIPELINE PHASE SPECS DRAWER */}
-                            {}
                             <div className="max-w-7xl mx-auto bg-brandNavy-950 border border-brandNavy-800 p-6 sm:p-10 rounded-2xl shadow-2xl glass-panel relative animate-fadeIn">
                                 <div className="absolute top-4 right-6 text-[10px] font-mono text-brandBlue-400 font-bold bg-brandBlue-500/10 border border-brandBlue-500/20 px-3 py-1 rounded">
-                                    Sprint Phase Timeline: {modulesData[activeModule].duration}
+                                    Project Duration: {modulesData[activeModule].duration}
                                 </div>
                                 
                                 <div className="space-y-6">
                                     <div className="space-y-2">
                                         <h3 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2.5">
                                             <IconSparkles />
-                                            Module {activeModule}: {modulesData[activeModule].title}
+                                            Phase {activeModule}: {modulesData[activeModule].title}
                                         </h3>
                                         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl font-light">
                                             {modulesData[activeModule].desc}
@@ -1154,7 +1162,7 @@ Best regards,
                                     </div>
 
                                     <div className="border-t border-brandNavy-800 pt-6">
-                                        <h4 className="text-xs font-mono tracking-wider text-slate-400 uppercase font-bold mb-4">Milestone Deliverables:</h4>
+                                        <h4 className="text-xs font-mono tracking-wider text-slate-400 uppercase font-bold mb-4">What You Get:</h4>
                                         <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {modulesData[activeModule].deliverables.map((del, i) => (
                                                 <li key={i} className="p-4 bg-brandNavy-950/60 border border-brandNavy-800 rounded-xl flex items-start gap-2.5">
@@ -1167,10 +1175,10 @@ Best regards,
 
                                     <div className="pt-4 border-t border-brandNavy-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                         <div className="text-xs text-slate-400">
-                                            <strong className="text-white">Audit Standard Objective:</strong> {modulesData[activeModule].outcome}
+                                            <strong className="text-white">Goal of this stage:</strong> {modulesData[activeModule].outcome}
                                         </div>
                                         <a href={mailtoLink} className="w-full sm:w-auto text-center px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-[10px] tracking-wider rounded uppercase transition-all shadow-md">
-                                            Initiate Mod {activeModule}
+                                            Ask About Phase {activeModule}
                                         </a>
                                     </div>
                                 </div>
@@ -1186,10 +1194,10 @@ Best regards,
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
                                 
                                 <div className="max-w-2xl mx-auto space-y-4 mb-8">
-                                    <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Secure Channel</span>
-                                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book Your Operational Diagnostics Audit</h3>
+                                    <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Connect</span>
+                                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Request a Free 15-Minute Workflow Review</h3>
                                     <p className="text-sm text-slate-600 leading-relaxed font-sans font-light">
-                                        We protect client data privacy under <strong>Republic Act No. 10173</strong> and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
+                                        We respect your privacy under the <strong>Data Privacy Act (RA 10173)</strong>. Instead of making you fill out long corporate inquiry forms, click the button below to generate a pre-templated email. Just hit send, and we will get back to you with a simple workflow summary.
                                     </p>
                                 </div>
 
@@ -1198,10 +1206,10 @@ Best regards,
                                         href={mailtoLink}
                                         className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5 font-sans"
                                     >
-                                        <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
+                                        <IconMail className="w-4 h-4 mr-2" /> Request Free Review via Email
                                     </a>
                                     <p className="text-xs text-slate-500 font-sans font-semibold">
-                                        Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. All personal information received is strictly processed under the National Privacy Commission guidelines.
+                                        Or write to us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>.
                                     </p>
                                 </div>
                             </div>
@@ -1227,19 +1235,19 @@ Best regards,
                                     onClick={() => setIsLegalModalOpen(true)}
                                     className="text-brandBlue-400 hover:text-brandBlue-300 transition-colors underline font-mono text-[9px] uppercase tracking-wider block mt-2 text-center md:text-left mx-auto md:mx-0"
                                 >
-                                    View NPC Privacy Manual &amp; BIR EOPT Disclosures
+                                    View NPC Privacy Policy &amp; BIR Tax Details
                                 </button>
                             </div>
 
                             <div className="space-y-1.5 text-center md:text-right font-semibold">
-                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
+                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Get in Touch</span>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
-                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-medium font-sans">contact@kolthoff-consulting.com</a>
+                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-medium font-sans font-mono">contact@kolthoff-consulting.com</a>
                                 </div>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
-                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-medium font-sans">www.kolthoff-consulting.com</a>
+                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-medium font-sans font-mono">www.kolthoff-consulting.com</a>
                                 </div>
                             </div>
 
@@ -1266,8 +1274,8 @@ Best regards,
                                 </button>
                                 
                                 <div className="border-b border-brandNavy-800 pb-4">
-                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Kolthoff Corporate Governance</span>
-                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Regulatory &amp; Statutory Compliance Brief</h3>
+                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Regulatory Compliance</span>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Local Business Compliance Summary</h3>
                                 </div>
 
                                 <div className="space-y-5 text-xs font-light leading-relaxed">
@@ -1278,12 +1286,12 @@ Best regards,
                                             1. Data Privacy Act of 2012 (Republic Act No. 10173)
                                         </h4>
                                         <p className="pl-3 text-slate-400">
-                                            All processed parameters—specifically operational overheads, salary estimates, and systems catalogs—are handled dynamically. In strict alignment with NPC Advisory No. 2017-01:
+                                            We handle all business figures, payroll estimates, and system lists with strict security. In line with National Privacy Commission (NPC) rules:
                                         </p>
                                         <ul className="list-disc list-inside pl-6 text-slate-400 space-y-1 font-semibold">
-                                            <li>Encryption Standard: All stored client profiles utilize localized cryptographic wraps (AES-256).</li>
-                                            <li>Data Retention: Automatically purged from servers 90 days after delivery of diagnostics.</li>
-                                            <li>No Third-Party Access: Your indicators are never leased, sold, or shared.</li>
+                                            <li>Encryption Standard: All client data is encrypted locally using AES-256 wraps.</li>
+                                            <li>Automatic Purge: We permanently delete your operations details 90 days after delivery.</li>
+                                            <li>No Shared Data: Your private metrics are never shared, rented, or sold to third parties.</li>
                                         </ul>
                                     </div>
 
@@ -1291,10 +1299,10 @@ Best regards,
                                     <div className="space-y-2">
                                         <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
                                             <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
-                                            2. BIR Ease of Paying Taxes (EOPT) Act Alignment
+                                            2. BIR Ease of Paying Taxes (EOPT) Act Compliance
                                         </h4>
                                         <p className="pl-3 text-slate-400">
-                                            In strict compliance with Philippine taxation updates (EOPT, RA 11976), all billing is handled asynchronously. VAT Sales Invoices are produced digitally at point-of-sale, matching mandatory fields for seamless tax filing.
+                                            In accordance with the EOPT Act (RA 11976), all service billing is handled smoothly. We issue digital VAT Sales Invoices directly to your email, containing all mandatory BIR taxpayer fields for seamless filing.
                                         </p>
                                     </div>
 
@@ -1305,7 +1313,7 @@ Best regards,
                                             3. DOLE General Labor Standards (GLS) Audit Compliance
                                         </h4>
                                         <p className="pl-3 text-slate-400">
-                                            Our standard operational blueprints are structurally built to protect both management and staff, respecting GLS guidelines regarding working hours, overtime, and mandatory rest periods. We systematically prevent compliance creep.
+                                            We structure our daily workflow templates to fully respect DOLE labor codes—specifically guidelines on standard working hours, mandatory rest periods, and clear responsibilities to avoid employee friction.
                                         </p>
                                     </div>
                                 </div>
@@ -1315,7 +1323,7 @@ Best regards,
                                         onClick={() => setIsLegalModalOpen(false)}
                                         className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
                                     >
-                                        Acknowledge &amp; Close
+                                        Close Details
                                     </button>
                                 </div>
                             </div>
@@ -1334,18 +1342,18 @@ Best regards,
                                 </button>
                                 
                                 <div className="border-b border-brandNavy-800 pb-4">
-                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Scientific Validity</span>
-                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Mathematical Proof &amp; Operational Logic</h3>
+                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Calculation Standard</span>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Calculation Logic &amp; Formulas</h3>
                                 </div>
 
                                 <div className="space-y-6 text-xs font-light leading-relaxed">
                                     <p className="text-slate-300 font-semibold">
-                                        Operational leakage is mathematically modeled as a function of total personnel, average monthly salary, baseline delay rates, and recruiting attrition variables. We identify corporate resource bleed with maximum precision.
+                                        Our calculations model direct financial loss based on wasted staff hours and employee turnover metrics. This helps you visualize exactly what daily coordination mistakes are costing your business.
                                     </p>
 
                                     {/* Equation Canvas Area */}
                                     <div className="p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
-                                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Chaos Waste Equation</span>
+                                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Lost Payroll Formula</span>
                                         <div id="modal-math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
                                             {"$$\\Omega_c = \\frac{T \\cdot S_{\\text{monthly}} \\cdot 0.12 \\cdot 12 + (H_{\\text{weekly}} \\cdot 4.33 \\cdot T \\cdot R_{\\text{avg}} \\cdot 12)}{12 \\cdot T \\cdot S_{\\text{monthly}}}$$"}
                                         </div>
@@ -1359,13 +1367,13 @@ Best regards,
                                         </h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 text-slate-400 font-mono text-[10px] font-semibold">
                                             <div>
-                                                <strong className="text-white">{"$T$"}</strong> = Total Personnel count (FTEs)
+                                                <strong className="text-white">{"$T$"}</strong> = Total Employees
                                             </div>
                                             <div>
-                                                <strong className="text-white">{"$S_{\\text{monthly}}$"}</strong> = Avg Monthly Base Salary (₱)
+                                                <strong className="text-white">{"$S_{\\text{monthly}}$"}</strong> = Average Monthly Base Salary (₱)
                                             </div>
                                             <div>
-                                                <strong className="text-white">{"$H_{\\text{weekly}}$"}</strong> = Weekly Delays per Employee (Hours)
+                                                <strong className="text-white">{"$H_{\\text{weekly}}$"}</strong> = Wasted Hours per Employee Weekly
                                             </div>
                                             <div>
                                                 <strong className="text-white">{"$R_{\\text{avg}}$"}</strong> = Average Hourly Rate ({"$S_{\\text{monthly}} / 160$"})
@@ -1375,10 +1383,10 @@ Best regards,
 
                                     {/* Logic Breakdown */}
                                     <div className="space-y-3 bg-brandNavy-950/50 p-4 border border-brandNavy-800 rounded-xl">
-                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px]">Logical Proof Components</h4>
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px]">What This Formula Factors In:</h4>
                                         <ul className="list-disc list-inside space-y-2 text-slate-400 text-[11px] font-semibold">
-                                            <li><strong className="text-slate-200 font-sans">Annual Attrition Friction (12%):</strong> Quantifies resource replacement, ramp-up delays, and onboarding loss.</li>
-                                            <li><strong className="text-slate-200 font-sans">System Friction Wastage:</strong> Measures expensive administrative hours spent manually copying metrics or chasing approvals.</li>
+                                            <li><strong className="text-slate-200 font-sans">Turnover Loss (12%):</strong> Wasted money spent recruiting, hiring, and onboarding replacements when frustrated employees leave.</li>
+                                            <li><strong className="text-slate-200 font-sans">Workflow Loss:</strong> The actual payroll value spent on manual tasks, chasing approvals, and correcting communication mistakes.</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -1388,7 +1396,7 @@ Best regards,
                                         onClick={() => setIsMathModalOpen(false)}
                                         className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
                                     >
-                                        Acknowledge &amp; Close
+                                        Close Math Details
                                     </button>
                                 </div>
                             </div>
