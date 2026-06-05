@@ -96,12 +96,13 @@
             transform: scale(1.2);
         }
 
-        /* Glassmorphism accent panels */
+        /* Glassmorphism accent panels with subtle glow */
         .glass-panel {
-            background: rgba(15, 26, 44, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(37, 99, 235, 0.15);
+            background: rgba(15, 26, 44, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(11, 23, 49, 0.5);
         }
     </style>
 </head>
@@ -279,28 +280,35 @@ Best regards,
                         <span>Registered System Security: Fully Compliant with **RA 10173 (Data Privacy Act of 2012)** & **BIR EOPT Audit mandates**</span>
                     </div>
 
-                    {/* Navigation Header */}
+                    {/* Symmetrical Centered Header Navigation */}
                     <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/90 sticky top-0 z-40 backdrop-blur-md font-sans">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400" />
+                            
+                            {/* Logo Column (Left 25%) */}
+                            <div className="flex items-center gap-3 lg:w-1/4 shrink-0">
+                                <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400 animate-pulse" />
                                 <div>
-                                    <span className="font-sans font-extrabold tracking-wider text-base sm:text-lg uppercase block text-white leading-none">
+                                    <span className="font-sans font-extrabold tracking-wider text-sm sm:text-base uppercase block text-white leading-none">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
-                                    <span className="text-[9px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Architecture & Strategy</span>
+                                    <span className="text-[8px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Architecture</span>
                                 </div>
                             </div>
                             
-                            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                                <a href="#philosophy" className="hover:text-white transition-colors duration-200">The Model</a>
-                                <a href="#chaos" className="hover:text-white transition-colors duration-200">Cost of Chaos</a>
-                                <a href="#intake-demo" className="hover:text-white transition-colors duration-200">Intake Preview</a>
-                                <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Roadmap</a>
-                                <a href={mailtoLink} className="px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold rounded transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
+                            {/* Centered Navigation Links (Middle 50%) */}
+                            <nav className="hidden lg:flex items-center justify-center gap-10 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex-1">
+                                <a href="#philosophy" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">The Model</a>
+                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Cost of Chaos</a>
+                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Intake Preview</a>
+                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Roadmap</a>
+                            </nav>
+
+                            {/* Action CTA Onboarding Button (Right 25%) */}
+                            <div className="flex justify-end lg:w-1/4 shrink-0">
+                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
                                     Start Onboarding
                                 </a>
-                            </nav>
+                            </div>
                         </div>
                     </header>
 
@@ -451,7 +459,7 @@ Best regards,
                                     Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
                                 </p>
                                 
-                                {/* Dynamic popup link positioning as requested */}
+                                {/* Dynamic popup link positioning */}
                                 <div className="pt-2">
                                     <button 
                                         onClick={() => setIsMathModalOpen(true)}
