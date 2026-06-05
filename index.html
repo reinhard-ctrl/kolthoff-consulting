@@ -11,7 +11,7 @@
     <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght=0,100..900;1,100..900&family=Playfair+Display:ital,wght=0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -137,7 +137,6 @@
             </svg>
         );
 
-        // SVG Symbols optimized to use React-compliant camelCase attributes
         const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
         const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
         const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
@@ -172,13 +171,11 @@
             const [bottleneck, setBottleneck] = useState('');
             const [documentation, setDocumentation] = useState('');
             const [toolstack, setToolstack] = useState('');
-            const [isDemoSubmitted, setIsDemoSubmitted] = useState(false);
             const [dpaConsent, setDpaConsent] = useState(false);
+            const [isDemoSubmitted, setIsDemoSubmitted] = useState(false);
 
-            // Compliance Modal Control
+            // Modal Trigger States
             const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-            
-            // Math Proof Modal Control
             const [isMathModalOpen, setIsMathModalOpen] = useState(false);
 
             // Dynamic Calculator Leakage Math
@@ -193,7 +190,7 @@
                 
                 const annualChaosTotal = annualTurnoverLoss + annualInefficiencyLoss;
                 const dailyChaosBleed = Math.round(annualChaosTotal / 365);
-                const hourlyChaosBleed = Math.round(annualChaosTotal / (365 * 8));
+                const hourlyChaosBleed = exactHourBleed(annualChaosTotal);
 
                 // Invisible "Chaos Tax" percentage on total payroll overhead
                 const annualPayrollOverhead = totalMonthlyPayroll * 12;
@@ -201,11 +198,11 @@
                 const workforceEfficiency = 100 - chaosTaxRate;
 
                 // Lost Opportunity Equivalents (B2B Visceral Assets)
-                const seniorDeveloperSalary = 80000 * 12; 
+                const seniorDeveloperSalary = 80000 * 12; // ₱80k per month + overhead
                 const lostFTEEquivalent = Math.round((annualChaosTotal / seniorDeveloperSalary) * 10) / 10;
-                const primeOfficeRent = 120000; 
+                const primeOfficeRent = 120000; // ₱120k monthly rent
                 const lostOfficeRentMonths = Math.round(annualChaosTotal / primeOfficeRent);
-                const macbookProCost = 140000; 
+                const macbookProCost = 140000; // Premium hardware
                 const lostWorkstations = Math.round(annualChaosTotal / macbookProCost);
 
                 return { 
@@ -222,11 +219,16 @@
                 };
             }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
 
+            function exactHourBleed(annual) {
+                return Math.round(annual / (365 * 8)); // Assumes 8 active business hours per day
+            }
+
+            // Direct mail link generator with custom inquiry body
             const mailtoLink = useMemo(() => {
                 const subject = encodeURIComponent("Operational Diagnostics Audit Request - Kolthoff");
                 const body = encodeURIComponent(`Dear Reinhard,
 
-I am writing to initiate our Operational Diagnostics Audit (MOD 0) to evaluate our workflow architecture, eliminate system drag, and lock in our scale-ready infrastructure.
+I am writing to initiate our Operational Diagnostics Audit (MOD 1) to evaluate our workflow architecture, eliminate system drag, and lock in our scale-ready infrastructure.
 
 I have completed the preliminary diagnostic parameters on your landing page. Here are our indicators:
 
@@ -240,10 +242,7 @@ I have completed the preliminary diagnostic parameters on your landing page. Her
 - Current Documentation Status: ${documentation || 'Unspecified'}
 - Core Collaboration Engine: ${toolstack || 'Unspecified'}
 
-DPA Regulatory Confirmation:
-- Consent given to securely process the above diagnostics parameters in strict compliance with RA 10173 guidelines.
-
-Please secure our queue position and deliver the secure MOD 0 Intake Document so we can submit our detailed architecture.
+Please secure our queue position and deliver the secure MOD 1 Intake Document so we can submit our detailed architecture.
 
 Best regards,
 [Name]
@@ -252,27 +251,16 @@ Best regards,
                 return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
             }, [publicCalculatedChaos, bottleneck, documentation, toolstack]);
 
-            // Trigger MathJax typeset updates cleanly on ROI changes
+            // Trigger MathJax typeset updates cleanly on ROI changes and modal popups
             useEffect(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
-                    const mathElement = document.getElementById('math-roi');
+                    const mathElement = document.getElementById('math-roi') || document.getElementById('modal-math-roi');
                     if (mathElement) {
                         window.MathJax.typesetClear([mathElement]);
                         window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
                     }
                 }
-            }, [publicCalculatedChaos.workforceEfficiency]);
-
-            // Re-render MathJax variables inside the popup modal when opened
-            useEffect(() => {
-                if (isMathModalOpen && window.MathJax && window.MathJax.typesetPromise) {
-                    const mathElement = document.getElementById('modal-math-roi');
-                    if (mathElement) {
-                        window.MathJax.typesetClear([mathElement]);
-                        window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
-                    }
-                }
-            }, [isMathModalOpen]);
+            }, [publicCalculatedChaos.workforceEfficiency, isMathModalOpen]);
 
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
@@ -534,7 +522,7 @@ Best regards,
                                         </div>
                                     </div>
 
-                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-555 leading-relaxed font-sans font-semibold">
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
                                         <strong>Diagnostic Security & Tax Compliance Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation. All calculations are governed in strict compliance with the **Data Privacy Act of 2012 (RA 10173)**. Any subsequent scoping operations are billed via EOPT-mandated **VAT Sales Invoices**.
                                     </div>
                                 </div>
@@ -646,7 +634,7 @@ Best regards,
                                 <div className="lg:col-span-5 bg-brandNavy-900 border border-brandNavy-700/80 p-8 rounded-2xl shadow-xl space-y-6 glass-panel">
                                     <div className="flex items-center justify-between border-b border-brandNavy-800 pb-4">
                                         <span className="text-xs font-mono text-brandBlue-400 uppercase tracking-widest font-bold">Smart Intake Stepper</span>
-                                        <span className="text-xs text-slate-400 font-mono">Step {intakeStep} of 3</span>
+                                        <span className="text-xs text-slate-400 font-mono font-bold">Step {intakeStep} of 3</span>
                                     </div>
 
                                     {/* STEP 1: Core Bottleneck */}
@@ -667,7 +655,7 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Tribal Knowledge Drift</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Processes are locked inside the heads of key personnel, stalling execution when they leave.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Processes are locked inside the heads of key personnel, stalling execution when they leave.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'approval-drag' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -681,13 +669,13 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Admin & Compliance Approval Drag</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Multi-layered corporate signoffs or BIR compliance filings take days to clear internally.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Multi-layered corporate signoffs or BIR compliance filings take days to clear internally.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tool-bloat' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
                                                     <input 
                                                         type="radio" 
-                                                        name="toolstack" 
+                                                        name="bottleneck" 
                                                         value="tool-bloat" 
                                                         checked={bottleneck === 'tool-bloat'} 
                                                         onChange={() => setBottleneck('tool-bloat')} 
@@ -695,14 +683,14 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">SaaS Stack Bloat & Manual Copying</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Too many disjointed apps, requiring staff to manually transcribe or sync metrics across hubs.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Too many disjointed apps, requiring staff to manually transcribe or sync metrics across hubs.</span>
                                                     </div>
                                                 </label>
                                             </div>
                                             <button 
                                                 disabled={!bottleneck}
                                                 onClick={() => setIntakeStep(2)}
-                                                className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all"
+                                                className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                             >
                                                 Continue to Step 2
                                             </button>
@@ -727,7 +715,7 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Entirely Undocumented (Oral History)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">We rely on verbal instruction. Operational drift happens naturally with each onboarding cycle.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We rely on verbal instruction. Operational drift happens naturally with each onboarding cycle.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'outdated-docs' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -741,7 +729,7 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Outdated or Scattered Documents</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">We have some Google Docs or spreadsheets, but they are seldom updated and hard to find.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We have some Google Docs or spreadsheets, but they are seldom updated and hard to find.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'fully-standardized' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -755,21 +743,21 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Fully Standardized & Audited</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Everything is in centralized wikis. However, operational tracking remains manual.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Everything is in centralized wikis. However, operational tracking remains manual.</span>
                                                     </div>
                                                 </label>
                                             </div>
                                             <div className="flex gap-4">
                                                 <button 
                                                     onClick={() => setIntakeStep(1)}
-                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all"
+                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                                 >
                                                     Back
                                                 </button>
                                                 <button 
                                                     disabled={!documentation}
                                                     onClick={() => setIntakeStep(3)}
-                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all"
+                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                                 >
                                                     Step 3
                                                 </button>
@@ -777,13 +765,13 @@ Best regards,
                                         </div>
                                     )}
 
-                                    {/* STEP 3: Tools & Integration with mandatory DPA and EOPT Legal Checkboxes */}
+                                    {/* STEP 3: Tools & Integration + Legal Consent Checkbox (RA 10173 compliant) */}
                                     {intakeStep === 3 && (
                                         <div className="space-y-4">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
                                                 3. Which system acts as your team's primary collaboration engine?
                                             </h4>
-                                            <div className="space-y-3 pt-2">
+                                            <div className="space-y-3 pt-1">
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'slack-lark' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
                                                     <input 
                                                         type="radio" 
@@ -795,7 +783,7 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Messaging Heavy (Lark, Slack, Teams)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Processes are run through active group messages and pings, making task prioritization chaotic.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Processes are run through active group messages and pings, making task prioritization chaotic.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'email-piles' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -809,7 +797,7 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Legacy Admin (Heavy Email Chains)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">Tasks are assigned via email or Viber notes. Finding baseline task states requires scouring records.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Tasks are assigned via email or Viber notes. Finding baseline task states requires scouring records.</span>
                                                     </div>
                                                 </label>
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'pmo-boards' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
@@ -823,22 +811,22 @@ Best regards,
                                                     />
                                                     <div className="text-xs font-sans">
                                                         <strong className="text-white block font-semibold">Task Trackers (Trello, ClickUp, Notion)</strong>
-                                                        <span className="text-slate-400 text-[11px] block mt-1 leading-relaxed font-light">We track work in systems but suffer from outdated tasks, ghost tickets, and low configuration standards.</span>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We track work in systems but suffer from outdated tasks, ghost tickets, and low configuration standards.</span>
                                                     </div>
                                                 </label>
                                             </div>
 
-                                            {/* LEGAL CONSENT DISCLOSURE (DPA compliant RA 10173) */}
-                                            <div className="p-4 bg-brandNavy-950/80 rounded-xl border border-brandNavy-800 space-y-3">
-                                                <label className="flex items-start gap-3.5 cursor-pointer">
+                                            {/* DPA SECURE VOLUNTARY CONSENT CHECKBOX */}
+                                            <div className="pt-2">
+                                                <label className="flex items-start gap-3 select-none cursor-pointer">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={dpaConsent} 
-                                                        onChange={(e) => setDpaConsent(e.target.checked)}
-                                                        className="mt-1 accent-brandBlue-500 shrink-0 h-4 w-4 rounded"
+                                                        onChange={(e) => setDpaConsent(e.target.checked)} 
+                                                        className="mt-1 rounded text-brandBlue-500 focus:ring-brandBlue-400 focus:ring-offset-brandNavy-950 accent-brandBlue-500"
                                                     />
-                                                    <span className="text-[10px] text-slate-400 leading-relaxed font-light font-sans block">
-                                                        I hereby authorize Kolthoff Consulting to securely process these baseline diagnostic indicators. I confirm this data is submitted voluntarily under the statutory protections of the <strong className="text-white hover:underline" onClick={() => setIsLegalModalOpen(true)}>Data Privacy Act of 2012 (RA 10173)</strong>.
+                                                    <span className="text-[10px] leading-relaxed text-slate-400 font-sans font-semibold">
+                                                        I consent to the secure handling of my metrics under **RA 10173** and agree to receive my asynchronous MOD 1 diagnostic reports at the email provided.
                                                     </span>
                                                 </label>
                                             </div>
@@ -846,14 +834,14 @@ Best regards,
                                             <div className="flex gap-4">
                                                 <button 
                                                     onClick={() => setIntakeStep(2)}
-                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all"
+                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
                                                 >
                                                     Back
                                                 </button>
                                                 <button 
                                                     disabled={!toolstack || !dpaConsent}
                                                     onClick={() => setIsDemoSubmitted(true)}
-                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all shadow-lg"
+                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all shadow-lg"
                                                 >
                                                     Render My Report Preview
                                                 </button>
@@ -863,8 +851,8 @@ Best regards,
                                 </div>
 
                                 {/* Right Column: Live Diagnostic Report Preview Container */}
-                                <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl relative min-h-[32rem] flex flex-col justify-between overflow-hidden glass-panel">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
+                                <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl relative min-h-[32rem] flex flex-col justify-between overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full" />
                                     
                                     {!isDemoSubmitted ? (
                                         <div className="m-auto text-center space-y-4 max-w-md p-6 z-10">
@@ -873,7 +861,7 @@ Best regards,
                                             </div>
                                             <h4 className="text-base font-serif font-bold text-white">Diagnostic Blueprint Preview Loading</h4>
                                             <p className="text-[11px] text-slate-400 leading-relaxed font-light">
-                                                Complete the three intake stepper steps to watch our system instantly compile an actionable operational risk matrix for your business profile.
+                                                Complete the three intake stepper steps on the left to watch our system instantly compile an actionable operational risk matrix for your business profile.
                                             </p>
                                         </div>
                                     ) : (
@@ -881,7 +869,7 @@ Best regards,
                                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-brandNavy-800 pb-4 gap-4">
                                                 <div>
                                                     <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Kolthoff Diagnostic Sandbox</span>
-                                                    <h3 className="text-lg font-serif font-bold text-white mt-0.5">Custom MOD 0 Risk Assessment</h3>
+                                                    <h3 className="text-lg font-serif font-bold text-white mt-0.5">Custom MOD 1 Risk Assessment</h3>
                                                 </div>
                                                 <span className="text-[9px] font-mono bg-brandBlue-500/10 text-brandBlue-400 border border-brandBlue-500/30 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
                                                     Status: Sandbox Output
@@ -933,7 +921,7 @@ Best regards,
                                                 <div className="flex flex-col sm:flex-row gap-4">
                                                     <a 
                                                         href={mailtoLink}
-                                                        className="w-full sm:w-auto text-center px-6 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg font-sans transition-all shadow-lg"
+                                                        className="w-full sm:w-auto text-center px-6 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded font-sans transition-all shadow-lg"
                                                     >
                                                         Submit Diagnostic & Book Audit
                                                     </a>
@@ -946,7 +934,7 @@ Best regards,
                                                             setToolstack('');
                                                             setDpaConsent(false);
                                                         }}
-                                                        className="w-full sm:w-auto px-6 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded-lg font-sans transition-all border border-brandNavy-750"
+                                                        className="w-full sm:w-auto px-6 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all border border-brandNavy-750"
                                                     >
                                                         Restart Demo
                                                     </button>
@@ -970,18 +958,18 @@ Best regards,
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 0) through ongoing Strategic Advisory & Systems Retainers (MOD III), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
+                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 1) through ongoing Strategic Advisory & Systems Retainers (MOD 4), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
                                 </p>
                             </div>
 
                             {/* 4-CARD MODULAR ROADMAP LAYOUT */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
                                 
-                                {/* MOD 0 CARD */}
+                                {/* MOD 1 CARD */}
                                 <div className="border border-brandBlue-500 bg-brandBlue-5/10 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all shadow-md">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center font-bold text-[10px] tracking-wider text-brandBlue-400 border border-brandBlue-200/20">MOD 0</div>
+                                            <div className="w-14 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center font-bold text-[10px] tracking-wider text-brandBlue-400 border border-brandBlue-200/20">MOD 1</div>
                                             <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brandBlue-100 text-brandBlue-700 font-extrabold">3 Weeks</span>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Operational Diagnostics</h3>
@@ -1008,11 +996,11 @@ Best regards,
                                     </div>
                                 </div>
 
-                                {/* MOD I CARD */}
+                                {/* MOD 2 CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD I</div>
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 2</div>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Process Architecture</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
@@ -1038,11 +1026,11 @@ Best regards,
                                     </div>
                                 </div>
 
-                                {/* MOD II CARD */}
+                                {/* MOD 3 CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD II</div>
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 3</div>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Workflow Automation</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
@@ -1068,11 +1056,11 @@ Best regards,
                                     </div>
                                 </div>
 
-                                {/* MOD III CARD */}
+                                {/* MOD 4 CARD */}
                                 <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD III</div>
+                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 4</div>
                                         </div>
                                         <h3 className="text-base font-bold text-white font-serif">Strategic Advisory Retainer</h3>
                                         <p className="text-[11px] leading-relaxed text-slate-300 font-light">
@@ -1123,7 +1111,7 @@ Best regards,
                                     >
                                         <IconMail className="w-4 h-4 mr-2" /> Initiate Diagnostics Scoping via Email
                                     </a>
-                                    <p className="text-xs text-slate-555 font-sans font-semibold">
+                                    <p className="text-xs text-slate-500 font-sans font-semibold">
                                         Or email us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>. All personal information received is strictly processed under the National Privacy Commission guidelines.
                                     </p>
                                 </div>
@@ -1132,17 +1120,17 @@ Best regards,
                     </section>
 
                     {/* Corporate Premium Footer */}
-                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-400 text-xs">
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-400 text-xs font-sans">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
                             
-                            <div className="space-y-2 text-center md:text-left font-sans font-medium">
+                            <div className="space-y-2 text-center md:text-left font-medium">
                                 <div className="flex items-center justify-center md:justify-start gap-2">
                                     <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
                                     <span className="font-sans font-extrabold text-sm uppercase text-slate-300">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
                                 </div>
-                                <p className="text-[10px] leading-relaxed text-slate-505 font-sans">
+                                <p className="text-[10px] leading-relaxed text-slate-500 font-sans">
                                     Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
                                     © 2026 Kolthoff Consulting. All rights reserved.
                                 </p>
@@ -1154,7 +1142,7 @@ Best regards,
                                 </button>
                             </div>
 
-                            <div className="space-y-1.5 text-center md:text-right font-sans font-semibold">
+                            <div className="space-y-1.5 text-center md:text-right font-semibold">
                                 <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Contact Coordinates</span>
                                 <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
                                     <IconMail className="w-3.5 h-3.5" /> 
@@ -1195,7 +1183,7 @@ Best regards,
                                         <p className="pl-3 text-slate-400">
                                             All processed parameters—specifically operational overheads, salary estimates, and systems catalogs—are handled dynamically. In strict alignment with NPC Advisory No. 2017-01:
                                         </p>
-                                        <ul className="list-disc list-inside pl-6 text-slate-400 space-y-1">
+                                        <ul className="list-disc list-inside pl-6 text-slate-400 space-y-1 font-semibold">
                                             <li>Encryption Standard: All stored client profiles utilize localized cryptographic wraps (AES-256).</li>
                                             <li>Data Retention: Automatically purged from servers 90 days after delivery of diagnostics.</li>
                                             <li>No Third-Party Access: Your indicators are never leased, sold, or shared.</li>
@@ -1254,11 +1242,11 @@ Best regards,
                                 </div>
 
                                 <div className="space-y-6 text-xs font-light leading-relaxed">
-                                    <p className="text-slate-300">
+                                    <p className="text-slate-300 font-semibold">
                                         Operational leakage is mathematically modeled as a function of total personnel, average monthly salary, baseline delay rates, and recruiting attrition variables. We identify corporate resource bleed with maximum precision.
                                     </p>
 
-                                    {/* Equation Canvas Area */}
+                                    {/* Equation Canvas Area with double escaped curly template to secure React build */}
                                     <div className="p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
                                         <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Chaos Waste Equation</span>
                                         <div id="modal-math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
@@ -1272,7 +1260,7 @@ Best regards,
                                             <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
                                             Variable Parameter Key
                                         </h4>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 text-slate-400 font-mono text-[10px]">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 text-slate-400 font-mono text-[10px] font-semibold">
                                             <div>
                                                 <strong className="text-white">{"$T$"}</strong> = Total Personnel count (FTEs)
                                             </div>
@@ -1291,9 +1279,9 @@ Best regards,
                                     {/* Logic Breakdown */}
                                     <div className="space-y-3 bg-brandNavy-950/50 p-4 border border-brandNavy-800 rounded-xl">
                                         <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px]">Logical Proof Components</h4>
-                                        <ul className="list-disc list-inside space-y-2 text-slate-400 text-[11px]">
-                                            <li><strong className="text-slate-200">Annual Attrition Friction (12%):</strong> Quantifies resource replacement, ramp-up delays, and onboarding loss.</li>
-                                            <li><strong className="text-slate-200">System Friction Wastage:</strong> Measures expensive administrative hours spent manually copying metrics or chasing approvals.</li>
+                                        <ul className="list-disc list-inside space-y-2 text-slate-400 text-[11px] font-semibold">
+                                            <li><strong className="text-slate-200 font-sans">Annual Attrition Friction (12%):</strong> Quantifies resource replacement, ramp-up delays, and onboarding loss.</li>
+                                            <li><strong className="text-slate-200 font-sans">System Friction Wastage:</strong> Measures expensive administrative hours spent manually copying metrics or chasing approvals.</li>
                                         </ul>
                                     </div>
                                 </div>
