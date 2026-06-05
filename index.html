@@ -173,6 +173,9 @@
 
             // Compliance Modal Control
             const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+            
+            // Math Proof Modal Control
+            const [isMathModalOpen, setIsMathModalOpen] = useState(false);
 
             // Dynamic Calculator Leakage Math
             const publicCalculatedChaos = useMemo(() => {
@@ -256,6 +259,17 @@ Best regards,
                 }
             }, [publicCalculatedChaos.workforceEfficiency]);
 
+            // Re-render MathJax variables inside the popup modal when opened
+            useEffect(() => {
+                if (isMathModalOpen && window.MathJax && window.MathJax.typesetPromise) {
+                    const mathElement = document.getElementById('modal-math-roi');
+                    if (mathElement) {
+                        window.MathJax.typesetClear([mathElement]);
+                        window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
+                    }
+                }
+            }, [isMathModalOpen]);
+
             return (
                 <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
                     
@@ -265,7 +279,7 @@ Best regards,
                         <span>Registered System Security: Fully Compliant with **RA 10173 (Data Privacy Act of 2012)** & **BIR EOPT Audit mandates**</span>
                     </div>
 
-                    {}
+                    {/* Navigation Header */}
                     <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/90 sticky top-0 z-40 backdrop-blur-md font-sans">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -280,7 +294,6 @@ Best regards,
                             
                             <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-widest text-slate-400">
                                 <a href="#philosophy" className="hover:text-white transition-colors duration-200">The Model</a>
-                                <a href="#math-proof" className="hover:text-white transition-colors duration-200">The Proof</a>
                                 <a href="#chaos" className="hover:text-white transition-colors duration-200">Cost of Chaos</a>
                                 <a href="#intake-demo" className="hover:text-white transition-colors duration-200">Intake Preview</a>
                                 <a href="#diagnostics" className="hover:text-white transition-colors duration-200">Roadmap</a>
@@ -291,7 +304,7 @@ Best regards,
                         </div>
                     </header>
 
-                    {}
+                    {/* Hero Section */}
                     <section className="relative overflow-hidden pt-24 pb-28 border-b border-brandNavy-700/60 bg-brandNavy-950 text-slate-100">
                         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full pointer-events-none" />
                         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -340,7 +353,7 @@ Best regards,
 
                     {/* SENSEFUL MODEL (TRADITIONAL VS KOLTHOFF) */}
                     <section id="philosophy" className="py-24 border-b border-brandNavy-900 bg-brandNavy-900/40 relative">
-                        <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-50/5 blur-[100px] rounded-full pointer-events-none" />
+                        <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-5/10 blur-[100px] rounded-full pointer-events-none" />
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">A Higher Standard of advisory</span>
@@ -428,42 +441,6 @@ Best regards,
                         </div>
                     </section>
 
-                    {}
-                    <section id="math-proof" className="py-20 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
-                        <div className="max-w-7xl mx-auto px-6">
-                            <div className="bg-brandNavy-900 border border-brandNavy-750 p-8 sm:p-12 rounded-3xl relative overflow-hidden glass-panel max-w-5xl mx-auto">
-                                <div className="absolute top-0 right-0 w-80 h-80 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
-                                
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                                    <div className="lg:col-span-7 space-y-4">
-                                        <span className="text-[10px] font-mono tracking-[0.2em] uppercase font-bold text-brandBlue-400">Mathematical Proof & Operational Logic</span>
-                                        <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white">How We Quantify the Chaos Tax</h3>
-                                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
-                                            Operational leakage isn't subjective. We model capital friction as a function of personnel size ({"$T$"}), average hourly billing drag ({"$R_{\\text{avg}}$"}), baseline delays ({"$H_{\\text{weekly}}$"}), and onboarding attrition loss.
-                                        </p>
-                                        <div className="p-4 bg-brandNavy-950/70 border border-brandNavy-800 rounded-xl space-y-1">
-                                            <span className="text-[11px] font-mono font-bold uppercase text-brandBlue-400 block">Variable Mappings:</span>
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono text-slate-400">
-                                                <span>$T$ = Total Personnel (FTE)</span>
-                                                <span>{"$R_{\\text{avg}}$"} = Average Hourly Base Rate</span>
-                                                <span>{"$H_{\\text{weekly}}$"} = Lost Hours Per Staff</span>
-                                                <span>{"$M_{\\text{annual}}$"} = Onboarding Drag Rate (12%)</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="lg:col-span-5 p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
-                                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">Chaos Waste Formula</span>
-                                        <div id="math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
-                                            {"$$\\Omega_c = \\frac{T \\cdot S_{\\text{monthly}} \\cdot 0.12 \\cdot 12 + (H_{\\text{weekly}} \\cdot 4.33 \\cdot T \\cdot R_{\\text{avg}} \\cdot 12)}{12 \\cdot T \\cdot S_{\\text{monthly}}}$$"}
-                                        </div>
-                                        <span className="text-[10px] text-slate-500 font-mono mt-3">Renders dynamically based on your diagnostic input parameters</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
                     {/* Cost of Chaos Assessment Section */}
                     <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
                         <div className="max-w-7xl mx-auto px-6">
@@ -473,6 +450,16 @@ Best regards,
                                 <p className="text-sm text-slate-600 leading-relaxed font-light font-sans">
                                     Input your current team metrics below to dynamically audit and visualize the annual capital leaked through daily operational delays and employee turn friction.
                                 </p>
+                                
+                                {/* Dynamic popup link positioning as requested */}
+                                <div className="pt-2">
+                                    <button 
+                                        onClick={() => setIsMathModalOpen(true)}
+                                        className="inline-flex items-center gap-2 text-xs font-mono text-brandBlue-600 hover:text-brandBlue-700 font-bold uppercase tracking-wider bg-brandBlue-50/70 border border-brandBlue-100 hover:border-brandBlue-200 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm"
+                                    >
+                                        <IconCalculator className="w-3.5 h-3.5" /> View Mathematical Proof & Operational Logic
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch font-sans">
@@ -628,7 +615,7 @@ Best regards,
                         </div>
                     </section>
 
-                    {}
+                    {/* Interactive Smart Intake Demo */}
                     <section id="intake-demo" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -686,7 +673,7 @@ Best regards,
                                                 <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tool-bloat' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
                                                     <input 
                                                         type="radio" 
-                                                        name="bottleneck" 
+                                                        name="toolstack" 
                                                         value="tool-bloat" 
                                                         checked={bottleneck === 'tool-bloat'} 
                                                         onChange={() => setBottleneck('tool-bloat')} 
@@ -827,7 +814,6 @@ Best regards,
                                                 </label>
                                             </div>
 
-                                            {}
                                             {/* LEGAL CONSENT DISCLOSURE (DPA compliant RA 10173) */}
                                             <div className="p-4 bg-brandNavy-950/80 rounded-xl border border-brandNavy-800 space-y-3">
                                                 <label className="flex items-start gap-3.5 cursor-pointer">
@@ -961,7 +947,6 @@ Best regards,
                         </div>
                     </section>
 
-                    {}
                     {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP */}
                     <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
                         <div className="max-w-7xl mx-auto px-6 space-y-16">
@@ -1132,7 +1117,6 @@ Best regards,
                         </div>
                     </section>
 
-                    {}
                     {/* Corporate Premium Footer */}
                     <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-400 text-xs">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
@@ -1171,7 +1155,6 @@ Best regards,
                         </div>
                     </footer>
 
-                    {}
                     {/* NPC, DPA (RA 10173), & BIR EOPT COMPLIANCE OVERLAY MODAL */}
                     {isLegalModalOpen && (
                         <div className="fixed inset-0 bg-brandNavy-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
@@ -1231,6 +1214,79 @@ Best regards,
                                 <div className="pt-4 border-t border-brandNavy-800 text-center">
                                     <button 
                                         onClick={() => setIsLegalModalOpen(false)}
+                                        className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
+                                    >
+                                        Acknowledge & Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MATHEMATICAL PROOF & OPERATIONAL LOGIC MODAL */}
+                    {isMathModalOpen && (
+                        <div className="fixed inset-0 bg-brandNavy-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
+                            <div className="bg-brandNavy-900 border-2 border-brandBlue-500/30 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 space-y-6 text-slate-300 relative shadow-2xl">
+                                <button 
+                                    onClick={() => setIsMathModalOpen(false)}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-white font-mono text-xl font-bold p-2"
+                                >
+                                    ✕
+                                </button>
+                                
+                                <div className="border-b border-brandNavy-800 pb-4">
+                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Scientific Validity</span>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Mathematical Proof & Operational Logic</h3>
+                                </div>
+
+                                <div className="space-y-6 text-xs font-light leading-relaxed">
+                                    <p className="text-slate-300">
+                                        Operational leakage is mathematically modeled as a function of total personnel, average monthly salary, baseline delay rates, and recruiting attrition variables. We identify corporate resource bleed with maximum precision.
+                                    </p>
+
+                                    {/* Equation Canvas Area */}
+                                    <div className="p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Chaos Waste Equation</span>
+                                        <div id="modal-math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
+                                            {"$$\\Omega_c = \\frac{T \\cdot S_{\\text{monthly}} \\cdot 0.12 \\cdot 12 + (H_{\\text{weekly}} \\cdot 4.33 \\cdot T \\cdot R_{\\text{avg}} \\cdot 12)}{12 \\cdot T \\cdot S_{\\text{monthly}}}$$"}
+                                        </div>
+                                    </div>
+
+                                    {/* Variable Meanings - SAFE FROM BABEL INTERPRETATION ERRORS */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
+                                            Variable Parameter Key
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 text-slate-400 font-mono text-[10px]">
+                                            <div>
+                                                <strong className="text-white">{"$T$"}</strong> = Total Personnel count (FTEs)
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$S_{\\text{monthly}}$"}</strong> = Avg Monthly Base Salary (₱)
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$H_{\\text{weekly}}$"}</strong> = Weekly Delays per Employee (Hours)
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$R_{\\text{avg}}$"}</strong> = Average Hourly Rate ({"$S_{\\text{monthly}} / 160$"})
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Logic Breakdown */}
+                                    <div className="space-y-3 bg-brandNavy-950/50 p-4 border border-brandNavy-800 rounded-xl">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px]">Logical Proof Components</h4>
+                                        <ul className="list-disc list-inside space-y-2 text-slate-400 text-[11px]">
+                                            <li><strong className="text-slate-200">Annual Attrition Friction (12%):</strong> Quantifies resource replacement, ramp-up delays, and onboarding loss.</li>
+                                            <li><strong className="text-slate-200">System Friction Wastage:</strong> Measures expensive administrative hours spent manually copying metrics or chasing approvals.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-brandNavy-800 text-center">
+                                    <button 
+                                        onClick={() => setIsMathModalOpen(false)}
                                         className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
                                     >
                                         Acknowledge & Close
