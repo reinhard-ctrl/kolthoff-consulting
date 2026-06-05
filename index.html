@@ -117,6 +117,30 @@
             border: 1px solid rgba(37, 99, 235, 0.2);
             box-shadow: 0 8px 32px 0 rgba(11, 23, 49, 0.5);
         }
+
+        /* Responsive Arrow Pipeline Clip Paths */
+        @media (min-width: 1024px) {
+            .arrow-card-first {
+                clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 50%, calc(100% - 24px) 100%, 0% 100%);
+            }
+            .arrow-card-mid {
+                clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 50%, calc(100% - 24px) 100%, 0% 100%, 24px 50%);
+            }
+            .arrow-card-last {
+                clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 24px 50%);
+            }
+        }
+        @media (max-width: 1023px) {
+            .arrow-card-first {
+                clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 20px), 50% 100%, 0% calc(100% - 20px));
+            }
+            .arrow-card-mid {
+                clip-path: polygon(0% 0%, 50% 20px, 100% 0%, 100% calc(100% - 20px), 50% 100%, 0% calc(100% - 20px));
+            }
+            .arrow-card-last {
+                clip-path: polygon(0% 0%, 50% 20px, 100% 0%, 100% 100%, 0% 100%);
+            }
+        }
     </style>
 </head>
 <body class="bg-brandNavy-950 text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
@@ -127,6 +151,11 @@
     <!-- React/Babel Browser compilation block -->
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
+
+        // GLOBAL FORMAT CURRENCY UTILITY DEFINITION
+        const formatCurrency = (val) => {
+            return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+        };
 
         // HIGH-FIDELITY SHIELD, COGWHEEL, AND CHECKMARK LOGO
         const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
@@ -166,11 +195,6 @@
                 <path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
             </svg>
         );
-
-        // GLOBAL FORMAT CURRENCY UTILITY DEFINITION
-        const formatCurrency = (val) => {
-            return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
-        };
 
         function App() {
             // Interactive Leakage Calculator States
@@ -300,7 +324,7 @@ Best regards,
                 }
             }, [publicCalculatedChaos.workforceEfficiency, isMathModalOpen]);
 
-            // Lifecycle roadmap modules configuration
+            // Lifecycle roadmap modules configuration with arrow structural styles
             const modulesData = {
                 1: {
                     title: "Operational Diagnostics",
@@ -312,6 +336,7 @@ Best regards,
                         "Priority Action Roadmap Blueprint"
                     ],
                     outcome: "Detailed Operational Risk Matrix & 10m walkthrough video.",
+                    shapeClass: "arrow-card-first"
                 },
                 2: {
                     title: "Process Architecture",
@@ -323,6 +348,7 @@ Best regards,
                         "GLS Code of Conduct & Employee Handbooks"
                     ],
                     outcome: "Mitigated labor litigation risks and protected tribal IP.",
+                    shapeClass: "arrow-card-mid"
                 },
                 3: {
                     title: "Workflow Automation",
@@ -334,6 +360,7 @@ Best regards,
                         "Asynchronous Progress Dashboards"
                     ],
                     outcome: "Automated approvals, zero legacy paperwork sprawl.",
+                    shapeClass: "arrow-card-mid"
                 },
                 4: {
                     title: "Strategic Advisory Retainer",
@@ -345,6 +372,7 @@ Best regards,
                         "Semi-Annual Process Drift Audits"
                     ],
                     outcome: "CEO operational relief and proactive baseline protection.",
+                    shapeClass: "arrow-card-last"
                 }
             };
 
@@ -382,7 +410,7 @@ Best regards,
 
                             {/* Action CTA Onboarding Button (Right 25%) */}
                             <div className="flex justify-end lg:w-1/4 shrink-0">
-                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
+                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-955/40 hover:-translate-y-0.5 font-sans uppercase">
                                     Start Onboarding
                                 </a>
                             </div>
@@ -405,7 +433,7 @@ Best regards,
                                     We re-engineer workflows for mid-sized enterprises in the Philippines without calendar-clogging status meetings or endless Zoom circles. Complete our hyper-efficient intake system, receive your deep operational diagnostics, and scale with absolute structural clarity.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
+                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Test Drive Smart Intake <IconArrowRight />
                                     </a>
                                     <a href="#chaos" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-lg border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -437,7 +465,7 @@ Best regards,
                     </section>
 
                     {/* SENSEFUL MODEL (TRADITIONAL VS KOLTHOFF) */}
-                    <section id="philosophy" className="py-24 border-b border-brandNavy-800 bg-brandNavy-900 relative">
+                    <section id="philosophy" className="py-24 border-b border-brandNavy-850 bg-brandNavy-900 relative">
                         <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-500/5 blur-[100px] rounded-full pointer-events-none" />
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
@@ -1038,39 +1066,78 @@ Best regards,
                         </div>
                     </section>
 
-                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (Interactive Tabs Upgrade) */}
+                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP */}
                     <section id="diagnostics" className="py-24 border-b border-brandNavy-800 bg-brandNavy-900 text-slate-100 font-sans">
-                        <div className="max-w-7xl mx-auto px-6 space-y-12">
+                        <div className="max-w-7xl mx-auto px-6 space-y-16">
                             
                             {/* Section Header */}
                             <div className="max-w-3xl mx-auto text-center space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 1) through ongoing Strategic Advisory &amp; Systems Retainers (MOD 4), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
+                                    Click any stage along our pipeline to interactively inspect its compliance variables, execution timeframes, and deliverables.
                                 </p>
                             </div>
 
-                            {/* Modular Tab Selectors */}
-                            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 border-b border-brandNavy-800 pb-4 max-w-4xl mx-auto">
-                                {[1, 2, 3, 4].map((num) => (
-                                    <button
-                                        key={num}
-                                        onClick={() => setActiveModule(num)}
-                                        className={`px-4 sm:px-6 py-3 rounded-xl border text-xs font-mono tracking-wider transition-all uppercase font-bold flex items-center gap-2 ${
-                                            activeModule === num 
-                                                ? 'border-brandBlue-500 bg-brandBlue-500/10 text-white shadow-lg' 
-                                                : 'border-brandNavy-800 bg-brandNavy-955/50 text-slate-400 hover:text-white hover:border-brandNavy-700'
-                                        }`}
-                                    >
-                                        <span className={`h-2 w-2 rounded-full ${activeModule === num ? 'bg-brandBlue-400 animate-pulse' : 'bg-brandNavy-700'}`} />
-                                        MOD {num}: {num === 1 ? 'Diagnostics' : num === 2 ? 'Process' : num === 3 ? 'Automation' : 'Advisory'}
-                                    </button>
-                                ))}
+                            {/* 4-CARD ARROW PIPELINE SEQUENCE GRID */}
+                            {}
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-0 font-sans items-stretch">
+                                {Object.entries(modulesData).map(([key, data]) => {
+                                    const num = parseInt(key);
+                                    const isActive = activeModule === num;
+                                    
+                                    return (
+                                        <div 
+                                            key={num}
+                                            onClick={() => setActiveModule(num)}
+                                            className="group cursor-pointer relative focus:outline-none transition-all duration-300"
+                                        >
+                                            {/* Glowing Border Wrap (Outlines arrow contour cleanly) */}
+                                            <div className={`transition-all duration-300 ${data.shapeClass} p-[1.5px] h-full ${
+                                                isActive 
+                                                    ? 'bg-gradient-to-r lg:bg-gradient-to-r from-brandBlue-400 to-brandBlue-500 shadow-xl shadow-brandBlue-950/40 scale-[1.02] z-10' 
+                                                    : 'bg-brandNavy-700 hover:bg-brandNavy-600'
+                                            }`}>
+                                                {/* Card Content Interior Body (Tighter constraints to eliminate empty space) */}
+                                                <div className={`transition-all duration-300 h-full ${data.shapeClass} ${
+                                                    isActive 
+                                                        ? 'bg-brandNavy-800 text-white' 
+                                                        : 'bg-brandNavy-950 text-slate-400 hover:text-white'
+                                                } p-4 sm:p-5 lg:pl-8 lg:pr-10 pt-4 pb-4 flex flex-col justify-between min-h-[8.5rem]`}>
+                                                    
+                                                    <div className="space-y-2">
+                                                        {/* Step & Timeframe Header Row */}
+                                                        <div className="flex justify-between items-center pr-2 lg:pr-0">
+                                                            <span className={`text-[10px] font-mono tracking-widest uppercase font-black px-2 py-0.5 rounded ${
+                                                                isActive ? 'bg-brandBlue-500/20 text-brandBlue-300' : 'bg-brandNavy-800 text-slate-400'
+                                                            }`}>
+                                                                MOD {num}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Card Title */}
+                                                        <h3 className="text-sm sm:text-base font-bold font-serif leading-snug">
+                                                            {data.title}
+                                                        </h3>
+                                                    </div>
+
+                                                    {/* Outcomes Summary footer */}
+                                                    <div className="pt-2 border-t border-brandNavy-800/80 text-[10px] sm:text-[11px] leading-snug font-semibold text-slate-400 mt-2 flex justify-between items-center">
+                                                        <span>Inspect Phase Specs</span>
+                                                        <svg className={`w-3.5 h-3.5 transition-transform group-hover:translate-x-1 ${isActive ? 'text-brandBlue-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
-                            {/* Active Tab High-Fidelity Details */}
-                            <div className="max-w-4xl mx-auto bg-brandNavy-950 border border-brandNavy-800 p-6 sm:p-10 rounded-2xl shadow-2xl glass-panel relative animate-fadeIn">
+                            {/* DYNAMIC PIPELINE PHASE SPECS DRAWER */}
+                            {}
+                            <div className="max-w-7xl mx-auto bg-brandNavy-950 border border-brandNavy-800 p-6 sm:p-10 rounded-2xl shadow-2xl glass-panel relative animate-fadeIn">
                                 <div className="absolute top-4 right-6 text-[10px] font-mono text-brandBlue-400 font-bold bg-brandBlue-500/10 border border-brandBlue-500/20 px-3 py-1 rounded">
                                     Sprint Phase Timeline: {modulesData[activeModule].duration}
                                 </div>
@@ -1081,7 +1148,7 @@ Best regards,
                                             <IconSparkles />
                                             Module {activeModule}: {modulesData[activeModule].title}
                                         </h3>
-                                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl font-light">
+                                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl font-light">
                                             {modulesData[activeModule].desc}
                                         </p>
                                     </div>
