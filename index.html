@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kolthoff Consulting - Get Your Business Running on Autopilot. Organize Your Daily Operations.</title>
     
-    <!-- Custom SVG Logo Favicon (High-Fidelity Vector Shield & Checkmark) -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 10 C70 14 86 20 86 20 V54 C86 74 71 87 50 92 C29 87 14 74 14 54 V20 C14 20 30 14 50 10 Z' fill='%232563EB'/><path d='M38 52 L47 61 L64 39' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+    <!-- Custom SVG Logo Favicon (Sleek Shield & Checkmark with Custom Gradients) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%232563EB' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%232563EB' stop-opacity='0.4' /><stop offset='1' stop-color='%2360A1FA' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%233B82F6' /><stop offset='1' stop-color='%2360A1FA' /></linearGradient></defs></svg>">
 
     <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -157,22 +157,20 @@
             return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
         };
 
-        // HIGH-FIDELITY SHIELD, COGWHEEL, AND CHECKMARK LOGO
         const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
-            <svg className={`${className} transition-colors duration-250`} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 10 C70 14 86 20 86 20 V54 C86 74 71 87 50 92 C29 87 14 74 14 54 V20 C14 20 30 14 50 10 Z" fill="currentColor" fillOpacity="0.12" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round"/>
-                <g className="opacity-90">
-                    <circle cx="50" cy="52" r="22" fill="none" stroke="currentColor" strokeWidth="4.5" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(45 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(90 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(135 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(180 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(225 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(270 50 52)" />
-                    <rect x="47.5" y="24.5" width="5" height="6" rx="1" fill="currentColor" transform="rotate(315 50 52)" />
-                </g>
-                <path d="M38 52 L47 61 L64 39" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            <svg className={`${className} shrink-0 transition-transform duration-300`} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#2563EB" fillOpacity="0.08" stroke="url(#concept4-shield-grad)" strokeWidth="4.5" strokeLinejoin="round" />
+                <path d="M36 50 L46 60 L66 36" stroke="url(#concept4-check-grad)" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                <defs>
+                    <linearGradient id="concept4-shield-grad" x1="16" y1="12" x2="84" y2="90" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#2563EB" stopOpacity="0.4" />
+                        <stop offset="1" stopColor="#60A1FA" stopOpacity="0.1" />
+                    </linearGradient>
+                    <linearGradient id="concept4-check-grad" x1="36" y1="36" x2="66" y2="60" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#3B82F6" />
+                        <stop offset="1" stopColor="#60A1FA" />
+                    </linearGradient>
+                </defs>
             </svg>
         );
 
@@ -394,9 +392,9 @@ Best regards,
                     <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/90 sticky top-0 z-40 backdrop-blur-md font-sans">
                         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                             
-                            {/* Logo Column */}
+                            {/* Logo Column with Premium Shield Branding */}
                             <div className="flex items-center gap-3 lg:w-1/4 shrink-0">
-                                <IconWebsiteLogo className="w-10 h-10 text-brandBlue-400 animate-pulse" />
+                                <IconWebsiteLogo className="w-10 h-10" />
                                 <div>
                                     <span className="font-sans font-extrabold tracking-wider text-sm sm:text-base uppercase block text-white leading-none">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
@@ -449,7 +447,7 @@ Best regards,
 
                             {/* Core Partnership Philosophy */}
                             <div className="lg:col-span-5 bg-brandNavy-900/90 border border-brandNavy-700 p-8 rounded-2xl shadow-2xl relative glass-panel">
-                                <div className="absolute top-3 right-3 text-brandBlue-400 animate-pulse">
+                                <div className="absolute top-3 right-3 text-brandBlue-400">
                                     <span className="w-2 h-2 rounded-full bg-brandBlue-400 inline-block"></span>
                                 </div>
                                 <h3 className="text-xs font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">Our Practical Viewpoint</h3>
@@ -457,7 +455,7 @@ Best regards,
                                     "You didn't start your business to spend all day on Viber or Zoom. Getting your team organized shouldn't require complex software or corporate slide presentations—just clean playbooks and simple, clear-cut daily habits."
                                 </p>
                                 <div className="border-t border-brandNavy-700/60 pt-4 flex gap-4 items-center">
-                                    <div className="w-10 h-10 bg-brandBlue-500/10 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm shrink-0">
+                                    <div className="w-10 h-10 bg-brandBlue-50/10 border border-brandBlue-500/25 rounded-full flex items-center justify-center text-brandBlue-400 font-bold text-sm shrink-0">
                                         0H
                                     </div>
                                     <div className="text-xs font-sans font-medium">
@@ -506,14 +504,14 @@ Best regards,
                                             <span className="text-rose-400 font-bold shrink-0">■</span>
                                             <div>
                                                 <span className="text-slate-200 font-bold block">Complicated Tools:</span>
-                                                <span className="text-slate-400 text-[11px] block mt-0.5">Forcing you to use expensive enterprise software that your team finds hard to learn.</span>
+                                                <span className="text-slate-400 text-[11px] block mt-1">Forcing you to use expensive enterprise software that your team finds hard to learn.</span>
                                             </div>
                                         </div>
                                         <div className="flex gap-3 text-xs">
                                             <span className="text-rose-400 font-bold shrink-0">■</span>
                                             <div>
                                                 <span className="text-slate-200 font-bold block">Vague Deliverables:</span>
-                                                <span className="text-slate-400 text-[11px] block mt-0.5">Heavy PDF reports full of advice but zero actual hands-on setup support.</span>
+                                                <span className="text-slate-400 text-[11px] block mt-1">Heavy PDF reports full of advice but zero actual hands-on setup support.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -790,7 +788,7 @@ Best regards,
                                                         name="bottleneck" 
                                                         value="tool-bloat" 
                                                         checked={bottleneck === 'tool-bloat'} 
-                                                        onChange={() => setBottleneck('tool-bloat')} 
+                                                        onChange={() => setToolstack('tool-bloat')} 
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
@@ -826,7 +824,7 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">No SOPs, just \"how we do things\"</strong>
+                                                        <strong className="text-white block font-semibold">No SOPs, just "how we do things"</strong>
                                                         <span className="text-slate-400 text-[11px] block mt-1">We rely on verbal instructions and teaching new hires on the fly.</span>
                                                     </div>
                                                 </label>
@@ -1213,7 +1211,7 @@ Best regards,
                             
                             <div className="space-y-2 text-center md:text-left font-medium">
                                 <div className="flex items-center justify-center md:justify-start gap-2">
-                                    <IconWebsiteLogo className="w-8 h-8 text-brandBlue-400/80" />
+                                    <IconWebsiteLogo className="w-8 h-8" />
                                     <span className="font-sans font-extrabold text-sm uppercase text-slate-300">
                                         KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
                                     </span>
