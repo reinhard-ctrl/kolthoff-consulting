@@ -60,6 +60,16 @@
                     fontFamily: {
                         sans: ['"Montserrat"', 'sans-serif'],
                         serif: ['"Playfair Display"', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fadeIn': 'fadeIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
                     }
                 }
             }
@@ -145,7 +155,9 @@
         const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>;
         const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
         const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
-        const IconShieldAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+        const IconShieldAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400 shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+        const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+        const IconSparkles = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400 animate-pulse"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>;
         const IconCalculator = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 <rect width="16" height="20" x="4" y="2" rx="2"/>
@@ -173,6 +185,12 @@
             const [toolstack, setToolstack] = useState('');
             const [dpaConsent, setDpaConsent] = useState(false);
             const [isDemoSubmitted, setIsDemoSubmitted] = useState(false);
+
+            // Interactive Tabs state for lifecycle roadmap
+            const [activeModule, setActiveModule] = useState(1);
+
+            // Toast/Copy Feedback State
+            const [toastMessage, setToastMessage] = useState('');
 
             // Modal Trigger States
             const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
@@ -251,6 +269,26 @@ Best regards,
                 return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
             }, [publicCalculatedChaos, bottleneck, documentation, toolstack]);
 
+            // Copy to clipboard fallback function as required
+            const handleCopyToClipboard = (text) => {
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = text;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Diagnostics copied to clipboard!');
+                } catch (err) {
+                    showToast('Unable to copy automatically.');
+                }
+                document.body.removeChild(tempTextArea);
+            };
+
+            const showToast = (message) => {
+                setToastMessage(message);
+                setTimeout(() => setToastMessage(''), 3000);
+            };
+
             // Trigger MathJax typeset updates cleanly on ROI changes and modal popups
             useEffect(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
@@ -262,13 +300,61 @@ Best regards,
                 }
             }, [publicCalculatedChaos.workforceEfficiency, isMathModalOpen]);
 
+            // Lifecycle roadmap modules configuration
+            const modulesData = {
+                1: {
+                    title: "Operational Diagnostics",
+                    duration: "3 Weeks",
+                    desc: "A mandated discovery sprint mapping your baseline organizational friction in strict compliance with RA 10173 (Data Privacy Act of 2012). Delivered completely asynchronously.",
+                    deliverables: [
+                        "DPA-Compliant Smart Intake & System Map",
+                        "SaaS Stack Overlap & Duplicate Seats Audit",
+                        "Priority Action Roadmap Blueprint"
+                    ],
+                    outcome: "Detailed Operational Risk Matrix & 10m walkthrough video.",
+                },
+                2: {
+                    title: "Process Architecture",
+                    duration: "4 Weeks",
+                    desc: "Establish functional reporting boundaries, organigrams, and compliant workflow playbooks in strict alignment with DOLE General Labor Standards (GLS).",
+                    deliverables: [
+                        "Macro Value Stream Maps (VSM)",
+                        "DOLE-Aligned Onboarding Packs",
+                        "GLS Code of Conduct & Employee Handbooks"
+                    ],
+                    outcome: "Mitigated labor litigation risks and protected tribal IP.",
+                },
+                3: {
+                    title: "Workflow Automation",
+                    duration: "5 Weeks",
+                    desc: "Deploy Swiss-standard HERMES project controls and configure Lark/Notion workspace automations to eliminate manual copying and tracking tasks.",
+                    deliverables: [
+                        "Enterprise Lark/Slack Workspace Hub Integration",
+                        "HERMES PMO Framework Config & Templates",
+                        "Asynchronous Progress Dashboards"
+                    ],
+                    outcome: "Automated approvals, zero legacy paperwork sprawl.",
+                },
+                4: {
+                    title: "Strategic Advisory Retainer",
+                    duration: "Ongoing",
+                    desc: "Continuous executive governance oversight paired with managed cyber SLA monitoring to protect baseline configurations.",
+                    deliverables: [
+                        "Fractional COO Governance Strategy Syncs",
+                        "Managed Admin Services & Custom Integrations",
+                        "Semi-Annual Process Drift Audits"
+                    ],
+                    outcome: "CEO operational relief and proactive baseline protection.",
+                }
+            };
+
             return (
-                <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950">
+                <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950 pb-12">
                     
                     {/* Compliance Header Banner (EOPT & DPA) */}
                     <div className="bg-gradient-to-r from-brandBlue-950 via-brandBlue-850 to-brandBlue-950 border-b border-brandBlue-500/20 py-2 px-6 text-center text-[10px] sm:text-xs text-brandBlue-200 flex justify-center items-center gap-2.5 font-medium select-none z-50 relative">
                         <IconShieldAlert />
-                        <span>Registered System Security: Fully Compliant with **RA 10173 (Data Privacy Act of 2012)** & **BIR EOPT Audit mandates**</span>
+                        <span>Registered System Security: Fully Compliant with <strong>RA 10173 (Data Privacy Act of 2012)</strong> & <strong>BIR EOPT Audit mandates</strong></span>
                     </div>
 
                     {/* Symmetrical Centered Header Navigation */}
@@ -288,15 +374,15 @@ Best regards,
                             
                             {/* Centered Navigation Links (Middle 50%) */}
                             <nav className="hidden lg:flex items-center justify-center gap-12 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex-1">
-                                <a href="#philosophy" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">The Model</a>
-                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Cost of Chaos</a>
-                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Intake Preview</a>
-                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-250">Roadmap</a>
+                                <a href="#philosophy" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">The Model</a>
+                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Cost of Chaos</a>
+                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Intake Preview</a>
+                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Roadmap</a>
                             </nav>
 
                             {/* Action CTA Onboarding Button (Right 25%) */}
                             <div className="flex justify-end lg:w-1/4 shrink-0">
-                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-955/40 hover:-translate-y-0.5 font-sans uppercase">
+                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-950/40 hover:-translate-y-0.5 font-sans uppercase">
                                     Start Onboarding
                                 </a>
                             </div>
@@ -319,7 +405,7 @@ Best regards,
                                     We re-engineer workflows for mid-sized enterprises in the Philippines without calendar-clogging status meetings or endless Zoom circles. Complete our hyper-efficient intake system, receive your deep operational diagnostics, and scale with absolute structural clarity.
                                 </p>
                                 <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
-                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
+                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-950/30 flex items-center justify-center hover:-translate-y-0.5">
                                         Test Drive Smart Intake <IconArrowRight />
                                     </a>
                                     <a href="#chaos" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-lg border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
@@ -343,7 +429,7 @@ Best regards,
                                     </div>
                                     <div className="text-xs font-sans font-medium">
                                         <span className="font-bold text-white block">Zero Exploratory Call Burden</span>
-                                        <span className="text-slate-400 mt-0.5 block">We prioritize your time. We ask questions via smart matrices; we deliver solutions via cinematic code walk-throughs and detailed diagnostic reports.</span>
+                                        <span className="text-slate-400 mt-0.5 block">We prioritize your time. We ask questions via smart matrices; we deliver solutions via cinematic walk-throughs and detailed diagnostic reports.</span>
                                     </div>
                                 </div>
                             </div>
@@ -351,8 +437,8 @@ Best regards,
                     </section>
 
                     {/* SENSEFUL MODEL (TRADITIONAL VS KOLTHOFF) */}
-                    <section id="philosophy" className="py-24 border-b border-brandNavy-900 bg-brandNavy-900/40 relative">
-                        <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-5/10 blur-[100px] rounded-full pointer-events-none" />
+                    <section id="philosophy" className="py-24 border-b border-brandNavy-800 bg-brandNavy-900 relative">
+                        <div className="absolute top-1/2 left-10 w-[300px] h-[300px] bg-brandBlue-500/5 blur-[100px] rounded-full pointer-events-none" />
                         <div className="max-w-7xl mx-auto px-6">
                             <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">A Higher Standard of advisory</span>
@@ -456,7 +542,7 @@ Best regards,
                                         onClick={() => setIsMathModalOpen(true)}
                                         className="inline-flex items-center gap-2 text-xs font-mono text-brandBlue-600 hover:text-brandBlue-700 font-bold uppercase tracking-wider bg-brandBlue-50/70 border border-brandBlue-100 hover:border-brandBlue-200 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm"
                                     >
-                                        <IconCalculator className="w-3.5 h-3.5" /> View Mathematical Proof & Operational Logic
+                                        <IconCalculator className="w-3.5 h-3.5" /> View Mathematical Proof &amp; Operational Logic
                                     </button>
                                 </div>
                             </div>
@@ -485,7 +571,7 @@ Best regards,
 
                                         <div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-705 font-bold flex items-center gap-1.5">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
                                                     <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
                                                 </label>
                                                 <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
@@ -520,7 +606,7 @@ Best regards,
                                     </div>
 
                                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-550 leading-relaxed font-sans font-semibold">
-                                        <strong>Diagnostic Security & Tax Compliance Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation. All calculations are governed in strict compliance with the **Data Privacy Act of 2012 (RA 10173)**. Any subsequent scoping operations are billed via EOPT-mandated **VAT Sales Invoices**.
+                                        <strong>Diagnostic Security &amp; Tax Compliance Note:</strong> This calculator models a standard 160-hour work month. Frictional turn loss assumes a standard 12% annual cost allocation. All calculations are governed in strict compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>. Any subsequent scoping operations are billed via EOPT-mandated <strong>VAT Sales Invoices</strong>.
                                     </div>
                                 </div>
 
@@ -582,7 +668,7 @@ Best regards,
                                                         {publicCalculatedChaos.lostFTEEquivalent}
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
-                                                        Fully funded senior staff members performing with 0% productive output.
+                                                        Fully funded staff members performing with 0% productive output.
                                                     </span>
                                                 </div>
 
@@ -636,7 +722,7 @@ Best regards,
 
                                     {/* STEP 1: Core Bottleneck */}
                                     {intakeStep === 1 && (
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
                                                 1. What is currently holding back your daily operational output?
                                             </h4>
@@ -665,7 +751,7 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Admin & Compliance Approval Drag</strong>
+                                                        <strong className="text-white block font-semibold">Admin &amp; Compliance Approval Drag</strong>
                                                         <span className="text-slate-400 text-[11px] block mt-1">Multi-layered corporate signoffs or BIR compliance filings take days to clear internally.</span>
                                                     </div>
                                                 </label>
@@ -679,7 +765,7 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">SaaS Stack Bloat & Manual Copying</strong>
+                                                        <strong className="text-white block font-semibold">SaaS Stack Bloat &amp; Manual Copying</strong>
                                                         <span className="text-slate-400 text-[11px] block mt-1">Too many disjointed apps, requiring staff to manually transcribe or sync metrics across hubs.</span>
                                                     </div>
                                                 </label>
@@ -696,7 +782,7 @@ Best regards,
 
                                     {/* STEP 2: Documentation Status */}
                                     {intakeStep === 2 && (
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
                                                 2. How would you describe your company's playbooks and SOPs?
                                             </h4>
@@ -739,7 +825,7 @@ Best regards,
                                                         className="mt-1 accent-brandBlue-500"
                                                     />
                                                     <div className="text-xs font-sans">
-                                                        <strong className="text-white block font-semibold">Fully Standardized & Audited</strong>
+                                                        <strong className="text-white block font-semibold">Fully Standardized &amp; Audited</strong>
                                                         <span className="text-slate-400 text-[11px] block mt-1">Everything is in centralized wikis. However, operational tracking remains manual.</span>
                                                     </div>
                                                 </label>
@@ -764,7 +850,7 @@ Best regards,
 
                                     {/* STEP 3: Tools & Integration + Legal Consent Checkbox (RA 10173 compliant) */}
                                     {intakeStep === 3 && (
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 animate-fadeIn">
                                             <h4 className="text-sm font-serif font-bold text-white leading-snug">
                                                 3. Which system acts as your team's primary collaboration engine?
                                             </h4>
@@ -823,7 +909,7 @@ Best regards,
                                                         className="mt-1 rounded text-brandBlue-500 focus:ring-brandBlue-400 focus:ring-offset-brandNavy-950 accent-brandBlue-500"
                                                     />
                                                     <span className="text-[10px] leading-relaxed text-slate-400 font-sans font-semibold">
-                                                        I consent to the secure handling of my metrics under **RA 10173** and agree to receive my asynchronous MOD 1 diagnostic reports at the email provided.
+                                                        I consent to the secure handling of my metrics under <strong>RA 10173</strong> and agree to receive my asynchronous MOD 1 diagnostic reports at the email provided.
                                                     </span>
                                                 </label>
                                             </div>
@@ -874,13 +960,21 @@ Best regards,
                                             </div>
 
                                             {/* Simulated Report Card block */}
-                                            <div className="space-y-4 bg-brandNavy-950/80 p-6 rounded-xl border border-brandNavy-800">
-                                                <div className="space-y-2">
+                                            <div className="space-y-4 bg-brandNavy-950/80 p-6 rounded-xl border border-brandNavy-800 relative">
+                                                <button 
+                                                    onClick={() => handleCopyToClipboard(`Vulnerability: ${bottleneck === 'tribal-knowledge' ? 'High Key-Person Dependency' : bottleneck === 'approval-drag' ? 'High SLA Latency' : 'SaaS Stack Bloat'}\nChaos Tax: ${publicCalculatedChaos.chaosTaxRate}%\nDaily Bleed: ${formatCurrency(publicCalculatedChaos.dailyChaosBleed)}`)}
+                                                    className="absolute top-4 right-4 p-2 rounded bg-brandNavy-900 hover:bg-brandNavy-800 border border-brandNavy-750 transition-colors flex items-center gap-1.5 text-[10px] text-slate-300 font-mono"
+                                                    title="Copy metrics summary"
+                                                >
+                                                    <IconCopy /> Copy
+                                                </button>
+                                                
+                                                <div className="space-y-2 pr-16">
                                                     <span className="text-[9px] font-mono font-bold tracking-wider text-rose-400 uppercase block">Critical Vulnerability Detected:</span>
                                                     <h4 className="text-sm font-bold text-white font-serif">
                                                         {bottleneck === 'tribal-knowledge' && "Critical Risk: High Key-Person Dependency Pattern"}
                                                         {bottleneck === 'approval-drag' && "Frictional Risk: High SLA Process approval Latency"}
-                                                        {bottleneck === 'tool-bloat' && "System Risk: Scattered Data Sinks & Operational Swarm"}
+                                                        {bottleneck === 'tool-bloat' && "System Risk: Scattered Data Sinks &amp; Operational Swarm"}
                                                     </h4>
                                                     <p className="text-[11px] text-slate-400 leading-relaxed font-light">
                                                         {bottleneck === 'tribal-knowledge' && "Your processes are siloed in individual minds. If key personnel resign, your operations face immediate degradation. Standardizing this information is your absolute #1 scaling priority."}
@@ -920,7 +1014,7 @@ Best regards,
                                                         href={mailtoLink}
                                                         className="w-full sm:w-auto text-center px-6 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded font-sans transition-all shadow-lg"
                                                     >
-                                                        Submit Diagnostic & Book Audit
+                                                        Submit Diagnostic &amp; Book Audit
                                                     </a>
                                                     <button 
                                                         onClick={() => {
@@ -939,151 +1033,82 @@ Best regards,
                                             </div>
                                         </div>
                                     )}
-
                                 </div>
-
                             </div>
                         </div>
                     </section>
 
-                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP */}
-                    <section id="diagnostics" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100 font-sans">
-                        <div className="max-w-7xl mx-auto px-6 space-y-16">
+                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP (Interactive Tabs Upgrade) */}
+                    <section id="diagnostics" className="py-24 border-b border-brandNavy-800 bg-brandNavy-900 text-slate-100 font-sans">
+                        <div className="max-w-7xl mx-auto px-6 space-y-12">
                             
                             {/* Section Header */}
                             <div className="max-w-3xl mx-auto text-center space-y-3">
                                 <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">360° Scale-Up Lifecycle</span>
                                 <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
                                 <p className="text-sm text-slate-400 leading-relaxed font-light">
-                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 1) through ongoing Strategic Advisory & Systems Retainers (MOD 4), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
+                                    Our operational partnership is fully integrated. From baseline Operational Diagnostics (MOD 1) through ongoing Strategic Advisory &amp; Systems Retainers (MOD 4), acquire targeted execution packages mapped to your corporate scale requirements in strict compliance with DOLE and BIR EOPT mandates.
                                 </p>
                             </div>
 
-                            {/* 4-CARD MODULAR ROADMAP LAYOUT */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
-                                
-                                {/* MOD 1 CARD */}
-                                <div className="border border-brandBlue-500 bg-brandBlue-5/10 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all shadow-md">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandBlue-500/10 flex items-center justify-center font-bold text-[10px] tracking-wider text-brandBlue-400 border border-brandBlue-200/20">MOD 1</div>
-                                            <span className="text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brandBlue-100 text-brandBlue-700 font-extrabold">3 Weeks</span>
-                                        </div>
-                                        <h3 className="text-base font-bold text-white font-serif">Operational Diagnostics</h3>
-                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            A mandated discovery sprint mapping your baseline organizational friction in strict compliance with RA 10173 (Data Privacy Act of 2012). Delivered completely asynchronously.
-                                        </p>
-                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>DPA-Compliant Smart Intake</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>SaaS Stack Overlap Audit</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Custom Priority Action Blueprint</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
-                                        Outcome: Detailed Operational Risk Matrix & 10m walkthrough Loom video.
-                                    </div>
-                                </div>
-
-                                {/* MOD 2 CARD */}
-                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 2</div>
-                                        </div>
-                                        <h3 className="text-base font-bold text-white font-serif">Process Architecture</h3>
-                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            Establish functional reporting boundaries, organigrams, and compliant workflow playbooks in strict alignment with DOLE General Labor Standards (GLS).
-                                        </p>
-                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Macro Value Stream Maps (VSM)</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>DOLE-Aligned Onboarding Packs</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>GLS Code of Conduct & Handbooks</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
-                                        Outcome: Mitigated labor litigation risks and protected tribal IP.
-                                    </div>
-                                </div>
-
-                                {/* MOD 3 CARD */}
-                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 3</div>
-                                        </div>
-                                        <h3 className="text-base font-bold text-white font-serif">Workflow Automation</h3>
-                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            Deploy Swiss-standard HERMES project controls and configure Lark workspace automations to eliminate manual copying and tracking tasks.
-                                        </p>
-                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Enterprise Lark Workspace Hub</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>HERMES PMO Framework Setup</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Workforce Change Enablement</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
-                                        Outcome: Automated approvals, zero legacy paperwork sprawl.
-                                    </div>
-                                </div>
-
-                                {/* MOD 4 CARD */}
-                                <div className="border border-dashed border-brandNavy-700 bg-brandNavy-900/50 rounded-xl p-5 flex flex-col justify-between min-h-[22rem] transition-all">
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <div className="w-14 h-8 rounded-lg bg-brandNavy-800 flex items-center justify-center font-bold text-[10px] tracking-wider text-slate-400 border border-brandNavy-700">MOD 4</div>
-                                        </div>
-                                        <h3 className="text-base font-bold text-white font-serif">Strategic Advisory Retainer</h3>
-                                        <p className="text-[11px] leading-relaxed text-slate-300 font-light">
-                                            Continuous executive governance oversight paired with managed cyber SLA monitoring to protect baseline configurations.
-                                        </p>
-                                        <ul className="text-[10px] space-y-2 pt-1 font-semibold text-slate-300">
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Fractional COO Governance Syncs</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Managed Admin Services & Cyber SLA</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <IconCheck />
-                                                <span>Semi-Annual Process Drift Audits</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div className="pt-4 border-t border-slate-700/65 text-[10px] text-slate-400 font-semibold leading-snug">
-                                        Outcome: CEO operational relief and proactive baseline protection.
-                                    </div>
-                                </div>
-
+                            {/* Modular Tab Selectors */}
+                            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 border-b border-brandNavy-800 pb-4 max-w-4xl mx-auto">
+                                {[1, 2, 3, 4].map((num) => (
+                                    <button
+                                        key={num}
+                                        onClick={() => setActiveModule(num)}
+                                        className={`px-4 sm:px-6 py-3 rounded-xl border text-xs font-mono tracking-wider transition-all uppercase font-bold flex items-center gap-2 ${
+                                            activeModule === num 
+                                                ? 'border-brandBlue-500 bg-brandBlue-500/10 text-white shadow-lg' 
+                                                : 'border-brandNavy-800 bg-brandNavy-955/50 text-slate-400 hover:text-white hover:border-brandNavy-700'
+                                        }`}
+                                    >
+                                        <span className={`h-2 w-2 rounded-full ${activeModule === num ? 'bg-brandBlue-400 animate-pulse' : 'bg-brandNavy-700'}`} />
+                                        MOD {num}: {num === 1 ? 'Diagnostics' : num === 2 ? 'Process' : num === 3 ? 'Automation' : 'Advisory'}
+                                    </button>
+                                ))}
                             </div>
+
+                            {/* Active Tab High-Fidelity Details */}
+                            <div className="max-w-4xl mx-auto bg-brandNavy-950 border border-brandNavy-800 p-6 sm:p-10 rounded-2xl shadow-2xl glass-panel relative animate-fadeIn">
+                                <div className="absolute top-4 right-6 text-[10px] font-mono text-brandBlue-400 font-bold bg-brandBlue-500/10 border border-brandBlue-500/20 px-3 py-1 rounded">
+                                    Sprint Phase Timeline: {modulesData[activeModule].duration}
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2.5">
+                                            <IconSparkles />
+                                            Module {activeModule}: {modulesData[activeModule].title}
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl font-light">
+                                            {modulesData[activeModule].desc}
+                                        </p>
+                                    </div>
+
+                                    <div className="border-t border-brandNavy-800 pt-6">
+                                        <h4 className="text-xs font-mono tracking-wider text-slate-400 uppercase font-bold mb-4">Milestone Deliverables:</h4>
+                                        <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {modulesData[activeModule].deliverables.map((del, i) => (
+                                                <li key={i} className="p-4 bg-brandNavy-950/60 border border-brandNavy-800 rounded-xl flex items-start gap-2.5">
+                                                    <IconCheck />
+                                                    <span className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-medium">{del}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-brandNavy-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                        <div className="text-xs text-slate-400">
+                                            <strong className="text-white">Audit Standard Objective:</strong> {modulesData[activeModule].outcome}
+                                        </div>
+                                        <a href={mailtoLink} className="w-full sm:w-auto text-center px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-[10px] tracking-wider rounded uppercase transition-all shadow-md">
+                                            Initiate Mod {activeModule}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </section>
 
@@ -1097,7 +1122,7 @@ Best regards,
                                     <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Secure Channel</span>
                                     <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Book Your Operational Diagnostics Audit</h3>
                                     <p className="text-sm text-slate-600 leading-relaxed font-sans font-light">
-                                        We protect client data privacy under **Republic Act No. 10173** and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
+                                        We protect client data privacy under <strong>Republic Act No. 10173</strong> and reject complex entry form hazards. Access our direct, partner-led scoping stream by clicking the button below to generate a pre-templated corporate inquiry email.
                                     </p>
                                 </div>
 
@@ -1135,7 +1160,7 @@ Best regards,
                                     onClick={() => setIsLegalModalOpen(true)}
                                     className="text-brandBlue-400 hover:text-brandBlue-300 transition-colors underline font-mono text-[9px] uppercase tracking-wider block mt-2 text-center md:text-left mx-auto md:mx-0"
                                 >
-                                    View NPC Privacy Manual & BIR EOPT Disclosures
+                                    View NPC Privacy Manual &amp; BIR EOPT Disclosures
                                 </button>
                             </div>
 
@@ -1154,6 +1179,14 @@ Best regards,
                         </div>
                     </footer>
 
+                    {/* Secure In-App Toast Alert System */}
+                    {toastMessage && (
+                        <div className="fixed bottom-6 right-6 bg-brandBlue-500 text-white font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-2xl z-50 animate-fadeIn border border-brandBlue-400 flex items-center gap-2">
+                            <IconCheck />
+                            {toastMessage}
+                        </div>
+                    )}
+
                     {/* NPC, DPA (RA 10173), & BIR EOPT COMPLIANCE OVERLAY MODAL */}
                     {isLegalModalOpen && (
                         <div className="fixed inset-0 bg-brandNavy-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
@@ -1167,7 +1200,7 @@ Best regards,
                                 
                                 <div className="border-b border-brandNavy-800 pb-4">
                                     <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Kolthoff Corporate Governance</span>
-                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Regulatory & Statutory Compliance Brief</h3>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Regulatory &amp; Statutory Compliance Brief</h3>
                                 </div>
 
                                 <div className="space-y-5 text-xs font-light leading-relaxed">
@@ -1215,7 +1248,7 @@ Best regards,
                                         onClick={() => setIsLegalModalOpen(false)}
                                         className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
                                     >
-                                        Acknowledge & Close
+                                        Acknowledge &amp; Close
                                     </button>
                                 </div>
                             </div>
@@ -1235,7 +1268,7 @@ Best regards,
                                 
                                 <div className="border-b border-brandNavy-800 pb-4">
                                     <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Scientific Validity</span>
-                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Mathematical Proof & Operational Logic</h3>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Mathematical Proof &amp; Operational Logic</h3>
                                 </div>
 
                                 <div className="space-y-6 text-xs font-light leading-relaxed">
@@ -1243,7 +1276,7 @@ Best regards,
                                         Operational leakage is mathematically modeled as a function of total personnel, average monthly salary, baseline delay rates, and recruiting attrition variables. We identify corporate resource bleed with maximum precision.
                                     </p>
 
-                                    {/* Equation Canvas Area with double escaped curly template to secure React build */}
+                                    {/* Equation Canvas Area */}
                                     <div className="p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
                                         <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Chaos Waste Equation</span>
                                         <div id="modal-math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
@@ -1288,7 +1321,7 @@ Best regards,
                                         onClick={() => setIsMathModalOpen(false)}
                                         className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
                                     >
-                                        Acknowledge & Close
+                                        Acknowledge &amp; Close
                                     </button>
                                 </div>
                             </div>
