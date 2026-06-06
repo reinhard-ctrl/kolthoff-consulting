@@ -1,341 +1,1342 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SME Operations Scale & Compliance Partners</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
+    <title>Kolthoff Consulting - Landing Page</title>
+    
+    <!-- Custom SVG Logo Favicon (Sleek Shield & Checkmark with Custom Gradients) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%232563EB' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%232563EB' stop-opacity='0.4' /><stop offset='1' stop-color='%2360A1FA' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%233B82F6' /><stop offset='1' stop-color='%2360A1FA' /></linearGradient></defs></svg>">
+
+    <!-- Google Fonts: Montserrat (Clean Geometric UI) & Playfair Display (Premium Editorial Serif) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght=0,100..900;1,100..900&family=Playfair+Display:ital,wght=0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <!-- MathJax for rendering LaTeX formulas dynamically with high fidelity -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: {
+                            950: '#020613', // Ultra-dark corporate space
+                            900: '#09111F', // Rich navy base
+                            850: '#0C1626', // High-end dark middle-ground
+                            800: '#0F1A2C', // Deep card background
+                            750: '#15233A', // Intermediate dark accent
+                            700: '#1B2C46', // Panel borders and dividers
+                            600: '#2E4567', // Subdued text and inactive strokes
+                        },
+                        brandBlue: {
+                            50: '#F0F6FF',
+                            100: '#E0EDFF',
+                            200: '#C2DBFF',
+                            300: '#99C4FF',
+                            400: '#60A1FA', // Highlighting element
+                            500: '#2563EB', // Premium solid corporate blue
+                            600: '#1D4ED8',
+                            700: '#1E40AF',
+                            850: '#0F2963', // Internal container accents
+                            950: '#0B1731', // Deep glow shadows
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Montserrat"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fadeIn': 'fadeIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
         }
-        h1, h2, h3, .serif-font {
-            font-family: 'Playfair Display', serif;
+    </script>
+    
+    <!-- React and ReactDOM CDNs (Production Builds) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel CDN (Compiles JSX inside the browser dynamically) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #0F1A2C; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2563EB; }
+        
+        .luxury-gradient {
+            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
+        }
+        
+        /* Premium custom range slider stylings */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563EB;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Glassmorphism accent panels with subtle glow */
+        .glass-panel {
+            background: rgba(15, 26, 44, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(11, 23, 49, 0.5);
+        }
+
+        /* Responsive Arrow Pipeline Clip Paths */
+        @media (min-width: 1024px) {
+            .arrow-card-first {
+                clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 50%, calc(100% - 24px) 100%, 0% 100%);
+            }
+            .arrow-card-mid {
+                clip-path: polygon(0% 0%, calc(100% - 24px) 0%, 100% 50%, calc(100% - 24px) 100%, 0% 100%, 24px 50%);
+            }
+            .arrow-card-last {
+                clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 24px 50%);
+            }
+        }
+        @media (max-width: 1023px) {
+            .arrow-card-first {
+                clip-path: polygon(0% 0%, 100% 0%, 100% calc(100% - 20px), 50% 100%, 0% calc(100% - 20px));
+            }
+            .arrow-card-mid {
+                clip-path: polygon(0% 0%, 50% 20px, 100% 0%, 100% calc(100% - 20px), 50% 100%, 0% calc(100% - 20px));
+            }
+            .arrow-card-last {
+                clip-path: polygon(0% 0%, 50% 20px, 100% 0%, 100% 100%, 0% 100%);
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 scroll-smooth antialiased">
+<body class="bg-brandNavy-950 text-slate-100 antialiased selection:bg-brandBlue-600 selection:text-white min-h-screen">
 
-    <!-- Top Banner for Compliance / Trust -->
-    <div class="bg-indigo-900 text-indigo-100 py-2.5 px-4 text-center text-xs font-semibold tracking-wider uppercase">
-        ⚡ Designed for Growing Philippine SMEs: DOLE-Compliant & Data Privacy Secure (RA 10173)
-    </div>
+    <!-- Target mount node for React -->
+    <div id="root"></div>
 
-    <!-- Navigation Header -->
-    <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-150">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-2">
-                <div class="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200">
-                    Ω
-                </div>
-                <span class="font-extrabold text-xl tracking-tight text-slate-800">Ops<span class="text-indigo-600">Scale</span></span>
-            </a>
-            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-                <a href="#how-it-works" class="hover:text-indigo-600 transition">Our Process</a>
-                <a href="#phases" class="hover:text-indigo-600 transition">Operational Phases</a>
-                <a href="#benefits" class="hover:text-indigo-600 transition">SME Benefits</a>
-            </nav>
-            <div class="flex items-center gap-4">
-                <a href="workbook.html" class="hidden sm:inline-flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-100 transition">
-                    <i data-lucide="sliders" class="w-4 h-4"></i> Try Interactive Estimator
-                </a>
-            </div>
-        </div>
-    </header>
+    <!-- React/Babel Browser compilation block -->
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
 
-    <!-- Hero Section -->
-    <section class="relative py-20 lg:py-32 overflow-hidden bg-gradient-to-b from-white to-slate-50">
-        <div class="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-            <div class="lg:col-span-7 space-y-8">
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold">
-                    <span class="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse"></span> For Founders & Business Owners
-                </div>
-                <h1 class="text-5xl lg:text-6xl font-bold leading-tight text-slate-900">
-                    Scale your business <span class="text-indigo-600 italic font-normal">without</span> the daily chaos.
-                </h1>
-                <p class="text-lg text-slate-600 max-w-xl leading-relaxed">
-                    Stop micromanaging messy group chats and overlapping tools. We help growing SMEs audit processes, build compliant playbooks, sync workflows, and provide ongoing fractional ops support.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="#phases" class="bg-indigo-600 text-white text-center px-8 py-4 rounded-xl font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl transition-all flex items-center justify-center gap-3">
-                        Explore the 4 Phases <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                    </a>
-                    <a href="workbook.html" class="bg-white border border-slate-200 text-slate-700 text-center px-8 py-4 rounded-xl font-semibold hover:border-slate-300 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                        <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i> Open Live Interactive Workbook
-                    </a>
-                </div>
-                <!-- Trust Badges -->
-                <div class="pt-8 border-t border-slate-200 grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <div class="text-3xl font-extrabold text-indigo-600">100%</div>
-                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1 font-semibold">DOLE Compliant</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-extrabold text-indigo-600">400+ hrs</div>
-                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1 font-semibold">Saved / Founder</div>
-                    </div>
-                    <div>
-                        <div class="text-3xl font-extrabold text-indigo-600">RA 10173</div>
-                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1 font-semibold">Data Privacy Secure</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="lg:col-span-5 relative">
-                <div class="absolute -inset-4 bg-indigo-500/10 rounded-3xl blur-2xl"></div>
-                <!-- Mini UI Preview Card -->
-                <div class="relative bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-6">
-                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                                <i data-lucide="compass" class="w-5 h-5"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-sm text-slate-800">Your Operations Roadmap</h4>
-                                <p class="text-xs text-slate-500">Tailored SME Growth Plan</p>
-                            </div>
-                        </div>
-                        <span class="text-xs bg-indigo-550 bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-bold">Active Scope</span>
-                    </div>
-                    <!-- Sample Progress Items -->
-                    <div class="space-y-4">
-                        <div class="flex gap-3">
-                            <div class="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mt-0.5 shrink-0">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-700">Phase 1: Operations Health Check</p>
-                                <p class="text-[11px] text-slate-500">Pinpointing process leaks & tools overlap.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <div class="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mt-0.5 shrink-0">
-                                <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-indigo-900">Phase 2: Team Playbooks & HR Foundations</p>
-                                <p class="text-[11px] text-slate-500">Writing custom SOPs & DOLE-compliant handbooks.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3 opacity-60">
-                            <div class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mt-0.5 shrink-0">
-                                <i data-lucide="clock" class="w-3 h-3"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-slate-700">Phase 3: Simple Trackers & Workspaces</p>
-                                <p class="text-[11px] text-slate-500">Centralized task tracking & workspace setups.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-slate-50 border border-slate-100 p-3 rounded-lg flex items-center justify-between text-xs">
-                        <span class="text-slate-500">Timeline Impact:</span>
-                        <strong class="text-indigo-600 font-bold">Calculated Dynamically</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+        // GLOBAL FORMAT CURRENCY UTILITY DEFINITION
+        const formatCurrency = (val) => {
+            return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+        };
 
-    <!-- Operational Phases Section -->
-    <section id="phases" class="py-24 bg-white border-y border-slate-150">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20">
-                <span class="text-indigo-600 font-bold uppercase tracking-widest text-xs">Step-By-Step Scaling Methodology</span>
-                <h2 class="text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">The 4-Phase System-Led Blueprint</h2>
-                <p class="text-lg text-slate-600">
-                    We systematically upgrade your operational core to ensure every task is documented, tracked, compliant, and scale-ready.
-                </p>
-            </div>
+        const IconWebsiteLogo = ({ className = "w-12 h-12" }) => (
+            <svg className={`${className} shrink-0 transition-transform duration-300`} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#2563EB" fillOpacity="0.08" stroke="url(#concept4-shield-grad)" strokeWidth="4.5" strokeLinejoin="round" />
+                <path d="M36 50 L46 60 L66 36" stroke="url(#concept4-check-grad)" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                <defs>
+                    <linearGradient id="concept4-shield-grad" x1="16" y1="12" x2="84" y2="90" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#2563EB" stopOpacity="0.4" />
+                        <stop offset="1" stopColor="#60A1FA" stopOpacity="0.1" />
+                    </linearGradient>
+                    <linearGradient id="concept4-check-grad" x1="36" y1="36" x2="66" y2="60" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#3B82F6" />
+                        <stop offset="1" stopColor="#60A1FA" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        );
 
-            <!-- Dynamic Modules Grid rendering based on matching taxonomy -->
-            <div id="modules-container" class="grid lg:grid-cols-2 gap-8">
-                <!-- Javascript will render custom cards matching the exact array variables -->
-            </div>
+        const IconTrendingDown = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>;
+        const IconTrendingUp = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
+        const IconArrowRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5 transition-transform group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+        const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+        const IconTarget = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-500 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>;
+        const IconMail = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
+        const IconGlobe = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+        const IconShieldAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400 shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
+        const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+        const IconSparkles = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brandBlue-400 animate-pulse"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>;
+        const IconCalculator = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect width="16" height="20" x="4" y="2" rx="2"/>
+                <line x1="8" x2="16" y1="6" y2="6"/>
+                <line x1="16" x2="16" y1="14" y2="18"/>
+                <path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
+            </svg>
+        );
 
-            <!-- Timeline Qualifier -->
-            <div class="mt-12 p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center text-xs text-indigo-900 font-medium">
-                💡 <strong>Important Note on Timelines:</strong> Estimated durations are baseline configurations. Your actual project length, resource requirements, and investment scale will dynamically recalculate in our shared <strong>Interactive Estimator Workbook</strong> to perfectly match your team's operational rhythm.
-            </div>
-        </div>
-    </section>
+        function App() {
+            // Interactive Leakage Calculator States
+            const [teamSize, setTeamSize] = useState(30);
+            const [avgMonthlySalary, setAvgMonthlySalary] = useState(45000);
+            const [delayHoursWeekly, setDelayHoursWeekly] = useState(6);
 
-    <!-- SME Benefits Section -->
-    <section id="benefits" class="py-24 bg-slate-50">
-        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8">
-            <div class="bg-white p-8 rounded-2xl border border-slate-200 space-y-4 shadow-sm hover:shadow-md transition">
-                <div class="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-2">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Total Legal Peace of Mind</h3>
-                <p class="text-slate-600 text-sm leading-relaxed">
-                    Protect your venture from painful, costly litigation. We craft handbooks and operational onboarding setups that comply perfectly with Local Labor Standards (DOLE) and Philippine Data Privacy laws (RA 10173).
-                </p>
-            </div>
-            <div class="bg-white p-8 rounded-2xl border border-slate-200 space-y-4 shadow-sm hover:shadow-md transition">
-                <div class="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-2">
-                    <i data-lucide="users" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Accountable Team Culture</h3>
-                <p class="text-slate-600 text-sm leading-relaxed">
-                    Clear 'Who-Does-What' accountability structures mean no more dropped balls, overlap confusion, or "I thought they were doing that" excuses from your local or remote team.
-                </p>
-            </div>
-            <div class="bg-white p-8 rounded-2xl border border-slate-200 space-y-4 shadow-sm hover:shadow-md transition">
-                <div class="h-12 w-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-2">
-                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Seamless Founder Exit</h3>
-                <p class="text-slate-600 text-sm leading-relaxed">
-                    Transition your company from founder-led hustle to dynamic systems-run efficiency. Free yourself from micro-tasks so you can step into the role of true visionary CEO.
-                </p>
-            </div>
-        </div>
-    </section>
+            // Interactive Smart Intake Demo States
+            const [intakeStep, setIntakeStep] = useState(1);
+            const [bottleneck, setBottleneck] = useState('');
+            const [documentation, setDocumentation] = useState('');
+            const [toolstack, setToolstack] = useState('');
+            const [dpaConsent, setDpaConsent] = useState(false);
+            const [isDemoSubmitted, setIsDemoSubmitted] = useState(false);
 
-    <!-- Call to Action / Estimator Intro Section -->
-    <section id="estimator" class="py-24 bg-gradient-to-r from-indigo-900 to-indigo-950 text-white relative overflow-hidden">
-        <div class="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay"></div>
-        <div class="max-w-5xl mx-auto px-6 text-center space-y-8 relative z-10">
-            <h2 class="text-4xl lg:text-5xl font-bold">Ready to build your bespoke operations structure?</h2>
-            <p class="text-indigo-200 text-lg max-w-2xl mx-auto">
-                No cookie-cutter agency fees or endless consultations. Use our custom, transparent scoped workbook calculator to map out precisely what you need, calculate realistic timelines, and view immediate cost structures.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <a href="workbook.html" class="bg-emerald-550 bg-emerald-500 text-white hover:bg-emerald-600 transition-all font-bold px-8 py-4 rounded-xl flex items-center justify-center gap-2 text-base shadow-lg shadow-emerald-950/20">
-                    <i data-lucide="file-spreadsheet" class="w-5 h-5"></i> Open the Interactive Scope & Workbook Tool
-                </a>
-            </div>
-        </div>
-    </section>
+            // Interactive Tabs state for lifecycle roadmap
+            const [activeModule, setActiveModule] = useState(1);
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-2">
-                <div class="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">Ω</div>
-                <span class="font-extrabold text-lg text-white">Ops<span class="text-indigo-400">Scale</span></span>
-            </div>
-            <p class="text-xs text-slate-500">
-                &copy; 2026 OpsScale Systems. All rights reserved. Built to support Philippines & Southeast Asian SMEs.
-            </p>
-        </div>
-    </footer>
+            // Toast/Copy Feedback State
+            const [toastMessage, setToastMessage] = useState('');
 
-    <!-- Modules Data Script -->
-    <script>
-        const modulesData = [
-            {
-                phase: "Phase 1",
-                tagline: "Finding Your Bottlenecks",
-                title: "Operations Health Check",
-                description: "We look under the hood of your daily operations to find exactly where your team is wasting time and where you are losing money. We observe your actual workflows and deliver a clear, prioritized action plan to fix them.",
-                duration: "3 Weeks",
-                deliverables: [
-                    "Secure Client Onboarding & Data Privacy Setup (RA 10173 Compliant)",
-                    "Private Team Frustration & Bottleneck Survey",
-                    "On-Site Workflow Shadowing & Observation",
-                    "Software Waste & Cost-Saving Audit",
-                    "The 90-Day Operational \"Fix-It\" Roadmap"
-                ],
-                icon: "activity"
-            },
-            {
-                phase: "Phase 2",
-                tagline: "Organizing How You Work",
-                title: "Team Playbooks & HR Foundations",
-                description: "We untangle your team's overlapping responsibilities and create simple, easy-to-follow guides. This ensures your business runs smoothly, maintains DOLE compliance, and functions predictably even when you aren't in the office.",
-                duration: "4 Weeks",
-                deliverables: [
-                    "'Who-Does-What' Accountability Org Chart",
-                    "Step-by-Step Daily Process Playbooks (SOPs)",
-                    "Ready-to-Use HR & Onboarding Templates",
-                    "DOLE-Compliant Employee Handbook"
-                ],
-                icon: "book-open"
-            },
-            {
-                phase: "Phase 3",
-                tagline: "Getting Your Team on One Page",
-                title: "Simple Trackers & Workspaces",
-                description: "We clean up your messy group chats and connect your apps into one centralized workspace. We build visual task trackers so you can see exactly what your team is doing without having to micromanage them.",
-                duration: "5 Weeks",
-                deliverables: [
-                    "Centralized Team Workspace Setup (Lark / Slack / Teams)",
-                    "Visual Project & Daily Task Trackers",
-                    "Hands-On Team Training & Rollout Sprints"
-                ],
-                icon: "layout-grid"
-            },
-            {
-                phase: "Phase 4",
-                tagline: "Your Fractional Operations Partner",
-                title: "Ongoing Operations Support",
-                description: "We act as your part-time operations partner to help you manage the team, update your systems, and keep your business running seamlessly as you scale.",
-                duration: "Ongoing Retainer",
-                deliverables: [
-                    "Monthly Growth & Operations Syncs (Fractional COO)",
-                    "Bi-Annual System & Workspace Check-Ups",
-                    "On-Demand Admin & Tech Support SLAs"
-                ],
-                icon: "users"
+            // Modal Trigger States
+            const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+            const [isMathModalOpen, setIsMathModalOpen] = useState(false);
+
+            const publicCalculatedChaos = useMemo(() => {
+                const totalMonthlyPayroll = teamSize * avgMonthlySalary;
+                const avgHourlyRate = avgMonthlySalary / 160;
+                
+                // 12% baseline frictional recruitment/onboarding loss per annum
+                const annualTurnoverLoss = Math.round(totalMonthlyPayroll * 0.12 * 12);
+                // System friction hours wasted per year
+                const annualInefficiencyLoss = Math.round(delayHoursWeekly * 4.33 * teamSize * avgHourlyRate * 12);
+                
+                const annualChaosTotal = annualTurnoverLoss + annualInefficiencyLoss;
+                const dailyChaosBleed = Math.round(annualChaosTotal / 365);
+                const hourlyChaosBleed = exactHourBleed(annualChaosTotal);
+
+                // Invisible "Chaos Tax" percentage on total payroll overhead
+                const annualPayrollOverhead = totalMonthlyPayroll * 12;
+                const chaosTaxRate = Math.round((annualChaosTotal / annualPayrollOverhead) * 100);
+                const workforceEfficiency = 100 - chaosTaxRate;
+
+                // Lost Opportunity Equivalents (B2B Visceral Assets)
+                const seniorDeveloperSalary = 80000 * 12; // ₱80k per month + overhead
+                const lostFTEEquivalent = Math.round((annualChaosTotal / seniorDeveloperSalary) * 10) / 10;
+                const primeOfficeRent = 120000; // ₱120k monthly rent
+                const lostOfficeRentMonths = Math.round(annualChaosTotal / primeOfficeRent);
+                const macbookProCost = 140000; // Premium hardware
+                const lostWorkstations = Math.round(annualChaosTotal / macbookProCost);
+
+                return { 
+                    annualChaosTotal, 
+                    dailyChaosBleed, 
+                    hourlyChaosBleed, 
+                    chaosTaxRate, 
+                    workforceEfficiency,
+                    lostFTEEquivalent,
+                    lostOfficeRentMonths,
+                    lostWorkstations,
+                    annualTurnoverLoss,
+                    annualInefficiencyLoss
+                };
+            }, [teamSize, avgMonthlySalary, delayHoursWeekly]);
+
+            function exactHourBleed(annual) {
+                return Math.round(annual / (365 * 8)); // Assumes 8 active business hours per day
             }
-        ];
 
-        function renderModules() {
-            const container = document.getElementById('modules-container');
-            container.innerHTML = modulesData.map((mod, index) => {
-                const num = index + 1;
-                return `
-                    <div class="bg-white border border-slate-200 hover:border-indigo-250 rounded-3xl p-8 hover:shadow-xl transition-all duration-300 relative group flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between pb-6 border-b border-slate-100">
-                                <div class="space-y-1">
-                                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest block">${mod.phase} &bull; ${mod.tagline}</span>
-                                    <h3 class="text-2xl font-extrabold text-slate-900 group-hover:text-indigo-900 transition-colors">${mod.title}</h3>
-                                </div>
-                                <div class="h-12 w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">
-                                    <i data-lucide="${mod.icon}" class="w-6 h-6"></i>
+            // MODIFIED FOR frictionless, asynchronous email audits
+            const mailtoLink = useMemo(() => {
+                const subject = encodeURIComponent("Requesting Asynchronous Workflow Scorecard - Kolthoff");
+                const body = encodeURIComponent(`Dear Reinhard,
+
+I am requesting a written, 100% asynchronous review of our daily operations. We want to clean up group chat clutter and preserve our core operational knowledge without wasting hours on live meetings.
+
+Here are our quick team metrics for the written analysis:
+
+1. Operational Bleed Metrics:
+- Estimated Time Lost Equivalent: Around ${publicCalculatedChaos.lostFTEEquivalent} full-time staff member salaries
+- Lost Payroll Waste Rate: ${publicCalculatedChaos.chaosTaxRate}% of our payroll is leaked to system friction
+- Estimated Annual Loss: ₱${publicCalculatedChaos.annualChaosTotal.toLocaleString()}/year
+
+2. Current Hurdles:
+- Primary Hurdle: ${bottleneck === 'tribal-knowledge' ? 'Core business knowledge is siloed in key employees\' heads (expert trap)' : bottleneck === 'approval-drag' ? 'Chasing supervisors for simple sign-offs on chat/email' : bottleneck === 'tool-bloat' ? 'App chaos & manual copy-pasting across sheets' : 'Unspecified'}
+- Playbooks & SOPs: ${documentation === 'undocumented' ? 'Completely undocumented, relying on verbal training' : documentation === 'outdated-docs' ? 'Outdated or scattered Google Docs' : documentation === 'fully-standardized' ? 'SOPs exist, but monitoring is manual' : 'Unspecified'}
+- Workspace Communication: ${toolstack === 'slack-lark' ? 'Messaging apps (constant pings and chat chaos)' : toolstack === 'email-piles' ? 'Disorganized email piles or endless Viber chats' : toolstack === 'pmo-boards' ? 'We attempted tracking boards, but the team gave up updating them' : 'Unspecified'}
+
+Please review these metrics asynchronously and email us a practical Operations Scorecard outlining which workflows we should prioritize first.
+
+Best regards,
+[Name]
+[Designation]
+[Company Name]`);
+                return `mailto:contact@kolthoff-consulting.com?subject=${subject}&body=${body}`;
+            }, [publicCalculatedChaos, bottleneck, documentation, toolstack]);
+
+            const handleCopyToClipboard = (text) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => showToast('Summary copied to clipboard!'))
+                        .catch(() => fallbackCopyToClipboard(text));
+                } else {
+                    fallbackCopyToClipboard(text);
+                }
+            };
+
+            const fallbackCopyToClipboard = (text) => {
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = text;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Summary copied to clipboard!');
+                } catch (err) {
+                    showToast('Unable to copy automatically.');
+                }
+                document.body.removeChild(tempTextArea);
+            };
+
+            const showToast = (message) => {
+                setToastMessage(message);
+                setTimeout(() => setToastMessage(''), 3000);
+            };
+
+            useEffect(() => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    const mathElement = document.getElementById('math-roi') || document.getElementById('modal-math-roi');
+                    if (mathElement) {
+                        window.MathJax.typesetClear([mathElement]);
+                        window.MathJax.typesetPromise([mathElement]).catch(err => console.warn(err));
+                    }
+                }
+            }, [publicCalculatedChaos.workforceEfficiency, isMathModalOpen]);
+
+            // DO NOT change the Module content as requested. Keeping original titles, durations, desc, deliverables, and outcomes.
+            const modulesData = {
+                1: {
+                    title: "Finding Your Roadblocks (Diagnosis)",
+                    duration: "3 Weeks",
+                    desc: "We look at how your team currently works. We map out your group chats, list the apps you pay for, and identify exactly where you are losing hours every day—completely asynchronously, without disturbing your team's routine.",
+                    deliverables: [
+                        "Mapping of your current messy workflows",
+                        "List of unused or overlapping software seats",
+                        "A clear SOW priority checklist plan"
+                    ],
+                    outcome: "An easy-to-read map of your operational risks and a 10-minute video explaining how to fix them.",
+                    shapeClass: "arrow-card-first"
+                },
+                2: {
+                    title: "Organizing How You Work (SOP Playbooks)",
+                    duration: "4 Weeks",
+                    desc: "We help you build simple, clear, and updated Standard Operating Procedures (SOPs). We make sure they are simple enough for anyone on your team to follow, and fully compliant with local labor standards.",
+                    deliverables: [
+                        "Visual workflow checklists for daily tasks",
+                        "Simple, structured onboarding guides",
+                        "A centralized, easy-to-search team handbook"
+                    ],
+                    outcome: "Protect your business's core knowledge so work doesn't stop when someone is on leave.",
+                    shapeClass: "arrow-card-mid"
+                },
+                3: {
+                    title: "Simple Trackers & Automations",
+                    duration: "5 Weeks",
+                    desc: "We connect your daily apps (like Lark, Slack, Viber, or Gmail) so your team stops wasting time copying and pasting data. We set up simple, automatic task trackers so you always know who is doing what.",
+                    deliverables: [
+                        "Automated approval workflows (no more chasing on chat)",
+                        "Simple project tracking templates",
+                        "A central dashboard to view all ongoing work at a glance"
+                    ],
+                    outcome: "Fewer daily status meetings and zero lost follow-ups.",
+                    shapeClass: "arrow-card-mid"
+                },
+                4: {
+                    title: "Ongoing Operations Support",
+                    duration: "Ongoing",
+                    desc: "Think of us as your on-call Operations Manager. We check in regularly to make sure your team is still following the playbooks, help you onboard new hires, and fix any software issues.",
+                    deliverables: [
+                        "Regular operations check-ins with the owner",
+                        "Help setting up new software or integrations",
+                        "Twice-a-year process reviews to keep things clean"
+                    ],
+                    outcome: "Peace of mind for the business owner, knowing operations are running smoothly.",
+                    shapeClass: "arrow-card-last"
+                }
+            };
+
+            return (
+                <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-950 pb-12">
+                    
+                    {/* Compliance Header Banner */}
+                    <div className="bg-gradient-to-r from-brandBlue-950 via-brandBlue-850 to-brandBlue-950 border-b border-brandBlue-500/20 py-2.5 px-6 text-center text-[10px] sm:text-xs text-brandBlue-200 flex justify-center items-center gap-2.5 font-medium select-none z-50 relative">
+                        <IconShieldAlert />
+                        <span>Fully compliant with the <strong>Data Privacy Act of 2012 (RA 10173)</strong> &amp; BIR <strong>Ease of Paying Taxes (EOPT) Act</strong></span>
+                    </div>
+
+                    {}
+                    {/* Header Navigation */}
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/90 sticky top-0 z-40 backdrop-blur-md font-sans">
+                        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                            
+                            {/* Logo Column with Premium Shield Branding */}
+                            <div className="flex items-center gap-3 lg:w-1/4 shrink-0">
+                                <IconWebsiteLogo className="w-10 h-10" />
+                                <div>
+                                    <span className="font-sans font-extrabold tracking-wider text-sm sm:text-base uppercase block text-white leading-none">
+                                        KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
+                                    </span>
+                                    <span className="text-[8px] text-brandBlue-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Simple Workflows for Growing Teams</span>
                                 </div>
                             </div>
                             
-                            <p class="text-slate-600 text-sm leading-relaxed py-6 border-b border-slate-100">
-                                ${mod.description}
-                            </p>
+                            {/* Centered Links */}
+                            <nav className="hidden lg:flex items-center justify-center gap-12 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 flex-1">
+                                <a href="#chaos" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Calculate Waste</a>
+                                <a href="#intake-demo" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Written Audit</a>
+                                <a href="#diagnostics" className="hover:text-brandBlue-400 hover:scale-105 transition-all duration-200">Our Roadmap</a>
+                            </nav>
 
-                            <div class="py-6 space-y-4">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Included Deliverables:</h4>
-                                <ul class="space-y-3">
-                                    ${mod.deliverables.map(item => `
-                                        <li class="flex items-start gap-3 text-sm text-slate-700">
-                                            <span class="h-5 w-5 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mt-0.5 shrink-0">
-                                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                                            </span>
-                                            <span>${item}</span>
-                                        </li>
-                                    `).join('')}
-                                </ul>
+                            {/* CTA Action button - Changed to reflect asynchronous process */}
+                            <div className="flex justify-end lg:w-1/4 shrink-0">
+                                <a href={mailtoLink} className="hidden md:inline-block px-5 py-2.5 bg-gradient-to-r from-brandBlue-600 to-brandBlue-500 hover:from-brandBlue-500 hover:to-brandBlue-400 text-white font-bold rounded-lg text-[10px] tracking-wider transition-all duration-300 shadow-lg shadow-brandBlue-955/40 hover:-translate-y-0.5 font-sans uppercase">
+                                    Get an Async Scorecard
+                                </a>
                             </div>
                         </div>
+                    </header>
 
-                        <div class="pt-6 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                            <span class="flex items-center gap-1.5"><i data-lucide="calendar" class="w-4 h-4"></i> Est. Baseline: <strong>${mod.duration}</strong></span>
+                    {}
+                    {/* Hero Section */}
+                    <section className="relative overflow-hidden pt-20 pb-24 border-b border-brandNavy-700/60 bg-brandNavy-950 text-slate-100">
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brandBlue-500/5 blur-[120px] rounded-full pointer-events-none" />
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                            
+                            {/* Hero Copy (Left) */}
+                            <div className="lg:col-span-7 space-y-6">
+                                <span className="text-xs font-mono font-bold tracking-[0.3em] text-brandBlue-400 uppercase bg-brandBlue-950/40 border border-brandBlue-900/30 px-3.5 py-1.5 rounded inline-block">
+                                    No Exploratory Calls. No Hard Sales Zoom Meetings.
+                                </span>
+                                <h1 className="text-4xl sm:text-6xl font-serif font-bold text-white leading-tight">
+                                    Stop Chasing Status Updates. <br />
+                                    <span className="text-brandBlue-400 font-bold">Organize Your Daily Business Operations.</span>
+                                </h1>
+                                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl font-light font-sans">
+                                    We help growing Philippine SMEs transition from chat group overload, messy spreadsheets, and dependency on key staff to clean, checkable playbooks. We work entirely in the background so your team never has to waste hours on live alignment calls.
+                                </p>
+                                <div className="pt-4 flex flex-col sm:flex-row gap-4 font-sans font-medium">
+                                    <a href="#intake-demo" className="group px-8 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-brandBlue-955/30 flex items-center justify-center hover:-translate-y-0.5">
+                                        Get Async Scorecard <IconArrowRight />
+                                    </a>
+                                    <a href="#chaos" className="px-8 py-4 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-lg border border-brandNavy-700 flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5">
+                                        Calculate Lost Payroll Value
+                                    </a>
+                                </div>
+                            </div>
+
+                            {/* Our Simple Model (Right Sidebar Card - High-impact copy customized for SME owners) */}
+                            <div className="lg:col-span-5 bg-brandNavy-900 border-2 border-brandBlue-500/30 p-8 rounded-2xl shadow-2xl relative overflow-hidden glass-panel group hover:border-brandBlue-500/60 transition-all duration-300">
+                                <div className="absolute top-0 right-0 bg-brandBlue-500/20 text-brandBlue-300 text-[10px] font-mono tracking-widest uppercase font-bold px-4 py-1.5 rounded-bl-xl">
+                                    Our Simple Model
+                                </div>
+                                <h3 className="text-xl font-bold font-serif text-white flex items-center gap-2 mb-4">
+                                    <span className="text-brandBlue-400 text-2xl font-black">✓</span> Built for smart Entrepreneurs
+                                </h3>
+                                <p className="text-slate-300 text-xs leading-relaxed font-light mb-6 font-sans">
+                                    We don't force you into complex corporate software or endless alignment calls. We write clear SOPs and connect tools you are already using.
+                                </p>
+                                <div className="space-y-4 pt-4 border-t border-brandNavy-800/80">
+                                    <div className="flex gap-3 text-xs">
+                                        <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
+                                        <div>
+                                            <span className="text-white font-bold block">Asynchronous Audits:</span>
+                                            <span className="text-slate-300 text-[11px] block mt-0.5">No exploratory meetings. Use our simple form whenever you have 5 free minutes, and we analyze the backend structure.</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 text-xs">
+                                        <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
+                                        <div>
+                                            <span className="text-white font-bold block">Clear Checkable Playbooks:</span>
+                                            <span className="text-slate-300 text-[11px] block mt-1">Get simple checkable checklists for daily tasks so team members can step in instantly when someone is on leave.</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 text-xs">
+                                        <span className="text-brandBlue-400 font-bold shrink-0">✓</span>
+                                        <div>
+                                            <span className="text-white font-bold block">Rewatchable Video Guides:</span>
+                                            <span className="text-slate-300 text-[11px] block mt-1">We accompany playbooks with screen-share clips, making onboarding new employees entirely self-service.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
-                    </div>
-                `;
-            }).join('');
-            
-            // Re-initialize Lucide Icons after rendering modules dynamically
-            lucide.createIcons();
+                    </section>
+
+                    {}
+                    {/* Cost of Chaos Assessment Section */}
+                    <section id="chaos" className="py-24 border-b border-slate-200 bg-slate-50 text-slate-800">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600">Quick Estimate Tool</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-slate-900">How Much Money is Operational Chaos Costing You?</h2>
+                                <p className="text-sm text-slate-600 leading-relaxed font-light font-sans">
+                                    Adjust the sliders below to estimate what your company is actively losing to administrative drag, manual handoffs, and repeating simple tasks over chat.
+                                </p>
+                                
+                                {/* Dynamic popup link positioning */}
+                                <div className="pt-2">
+                                    <button 
+                                        onClick={() => setIsMathModalOpen(true)}
+                                        className="inline-flex items-center gap-2 text-xs font-mono text-brandBlue-600 hover:text-brandBlue-700 font-bold uppercase tracking-wider bg-brandBlue-50/70 border border-brandBlue-100 hover:border-brandBlue-200 px-4 py-2 rounded-lg transition-all duration-200 shadow-sm"
+                                    >
+                                        <IconCalculator className="w-3.5 h-3.5" /> View Math &amp; Calculation Logic
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch font-sans">
+                                
+                                {/* Left Column: Inputs & Settings Sliders */}
+                                <div className="lg:col-span-5 bg-white border border-slate-200/80 p-8 rounded-2xl shadow-lg flex flex-col justify-between space-y-8">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
+                                                    <IconTarget /> Total Team Members
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{teamSize} Employees</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="5" 
+                                                max="150" 
+                                                value={teamSize} 
+                                                onChange={(e) => setTeamSize(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
+                                                    <IconCalculator className="text-brandBlue-500" /> Average Monthly Salary
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">₱{avgMonthlySalary.toLocaleString()}</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="15000" 
+                                                max="120000" 
+                                                step="5000"
+                                                value={avgMonthlySalary} 
+                                                onChange={(e) => setAvgMonthlySalary(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <label className="text-xs font-mono uppercase tracking-widest text-slate-700 font-bold flex items-center gap-1.5">
+                                                    <IconClock /> Hours Wasted per Staff Weekly
+                                                </label>
+                                                <span className="text-sm font-mono font-bold text-brandBlue-600 bg-brandBlue-50 px-2.5 py-1 rounded">{delayHoursWeekly} Hours</span>
+                                            </div>
+                                            <input 
+                                                type="range" 
+                                                min="1" 
+                                                max="15" 
+                                                value={delayHoursWeekly} 
+                                                onChange={(e) => setDelayHoursWeekly(parseInt(e.target.value))}
+                                                className="w-full accent-brandBlue-500 bg-slate-100 h-2 rounded-lg cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 leading-relaxed font-sans font-medium">
+                                        <strong>Note on Calculations:</strong> We assume a standard 160-hour work month. All calculations are kept strictly confidential under the <strong>Data Privacy Act (RA 10173)</strong>.
+                                    </div>
+                                </div>
+
+                                {/* Right Column */}
+                                <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 sm:p-10 rounded-2xl shadow-2xl flex flex-col justify-between relative overflow-hidden text-slate-100">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
+                                    
+                                    <div className="space-y-8 z-10 w-full">
+                                        
+                                        {/* Row 1 */}
+                                        <div className="border-b border-brandNavy-800 pb-6">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <IconTrendingDown />
+                                                <span className="text-[10px] font-mono font-bold tracking-widest text-rose-400 uppercase">Estimated Annual Loss</span>
+                                            </div>
+                                            <span className="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-white leading-none block">
+                                                {formatCurrency(publicCalculatedChaos.annualChaosTotal)}
+                                            </span>
+                                            <span className="text-xs text-slate-400 font-light block mt-3 leading-relaxed">
+                                                This is the estimated payroll value being leaked to manual tasks, chasing approvals, and correcting miscommunications instead of growing your business.
+                                            </span>
+                                        </div>
+
+                                        {/* Row 2 */}
+                                        <div className="bg-brandNavy-950/80 p-5 rounded-xl border border-brandNavy-800 space-y-3">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-[10px] font-mono tracking-wider text-slate-400 uppercase font-bold">Lost Payroll Value</span>
+                                                <span className="text-rose-400 font-mono font-bold">{publicCalculatedChaos.chaosTaxRate}% of Monthly Payroll Wasted</span>
+                                            </div>
+                                            
+                                            <div className="w-full bg-brandNavy-800 rounded-full h-3.5 overflow-hidden flex">
+                                                <div 
+                                                    style={{ width: `${publicCalculatedChaos.workforceEfficiency}%` }} 
+                                                    className="bg-brandBlue-500 h-full transition-all duration-300"
+                                                    title={`Effective Work: ${publicCalculatedChaos.workforceEfficiency}%`}
+                                                />
+                                                <div 
+                                                    style={{ width: `${publicCalculatedChaos.chaosTaxRate}%` }} 
+                                                    className="bg-rose-500 h-full transition-all duration-300"
+                                                    title={`Messy Work Loss: ${publicCalculatedChaos.chaosTaxRate}%`}
+                                                />
+                                            </div>
+
+                                            <div className="flex justify-between text-[10px] font-mono text-slate-500">
+                                                <span>Productive Work: {publicCalculatedChaos.workforceEfficiency}%</span>
+                                                <span>Work Wasted in Admin Loops: {publicCalculatedChaos.chaosTaxRate}%</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Row 3 */}
+                                        <div className="space-y-3">
+                                            <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">What This Leaked Value Could Pay For:</span>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostFTEEquivalent} Staff
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
+                                                        The equivalent number of full-time staff salaries lost to administrative drag.
+                                                    </span>
+                                                </div>
+
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostOfficeRentMonths} Months
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
+                                                        Of commercial office rent in major business hubs (estimated at ₱120k/mo).
+                                                    </span>
+                                                </div>
+
+                                                <div className="p-4 bg-brandNavy-950/50 border border-brandNavy-800 rounded-xl">
+                                                    <span className="text-2xl font-black text-slate-100 block font-mono">
+                                                        {publicCalculatedChaos.lostWorkstations} Laptops
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-light block leading-snug mt-1 font-sans">
+                                                        Brand-new premium setups for your high-performing team members.
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {}
+                    {/* Interactive Smart Intake Demo */}
+                    <section id="intake-demo" className="py-24 border-b border-brandNavy-900 bg-brandNavy-950 text-slate-100">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Self-Guided Checklist</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Find Your Bottlenecks in 30 Seconds</h2>
+                                <p className="text-sm text-slate-400 leading-relaxed font-light font-sans">
+                                    Answer these 3 simple questions to see how operational bottlenecks affect your company, then request a free written scorecard.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                
+                                {/* Stepper Form Element */}
+                                <div className="lg:col-span-5 bg-brandNavy-900 border border-brandNavy-700/80 p-8 rounded-2xl shadow-xl space-y-6 glass-panel">
+                                    <div className="flex items-center justify-between border-b border-brandNavy-800 pb-4">
+                                        <span className="text-xs font-mono text-brandBlue-400 uppercase tracking-widest font-bold">Workflow Checklist</span>
+                                        <span className="text-xs text-slate-400 font-mono font-bold">Step {intakeStep} of 3</span>
+                                    </div>
+
+                                    {/* STEP 1: Core Bottleneck */}
+                                    {intakeStep === 1 && (
+                                        <div className="space-y-4 animate-fadeIn">
+                                            <h4 className="text-sm font-serif font-bold text-white leading-snug">
+                                                1. What is currently slowing down your daily work the most?
+                                            </h4>
+                                            <div className="space-y-3 pt-2">
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tribal-knowledge' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="bottleneck" 
+                                                        value="tribal-knowledge" 
+                                                        checked={bottleneck === 'tribal-knowledge'} 
+                                                        onChange={() => setBottleneck('tribal-knowledge')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">"Solo Expert" Trap (One person knows everything)</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Work halts or slows down completely when key people take leaves or resign.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'approval-drag' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="bottleneck" 
+                                                        value="approval-drag" 
+                                                        checked={bottleneck === 'approval-drag'} 
+                                                        onChange={() => setBottleneck('approval-drag')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">Chasing People for Approvals</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Waiting days for simple sign-offs over Viber, Facebook Messenger, or emails.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bottleneck === 'tool-bloat' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="bottleneck" 
+                                                        value="tool-bloat" 
+                                                        checked={bottleneck === 'tool-bloat'} 
+                                                        onChange={() => setBottleneck('tool-bloat')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">App Chaos &amp; Manual Copy-Pasting</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Your team manually copies the same information across multiple sheets and apps.</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <button 
+                                                disabled={!bottleneck}
+                                                onClick={() => setIntakeStep(2)}
+                                                className="w-full py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
+                                            >
+                                                Next Question
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* STEP 2: Documentation Status */}
+                                    {intakeStep === 2 && (
+                                        <div className="space-y-4 animate-fadeIn">
+                                            <h4 className="text-sm font-serif font-bold text-white leading-snug">
+                                                2. How are your team's playbooks and SOPs organized?
+                                            </h4>
+                                            <div className="space-y-3 pt-2">
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'undocumented' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="documentation" 
+                                                        value="undocumented" 
+                                                        checked={documentation === 'undocumented'} 
+                                                        onChange={() => setDocumentation('undocumented')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">No SOPs, just "how we do things"</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We rely on verbal instructions and teaching new hires on the fly.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'outdated-docs' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="documentation" 
+                                                        value="outdated-docs" 
+                                                        checked={documentation === 'outdated-docs'} 
+                                                        onChange={() => setDocumentation('outdated-docs')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">Messy Google Drive / Scattered Files</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We have some Google Docs, but they are seldom updated and hard to find.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${documentation === 'fully-standardized' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="documentation" 
+                                                        value="fully-standardized" 
+                                                        checked={documentation === 'fully-standardized'} 
+                                                        onChange={() => setDocumentation('fully-standardized')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">We have SOPs, but nobody reads them</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Everything is documented in wikis, but daily tracking is still messy.</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div className="flex gap-4">
+                                                <button 
+                                                    onClick={() => setIntakeStep(1)}
+                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
+                                                >
+                                                    Back
+                                                </button>
+                                                <button 
+                                                    disabled={!documentation}
+                                                    onClick={() => setIntakeStep(3)}
+                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
+                                                >
+                                                    Last Question
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* STEP 3: Tools & Integration + Legal Consent Checkbox (RA 10173 compliant) */}
+                                    {intakeStep === 3 && (
+                                        <div className="space-y-4 animate-fadeIn">
+                                            <h4 className="text-sm font-serif font-bold text-white leading-snug">
+                                                3. Where does your team discuss daily tasks the most?
+                                            </h4>
+                                            <div className="space-y-3 pt-1">
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'slack-lark' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="toolstack" 
+                                                        value="slack-lark" 
+                                                        checked={toolstack === 'slack-lark'} 
+                                                        onChange={() => setToolstack('slack-lark')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">Chat Apps (Lark, Slack, MS Teams)</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Everyone talks through threads and active groups, making it hard to track actual tasks.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'email-piles' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="toolstack" 
+                                                        value="email-piles" 
+                                                        checked={toolstack === 'email-piles'} 
+                                                        onChange={() => setToolstack('email-piles')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">Email Threads or Viber/Messenger</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">Work is assigned via chat groups or email. Updates get lost in long message histories.</span>
+                                                    </div>
+                                                </label>
+                                                <label className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${toolstack === 'pmo-boards' ? 'border-brandBlue-500 bg-brandBlue-950/20' : 'border-brandNavy-750 hover:bg-brandNavy-850'}`}>
+                                                    <input 
+                                                        type="radio" 
+                                                        name="toolstack" 
+                                                        value="pmo-boards" 
+                                                        checked={toolstack === 'pmo-boards'} 
+                                                        onChange={() => setToolstack('pmo-boards')} 
+                                                        className="mt-1 accent-brandBlue-500"
+                                                    />
+                                                    <div className="text-xs font-sans">
+                                                        <strong className="text-white block font-semibold">We tried task trackers but gave up</strong>
+                                                        <span className="text-slate-400 text-[11px] block mt-1">We set up Trello, ClickUp, or Notion, but nobody keeps them updated.</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            {/* DPA SECURE VOLUNTARY CONSENT CHECKBOX */}
+                                            <div className="pt-2">
+                                                <label className="flex items-start gap-3 select-none cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={dpaConsent} 
+                                                        onChange={(e) => setDpaConsent(e.target.checked)} 
+                                                        className="mt-1 rounded text-brandBlue-500 focus:ring-brandBlue-400 focus:ring-offset-brandNavy-950 accent-brandBlue-500"
+                                                    />
+                                                    <span className="text-[10px] leading-relaxed text-slate-400 font-sans font-semibold">
+                                                        I agree to share these basic team metrics under <strong>RA 10173 (Data Privacy Act)</strong> to generate my operations scorecard.
+                                                    </span>
+                                                </label>
+                                            </div>
+
+                                            <div className="flex gap-4">
+                                                <button 
+                                                    onClick={() => setIntakeStep(2)}
+                                                    className="w-1/3 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all"
+                                                >
+                                                    Back
+                                                </button>
+                                                <button 
+                                                    disabled={!toolstack || !dpaConsent}
+                                                    onClick={() => setIsDemoSubmitted(true)}
+                                                    className="w-2/3 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 disabled:opacity-40 text-white text-xs font-bold uppercase tracking-wider rounded font-sans transition-all shadow-lg"
+                                                >
+                                                    Generate Scorecard
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {}
+                                {/* Right Column: Live Diagnostic Report Preview Container */}
+                                <div className="lg:col-span-7 bg-brandNavy-900 border-2 border-brandBlue-500/20 p-8 rounded-2xl shadow-2xl relative min-h-[32rem] flex flex-col justify-between overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
+                                    
+                                    {!isDemoSubmitted ? (
+                                        <div className="m-auto text-center space-y-4 max-w-md p-6 z-10">
+                                            <div className="w-14 h-14 bg-brandNavy-800 border border-brandNavy-700 text-brandBlue-400 flex items-center justify-center rounded-2xl mx-auto shadow-inner animate-pulse">
+                                                <IconCalculator className="w-6 h-6" />
+                                            </div>
+                                            <h4 className="text-base font-serif font-bold text-white">Your Operations Summary Will Appear Here</h4>
+                                            <p className="text-[11px] text-slate-400 leading-relaxed font-light">
+                                                Complete the 3 quick questions on the left. Our system will instantly analyze your answers and generate an asynchronous action plan.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6 z-10 w-full animate-fadeIn">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-brandNavy-800 pb-4 gap-4">
+                                                <div>
+                                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase font-bold block">Async Scorecard Preview</span>
+                                                    <h3 className="text-lg font-serif font-bold text-white mt-0.5">Your SME Operations Summary</h3>
+                                                </div>
+                                                <span className="text-[9px] font-mono bg-brandBlue-500/10 text-brandBlue-400 border border-brandBlue-500/30 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
+                                                    Estimated Daily Bleed: {formatCurrency(publicCalculatedChaos.dailyChaosBleed)}
+                                                </span>
+                                            </div>
+
+                                            {/* Simulated Report Card block */}
+                                            <div className="space-y-4 bg-brandNavy-950/80 p-6 rounded-xl border border-brandNavy-800 relative">
+                                                <button 
+                                                    onClick={() => handleCopyToClipboard(`Business Vulnerability: ${bottleneck === 'tribal-knowledge' ? 'High dependency on single expert' : bottleneck === 'approval-drag' ? 'Approval bottlenecks' : 'App chaos and manual copy-pasting'}\nLoss Rate: ${publicCalculatedChaos.chaosTaxRate}% of payroll\nDaily Loss: ${formatCurrency(publicCalculatedChaos.dailyChaosBleed)}`)}
+                                                    className="absolute top-4 right-4 p-2 rounded bg-brandNavy-900 hover:bg-brandNavy-800 border border-brandNavy-750 transition-colors flex items-center gap-1.5 text-[10px] text-slate-300 font-mono"
+                                                    title="Copy metrics summary"
+                                                >
+                                                    <IconCopy /> Copy Details
+                                                </button>
+                                                
+                                                <div className="space-y-2 pr-16">
+                                                    <span className="text-[9px] font-mono font-bold tracking-wider text-rose-400 uppercase block">Biggest Area to Improve:</span>
+                                                    <h4 className="text-sm font-bold text-white font-serif">
+                                                        {bottleneck === 'tribal-knowledge' && "One person knows everything (Solo Expert trap)"}
+                                                        {bottleneck === 'approval-drag' && "Delayed Sign-offs & Approval Bottlenecks"}
+                                                        {bottleneck === 'tool-bloat' && "App Chaos & Manual Copy-pasting"}
+                                                    </h4>
+                                                    <p className="text-[11px] text-slate-400 leading-relaxed font-light">
+                                                        {bottleneck === 'tribal-knowledge' && "Your processes are siloed in individual minds. If key employees are on leave or resign, work slows down to a crawl. Getting these tasks written down into simple checkable SOPs is your absolute #1 priority."}
+                                                        {bottleneck === 'approval-drag' && "Chasing approvals over Viber chat or email is delaying client work. By mapping simple checklists inside your workspace, we can make approvals take minutes instead of days."}
+                                                        {bottleneck === 'tool-bloat' && "Your team is wasting expensive daily hours copying information between mismatched tools and spreadsheets. Connecting these apps will instantly save you hours of unnecessary work."}
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-brandNavy-850">
+                                                    <div>
+                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Current Playbook State:</span>
+                                                        <span className="text-xs font-bold text-slate-200 block mt-1 font-sans">
+                                                            {documentation === 'undocumented' && "No playbooks, relying on memory"}
+                                                            {documentation === 'outdated-docs' && "Outdated docs & scattered sheets"}
+                                                            {documentation === 'fully-standardized' && "Has SOPs but manual tracking"}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[9px] font-mono text-slate-500 uppercase font-bold block">Communication Channel State:</span>
+                                                        <span className="text-xs font-bold text-slate-200 block mt-1 font-sans">
+                                                            {toolstack === 'slack-lark' && "Chat heavy (constant pings)"}
+                                                            {toolstack === 'email-piles' && "Viber & Email Overload"}
+                                                            {toolstack === 'pmo-boards' && "Abandoned task boards"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Dynamic Call to action mapping based on sandbox metrics */}
+                                            <div className="space-y-4 pt-4 border-t border-brandNavy-800">
+                                                <p className="text-[11px] text-slate-300 leading-relaxed font-light font-sans">
+                                                    With your current setup, you are losing roughly <strong className="text-rose-400 font-bold">{publicCalculatedChaos.chaosTaxRate}% of your payroll value</strong>. That's about <strong className="text-white font-bold">{formatCurrency(publicCalculatedChaos.dailyChaosBleed)} wasted daily</strong> just on manual coordination and chat clutter. Let's build a simple operational structure to stop this waste.
+                                                </p>
+                                                
+                                                <div className="flex flex-col sm:flex-row gap-4">
+                                                    <a 
+                                                        href={mailtoLink}
+                                                        className="w-full sm:w-auto text-center px-6 py-3 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded font-sans transition-all shadow-lg"
+                                                    >
+                                                        Email Me My Full Written Scorecard
+                                                    </a>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setIsDemoSubmitted(false);
+                                                            setIntakeStep(1);
+                                                            setBottleneck('');
+                                                            setDocumentation('');
+                                                            setToolstack('');
+                                                            setDpaConsent(false);
+                                                        }}
+                                                        className="w-full sm:w-auto px-6 py-3 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 text-xs font-bold uppercase tracking-wider rounded font-sans transition-all border border-brandNavy-750"
+                                                    >
+                                                        Reset Checklist
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {}
+                    {/* UNIFIED 360° SCALE-UP LIFECYCLE ROADMAP */}
+                    <section id="diagnostics" className="py-24 border-b border-brandNavy-800 bg-brandNavy-900 text-slate-100 font-sans">
+                        <div className="max-w-7xl mx-auto px-6 space-y-16">
+                            
+                            {/* Section Header */}
+                            <div className="max-w-3xl mx-auto text-center space-y-3">
+                                <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-400 uppercase">Our Step-by-Step Method</span>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white">Our Operational Architecture Roadmap</h2>
+                                <p className="text-sm text-slate-400 leading-relaxed font-light">
+                                    Click on any stage below to see how we help your team clean up chats, organize playbooks, and automate basic tasks.
+                                </p>
+                            </div>
+
+                            {/* 4-CARD ARROW PIPELINE SEQUENCE GRID */}
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-0 font-sans items-stretch">
+                                {Object.entries(modulesData).map(([key, data]) => {
+                                    const num = parseInt(key);
+                                    const isActive = activeModule === num;
+                                    
+                                    return (
+                                        <div 
+                                            key={num}
+                                            onClick={() => setActiveModule(num)}
+                                            className="group cursor-pointer relative focus:outline-none transition-all duration-300"
+                                        >
+                                            {/* Glowing Border Wrap */}
+                                            <div className={`transition-all duration-300 ${data.shapeClass} p-[1.5px] h-full ${
+                                                isActive 
+                                                    ? 'bg-gradient-to-r lg:bg-gradient-to-r from-brandBlue-400 to-brandBlue-500 shadow-xl shadow-brandBlue-955/40 scale-[1.02] z-10' 
+                                                    : 'bg-brandNavy-700 hover:bg-brandNavy-600'
+                                            }`}>
+                                                {/* Card Content Interior Body */}
+                                                <div className={`transition-all duration-300 h-full ${data.shapeClass} ${
+                                                    isActive 
+                                                        ? 'bg-brandNavy-800 text-white' 
+                                                        : 'bg-brandNavy-950 text-slate-400 hover:text-white'
+                                                } p-4 sm:p-5 lg:pl-8 lg:pr-10 pt-4 pb-4 flex flex-col justify-between min-h-[8.5rem]`}>
+                                                    
+                                                    <div className="space-y-2">
+                                                        {/* Step & Timeframe Header Row */}
+                                                        <div className="flex justify-between items-center pr-2 lg:pr-0">
+                                                            <span className={`text-[10px] font-mono tracking-widest uppercase font-black px-2 py-0.5 rounded ${
+                                                                isActive ? 'bg-brandBlue-500/20 text-brandBlue-300' : 'bg-brandNavy-800 text-slate-400'
+                                                            }`}>
+                                                                MOD {num}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Card Title */}
+                                                        <h3 className="text-sm sm:text-base font-bold font-serif leading-snug">
+                                                            {data.title}
+                                                        </h3>
+                                                    </div>
+
+                                                    {/* Outcomes Summary footer */}
+                                                    <div className="pt-2 border-t border-brandNavy-800/80 text-[10px] sm:text-[11px] leading-snug font-semibold text-slate-400 mt-2 flex justify-between items-center">
+                                                        <span>View Details</span>
+                                                        <svg className={`w-3.5 h-3.5 transition-transform group-hover:translate-x-1 ${isActive ? 'text-brandBlue-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* DYNAMIC PIPELINE PHASE SPECS DRAWER */}
+                            <div className="max-w-7xl mx-auto bg-brandNavy-950 border border-brandNavy-800 p-6 sm:p-10 rounded-2xl shadow-2xl glass-panel relative animate-fadeIn">
+                                <div className="absolute top-4 right-6 text-[10px] font-mono text-brandBlue-400 font-bold bg-brandBlue-500/10 border border-brandBlue-500/20 px-3 py-1 rounded">
+                                    Project Duration: {modulesData[activeModule].duration}
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <h3 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2.5">
+                                            <IconSparkles />
+                                            Module {activeModule}: {modulesData[activeModule].title}
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl font-light">
+                                            {modulesData[activeModule].desc}
+                                        </p>
+                                    </div>
+
+                                    <div className="border-t border-brandNavy-800 pt-6">
+                                        <h4 className="text-xs font-mono tracking-wider text-slate-400 uppercase font-bold mb-4">What You Get:</h4>
+                                        <ul className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {modulesData[activeModule].deliverables.map((del, i) => (
+                                                <li key={i} className="p-4 bg-brandNavy-950/60 border border-brandNavy-800 rounded-xl flex items-start gap-2.5">
+                                                    <IconCheck />
+                                                    <span className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-medium">{del}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-brandNavy-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                        <div className="text-xs text-slate-400">
+                                            <strong className="text-white">Goal of this stage:</strong> {modulesData[activeModule].outcome}
+                                        </div>
+                                        <a href={mailtoLink} className="w-full sm:w-auto text-center px-5 py-2.5 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-[10px] tracking-wider rounded uppercase transition-all shadow-md">
+                                            Ask About Module {activeModule}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    {}
+                    {/* Simple Mailto Call to Action Section */}
+                    <section id="book" className="py-24 bg-slate-50 text-slate-900 font-semibold">
+                        <div className="max-w-4xl mx-auto px-6">
+                            <div className="bg-white border border-slate-200 p-8 sm:p-12 rounded-2xl shadow-xl relative text-center">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-brandBlue-500/5 blur-3xl rounded-full pointer-events-none" />
+                                
+                                <div className="max-w-2xl mx-auto space-y-4 mb-8">
+                                    <span className="text-xs font-mono font-bold tracking-[0.25em] text-brandBlue-600 uppercase">Direct Connect</span>
+                                    <h3 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Request a Free Asynchronous operations Scorecard</h3>
+                                    <p className="text-sm text-slate-600 leading-relaxed font-sans font-light">
+                                        We respect your privacy under the <strong>Data Privacy Act (RA 10173)</strong>. Instead of asking you to hop on a live meeting, click the button below to generate a pre-templated email. Just hit send, and we will get back to you with a practical, written operations scorecard.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <a 
+                                        href={mailtoLink}
+                                        className="inline-flex items-center justify-center px-10 py-4 bg-brandBlue-500 hover:bg-brandBlue-600 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all duration-300 shadow-xl shadow-brandBlue-500/20 hover:-translate-y-0.5 font-sans"
+                                    >
+                                        <IconMail className="w-4 h-4 mr-2" /> Request Async Scorecard via Email
+                                    </a>
+                                    <p className="text-xs text-slate-500 font-sans font-semibold">
+                                        Or write to us directly at <a href="mailto:contact@kolthoff-consulting.com" className="text-brandBlue-600 hover:underline font-semibold font-mono">contact@kolthoff-consulting.com</a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Corporate Premium Footer */}
+                    <footer className="border-t border-brandNavy-900/50 bg-brandNavy-950 py-12 text-slate-400 text-xs font-sans">
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+                            
+                            <div className="space-y-2 text-center md:text-left font-medium">
+                                <div className="flex items-center justify-center md:justify-start gap-2">
+                                    <IconWebsiteLogo className="w-8 h-8" />
+                                    <span className="font-sans font-extrabold text-sm uppercase text-slate-300">
+                                        KOLTHOFF <span className="text-brandBlue-400">CONSULTING</span>
+                                    </span>
+                                </div>
+                                <p className="text-[10px] leading-relaxed text-slate-500 font-sans">
+                                    Metro Manila, Philippines | Taytay, Rizal, Calabarzon <br />
+                                    © 2026 Kolthoff Consulting. All rights reserved.
+                                </p>
+                                <button 
+                                    onClick={() => setIsLegalModalOpen(true)}
+                                    className="text-brandBlue-400 hover:text-brandBlue-300 transition-colors underline font-mono text-[9px] uppercase tracking-wider block mt-2 text-center md:text-left mx-auto md:mx-0"
+                                >
+                                    View NPC Privacy Policy &amp; BIR Tax Details
+                                </button>
+                            </div>
+
+                            <div className="space-y-1.5 text-center md:text-right font-semibold">
+                                <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Get in Touch</span>
+                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
+                                    <IconMail className="w-3.5 h-3.5" /> 
+                                    <a href="mailto:contact@kolthoff-consulting.com" className="font-medium font-sans font-mono">contact@kolthoff-consulting.com</a>
+                                </div>
+                                <div className="flex items-center justify-center md:justify-end gap-1.5 text-brandBlue-400 text-[11px] mt-1 hover:text-brandBlue-300 transition-colors">
+                                    <IconGlobe className="w-3.5 h-3.5 text-brandBlue-500" /> 
+                                    <a href="https://www.kolthoff-consulting.com" target="_blank" rel="noopener noreferrer" className="font-medium font-sans font-mono">www.kolthoff-consulting.com</a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </footer>
+
+                    {/* Secure In-App Toast Alert System */}
+                    {toastMessage && (
+                        <div className="fixed bottom-6 right-6 bg-brandBlue-500 text-white font-mono text-[10px] sm:text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-2xl z-50 animate-fadeIn border border-brandBlue-400 flex items-center gap-2">
+                            <IconCheck />
+                            {toastMessage}
+                        </div>
+                    )}
+
+                    {}
+                    {/* NPC, DPA (RA 10173), & BIR EOPT COMPLIANCE OVERLAY MODAL */}
+                    {isLegalModalOpen && (
+                        <div className="fixed inset-0 bg-brandNavy-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
+                            <div className="bg-brandNavy-900 border-2 border-brandBlue-500/30 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 space-y-6 text-slate-300 relative shadow-2xl">
+                                <button 
+                                    onClick={() => setIsLegalModalOpen(false)}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-white font-mono text-xl font-bold p-2"
+                                >
+                                    ✕
+                                </button>
+                                
+                                <div className="border-b border-brandNavy-800 pb-4">
+                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Regulatory Compliance</span>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Local Business Compliance Summary</h3>
+                                </div>
+
+                                <div className="space-y-5 text-xs font-light leading-relaxed">
+                                    {/* DPA Block */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
+                                            1. Data Privacy Act of 2012 (Republic Act No. 10173)
+                                        </h4>
+                                        <p className="pl-3 text-slate-400">
+                                            We handle all business figures, payroll estimates, and system lists with strict security. In line with National Privacy Commission (NPC) rules:
+                                        </p>
+                                        <ul className="list-disc list-inside pl-6 text-slate-400 space-y-1 font-semibold">
+                                            <li>Encryption Standard: All client data is encrypted locally using AES-256 wraps.</li>
+                                            <li>Automatic Purge: We permanently delete your operations details 90 days after delivery.</li>
+                                            <li>No Shared Data: Your private metrics are never shared, rented, or sold to third parties.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* BIR EOPT Block */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
+                                            2. BIR Ease of Paying Taxes (EOPT) Act Compliance
+                                        </h4>
+                                        <p className="pl-3 text-slate-400">
+                                            In accordance with the EOPT Act (RA 11976), all service billing is handled smoothly. We issue digital VAT Sales Invoices directly to your email, containing all mandatory BIR taxpayer fields for seamless filing.
+                                        </p>
+                                    </div>
+
+                                    {/* DOLE Block */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
+                                            3. DOLE General Labor Standards (GLS) Audit Compliance
+                                        </h4>
+                                        <p className="pl-3 text-slate-400">
+                                            We structure our daily workflow templates to fully respect DOLE labor codes—specifically guidelines on standard working hours, mandatory rest periods, and clear responsibilities to avoid employee friction.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-brandNavy-800 text-center">
+                                    <button 
+                                        onClick={() => setIsLegalModalOpen(false)}
+                                        className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
+                                    >
+                                        Close Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MATHEMATICAL PROOF & OPERATIONAL LOGIC MODAL */}
+                    {isMathModalOpen && (
+                        <div className="fixed inset-0 bg-brandNavy-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn font-sans">
+                            <div className="bg-brandNavy-900 border-2 border-brandBlue-500/30 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 space-y-6 text-slate-300 relative shadow-2xl">
+                                <button 
+                                    onClick={() => setIsMathModalOpen(false)}
+                                    className="absolute top-4 right-4 text-slate-400 hover:text-white font-mono text-xl font-bold p-2"
+                                >
+                                    ✕
+                                </button>
+                                
+                                <div className="border-b border-brandNavy-800 pb-4">
+                                    <span className="text-[10px] font-mono tracking-widest text-brandBlue-400 uppercase block font-bold">Calculation Standard</span>
+                                    <h3 className="text-xl font-serif font-bold text-white mt-1">Calculation Logic &amp; Formulas</h3>
+                                </div>
+
+                                <div className="space-y-6 text-xs font-light leading-relaxed">
+                                    <p className="text-slate-300 font-semibold">
+                                        Our calculations model direct financial loss based on wasted staff hours and employee turnover metrics. This helps you visualize exactly what daily coordination mistakes are costing your business.
+                                    </p>
+
+                                    {/* Equation Canvas Area */}
+                                    <div className="p-6 bg-brandNavy-950 border border-brandNavy-750 rounded-2xl flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-bold mb-4">The Lost Payroll Formula</span>
+                                        <div id="modal-math-roi" className="text-sm font-semibold select-all text-white py-4 overflow-x-auto w-full max-w-full">
+                                            {"$$\\Omega_c = \\frac{T \\cdot S_{\\text{monthly}} \\cdot 0.12 \\cdot 12 + (H_{\\text{weekly}} \\cdot 4.33 \\cdot T \\cdot R_{\\text{avg}} \\cdot 12)}{12 \\cdot T \\cdot S_{\\text{monthly}}}$$"}
+                                        </div>
+                                    </div>
+
+                                    {/* Variable Meanings */}
+                                    <div className="space-y-2">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-brandBlue-400 inline-block"></span>
+                                            Variable Parameter Key
+                                        </h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-3 text-slate-400 font-mono text-[10px] font-semibold">
+                                            <div>
+                                                <strong className="text-white">{"$T$"}</strong> = Total Employees
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$S_{\\text{monthly}}$"}</strong> = Average Monthly Base Salary (₱)
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$H_{\\text{weekly}}$"}</strong> = Wasted Hours per Employee Weekly
+                                            </div>
+                                            <div>
+                                                <strong className="text-white">{"$R_{\\text{avg}}$"}</strong> = Average Hourly Rate ({"$S_{\\text{monthly}} / 160$"})
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Logic Breakdown */}
+                                    <div className="space-y-3 bg-brandNavy-950/50 p-4 border border-brandNavy-800 rounded-xl">
+                                        <h4 className="font-bold text-white font-mono uppercase tracking-wider text-[10px]">What This Formula Factors In:</h4>
+                                        <ul className="list-disc list-inside space-y-2 text-slate-400 text-[11px] font-semibold">
+                                            <li><strong className="text-slate-200 font-sans">Turnover Loss (12%):</strong> Wasted money spent recruiting, hiring, and onboarding replacements when frustrated employees leave.</li>
+                                            <li><strong className="text-slate-200 font-sans">Workflow Loss:</strong> The actual payroll value spent on manual tasks, chasing approvals, and correcting communication mistakes.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-brandNavy-800 text-center">
+                                    <button 
+                                        onClick={() => setIsMathModalOpen(false)}
+                                        className="px-6 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all border border-brandNavy-750"
+                                    >
+                                        Close Math Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
         }
 
-        document.addEventListener('DOMContentLoaded', renderModules);
+        // Render the public landing page in the DOM target
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
     </script>
 </body>
 </html>
