@@ -35,28 +35,34 @@
                 extend: {
                     colors: {
                         brandNavy: {
-                            950: '#070b19', // Executive dark background
-                            900: '#0f172a', // Clean slate card backdrop
-                            850: '#14213d', // Intermediate panel gray
-                            800: '#1e293b', // Subdued dark blue border base
-                            750: '#1e293b', 
-                            700: '#334155', // Layout borders
-                            600: '#475569',
+                            950: '#020613', // Deep slate navy workspace
+                            900: '#09111F', // Executive dark navy backdrop
+                            850: '#0C1626', // Intermediate card backdrop
+                            800: '#0F1A2C', // Container borders
+                            750: '#15233A', 
+                            700: '#1B2C46', // Dividers
+                            600: '#2E4567',
                         },
                         brandTeal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
                             400: '#2dd4bf',
-                            500: '#0d9488', // Core trustworthy teal
+                            500: '#0d9488', // Premium executive teal
                             600: '#0f766e',
                             700: '#115e59',
+                            850: '#134e4a',
+                            950: '#042f2e',
                         },
                         brandBlue: {
                             400: '#38bdf8',
-                            500: '#0284c7', // Growth blue
+                            500: '#0284c7', 
                             600: '#0369a1',
                         },
                         brandAmber: {
                             400: '#fbbf24',
-                            500: '#f59e0b', // High-converting warm accent
+                            500: '#f59e0b', // High-end amber accent
                             600: '#d97706',
                         }
                     },
@@ -74,7 +80,7 @@
             box-shadow: 0 0 50px -10px rgba(13, 148, 136, 0.15);
         }
         .luxury-gradient {
-            background: radial-gradient(circle at 50% -20%, #115e59 0%, #070b19 100%);
+            background: radial-gradient(circle at 50% -20%, #115e59 0%, #020613 100%);
         }
     </style>
 </head>
@@ -85,14 +91,14 @@
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#0d9488" fill-opacity="0.08" stroke="url(#g1)" stroke-width="4.5" stroke-linejoin="round" />
-                    <path d="M36 50 L46 60 L66 36" stroke="url(#g2)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#0d9488" fill-opacity="0.08" stroke="url(#sh1)" stroke-width="4.5" stroke-linejoin="round" />
+                    <path d="M36 50 L46 60 L66 36" stroke="url(#ch1)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round" />
                     <defs>
-                        <linearGradient id="g1" x1="16" y1="12" x2="84" y2="90" gradientUnits="userSpaceOnUse">
+                        <linearGradient id="sh1" x1="16" y1="12" x2="84" y2="90" gradientUnits="userSpaceOnUse">
                             <stop stop-color="#0d9488" />
                             <stop offset="1" stop-color="#0284c7" />
                         </linearGradient>
-                        <linearGradient id="g2" x1="36" y1="36" x2="66" y2="60" gradientUnits="userSpaceOnUse">
+                        <linearGradient id="ch1" x1="36" y1="36" x2="66" y2="60" gradientUnits="userSpaceOnUse">
                             <stop stop-color="#0d9488" />
                             <stop offset="1" stop-color="#0284c7" />
                         </linearGradient>
@@ -102,12 +108,12 @@
                     <span class="font-extrabold tracking-wider text-base uppercase block text-white leading-none">
                         KOLTHOFF <span class="text-brandTeal-400">CONSULTING</span>
                     </span>
-                    <span class="text-[8px] text-brandTeal-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Architecture &amp; Strategy</span>
+                    <span class="text-[8px] text-brandTeal-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold">Operational Excellence &amp; Strategy</span>
                 </div>
             </div>
             
             <div class="hidden md:flex items-center gap-8 text-xs uppercase font-mono tracking-wider font-semibold">
-                <a href="#about" class="hover:text-white transition-colors">Our Approach</a>
+                <a href="#about" class="hover:text-white transition-colors">Our Structure</a>
                 <a href="#roadmap" class="hover:text-white transition-colors">Service Pillars</a>
                 <a href="#calculator" class="hover:text-white transition-colors">Chaos Tax Calculator</a>
                 <a href="#get-started" class="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-white rounded font-bold tracking-widest transition-all shadow-lg shadow-brandTeal-500/10">Request Diagnostics ➔</a>
@@ -124,7 +130,7 @@
             <div class="lg:col-span-7 space-y-6">
                 <div class="inline-flex items-center gap-2 px-3 py-1 bg-brandTeal-500/10 border border-brandTeal-500/30 rounded text-brandTeal-400 font-mono text-[9px] uppercase tracking-widest font-extrabold">
                     <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
-                    Business Excellence for Philippine SMEs
+                    Operational Excellence for Philippine SMEs
                 </div>
                 <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-white leading-tight">
                     Plug the Invisible <span class="italic text-brandTeal-400">Financial Leakage</span> Sapping Your Monthly Cash Flow.
@@ -156,7 +162,7 @@
                 </div>
             </div>
 
-            <!-- Right Visual Graphic / Hero Image (Sub-Hero Card aligned exactly) -->
+            <!-- Right Visual Graphic -->
             <div class="lg:col-span-5 relative">
                 <div class="absolute -inset-1 bg-gradient-to-r from-brandTeal-500 to-brandBlue-500 rounded-2xl blur opacity-15"></div>
                 <div class="relative bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 premium-glow">
@@ -166,14 +172,14 @@
                     </div>
                     <div class="space-y-4">
                         <div class="p-3.5 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
-                            <span class="text-slate-500 font-mono block mb-1">Before Alignment: Unwritten Routines</span>
+                            <span class="text-slate-500 font-mono block mb-1">Before Alignment: Viber Sprawl</span>
                             <div class="flex justify-between items-center text-rose-400 font-bold font-sans">
-                                <span>Spreadsheet Sprawl &amp; Viber Chats</span>
+                                <span>Spreadsheet Clutter &amp; Chat Approvals</span>
                                 <span class="font-mono">+30% Process Drag</span>
                             </div>
                         </div>
                         <div class="p-3.5 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
-                            <span class="text-slate-500 font-mono block mb-1">Compliance Overhead Breakdown</span>
+                            <span class="text-slate-500 font-mono block mb-1">Compliance Risk Exposure</span>
                             <div class="flex justify-between items-center text-rose-400 font-bold font-sans">
                                 <span>DOLE Disputes &amp; Lost Consent Records</span>
                                 <span class="font-mono">High Regulatory Exposure</span>
@@ -198,72 +204,98 @@
             <div class="text-center max-w-xl mx-auto mb-16 space-y-3">
                 <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">The 360 Service Portfolio</span>
                 <h2 class="text-3xl sm:text-4xl font-serif font-black text-white leading-tight">
-                    Our Core Operational Strategy Pillars
+                    Our Operational Strategy Pillars
                 </h2>
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
-                    I design and map SOW diagnostic programs across the three main operational realities of a growing Philippine SME.
+                    I design and map SOW diagnostic programs across the core operational realities of a growing Philippine SME.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Pillar 1 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-8 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- MOD 1 -->
+                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">PILLAR 1: FINANCE</span>
+                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 1</span>
                             <span class="w-2 h-2 rounded-full bg-brandTeal-500"></span>
                         </div>
-                        <h3 class="font-bold text-xl text-white font-serif">Financial Clarity &amp; Recovery</h3>
+                        <h3 class="font-bold text-lg text-white font-serif">Workflow Diagnosis &amp; Roadblock Mapping</h3>
                         <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
-                            Protect your operating margin by identifying silent expense leaks. I audit software subscriptions, design cost-saving dashboards, and align billing timelines to comply fully with the BIR Ease of Paying Taxes (EOPT) Act.
+                            A diagnostic operational audit to map work bottlenecks, identify redundant software seats, and ensure compliance with RA 10173 and BIR EOPT guidelines.
                         </p>
-                        <ul class="text-xs text-slate-500 space-y-2 pt-2 font-mono uppercase font-bold">
-                            <li class="flex items-center gap-2"><span class="text-brandTeal-400">✓</span> Cash Flow Protection Audit</li>
-                            <li class="flex items-center gap-2"><span class="text-brandTeal-400">✓</span> BIR EOPT Invoice Alignment</li>
-                            <li class="flex items-center gap-2"><span class="text-brandTeal-400">✓</span> Subscription Optimization</li>
+                        <ul class="text-[10px] text-slate-500 space-y-1.5 pt-2 font-mono uppercase font-bold">
+                            <li>• DPA-Compliant Information Protocol</li>
+                            <li>• Async Team Friction Audits</li>
+                            <li>• Shadow Waste Process Audits</li>
+                            <li>• Redundant SaaS Cleanup</li>
+                            <li>• Leakage Quantification Roadmap</li>
                         </ul>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Focus: Cash Flow Margin Protection</span>
+                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-4 block border-t border-brandNavy-700/50 mt-6">Focus: Plugging Operational Leakage</span>
                 </div>
 
-                <!-- Pillar 2 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-8 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <!-- MOD 2 -->
+                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">PILLAR 2: OPERATIONS</span>
+                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 2</span>
                             <span class="w-2 h-2 rounded-full bg-brandBlue-500"></span>
                         </div>
-                        <h3 class="font-bold text-xl text-white font-serif">Operational Flow &amp; Automation</h3>
+                        <h3 class="font-bold text-lg text-white font-serif">Organizing How You Work (SOP Playbooks)</h3>
                         <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
-                            Stop losing orders and files in messy Viber groups. I build centralized shared task trackers, define clear step-by-step digital procedures (SOPs), and deploy custom automated notifications.
+                            Eliminate the risk of key employee resignation and protect your business against costly labor claims with DOLE-shielded guidelines and written SOP playbooks.
                         </p>
-                        <ul class="text-xs text-slate-500 space-y-2 pt-2 font-mono uppercase font-bold">
-                            <li class="flex items-center gap-2"><span class="text-brandBlue-400">✓</span> Viber-to-Workspace Migration</li>
-                            <li class="flex items-center gap-2"><span class="text-brandBlue-400">✓</span> Automated Task Tracking</li>
-                            <li class="flex items-center gap-2"><span class="text-brandBlue-400">✓</span> Process Walkthrough &amp; SOPs</li>
+                        <ul class="text-[10px] text-slate-500 space-y-1.5 pt-2 font-mono uppercase font-bold">
+                            <li>• Order-to-Cash Workflow Blueprints</li>
+                            <li>• Role-Overlap accountability matrix</li>
+                            <li>• Resignation Proof SOP Playbooks</li>
+                            <li>• DOLE Onboarding Template Packs</li>
+                            <li>• DOLE-Shielded Handbooks</li>
                         </ul>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Focus: Eliminating Coordination Drag</span>
+                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-4 block border-t border-brandNavy-700/50 mt-6">Focus: Building Legal Protection</span>
                 </div>
 
-                <!-- Pillar 3 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-8 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                <!-- MOD 3 -->
+                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">PILLAR 3: HR</span>
+                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 3</span>
                             <span class="w-2 h-2 rounded-full bg-brandAmber-500"></span>
                         </div>
-                        <h3 class="font-bold text-xl text-white font-serif">Structured Team Onboarding &amp; Compliance</h3>
+                        <h3 class="font-bold text-lg text-white font-serif">Workspace Tracking &amp; Workflow Automation</h3>
                         <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
-                            Structure employee reporting lines and clarify role expectations. Protect your business from labor litigation with DOLE-friendly Employee Handbooks, Code of Conduct playbooks, and RA 10173 compliant data consent.
+                            Transition communications out of unsecure Viber chat chains into visual task-tracking pipelines with clear triggers and team adoption sprints.
                         </p>
-                        <ul class="text-xs text-slate-500 space-y-2 pt-2 font-mono uppercase font-bold">
-                            <li class="flex items-center gap-2"><span class="text-brandAmber-400">✓</span> DOLE-Friendly Handbooks</li>
-                            <li class="flex items-center gap-2"><span class="text-brandAmber-400">✓</span> Responsibility Matrix Lines</li>
-                            <li class="flex items-center gap-2"><span class="text-brandAmber-400">✓</span> RA 10173 Data Onboarding</li>
+                        <ul class="text-[10px] text-slate-500 space-y-1.5 pt-2 font-mono uppercase font-bold">
+                            <li>• Viber-Exclusion central setup</li>
+                            <li>• Deadlock-Proof Visual Task-Boards</li>
+                            <li>• Change Management training sprints</li>
                         </ul>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Focus: Mitigating Local Labor Risks</span>
+                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-4 block border-t border-brandNavy-700/50 mt-6">Focus: Streamlining Team Velocity</span>
+                </div>
+
+                <!-- MOD 4 -->
+                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 4</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        </div>
+                        <h3 class="font-bold text-lg text-white font-serif">Ongoing Operations Support</h3>
+                        <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
+                            Strategic fractional COO accountability checks and workspace reviews paired with fully managed tech support to secure website domains and database systems.
+                        </p>
+                        <ul class="text-[10px] text-slate-500 space-y-1.5 pt-2 font-mono uppercase font-bold">
+                            <li>• Fractional COO Accountability Syncs</li>
+                            <li>• Bi-Annual Workspace Decay Audits</li>
+                            <li>• Workspace &amp; CRM Admin SLA</li>
+                            <li>• Endpoint Cyber Care Compliance</li>
+                            <li>• Cloud Website Maintenance SLA</li>
+                        </ul>
+                    </div>
+                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-4 block border-t border-brandNavy-700/50 mt-6">Focus: Active Operations SLA</span>
                 </div>
             </div>
         </div>
@@ -320,7 +352,7 @@
                         <!-- Slider 3 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-mono uppercase text-slate-400 font-bold">Daily Coordination Lost Hours (per Employee)</span>
+                                <span class="text-xs font-mono uppercase text-slate-400 font-bold">Daily Wasted Hours per Employee (Coordination Delays)</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
                             <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-1.5 rounded cursor-pointer">
@@ -409,7 +441,7 @@
         </div>
     </section>
 
-    <!-- Request Section (Isolation Constraint Applied - Standalone Funnel Form with Client-Side Mailto Action) -->
+    <!-- Request Section -->
     <section id="get-started" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-900/30 px-6">
         <div class="max-w-4xl mx-auto bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-8 sm:p-12 premium-glow text-center space-y-6">
             <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">Secure SME Intake Form</span>
@@ -461,8 +493,8 @@
             
             <!-- Data Privacy Act (DPA) of 2012 Compliance Notice -->
             <div class="pt-4 max-w-xl mx-auto border-t border-brandNavy-700/50">
-                <p class="text-[9px] font-mono text-slate-500 leading-normal text-left">
-                    <strong class="text-slate-400 uppercase">Data Privacy Notice:</strong> Kolthoff Consulting processes and collects your operational parameters strictly for consultation, booking, and SOW scoping. Any data shared in this email process is handled in strict compliance with the National Privacy Commission (NPC) circulars, the Republic Act No. 10173 (Data Privacy Act of 2012), and remains strictly confidential. We will never sell, lease, or distribute your email coordinates.
+                <p class="text-[9px] font-mono text-slate-505 leading-normal text-left">
+                    <strong class="text-slate-450 uppercase">Data Privacy Notice:</strong> Kolthoff Consulting processes and collects your operational parameters strictly for consultation, booking, and SOW scoping. Any data shared in this email process is handled in strict compliance with the National Privacy Commission (NPC) circulars, the Republic Act No. 10173 (Data Privacy Act of 2012), and remains strictly confidential. We will never sell, lease, or distribute your email coordinates.
                 </p>
             </div>
         </div>
