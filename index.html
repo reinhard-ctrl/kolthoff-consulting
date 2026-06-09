@@ -362,6 +362,11 @@
                             <span id="recoveryResult" class="text-2xl font-serif font-black text-emerald-400 font-mono">₱450,000</span>
                         </div>
                     </div>
+                    
+                    <!-- Added In-Line Calculator Fiscal Disclaimer for Regulatory Compliance -->
+                    <p class="text-[9px] font-mono text-slate-500 mt-3 leading-normal">
+                        * Disclaimer: This calculation is an illustrative simulation based on localized SME sector averages. Final operational performance recoveries vary and are governed strictly by customized, manually validated Statements of Work (SOW).
+                    </p>
                 </div>
             </div>
 
@@ -630,6 +635,14 @@
                     </p>
                 </div>
 
+                <!-- Section 4 Added: Governing Law, SEC/DTI Placement & Alternate Dispute Resolution -->
+                <div>
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">4. Governing Law, Corporate Registration &amp; Venue</h4>
+                    <p class="text-[11px] text-slate-400">
+                        Kolthoff Consulting is a formally registered professional advisory entity operating in accordance with Philippine commercial standards [SEC/DTI Reg. No. 202609204-A]. Any legal conflicts arising from advisory frameworks, digital assets, or structural metrics shall first be submitted to alternative dispute resolution paths under Philippine arbitration protocols, with the exclusive choice of venue located within Metro Manila, Philippines.
+                    </p>
+                </div>
+
                 <div class="p-3 bg-brandTeal-500/5 border border-brandTeal-500/20 rounded-lg text-[10px] leading-relaxed text-slate-400">
                     By submitting the intake form on this page, you acknowledge that you are requesting an operational audit framework designed for professional corporate evaluation, and that no standard client relationship is formed until a direct SOW is signed.
                 </div>
@@ -683,10 +696,11 @@
                     </p>
                 </div>
 
+                <!-- Updated Section 3: Inclusion of Dedicated Data Protection Officer Contact email -->
                 <div>
                     <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">3. Strict Retention &amp; Data Erasure Rights</h4>
                     <p class="text-[11px] text-slate-400">
-                        Intake parameters are never hosted on unsecured public servers. All active proposals and scoping records are processed locally under encryption and retained for a maximum duration of **ninety (90) days** from first submission, unless active consulting operations are formalized under a signed SOW. Under the DPA, you maintain the explicit **Right to Erasure** and may demand immediate permanent deletion of your metrics by emailing `contact@kolthoff-consulting.com`.
+                        Intake parameters are never hosted on unsecured public servers. All active proposals and scoping records are processed locally under encryption and retained for a maximum duration of **ninety (90) days** from first submission, unless active consulting operations are formalized under a signed SOW. Under the DPA, you maintain the explicit **Right to Erasure** and may demand immediate permanent deletion or modification of your metrics by emailing our Data Protection Officer at <span class="text-brandTeal-400 underline font-mono">dpo@kolthoff-consulting.com</span>.
                     </p>
                 </div>
 
@@ -734,6 +748,19 @@
             </div>
         </div>
     </footer>
+
+    <!-- Footer-adjacent Cookie Notification Banner -->
+    <div id="cookieBanner" class="fixed bottom-4 left-4 right-4 md:left-auto md:max-w-md bg-brandNavy-900 border border-brandTeal-500/30 p-4 rounded-xl shadow-2xl z-50 flex items-start gap-4 backdrop-blur-md transition-all duration-300">
+        <div class="space-y-1">
+            <span class="text-[10px] font-mono font-bold uppercase text-brandTeal-400 tracking-wider block">Privacy &amp; Asset Integrity Notice</span>
+            <p class="text-[10px] leading-relaxed text-slate-400 font-sans">
+                This platform uses baseline CDN caching networks and interactive calculators to analyze operational leaks. By remaining on our domain, you consent to this functional layout in alignment with RA 10173.
+            </p>
+        </div>
+        <button onclick="document.getElementById('cookieBanner').classList.add('hidden')" class="px-2.5 py-1.5 bg-brandNavy-955 hover:bg-brandNavy-800 border border-brandNavy-700 text-white rounded text-[10px] uppercase font-mono font-bold transition-all flex-shrink-0 cursor-pointer">
+            Accept
+        </button>
+    </div>
 
     <!-- Interactive Logic Script -->
     <script>
