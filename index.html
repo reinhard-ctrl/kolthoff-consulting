@@ -11,7 +11,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght=300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght=300;400;500;600;700;800;900&family=Playfair+Display:ital,wght=0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -589,6 +589,121 @@
         </div>
     </div>
 
+    <!-- Interactive Core Ethos Modal Container -->
+    <div id="ethosModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
+        <!-- Backdrop -->
+        <div id="ethosModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
+        
+        <!-- Modal Card -->
+        <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
+            <!-- Close Button -->
+            <button id="closeEthosModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer bg-brandNavy-955" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="pb-3 border-b border-brandNavy-700 mb-6">
+                <h3 class="text-base font-bold text-white tracking-wide font-sans flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
+                    Our Mission &amp; Core Values
+                </h3>
+                <p class="text-[9px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Mission, Vision, and Execution Standards</p>
+            </div>
+
+            <!-- Content Area -->
+            <div class="space-y-6 text-xs font-sans leading-relaxed text-slate-300">
+                <!-- Mission & Vision Dual Layout -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Mission Card -->
+                    <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
+                        <div class="flex items-start gap-4">
+                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase">THE MISSION</span>
+                                <h4 class="font-serif font-bold text-lg text-white leading-tight">To Eliminate Drag</h4>
+                                <p class="text-slate-400 text-xs leading-normal">
+                                    To eliminate operational drag and protect your bottom line so you can run a smoother, more profitable business.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vision Card -->
+                    <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
+                        <div class="flex items-start gap-4">
+                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </div>
+                            <div class="space-y-1">
+                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase">THE VISION</span>
+                                <h4 class="font-serif font-bold text-lg text-white leading-tight">Scaling with Clarity</h4>
+                                <p class="text-slate-400 text-xs leading-normal">
+                                    A future where every SME owner scales with absolute clarity, financial security, and zero chaos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Non-negotiable Values -->
+                <div>
+                    <div class="border-t border-brandNavy-700/50 pt-4 mb-4">
+                        <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase block mb-0.5">OUR OPERATIONAL CODE</span>
+                        <h4 class="text-sm font-bold font-serif text-white">Non-Negotiable Execution Values</h4>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <!-- Simple -->
+                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">01 - SIMPLE</span>
+                            </div>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                We skip the corporate jargon and deliver clear, actionable solutions you can use today.
+                            </p>
+                        </div>
+
+                        <!-- Efficient -->
+                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">02 - EFFICIENT</span>
+                            </div>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                We ruthlessly cut the bottlenecks, waste, and friction slowing your business down.
+                            </p>
+                        </div>
+
+                        <!-- Accountable -->
+                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">03 - ACCOUNTABLE</span>
+                            </div>
+                            <p class="text-slate-400 text-xs leading-relaxed">
+                                We treat your numbers like our own, making sure every operational move protects your profit.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer with Close Button -->
+            <div class="mt-6 pt-3 border-t border-brandNavy-700 flex justify-end">
+                <button id="dismissEthosModalBtn" type="button" class="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+                    Acknowledge Ethos
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Interactive Terms of Service Modal Container -->
     <div id="termsModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
         <!-- Backdrop -->
@@ -710,7 +825,7 @@
             </div>
 
             <!-- Footer with Close Button -->
-            <div class="mt-6 pt-3 border-t border-brandNavy-700 flex justify-end">
+            <div class="mt-6 pt-3 border-t border-brandAmber-600 flex justify-end">
                 <button id="dismissPrivacyModalBtn" type="button" class="px-4 py-1.5 bg-brandAmber-600 hover:bg-brandAmber-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
                     Acknowledge Policy
                 </button>
@@ -734,6 +849,8 @@
                 
                 <!-- Relocated Terms and Privacy links -->
                 <div class="flex flex-wrap gap-x-3 gap-y-1 justify-center items-center">
+                    <a href="#mission-values" id="openEthosLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Mission &amp; Values</a>
+                    <span class="text-slate-800 select-none text-[10px]">•</span>
                     <a href="#terms" id="openTermsLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Terms of Service</a>
                     <span class="text-slate-800 select-none text-[10px]">•</span>
                     <a href="#privacy" id="openPrivacyLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Data Privacy Note</a>
@@ -876,6 +993,37 @@
             modalBackdrop.addEventListener('click', closeModal);
         }
 
+        // --- Interactive Core Ethos Modal Logic ---
+        const ethosModal = document.getElementById('ethosModal');
+        const openEthosLink = document.getElementById('openEthosLink');
+        const closeEthosModalBtn = document.getElementById('closeEthosModalBtn');
+        const dismissEthosModalBtn = document.getElementById('dismissEthosModalBtn');
+        const ethosModalBackdrop = document.getElementById('ethosModalBackdrop');
+
+        function openEthos() {
+            ethosModal.classList.remove('hidden');
+        }
+
+        function closeEthos() {
+            ethosModal.classList.add('hidden');
+        }
+
+        if (openEthosLink) {
+            openEthosLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                openEthos();
+            });
+        }
+        if (closeEthosModalBtn) {
+            closeEthosModalBtn.addEventListener('click', closeEthos);
+        }
+        if (dismissEthosModalBtn) {
+            dismissEthosModalBtn.addEventListener('click', closeEthos);
+        }
+        if (ethosModalBackdrop) {
+            ethosModalBackdrop.addEventListener('click', closeEthos);
+        }
+
         // --- Interactive Terms of Service Modal Logic ---
         const termsModal = document.getElementById('termsModal');
         const openTermsLink = document.getElementById('openTermsLink');
@@ -943,6 +1091,9 @@
             if (e.key === 'Escape' || e.key === 'Esc') {
                 if (!formulaModal.classList.contains('hidden')) {
                     closeModal();
+                }
+                if (!ethosModal.classList.contains('hidden')) {
+                    closeEthos();
                 }
                 if (!termsModal.classList.contains('hidden')) {
                     closeTerms();
