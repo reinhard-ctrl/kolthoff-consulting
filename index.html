@@ -11,7 +11,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght=300;400;500;600;700;800;900&family=Playfair+Display:ital,wght=0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -35,6 +35,7 @@
                 extend: {
                     colors: {
                         brandNavy: {
+                            955: '#01040e',
                             950: '#020613',
                             900: '#09111F',
                             850: '#0C1626',
@@ -58,6 +59,7 @@
                     fontFamily: {
                         sans: ['"Montserrat"', 'sans-serif'],
                         serif: ['"Playfair Display"', 'serif'],
+                        mono: ['"Fira Code"', 'monospace'],
                     }
                 }
             }
@@ -66,10 +68,25 @@
     
     <style>
         .premium-glow {
-            box-shadow: 0 0 40px -10px rgba(20, 184, 166, 0.15);
+            box-shadow: 0 0 50px -10px rgba(20, 184, 166, 0.12);
         }
         .luxury-gradient {
-            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
+            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #01040e 100%);
+        }
+        /* Custom styled modern scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020613;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1B2C46;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #14B8A6;
         }
         /* Prevent MathJax formulas from overflowing cards and force responsive scrolling */
         mjx-container {
@@ -77,8 +94,8 @@
             overflow-x: auto !important;
             overflow-y: hidden !important;
             display: block !important;
+            padding: 0.5rem 0;
         }
-        /* Style scrollbar for MathJax containers matching brand navy */
         mjx-container::-webkit-scrollbar {
             height: 4px;
         }
@@ -96,8 +113,9 @@
     <!-- Header Navigation -->
     <header class="border-b border-brandNavy-700/50 bg-brandNavy-955/90 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
             <div class="flex items-center gap-3">
-                <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-10 h-10 flex-shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fill-opacity="0.08" stroke="url(#g1)" stroke-width="4.5" stroke-linejoin="round" />
                     <path d="M36 50 L46 60 L66 36" stroke="url(#g2)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round" />
                     <defs>
@@ -119,12 +137,32 @@
                 </div>
             </div>
             
-            <div class="hidden md:flex items-center gap-8 text-xs uppercase font-mono tracking-wider font-semibold">
-                <a href="#calculator" class="hover:text-white transition-colors">Chaos Tax Calculator</a>
-                <a href="#roadmap" class="hover:text-white transition-colors">Ecosystem Modules</a>
-                <a href="#about" class="hover:text-white transition-colors">Our Approach</a>
-                <a href="#get-started" class="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-white rounded font-bold tracking-widest transition-all shadow-lg shadow-brandTeal-500/10">Request Diagnostics ➔</a>
+            <!-- Desktop Navigation Links -->
+            <div class="hidden md:flex items-center gap-8 text-[11px] uppercase tracking-widest font-bold">
+                <a href="#calculator" class="text-slate-350 hover:text-white transition-colors">Chaos Tax Calculator</a>
+                <a href="#roadmap" class="text-slate-350 hover:text-white transition-colors">Ecosystem Modules</a>
+                <a href="#about" class="text-slate-350 hover:text-white transition-colors">Our Approach</a>
+                <a href="#get-started" class="px-5 py-3 bg-brandTeal-500 hover:bg-brandTeal-600 text-white rounded font-extrabold tracking-widest transition-all shadow-lg shadow-brandTeal-500/20 hover:shadow-brandTeal-500/30">
+                    Request Diagnostics ➔
+                </a>
             </div>
+
+            <!-- Mobile Navigation Toggle -->
+            <button id="mobileMenuToggle" class="md:hidden flex flex-col justify-center items-center w-8 h-8 rounded border border-brandNavy-700 bg-brandNavy-900 text-slate-300 focus:outline-none focus:border-brandTeal-500" aria-label="Toggle menu">
+                <span id="burgerIcon1" class="w-4 h-0.5 bg-current mb-1 transition-all"></span>
+                <span id="burgerIcon2" class="w-4 h-0.5 bg-current mb-1 transition-all"></span>
+                <span id="burgerIcon3" class="w-4 h-0.5 bg-current transition-all"></span>
+            </button>
+        </div>
+
+        <!-- Mobile Drawer Menu -->
+        <div id="mobileDrawer" class="hidden md:hidden absolute top-20 left-0 w-full bg-brandNavy-955/98 border-b border-brandNavy-700/80 backdrop-blur-lg transition-all duration-300 z-50 py-6 px-6 shadow-xl space-y-4">
+            <a href="#calculator" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Chaos Tax Calculator</a>
+            <a href="#roadmap" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Ecosystem Modules</a>
+            <a href="#about" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Our Approach</a>
+            <a href="#get-started" class="block w-full text-center py-3 bg-brandTeal-500 hover:bg-brandTeal-600 text-white rounded text-xs font-extrabold uppercase tracking-widest transition-all" onclick="toggleMobileMenu()">
+                Request Diagnostics ➔
+            </a>
         </div>
     </header>
 
@@ -135,35 +173,35 @@
             
             <!-- Left Narrative -->
             <div class="lg:col-span-7 space-y-6">
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-brandTeal-500/10 border border-brandTeal-500/30 rounded text-brandTeal-400 font-mono text-[9px] uppercase tracking-widest font-extrabold">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-brandTeal-500/10 border border-brandTeal-500/30 rounded text-brandTeal-400 font-mono text-[9px] uppercase tracking-widest font-extrabold">
                     <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Operational Excellence for Philippine SMEs
                 </div>
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif font-black text-white leading-tight">
-                    Stop Bleeding Cash: Plug the Hidden <span class="italic text-brandTeal-400">Operational Leaks</span> Eating Into Your Monthly Profits
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-white leading-tight">
+                    Stop Bleeding Cash: Plug the Hidden <span class="italic text-brandTeal-400 font-normal">Operational Leaks</span> Eating Into Your Monthly Profits
                 </h1>
-                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl font-medium font-sans">
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl font-medium">
                     Most growing companies in the Philippines bleed up to 30% of their payroll value in manual, unlinked tracking loops and Viber chaos. I execute direct, non-delegated operational audits to organize and automate your workflows—reclaiming lost capacity without bloating headcount.
                 </p>
                 <div class="flex flex-wrap gap-4 pt-4">
-                    <a href="#get-started" class="px-8 py-4 bg-brandTeal-500 hover:bg-brandTeal-600 text-white font-extrabold text-xs uppercase tracking-wider rounded shadow-xl hover:translate-y-[-1px] transition-all">
+                    <a href="#get-started" class="px-8 py-4 bg-brandTeal-500 hover:bg-brandTeal-600 text-white font-extrabold text-xs uppercase tracking-wider rounded shadow-xl hover:translate-y-[-1px] hover:shadow-brandTeal-500/20 transition-all">
                         Request Your Operations Scorecard &amp; SOW Proposal
                     </a>
-                    <a href="#calculator" class="px-8 py-4 bg-brandNavy-900 hover:bg-brandNavy-800 text-slate-300 border border-brandNavy-700 font-bold text-xs uppercase tracking-wider rounded transition-all">
+                    <a href="#calculator" class="px-8 py-4 bg-brandNavy-900 hover:bg-brandNavy-850 text-slate-350 border border-brandNavy-700 font-bold text-xs uppercase tracking-wider rounded hover:border-slate-500 transition-all">
                         Measure Your Chaos Tax
                     </a>
                 </div>
-                <div class="grid grid-cols-3 gap-6 pt-8 border-t border-brandNavy-700/50 max-w-lg text-xs font-mono font-bold tracking-wider uppercase text-slate-400">
+                <div class="grid grid-cols-3 gap-6 pt-8 border-t border-brandNavy-700/50 max-w-lg text-[10px] font-mono font-bold tracking-wider uppercase text-slate-450">
                     <div>
-                        <span class="text-white text-lg font-serif font-black block leading-none mb-1">RA 10173</span>
+                        <span class="text-white text-lg font-serif font-bold block leading-none mb-1">RA 10173</span>
                         DPA Compliant Audits
                     </div>
                     <div>
-                        <span class="text-white text-lg font-serif font-black block leading-none mb-1">BIR EOPT</span>
+                        <span class="text-white text-lg font-serif font-bold block leading-none mb-1">BIR EOPT</span>
                         Tax-Compliant Invoicing
                     </div>
                     <div>
-                        <span class="text-white text-lg font-serif font-black block leading-none mb-1">100% ASYNC</span>
+                        <span class="text-white text-lg font-serif font-bold block leading-none mb-1">100% ASYNC</span>
                         SOW Guarantee
                     </div>
                 </div>
@@ -174,29 +212,29 @@
                 <div class="absolute -inset-1 bg-gradient-to-r from-brandTeal-500 to-indigo-500 rounded-2xl blur opacity-15"></div>
                 <div class="relative bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 premium-glow">
                     <div class="flex items-center justify-between pb-4 border-b border-brandNavy-700 mb-6">
-                        <span class="text-xs font-mono font-bold uppercase text-slate-400 tracking-widest">Typical Process Leakage Path</span>
+                        <span class="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-widest">Typical Process Leakage Path</span>
                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
                     </div>
                     <div class="space-y-4">
-                        <div class="p-3.5 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-xs">
+                        <div class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
                             <span class="text-slate-500 font-mono block mb-1">Before Auditing: Unwritten Routines</span>
-                            <div class="flex justify-between items-center text-rose-400 font-bold font-sans">
+                            <div class="flex justify-between items-center text-rose-450 font-bold">
                                 <span>Uncontrolled Workload Duplication</span>
-                                <span class="font-mono">+30% Friction Delay</span>
+                                <span class="font-mono text-[11px]">+30% Friction Delay</span>
                             </div>
                         </div>
-                        <div class="p-3.5 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-xs">
+                        <div class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
                             <span class="text-slate-500 font-mono block mb-1">Operational Risk Breakdown</span>
-                            <div class="flex justify-between items-center text-rose-400 font-bold font-sans">
+                            <div class="flex justify-between items-center text-rose-450 font-bold">
                                 <span>Files Lost Across Unsecured Chat Pools</span>
-                                <span class="font-mono">RA 10173 Data Leak Risk</span>
+                                <span class="font-mono text-[11px]">RA 10173 Leak Risk</span>
                             </div>
                         </div>
-                        <div class="p-3.5 bg-brandTeal-500/5 rounded-lg border border-brandTeal-500/20 text-xs">
+                        <div class="p-4 bg-brandTeal-500/5 rounded-lg border border-brandTeal-500/20 text-xs">
                             <span class="text-brandTeal-400 font-mono font-bold block mb-1">After Alignment: Our Roadmap Strategy</span>
-                            <div class="flex justify-between items-center text-emerald-400 font-bold font-sans">
+                            <div class="flex justify-between items-center text-emerald-450 font-bold">
                                 <span>Unified Workspace Tracking &amp; Automation</span>
-                                <span class="font-mono font-bold">100% Organized SLA</span>
+                                <span class="font-mono text-[11px] font-bold text-emerald-400">100% Organized SLA</span>
                             </div>
                         </div>
                     </div>
@@ -211,9 +249,9 @@
             
             <!-- Explanatory Text -->
             <div class="lg:col-span-5 space-y-6">
-                <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">Interactive Financial Leak Assessment</span>
-                <h2 class="text-3xl sm:text-4xl font-serif font-black text-white leading-tight">
-                    What is Your Company's <span class="italic text-brandTeal-400">Annual Operational Leakage (Chaos Tax)?</span>
+                <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Interactive Financial Leak Assessment</span>
+                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
+                    What is Your Company's <span class="italic text-brandTeal-400 font-normal">Annual Operational Leakage (Chaos Tax)?</span>
                 </h2>
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
                     Every manual status follow-up, misplaced order file, and duplicate software account represents direct leakage of your company's monthly payroll value.
@@ -225,7 +263,7 @@
                 <!-- Improved Interactive Explanation Card (Clickable Trigger) -->
                 <div id="openFormulaBtnCard" class="p-5 bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/50 rounded-xl space-y-2 cursor-pointer transition-all hover:bg-brandNavy-850 group">
                     <div class="flex items-center justify-between">
-                        <span class="text-white font-bold text-xs font-mono uppercase tracking-wider block">The Loss Formula Explained</span>
+                        <span class="text-white font-bold text-xs uppercase tracking-wider block">The Loss Formula Explained</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brandAmber-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -239,55 +277,55 @@
             <!-- Interactivity Box -->
             <div class="lg:col-span-7">
                 <div class="bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 space-y-6">
-                    <h3 class="text-base font-bold text-white tracking-wide border-b border-brandNavy-700 pb-3">Operational Leakage Parameters</h3>
+                    <h3 class="text-base font-bold text-white tracking-wide border-b border-brandNavy-700 pb-3 uppercase font-sans tracking-wider">Operational Leakage Parameters</h3>
                     
-                    <div class="space-y-4">
+                    <div class="space-y-6">
                         <!-- Slider 1 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-mono uppercase text-slate-400 font-bold">Total Staff Count</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Total Staff Count</span>
                                 <span id="staffVal" class="text-sm font-mono font-bold text-brandTeal-400">15 Employees</span>
                             </div>
-                            <input type="range" id="staffRange" min="5" max="150" value="15" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-1.5 rounded cursor-pointer">
+                            <input type="range" id="staffRange" min="5" max="150" value="15" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
                         </div>
 
                         <!-- Slider 2 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-mono uppercase text-slate-400 font-bold">Average Monthly Payroll Salary</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Average Monthly Payroll Salary</span>
                                 <span id="salaryVal" class="text-sm font-mono font-bold text-brandTeal-400">₱25,000 / month</span>
                             </div>
-                            <input type="range" id="salaryRange" min="15000" max="120000" step="1000" value="25000" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-1.5 rounded cursor-pointer">
+                            <input type="range" id="salaryRange" min="15000" max="120000" step="1000" value="25000" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
                         </div>
 
                         <!-- Slider 3 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs font-mono uppercase text-slate-400 font-bold">Daily Wasted Hours per Employee (Coordination Delays)</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Daily Wasted Hours per Employee (Coordination Delays)</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
-                            <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-1.5 rounded cursor-pointer">
+                            <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
                         </div>
                     </div>
 
                     <!-- Dynamic Results Box -->
                     <div class="p-6 bg-brandNavy-950 rounded-xl border border-brandNavy-700 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                        <div class="p-4 rounded-lg flex-1">
+                        <div class="flex-1">
                             <div class="flex items-center gap-1.5 mb-1">
-                                <span class="text-[10px] font-mono uppercase text-rose-400 font-extrabold tracking-widest block">Your Est. Annual Operational Leakage (Chaos Tax)</span>
+                                <span class="text-[9px] font-mono uppercase text-rose-400 font-bold tracking-widest block">Your Est. Annual Operational Leakage (Chaos Tax)</span>
                             </div>
                             <div class="flex items-baseline gap-2">
-                                <span id="leakageResult" class="text-3xl font-serif font-black text-rose-500 font-mono">₱1,125,000</span>
+                                <span id="leakageResult" class="text-3xl font-serif font-bold text-rose-500 font-mono">₱1,125,000</span>
                             </div>
                         </div>
-                        <div class="text-left sm:text-right p-4 flex-1">
-                            <span class="text-[10px] font-mono uppercase text-brandTeal-400 font-extrabold tracking-widest block mb-1">Estimated Recovery Potential (First Year)</span>
-                            <span id="recoveryResult" class="text-2xl font-serif font-black text-emerald-400 font-mono">₱450,000</span>
+                        <div class="text-left sm:text-right flex-1 border-t sm:border-t-0 sm:border-l border-brandNavy-700/60 pt-4 sm:pt-0 sm:pl-6">
+                            <span class="text-[9px] font-mono uppercase text-brandTeal-400 font-bold tracking-widest block mb-1">Estimated Recovery Potential (First Year)</span>
+                            <span id="recoveryResult" class="text-2xl font-serif font-bold text-emerald-400 font-mono">₱450,000</span>
                         </div>
                     </div>
                     
                     <!-- Added In-Line Calculator Fiscal Disclaimer for Regulatory Compliance -->
-                    <p class="text-[9px] font-mono text-slate-500 mt-3 leading-normal">
+                    <p class="text-[9px] font-mono text-slate-500 leading-normal">
                         * Disclaimer: This calculation is an illustrative simulation based on localized SME sector averages. Final operational performance recoveries vary and are governed strictly by customized, manually validated Statements of Work (SOW).
                     </p>
                 </div>
@@ -300,8 +338,8 @@
     <section id="roadmap" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-955 px-6">
         <div class="max-w-7xl mx-auto">
             <div class="text-center max-w-xl mx-auto mb-16 space-y-3">
-                <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">Modular Scalability</span>
-                <h2 class="text-3xl sm:text-4xl font-serif font-black text-white leading-tight">
+                <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Modular Scalability</span>
+                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
                     Operational Diagnosis &amp; SOW Roadmap
                 </h2>
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
@@ -314,71 +352,71 @@
                 <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 1</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 1</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
                         </div>
                         <h3 class="font-bold text-lg text-white font-serif">Workflow Diagnosis &amp; Roadblock Mapping</h3>
-                        <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
+                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
                             A targeted operational diagnostic utilizing our signature **Ghost Waste Audit** to expose hidden process leaks, map unlinked spreadsheets, and verify compliance with RA 10173 and BIR EOPT guidelines.
                         </p>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6 font-sans">Outcome: System Leak Audit Report</span>
+                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: System Leak Audit Report</span>
                 </div>
 
                 <!-- MOD 2 -->
                 <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 2</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 2</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
                         </div>
                         <h3 class="font-bold text-lg text-white font-serif">Organizing How You Work / SOP Playbooks</h3>
-                        <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
+                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
                             Protect your operations against critical personnel exits with **Key-Employee Resignation-Proofing SOPs**, and deploy **DOLE-Shielded Handbooks** to legally insulate your business from NLRC disputes.
                         </p>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6 font-sans">Outcome: Ready-to-use playbooks</span>
+                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Ready-to-use playbooks</span>
                 </div>
 
                 <!-- MOD 3 -->
                 <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 3</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 3</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
                         </div>
                         <h3 class="font-bold text-lg text-white font-serif">Workspace Tracking &amp; Workflow Automation</h3>
-                        <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
+                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
                             Enforce **Viber-Exclusion Protocols** to migrate operations out of unsecure chat pools and into **Deadlock-Proof Visual Task-Boards** that break *pakikisama* silence and end the *turuan* culture.
                         </p>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6 font-sans">Outcome: Central Automated Workspace</span>
+                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Central Automated Workspace</span>
                 </div>
 
                 <!-- MOD 4 -->
                 <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 4</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 4</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
                         </div>
                         <h3 class="font-bold text-lg text-white font-serif">Ongoing Operations Support</h3>
-                        <p class="text-slate-400 text-xs leading-relaxed font-medium font-sans">
+                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
                             Fractional COO operational check-ins paired with strategic IT partner infrastructure maintenance, enforcing our rigorous **Anti-Decay SLA** to stop your team from sliding back into manual chaos.
                         </p>
                     </div>
-                    <span class="text-[10px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6 font-sans">Outcome: Ongoing Operational Peace of Mind</span>
+                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Ongoing Operational Peace of Mind</span>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Advisory Profile Section -->
-    <section id="about" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-955 px-6 font-sans">
+    <section id="about" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-955 px-6">
         <div class="max-w-7xl mx-auto">
             <div class="text-center max-w-xl mx-auto mb-16 space-y-3">
-                <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">Expert Advisory Model</span>
-                <h2 class="text-3xl sm:text-4xl font-serif font-black text-white leading-tight">
+                <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Expert Advisory Model</span>
+                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
                     Your Operational Leadership
                 </h2>
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
@@ -386,20 +424,20 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 font-sans font-medium max-w-5xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
                 <!-- Principal Consultant Profile Block -->
                 <div class="bg-brandNavy-900 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between premium-glow relative overflow-hidden">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-3 py-1 rounded font-bold uppercase">BOUTIQUE CONSULTING</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-3 py-1 rounded font-bold uppercase">BOUTIQUE CONSULTING</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-400"></span>
                         </div>
                         <h3 class="font-serif font-bold text-2xl text-white mb-2">Reinhard Ludwig A. Kolthoff</h3>
                         <p class="text-slate-400 text-xs font-bold font-mono tracking-wider uppercase text-brandTeal-400">Principal Consultant &amp; Strategist</p>
-                        <p class="text-slate-300 text-xs leading-relaxed">
+                        <p class="text-slate-350 text-xs leading-relaxed font-medium">
                             I act as your direct Operational Architect. By removing junior agency hand-offs and third-party layers, you secure uncompromised senior strategic oversight, custom-engineered human resource playbooks, and targeted operational audits.
                         </p>
-                        <ul class="text-xs text-slate-505 space-y-2 pt-2 font-mono uppercase font-bold">
+                        <ul class="text-xs text-slate-400 space-y-2.5 pt-2 font-mono uppercase font-bold">
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> Core Diagnostics &amp; Business Reviews</li>
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> Workflow &amp; Task-Journey Mapping</li>
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> DOLE-Shielded Employee Handbooks</li>
@@ -412,15 +450,15 @@
                 <div class="bg-brandNavy-900 border border-brandNavy-700 p-8 rounded-xl flex flex-col justify-between relative overflow-hidden">
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-3 py-1 rounded font-bold uppercase">ENTERPRISE IT SLA</span>
+                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-3 py-1 rounded font-bold uppercase">ENTERPRISE IT SLA</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-400"></span>
                         </div>
                         <h3 class="font-serif font-bold text-2xl text-white mb-2">Strategic Technology Partner</h3>
                         <p class="text-slate-400 text-xs font-bold font-mono tracking-wider uppercase text-brandTeal-400">Elite IT Support Team</p>
-                        <p class="text-slate-300 text-xs leading-relaxed">
+                        <p class="text-slate-350 text-xs leading-relaxed font-medium">
                             Our external, elite IT partner handles cloud hosting configurations, database integrations, network endpoint scans, and custom workspace setups. This ensures premium enterprise-grade IT capabilities without bloating your internal payroll.
                         </p>
-                        <ul class="text-xs text-slate-505 space-y-2 pt-2 font-mono uppercase font-bold">
+                        <ul class="text-xs text-slate-400 space-y-2.5 pt-2 font-mono uppercase font-bold">
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> Workspace Setup &amp; Admin Care</li>
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> Device Security &amp; End-Point Protection</li>
                             <li class="flex items-center gap-2"><span class="text-brandTeal-400">➔</span> Website Server &amp; Domain Maintenance</li>
@@ -435,8 +473,8 @@
     <!-- Request Section -->
     <section id="get-started" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-900/30 px-6">
         <div class="max-w-4xl mx-auto bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-8 sm:p-12 premium-glow text-center space-y-6">
-            <span class="text-xs font-mono font-extrabold tracking-[0.25em] text-brandTeal-400 uppercase block">Let's Scope Your Audit/span>
-            <h2 class="text-3xl sm:text-4xl font-serif font-black text-white leading-tight">
+            <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Let's Scope Your Audit</span>
+            <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
                 Request Your Operations Scorecard &amp; SOW Proposal
             </h2>
             <p class="text-slate-400 text-sm leading-relaxed max-w-xl mx-auto font-medium">
@@ -445,21 +483,21 @@
             <form class="space-y-4 text-left max-w-xl mx-auto pt-4" onsubmit="handleFormSubmission(event)">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Company Registered Name</label>
-                        <input id="companyName" type="text" placeholder="e.g., PH Retailers Inc." class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3 text-xs text-white focus:outline-none focus:border-brandTeal-500 bg-brandNavy-955" required>
+                        <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Company Registered Name</label>
+                        <input id="companyName" type="text" placeholder="e.g., PH Retailers Inc." class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                     </div>
                     <div>
-                        <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Business Representative / Owner</label>
-                        <input id="repName" type="text" placeholder="e.g., Juan Dela Cruz" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3 text-xs text-white focus:outline-none focus:border-brandTeal-500 bg-brandNavy-955" required>
+                        <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Business Representative / Owner</label>
+                        <input id="repName" type="text" placeholder="e.g., Juan Dela Cruz" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                     </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Official Work Email Address</label>
-                    <input id="workEmail" type="email" placeholder="e.g., owner@company.com.ph" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3 text-xs text-white focus:outline-none focus:border-brandTeal-500 bg-brandNavy-955" required>
+                    <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Official Work Email Address</label>
+                    <input id="workEmail" type="email" placeholder="e.g., owner@company.com.ph" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                 </div>
                 <div>
-                    <label class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Biggest Operational Pain Point</label>
-                    <select id="painPoint" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3 text-xs text-slate-400 focus:outline-none focus:border-brandTeal-500 bg-brandNavy-955">
+                    <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Biggest Operational Pain Point</label>
+                    <select id="painPoint" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-slate-350 focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500">
                         <option value="Chaotic Viber Group Chats & Manual Spreadsheet Sprawl">Chaotic Viber Group Chats &amp; Manual Spreadsheet Sprawl</option>
                         <option value="Hiring Extra Headcount to Manage Basic Day-to-Day Tasks">Hiring Extra Headcount to Manage Basic Day-to-Day Tasks</option>
                         <option value="HR Compliance / Drafting DOLE-Shielded Handbooks">HR Compliance / Drafting DOLE-Shielded Handbooks</option>
@@ -470,24 +508,24 @@
                 <!-- PH DPA 2012 Compliance Checkbox -->
                 <div class="py-2">
                     <label class="relative flex items-start gap-3 cursor-pointer">
-                        <input id="dpaCheckbox" type="checkbox" class="mt-1 accent-brandTeal-500 w-4 h-4 rounded cursor-pointer">
-                        <span class="text-[10px] leading-normal text-slate-400 font-mono">
+                        <input id="dpaCheckbox" type="checkbox" class="mt-1 accent-brandTeal-500 w-4 h-4 rounded cursor-pointer flex-shrink-0">
+                        <span class="text-[9px] leading-normal text-slate-400 font-mono">
                             I authorize Kolthoff Consulting (as Personal Information Controller) to process my parameters strictly for scheduling and SOW scoping under <strong>RA 10173 (Data Privacy Act of 2012)</strong>. I recognize my data will be deleted after 90 days of inactivity, I hold the explicit right to erasure, and may contact <strong class="text-brandTeal-400">dpo@kolthoff-consulting.com</strong>.
                         </span>
                     </label>
                     <!-- Custom Inline Error Container (replaces raw browser alert dialogs) -->
-                    <span id="dpaError" class="text-rose-500 text-[10px] font-mono mt-1 hidden block">
+                    <span id="dpaError" class="text-rose-500 text-[10px] font-mono mt-1.5 hidden block">
                         ⚠ Please agree to the Data Privacy Act notice to proceed.
                     </span>
                 </div>
 
-                <button type="submit" class="w-full py-4 bg-brandTeal-500 hover:bg-brandTeal-600 text-white font-extrabold text-xs uppercase tracking-wider rounded transition-all shadow-md">
+                <button type="submit" class="w-full py-4 bg-brandTeal-500 hover:bg-brandTeal-600 text-white font-extrabold text-xs uppercase tracking-wider rounded transition-all shadow-md shadow-brandTeal-500/10 hover:shadow-brandTeal-500/20">
                     Proceed to Email Scoping Draft ➔
                 </button>
             </form>
             
             <!-- Data Privacy Act (DPA) of 2012 Compliance Notice -->
-            <div class="pt-4 max-w-xl mx-auto border-t border-brandNavy-700/50">
+            <div class="pt-6 max-w-xl mx-auto border-t border-brandNavy-700/50">
                 <p class="text-[9px] font-mono leading-normal text-left text-slate-500">
                     <strong class="text-slate-400 uppercase">Data Privacy Notice:</strong> Kolthoff Consulting processes and collects your operational parameters strictly for consultation, booking, and SOW scoping. Reinhard Ludwig A. Kolthoff acts as the Personal Information Controller (PIC). Any data shared is held in strict compliance with the National Privacy Commission (NPC) circulars, the Republic Act No. 10173, and is kept for a maximum of ninety (90) days. You maintain an absolute right to erasure, rectifications, and audits. For formal inquiries or immediate permanent deletion, please write directly to <span class="text-brandTeal-400 underline font-mono">dpo@kolthoff-consulting.com</span>. We will never sell, lease, or distribute your email coordinates.
                 </p>
@@ -496,14 +534,14 @@
     </section>
 
     <!-- Loss Formula Explained Popup Modal Container -->
-    <div id="formulaModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
+    <div id="formulaModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
         <!-- Backdrop -->
         <div id="modalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
         
         <!-- Modal Card -->
-        <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10 transition-transform transform scale-100">
+        <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer bg-brandNavy-950" aria-label="Close modal">
+            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -511,42 +549,50 @@
 
             <!-- Modal Header -->
             <div class="pb-3 border-b border-brandNavy-700 mb-6">
-                <h3 class="text-base font-bold text-white tracking-wide font-sans flex items-center gap-2">
+                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase">
                     <span class="w-2.5 h-2.5 rounded-full bg-brandAmber-500 animate-pulse"></span>
                     The Loss Formula Explained
                 </h3>
-                <p class="text-[9px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Strategic B2B Value-Based ROI Model</p>
+                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Strategic B2B Value-Based ROI Model</p>
             </div>
 
             <!-- MathJax Formulas Section -->
             <div class="space-y-4 mb-6">
                 <!-- Formula 1: Parameter-Based Calculator Formula -->
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block mb-1">1. Calculator Logic (How We Measured Your Chaos Tax)</span>
-                    <div id="modal-math-container-calc" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandAmber-400 font-mono text-center select-all text-xs">
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">1. Calculator Logic (How We Measured Your Chaos Tax)</span>
+                        <button onclick="copyToClipboard('formula-calc-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-950 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
+                    </div>
+                    <div id="modal-math-container-calc" class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-brandAmber-400 font-mono text-center text-xs">
                         $$\text{Annual Operational Leakage (Chaos Tax)} = \text{Staff Count} \times \text{Avg Monthly Salary} \times 12 \times \frac{\text{Daily Lost Hours}}{8}$$
                     </div>
+                    <span id="formula-calc-text" class="hidden">\text{Annual Operational Leakage (Chaos Tax)} = \text{Staff Count} \times \text{Avg Monthly Salary} \times 12 \times \frac{\text{Daily Lost Hours}}{8}</span>
                 </div>
 
                 <!-- Formula 2: Strategic/Structural Loss Formula -->
-                <div>
-                    <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block mb-1">2. Strategic SOW Value (Underlying Risk Variables)</span>
-                    <div id="modal-math-container-risk" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandTeal-400 font-mono text-center select-all text-xs">
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">2. Strategic SOW Value (Underlying Risk Variables)</span>
+                        <button onclick="copyToClipboard('formula-risk-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-950 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
+                    </div>
+                    <div id="modal-math-container-risk" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandTeal-400 font-mono text-center text-xs">
                         $$\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Waste Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}$$
                     </div>
+                    <span id="formula-risk-text" class="hidden">\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Waste Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}</span>
                 </div>
             </div>
 
             <!-- Variables Explanatory Breakdown -->
-            <div class="space-y-3.5 text-xs font-sans">
-                <h4 class="text-[9px] font-mono uppercase tracking-widest text-slate-400 font-extrabold border-b border-brandNavy-700 pb-1">Understanding Your Losses:</h4>
+            <div class="space-y-4 text-xs">
+                <h4 class="text-[9px] font-mono uppercase tracking-widest text-slate-450 font-extrabold border-b border-brandNavy-700 pb-1">Understanding Your Losses:</h4>
                 
-                <div class="space-y-2.5 font-medium">
+                <div class="space-y-3.5 font-medium">
                     <div class="flex gap-2.5 items-start">
                         <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">01.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Monthly Payroll × Waste Rate (The Chaos Tax)</strong>
-                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5 text-slate-405">
+                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
                                 Represents the immediate cash lost to manual tracking loops, double-data entry across unlinked spreadsheets, and operational Viber group message chaos. On average, growing Philippine SMEs bleed between <span class="text-brandAmber-500 font-bold">15% to 30%</span> of their payroll value into these coordination leaks.
                             </p>
                         </div>
@@ -556,7 +602,7 @@
                         <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">02.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">SOP Capacity Bleed (Knowledge Flight)</strong>
-                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5 text-slate-405">
+                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
                                 The hidden cost of unwritten operating routines. When standard procedures exist only in the heads of key personnel, resignations force the business to bleed cash and capacity while trying to manually rebuild lost operational knowledge from scratch.
                             </p>
                         </div>
@@ -566,23 +612,23 @@
                         <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">03.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Regulatory Non-Compliance Liabilities (Local Exposure)</strong>
-                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5 text-slate-405">
-                                SMEs face massive legal exposure under local regulations. This includes multi-million peso fines from National Privacy Commission (NPC) data breaches due to unsecured files being shared in chat apps under <strong class="text-brandTeal-400 font-semibold font-sans font-mono text-brandTeal-500">RA 10173</strong>, or costly constructive dismissal disputes at the National Labor Relations Commission (NLRC) due to a lack of standard, advisory <strong class="text-brandTeal-400 font-semibold font-sans font-mono text-brandTeal-500">DOLE-shielded handbooks</strong>.
+                            <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
+                                SMEs face massive legal exposure under local regulations. This includes multi-million peso fines from National Privacy Commission (NPC) data breaches due to unsecured files being shared in chat apps under <strong class="text-brandTeal-400 font-semibold font-mono text-brandTeal-500">RA 10173</strong>, or costly constructive dismissal disputes at the National Labor Relations Commission (NLRC) due to a lack of standard, advisory <strong class="text-brandTeal-400 font-semibold font-mono text-brandTeal-500">DOLE-shielded handbooks</strong>.
                             </p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Closing Value Proposition -->
-                <div class="mt-4 p-3 bg-brandTeal-500/5 border border-brandTeal-500/25 rounded-lg text-[10px] leading-relaxed text-slate-400">
+                <div class="mt-4 p-4 bg-brandTeal-50/5 border border-brandTeal-500/20 rounded-lg text-[10px] leading-relaxed text-slate-400">
                     <strong class="text-slate-200 block mb-1">Our Value-Based Solution:</strong>
-                    Our <strong class="text-brandTeal-500 font-bold font-sans">360-Degree Operational Shield</strong> proactively seals these financial drains. We audit your bottlenecks in Module 1, draft protected manuals in Module 2, engineer secure tracking boards in Module 3, and enforce velocity under our Ongoing SLA in Module 4—reclaiming up to <strong class="text-emerald-400 font-bold text-emerald-400">40% of wasted capacity</strong> in the first year alone.
+                    Our <strong class="text-brandTeal-500 font-bold">360-Degree Operational Shield</strong> proactively seals these financial drains. We audit your bottlenecks in Module 1, draft protected manuals in Module 2, engineer secure tracking boards in Module 3, and enforce velocity under our Ongoing SLA in Module 4—reclaiming up to <strong class="text-emerald-400 font-bold">40% of wasted capacity</strong> in the first year alone.
                 </div>
             </div>
 
             <!-- Footer with Close Button -->
-            <div class="mt-5 pt-3 border-t border-brandNavy-700 flex justify-end">
-                <button id="dismissModalBtn" type="button" class="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+            <div class="mt-6 pt-4 border-t border-brandNavy-700 flex justify-end">
+                <button id="dismissModalBtn" type="button" class="px-5 py-2.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
                     Dismiss
                 </button>
             </div>
@@ -590,14 +636,14 @@
     </div>
 
     <!-- Interactive Core Ethos Modal Container -->
-    <div id="ethosModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
+    <div id="ethosModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
         <!-- Backdrop -->
         <div id="ethosModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
         
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeEthosModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer bg-brandNavy-955" aria-label="Close modal">
+            <button id="closeEthosModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -605,27 +651,27 @@
 
             <!-- Modal Header -->
             <div class="pb-3 border-b border-brandNavy-700 mb-6">
-                <h3 class="text-base font-bold text-white tracking-wide font-sans flex items-center gap-2">
+                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase">
                     <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Our Mission &amp; Core Values
                 </h3>
-                <p class="text-[9px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Mission, Vision, and Execution Standards</p>
+                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Mission, Vision, and Execution Standards</p>
             </div>
 
             <!-- Content Area -->
-            <div class="space-y-6 text-xs font-sans leading-relaxed text-slate-300">
+            <div class="space-y-6 text-xs leading-relaxed text-slate-300">
                 <!-- Mission & Vision Dual Layout -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Mission Card -->
                     <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
                         <div class="flex items-start gap-4">
-                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400">
+                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400 flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                                 </svg>
                             </div>
                             <div class="space-y-1">
-                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase">THE MISSION</span>
+                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase block">THE MISSION</span>
                                 <h4 class="font-serif font-bold text-lg text-white leading-tight">To Eliminate Drag</h4>
                                 <p class="text-slate-400 text-xs leading-normal">
                                     To eliminate operational drag and protect your bottom line so you can run a smoother, more profitable business.
@@ -637,14 +683,14 @@
                     <!-- Vision Card -->
                     <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
                         <div class="flex items-start gap-4">
-                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400">
+                            <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400 flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                 </svg>
                             </div>
                             <div class="space-y-1">
-                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase">THE VISION</span>
+                                <span class="text-[8px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase block">THE VISION</span>
                                 <h4 class="font-serif font-bold text-lg text-white leading-tight">Scaling with Clarity</h4>
                                 <p class="text-slate-400 text-xs leading-normal">
                                     A future where every SME owner scales with absolute clarity, financial security, and zero chaos.
@@ -668,7 +714,7 @@
                                 <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">01 - SIMPLE</span>
                             </div>
                             <p class="text-slate-400 text-xs leading-relaxed">
-                                We skip the corporate jargon and deliver clear, actionable solutions you can use today.
+                                We skip corporate jargon and deliver clear, actionable solutions you can use today.
                             </p>
                         </div>
 
@@ -696,8 +742,8 @@
             </div>
 
             <!-- Footer with Close Button -->
-            <div class="mt-6 pt-3 border-t border-brandNavy-700 flex justify-end">
-                <button id="dismissEthosModalBtn" type="button" class="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+            <div class="mt-6 pt-4 border-t border-brandNavy-700 flex justify-end">
+                <button id="dismissEthosModalBtn" type="button" class="px-5 py-2.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
                     Acknowledge Ethos
                 </button>
             </div>
@@ -705,14 +751,14 @@
     </div>
 
     <!-- Interactive Terms of Service Modal Container -->
-    <div id="termsModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
+    <div id="termsModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
         <!-- Backdrop -->
         <div id="termsModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
         
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeTermsModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer bg-brandNavy-955" aria-label="Close modal">
+            <button id="closeTermsModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -720,40 +766,40 @@
 
             <!-- Modal Header -->
             <div class="pb-3 border-b border-brandNavy-700 mb-6">
-                <h3 class="text-base font-bold text-white tracking-wide font-sans flex items-center gap-2">
+                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase">
                     <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Terms of Service &amp; Advisory Framework
                 </h3>
-                <p class="text-[9px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Standard Consulting Operational Agreement</p>
+                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Standard Consulting Operational Agreement</p>
             </div>
 
             <!-- Content Area -->
-            <div class="space-y-4 text-xs font-sans leading-relaxed text-slate-300">
+            <div class="space-y-4 text-xs leading-relaxed text-slate-300">
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">1. Advisory Scope of Work (SOW) Protocols</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">1. Advisory Scope of Work (SOW) Protocols</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         All advisory operations, pipeline diagnostics, playbooks, and training schedules provided by Kolthoff Consulting are executed strictly under independent, mutually formalized Statements of Work (SOW). No consulting engagement is declared active until explicit milestones, timelines, and operational parameters are fully ratified in writing by authorized representatives of both parties.
                     </p>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">2. BIR EOPT Act Financial &amp; Billing Terms</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">2. BIR EOPT Act Financial &amp; Billing Terms</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         In compliance with Republic Act No. 11976, otherwise known as the **Ease of Paying Taxes (EOPT) Act of 2024**, billing milestones are strictly invoiced based on the performance and completion of specific module outcomes and deliverables. Invoicing protocols conform to unified service tax invoice standards, and clients agree to submit completed Bureau of Internal Revenue (BIR) Form 2307 (Withholding Tax Certificates) simultaneously with milestone payments to secure full local compliance.
                     </p>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">3. Independent Contractor &amp; Limitation of Liability</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">3. Independent Contractor &amp; Limitation of Liability</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         Kolthoff Consulting operates exclusively as an independent professional corporate strategist. Our operational roadmaps, visual tracking structures, and human resource modules are structured strictly as advisory frameworks. While designed to prevent capacity leakages and help companies legally insulate themselves from DOLE or NLRC disputes, the ultimate operational implementation and labor results remain the responsibility of the client. Under no circumstances shall aggregate consultant liability exceed the cumulative fees paid under the active SOW.
                     </p>
                 </div>
 
                 <!-- Section 4: Governing Law, SEC/DTI Placement & Alternate Dispute Resolution -->
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">4. Governing Law, Corporate Registration &amp; Venue</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">4. Governing Law, Corporate Registration &amp; Venue</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         Kolthoff Consulting is a formally registered professional entity operating under Philippine commercial codes [SEC/DTI Registration Reference: 202609204-A]. Any legal conflicts arising from advisory frameworks, digital assets, or structural metrics shall first be submitted to alternative dispute resolution paths under Philippine arbitration protocols, with the exclusive choice of venue located within Metro Manila, Philippines.
                     </p>
                 </div>
@@ -764,8 +810,8 @@
             </div>
 
             <!-- Footer with Close Button -->
-            <div class="mt-6 pt-3 border-t border-brandNavy-700 flex justify-end">
-                <button id="dismissTermsModalBtn" type="button" class="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+            <div class="mt-6 pt-4 border-t border-brandNavy-700 flex justify-end">
+                <button id="dismissTermsModalBtn" type="button" class="px-5 py-2.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
                     Dismiss Agreement
                 </button>
             </div>
@@ -773,14 +819,14 @@
     </div>
 
     <!-- Interactive Data Privacy Note Modal Container -->
-    <div id="privacyModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print animate-fade-in">
+    <div id="privacyModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
         <!-- Backdrop -->
         <div id="privacyModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
         
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandAmber-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closePrivacyModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer bg-brandNavy-955" aria-label="Close modal">
+            <button id="closePrivacyModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -788,33 +834,33 @@
 
             <!-- Modal Header -->
             <div class="pb-3 border-b border-brandNavy-700 mb-6">
-                <h3 class="text-base font-bold text-white tracking-wide font-sans flex items-center gap-2">
+                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase">
                     <span class="w-2.5 h-2.5 rounded-full bg-brandAmber-500 animate-pulse"></span>
                     Data Privacy Policy (RA 10173 Compliance)
                 </h3>
-                <p class="text-[9px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Philippine National Privacy Commission Standards</p>
+                <p class="text-[9px] text-slate-455 mt-1 font-mono uppercase tracking-wider">Philippine National Privacy Commission Standards</p>
             </div>
 
             <!-- Content Area -->
-            <div class="space-y-4 text-xs font-sans leading-relaxed text-slate-300">
+            <div class="space-y-4 text-xs leading-relaxed text-slate-300">
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">1. Lawful Basis &amp; RA 10173 Mandate</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">1. Lawful Basis &amp; RA 10173 Mandate</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         In strict alignment with the **Philippine Data Privacy Act of 2012 (Republic Act No. 10173)**, Reinhard Ludwig A. Kolthoff operates as the designated Personal Information Controller (PIC). We are committed to protecting all Personal and Privileged Information processed on this domain against unauthorized access, accidental loss, or breach.
                     </p>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">2. Information Collection &amp; Secure Processing</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">2. Information Collection &amp; Secure Processing</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         We process only the parameters explicitly volunteered in our secure intake form: Company Name, Representative Name, Work Email, and Operational Pain Points. This information is processed strictly to compile and configure your operations diagnostic scoreboard and pre-format secure email correspondence drafts via your system’s local mail client.
                     </p>
                 </div>
 
                 <!-- Updated Section 3: Dedicated Data Protection Officer Contact & Retention -->
                 <div>
-                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[10px] tracking-wider">3. Strict Retention &amp; Data Erasure Rights</h4>
-                    <p class="text-[11px] text-slate-400">
+                    <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">3. Strict Retention &amp; Data Erasure Rights</h4>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
                         Intake parameters are never stored on unsecured public servers. All active proposals and scoping records are processed locally under strict organizational encryption standards and retained for a maximum duration of **ninety (90) days** from first submission, unless active consulting operations are formalized under a signed SOW. Under the DPA, you maintain the explicit **Right to Erasure** and may demand immediate permanent deletion, modification, or rectification of your operational parameters by emailing our designated Data Protection Officer at <span class="text-brandTeal-400 underline font-mono font-bold">dpo@kolthoff-consulting.com</span>.
                     </p>
                 </div>
@@ -825,8 +871,8 @@
             </div>
 
             <!-- Footer with Close Button -->
-            <div class="mt-6 pt-3 border-t border-brandAmber-600 flex justify-end">
-                <button id="dismissPrivacyModalBtn" type="button" class="px-4 py-1.5 bg-brandAmber-600 hover:bg-brandAmber-500 text-white font-bold rounded text-[11px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+            <div class="mt-6 pt-4 border-t border-brandAmber-600 flex justify-end">
+                <button id="dismissPrivacyModalBtn" type="button" class="px-5 py-2.5 bg-brandAmber-600 hover:bg-brandAmber-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
                     Acknowledge Policy
                 </button>
             </div>
@@ -849,16 +895,16 @@
                 
                 <!-- Relocated Terms and Privacy links -->
                 <div class="flex flex-wrap gap-x-3 gap-y-1 justify-center items-center">
-                    <a href="#mission-values" id="openEthosLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Mission &amp; Values</a>
-                    <span class="text-slate-800 select-none text-[10px]">•</span>
-                    <a href="#terms" id="openTermsLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Terms of Service</a>
-                    <span class="text-slate-800 select-none text-[10px]">•</span>
-                    <a href="#privacy" id="openPrivacyLink" class="text-slate-400 hover:text-white transition-colors text-[10px]">Data Privacy Note</a>
+                    <a href="#mission-values" id="openEthosLink" class="text-slate-400 hover:text-white transition-colors">Mission &amp; Values</a>
+                    <span class="text-slate-800 select-none">•</span>
+                    <a href="#terms" id="openTermsLink" class="text-slate-400 hover:text-white transition-colors">Terms of Service</a>
+                    <span class="text-slate-800 select-none">•</span>
+                    <a href="#privacy" id="openPrivacyLink" class="text-slate-400 hover:text-white transition-colors">Data Privacy Note</a>
                 </div>
             </div>
             
             <!-- Copyright & Compliance block -->
-            <div class="text-center md:text-right space-y-1 font-semibold">
+            <div class="text-center md:text-right space-y-1 font-semibold leading-relaxed">
                 <div>© 2026 Kolthoff Consulting. All rights reserved.</div>
                 <div>All data audits strictly bound to Republic Act No. 10173 (Data Privacy Act of 2012).</div>
                 <div>Billing proposals and milestones structured under BIR Ease of Paying Taxes (EOPT) Act guidelines.</div>
@@ -874,7 +920,7 @@
                 This platform uses baseline CDN caching networks and interactive calculators to analyze operational leaks. By remaining on our domain, you consent to this functional layout in alignment with RA 10173.
             </p>
         </div>
-        <button onclick="document.getElementById('cookieBanner').classList.add('hidden')" class="px-2.5 py-1.5 bg-brandNavy-955 hover:bg-brandNavy-800 border border-brandNavy-700 text-white rounded text-[10px] uppercase font-mono font-bold transition-all flex-shrink-0 cursor-pointer">
+        <button onclick="document.getElementById('cookieBanner').classList.add('hidden')" class="px-2.5 py-1.5 bg-brandNavy-950 hover:bg-brandNavy-800 border border-brandNavy-700 text-white rounded text-[10px] uppercase font-mono font-bold transition-all flex-shrink-0 cursor-pointer">
             Accept
         </button>
     </div>
@@ -955,7 +1001,59 @@
             );
 
             // Redirection to the pre-filled mail client
-            window.location.href = `mailto:${recipient}?subject=${subject}?cc=dpo@kolthoff-consulting.com&body=${body}`;
+            window.location.href = `mailto:${recipient}?subject=${subject}&cc=dpo@kolthoff-consulting.com&body=${body}`;
+        }
+
+        // Mobile menu toggle logic
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mobileDrawer = document.getElementById('mobileDrawer');
+        const burgerIcon1 = document.getElementById('burgerIcon1');
+        const burgerIcon2 = document.getElementById('burgerIcon2');
+        const burgerIcon3 = document.getElementById('burgerIcon3');
+
+        function toggleMobileMenu() {
+            const isOpen = !mobileDrawer.classList.contains('hidden');
+            if (isOpen) {
+                mobileDrawer.classList.add('hidden');
+                burgerIcon1.classList.remove('rotate-45', 'translate-y-1.5');
+                burgerIcon2.classList.remove('opacity-0');
+                burgerIcon3.classList.remove('-rotate-45', '-translate-y-1.5');
+            } else {
+                mobileDrawer.classList.remove('hidden');
+                burgerIcon1.classList.add('rotate-45', 'translate-y-1.5');
+                burgerIcon2.classList.add('opacity-0');
+                burgerIcon3.classList.add('-rotate-45', '-translate-y-1.5');
+            }
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+        }
+
+        // Clipboard Copy Helper for Modals
+        function copyToClipboard(elementId, buttonElement) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            
+            // Create fallback input element
+            const tempInput = document.createElement('textarea');
+            tempInput.value = textToCopy;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                const originalText = buttonElement.innerText;
+                buttonElement.innerText = "Copied!";
+                buttonElement.classList.add('text-emerald-400', 'border-emerald-500/50');
+                setTimeout(() => {
+                    buttonElement.innerText = originalText;
+                    buttonElement.classList.remove('text-emerald-400', 'border-emerald-500/50');
+                }, 2000);
+            } catch (err) {
+                console.error('Could not copy formula: ', err);
+            }
+            
+            document.body.removeChild(tempInput);
         }
 
         // --- Interactive Loss Formula Modal Logic ---
@@ -1086,7 +1184,7 @@
             privacyModalBackdrop.addEventListener('click', closeModalPrivacy);
         }
 
-        // Global keydown escape event listener for all three modals
+        // Global keydown escape event listener for all modals
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' || e.key === 'Esc') {
                 if (!formulaModal.classList.contains('hidden')) {
