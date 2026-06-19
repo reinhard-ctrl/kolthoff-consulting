@@ -106,6 +106,12 @@
             background: #14B8A6;
             border-radius: 2px;
         }
+        /* Visual cue for active video storyboard scrubbing item */
+        .active-storyboard {
+            border-color: #14B8A6 !important;
+            background-color: #0C1626 !important;
+            box-shadow: 0 0 15px -3px rgba(20, 184, 166, 0.15);
+        }
     </style>
 </head>
 <body class="luxury-gradient text-slate-300 antialiased min-h-screen font-sans selection:bg-brandTeal-600 selection:text-white">
@@ -191,7 +197,7 @@
                         Measure Your Chaos Tax
                     </a>
                 </div>
-                <div class="grid grid-cols-3 gap-6 pt-8 border-t border-brandNavy-700/50 max-w-lg text-[10px] font-mono font-bold tracking-wider uppercase text-slate-450">
+                <div class="grid grid-cols-3 gap-6 pt-8 border-t border-brandNavy-700/50 max-w-lg text-[10px] font-mono font-bold tracking-wider uppercase text-slate-455">
                     <div>
                         <span class="text-white text-lg font-serif font-bold block leading-none mb-1">RA 10173</span>
                         DPA Compliant Audits
@@ -222,7 +228,7 @@
                         <!-- Slider 1 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Total Staff Count</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Total Staff Count</span>
                                 <span id="staffVal" class="text-sm font-mono font-bold text-brandTeal-400">15 Employees</span>
                             </div>
                             <input type="range" id="staffRange" min="5" max="150" value="15" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
@@ -231,7 +237,7 @@
                         <!-- Slider 2 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Average Monthly Payroll Salary</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Average Monthly Payroll Salary</span>
                                 <span id="salaryVal" class="text-sm font-mono font-bold text-brandTeal-400">₱25,000 / month</span>
                             </div>
                             <input type="range" id="salaryRange" min="15000" max="120000" step="1000" value="25000" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
@@ -240,7 +246,7 @@
                         <!-- Slider 3 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Daily Wasted Hours per Employee</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Daily Wasted Hours per Employee</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
                             <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
@@ -248,7 +254,7 @@
                     </div>
 
                     <!-- Dynamic Results Box -->
-                    <div class="p-5 bg-brandNavy-950 rounded-xl border border-brandNavy-700/80 space-y-4">
+                    <div class="p-5 bg-brandNavy-955 rounded-xl border border-brandNavy-700/80 space-y-4">
                         <div>
                             <span class="text-[9px] font-mono uppercase text-rose-400 font-bold tracking-widest block mb-1">Your Est. Annual Operational Leakage (Chaos Tax)</span>
                             <span id="leakageResult" class="text-3xl font-serif font-bold text-rose-500 font-mono">₱1,125,000</span>
@@ -284,7 +290,7 @@
     <!-- Operational Diagnosis & SOW Roadmap -->
     <section id="roadmap" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-955 px-6">
         <div class="max-w-7xl mx-auto">
-            <div class="text-center max-w-xl mx-auto mb-16 space-y-3">
+            <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
                 <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Modular Scalability</span>
                 <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
                     Operational Diagnosis &amp; SOW Roadmap
@@ -292,6 +298,16 @@
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
                     I engineer tailored operational recovery blueprints designed specifically to address the financial leaks, structural risks, and labor compliance vulnerabilities of Philippine SMEs.
                 </p>
+                
+                <!-- NEW WATCH EXPLAINER BUTTON -->
+                <div class="pt-2">
+                    <button id="openExplainerBtn" class="inline-flex items-center gap-2.5 px-6 py-3 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-brandTeal-500/5 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current text-brandTeal-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Watch Explainer Video
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -431,20 +447,20 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Company Registered Name</label>
-                        <input id="companyName" type="text" placeholder="e.g., PH Retailers Inc." class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
+                        <input id="companyName" type="text" placeholder="e.g., PH Retailers Inc." class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                     </div>
                     <div>
                         <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Business Representative / Owner</label>
-                        <input id="repName" type="text" placeholder="e.g., Juan Dela Cruz" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
+                        <input id="repName" type="text" placeholder="e.g., Juan Dela Cruz" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                     </div>
                 </div>
                 <div>
                     <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Official Work Email Address</label>
-                    <input id="workEmail" type="email" placeholder="e.g., owner@company.com.ph" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
+                    <input id="workEmail" type="email" placeholder="e.g., owner@company.com.ph" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500" required>
                 </div>
                 <div>
                     <label class="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Biggest Operational Pain Point</label>
-                    <select id="painPoint" class="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-md p-3.5 text-xs text-slate-350 focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500">
+                    <select id="painPoint" class="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-md p-3.5 text-xs text-slate-350 focus:outline-none focus:border-brandTeal-500 focus:ring-1 focus:ring-brandTeal-500">
                         <option value="Chaotic Viber Group Chats & Manual Spreadsheet Sprawl">Chaotic Viber Group Chats &amp; Manual Spreadsheet Sprawl</option>
                         <option value="Hiring Extra Headcount to Manage Basic Day-to-Day Tasks">Hiring Extra Headcount to Manage Basic Day-to-Day Tasks</option>
                         <option value="HR Compliance / Drafting DOLE-Shielded Handbooks">HR Compliance / Drafting DOLE-Shielded Handbooks</option>
@@ -480,6 +496,117 @@
         </div>
     </section>
 
+    <!-- NEW Explainer Video Modal Container -->
+    <div id="explainerModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
+        <!-- Backdrop -->
+        <div id="explainerModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
+        
+        <!-- Modal Card -->
+        <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 max-w-5xl w-full shadow-2xl premium-glow text-left overflow-hidden z-10 flex flex-col max-h-[90vh]">
+            <!-- Close Button -->
+            <button id="closeExplainerModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer z-20" aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="pb-3 border-b border-brandNavy-700 mb-4 pr-10">
+                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase font-sans">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
+                    SME Workflow Explainer
+                </h3>
+                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Systemize Workflows &amp; Eliminate the Chaos Tax</p>
+            </div>
+
+            <!-- Content Area: Video + Interactive Transcript Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto pr-1 flex-1">
+                <!-- Left: Video Player -->
+                <div class="lg:col-span-7 flex flex-col justify-center space-y-3">
+                    <div class="relative aspect-video w-full rounded-lg overflow-hidden bg-black border border-brandNavy-700">
+                        <video id="explainerVideo" class="w-full h-full object-contain" controls preload="auto">
+                            <source src="Systemize_SME_Workflows.mp4" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                        <!-- Fallback Card inside Player area in case browser environment prevents video access -->
+                        <div id="videoFallbackCard" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/90 hidden">
+                            <svg class="w-12 h-12 text-brandTeal-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125V3a1.125 1.125 0 011.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v15.375c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25m-17.25 0v1.5a1.125 1.125 0 001.125 1.125h14.25a1.125 1.125 0 001.125-1.125v-1.5M14.25 9.75l-4.5 4.5m0-4.5l4.5 4.5m1.5-6h.008v.008H15.75V3.75z" />
+                            </svg>
+                            <h4 class="font-serif font-bold text-white text-sm mb-1">Direct Explainer Storyboard</h4>
+                            <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+                                Use the interactive storyboard timeline on the right to navigate the core lessons and frameworks.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-450 px-1">
+                        <span>Format: H.264 video</span>
+                        <span id="videoStatus" class="text-brandTeal-400 font-bold">Select any milestone to jump directly to it</span>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Storyboard Scrubbing Panel -->
+                <div class="lg:col-span-5 flex flex-col space-y-3 max-h-[50vh] lg:max-h-[60vh] overflow-y-auto pr-1">
+                    <span class="text-[9px] font-mono font-bold tracking-widest text-brandTeal-400 uppercase block">Interactive Chapters &amp; Lessons</span>
+                    
+                    <div class="space-y-2 text-xs">
+                        <!-- Step 1 -->
+                        <div onclick="seekVideo(0, this)" class="storyboard-item p-3 rounded-lg bg-brandNavy-955 hover:bg-brandNavy-850 border border-brandNavy-750 hover:border-brandTeal-500/40 transition-all cursor-pointer flex items-start gap-3 group active-storyboard">
+                            <span class="font-mono text-[10px] font-bold text-brandTeal-400 bg-brandTeal-500/10 px-2 py-0.5 rounded-md">0:00</span>
+                            <div class="space-y-0.5">
+                                <h4 class="font-bold text-white group-hover:text-brandTeal-400 transition-colors">1. Systemize &amp; Scale</h4>
+                                <p class="text-[11px] text-slate-400 leading-normal">Introduction to workflow systemization, eliminating drag, and scaling your business with absolute clarity.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div onclick="seekVideo(6, this)" class="storyboard-item p-3 rounded-lg bg-brandNavy-955 hover:bg-brandNavy-850 border border-brandNavy-750 hover:border-brandTeal-500/40 transition-all cursor-pointer flex items-start gap-3 group">
+                            <span class="font-mono text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">0:06</span>
+                            <div class="space-y-0.5">
+                                <h4 class="font-bold text-white group-hover:text-brandTeal-400 transition-colors">2. The "Chaos Tax"</h4>
+                                <p class="text-[11px] text-slate-400 leading-normal">Growing companies bleed up to 30% of payroll value into manual tracking loops and unlinked spreadsheets.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div onclick="seekVideo(20, this)" class="storyboard-item p-3 rounded-lg bg-brandNavy-955 hover:bg-brandNavy-850 border border-brandNavy-750 hover:border-brandTeal-500/40 transition-all cursor-pointer flex items-start gap-3 group">
+                            <span class="font-mono text-[10px] font-bold text-brandAmber-400 bg-brandAmber-500/10 px-2 py-0.5 rounded-md">0:20</span>
+                            <div class="space-y-0.5">
+                                <h4 class="font-bold text-white group-hover:text-brandTeal-400 transition-colors">3. Symptoms &amp; Risks</h4>
+                                <p class="text-[11px] text-slate-400 leading-normal">Viber group chat sprawl, duplicate workloads, knowledge flight, and data leak fines under RA 10173.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div onclick="seekVideo(34, this)" class="storyboard-item p-3 rounded-lg bg-brandNavy-955 hover:bg-brandNavy-850 border border-brandNavy-750 hover:border-brandTeal-500/40 transition-all cursor-pointer flex items-start gap-3 group">
+                            <span class="font-mono text-[10px] font-bold text-brandTeal-400 bg-brandTeal-500/10 px-2 py-0.5 rounded-md">0:34</span>
+                            <div class="space-y-0.5">
+                                <h4 class="font-bold text-white group-hover:text-brandTeal-400 transition-colors">4. The 4-Module Strategy</h4>
+                                <p class="text-[11px] text-slate-400 leading-normal">Our ultimate blueprint to permanently systemize your business: Diagnose, Organize, Automate, and Ongoing Care.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div onclick="seekVideo(102, this)" class="storyboard-item p-3 rounded-lg bg-brandNavy-955 hover:bg-brandNavy-850 border border-brandNavy-750 hover:border-brandTeal-500/40 transition-all cursor-pointer flex items-start gap-3 group">
+                            <span class="font-mono text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">1:42</span>
+                            <div class="space-y-0.5">
+                                <h4 class="font-bold text-white group-hover:text-brandTeal-400 transition-colors">5. Reclaiming Capacity</h4>
+                                <p class="text-[11px] text-slate-400 leading-normal">The final payoff: reclaim up to 40% of wasted capacity, achieving high strategic security and zero operational chaos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-4 pt-4 border-t border-brandNavy-700 flex justify-end">
+                <button id="dismissExplainerModalBtn" type="button" class="px-5 py-2.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
+                    Close Explainer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Loss Formula Explained Popup Modal Container -->
     <div id="formulaModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
         <!-- Backdrop -->
@@ -500,7 +627,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-brandAmber-500 animate-pulse"></span>
                     The Loss Formula Explained
                 </h3>
-                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Strategic B2B Value-Based ROI Model</p>
+                <p class="text-[9px] text-slate-455 mt-1 font-mono uppercase tracking-wider">Strategic B2B Value-Based ROI Model</p>
             </div>
 
             <!-- MathJax Formulas Section -->
@@ -509,7 +636,7 @@
                 <div class="relative group">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">1. Calculator Logic (How We Measured Your Chaos Tax)</span>
-                        <button onclick="copyToClipboard('formula-calc-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-950 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
+                        <button onclick="copyToClipboard('formula-calc-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-955 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
                     </div>
                     <div id="modal-math-container-calc" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandAmber-400 font-mono text-center text-xs">
                         $$\text{Annual Operational Leakage (Chaos Tax)} = \text{Staff Count} \times \text{Avg Monthly Salary} \times 12 \times \frac{\text{Daily Lost Hours}}{8}$$
@@ -521,7 +648,7 @@
                 <div class="relative group">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">2. Strategic SOW Value (Underlying Risk Variables)</span>
-                        <button onclick="copyToClipboard('formula-risk-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-950 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
+                        <button onclick="copyToClipboard('formula-risk-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-955 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
                     </div>
                     <div id="modal-math-container-risk" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandTeal-400 font-mono text-center text-xs">
                         $$\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Waste Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}$$
@@ -536,7 +663,7 @@
                 
                 <div class="space-y-3.5 font-medium">
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">01.</span>
+                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">01.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Monthly Payroll × Waste Rate (The Chaos Tax)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
@@ -546,7 +673,7 @@
                     </div>
 
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">02.</span>
+                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">02.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">SOP Capacity Bleed (Knowledge Flight)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
@@ -556,11 +683,11 @@
                     </div>
 
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">03.</span>
+                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">03.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Regulatory Non-Compliance Liabilities (Local Exposure)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
-                                SMEs face massive legal exposure under local regulations. This includes multi-million peso fines from National Privacy Commission (NPC) data breaches due to unsecured files being shared in chat apps under <strong class="text-brandTeal-400 font-semibold font-mono text-brandTeal-500">RA 10173</strong>, or costly constructive dismissal disputes at the National Labor Relations Commission (NLRC) due to a lack of standard, advisory <strong class="text-brandTeal-400 font-semibold font-mono text-brandTeal-500">DOLE-shielded handbooks</strong>.
+                                SMEs face massive legal exposure under local regulations. This includes multi-million peso fines from National Privacy Commission (NPC) data breaches due to unsecured files being shared in chat apps under <strong class="text-brandTeal-500 font-semibold font-mono">RA 10173</strong>, or costly constructive dismissal disputes at the National Labor Relations Commission (NLRC) due to a lack of standard, advisory <strong class="text-brandTeal-500 font-semibold font-mono">DOLE-shielded handbooks</strong>.
                             </p>
                         </div>
                     </div>
@@ -717,7 +844,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Terms of Service &amp; Advisory Framework
                 </h3>
-                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Standard Consulting Operational Agreement</p>
+                <p class="text-[9px] text-slate-455 mt-1 font-mono uppercase tracking-wider">Standard Consulting Operational Agreement</p>
             </div>
 
             <!-- Content Area -->
@@ -867,7 +994,7 @@
                 This platform uses baseline CDN caching networks and interactive calculators to analyze operational leaks. By remaining on our domain, you consent to this functional layout in alignment with RA 10173.
             </p>
         </div>
-        <button onclick="document.getElementById('cookieBanner').classList.add('hidden')" class="px-2.5 py-1.5 bg-brandNavy-950 hover:bg-brandNavy-800 border border-brandNavy-700 text-white rounded text-[10px] uppercase font-mono font-bold transition-all flex-shrink-0 cursor-pointer">
+        <button onclick="document.getElementById('cookieBanner').classList.add('hidden')" class="px-2.5 py-1.5 bg-brandNavy-955 hover:bg-brandNavy-800 border border-brandNavy-700 text-white rounded text-[10px] uppercase font-mono font-bold transition-all flex-shrink-0 cursor-pointer">
             Accept
         </button>
     </div>
@@ -1038,6 +1165,80 @@
             modalBackdrop.addEventListener('click', closeModal);
         }
 
+        // --- NEW Interactive Explainer Modal Logic ---
+        const explainerModal = document.getElementById('explainerModal');
+        const openExplainerBtn = document.getElementById('openExplainerBtn');
+        const closeExplainerModalBtn = document.getElementById('closeExplainerModalBtn');
+        const dismissExplainerModalBtn = document.getElementById('dismissExplainerModalBtn');
+        const explainerModalBackdrop = document.getElementById('explainerModalBackdrop');
+        const explainerVideo = document.getElementById('explainerVideo');
+        const videoFallbackCard = document.getElementById('videoFallbackCard');
+        const videoStatus = document.getElementById('videoStatus');
+
+        function openExplainer() {
+            explainerModal.classList.remove('hidden');
+            if (explainerVideo) {
+                explainerVideo.play().catch(error => {
+                    console.log("Video autoplay prevented or file unavailable:", error);
+                    // Show a fallback card if video loading fails entirely
+                    if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
+                });
+            }
+        }
+
+        function closeExplainer() {
+            explainerModal.classList.add('hidden');
+            if (explainerVideo) {
+                explainerVideo.pause();
+            }
+        }
+
+        // Setup HTML5 video error callback
+        if (explainerVideo) {
+            explainerVideo.addEventListener('error', () => {
+                if (videoFallbackCard) {
+                    videoFallbackCard.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Interactive video timestamp scrubber logic
+        function seekVideo(seconds, element) {
+            if (explainerVideo) {
+                explainerVideo.currentTime = seconds;
+                explainerVideo.play().catch(err => console.log("Video play error during scrubbing: ", err));
+            }
+            
+            // Highlight current active storyboard item
+            document.querySelectorAll('.storyboard-item').forEach(item => {
+                item.classList.remove('active-storyboard');
+            });
+            if (element) {
+                element.classList.add('active-storyboard');
+            }
+
+            if (videoStatus) {
+                const chapterTitle = element.querySelector('h4').innerText;
+                videoStatus.innerText = `Mapsd to ${chapterTitle}`;
+                setTimeout(() => {
+                    videoStatus.innerText = "Select any milestone to jump directly to it";
+                }, 4000);
+            }
+        }
+
+        if (openExplainerBtn) {
+            openExplainerBtn.addEventListener('click', openExplainer);
+        }
+        if (closeExplainerModalBtn) {
+            closeExplainerModalBtn.addEventListener('click', closeExplainer);
+        }
+        if (dismissExplainerModalBtn) {
+            dismissExplainerModalBtn.addEventListener('click', closeExplainer);
+        }
+        if (explainerModalBackdrop) {
+            explainerModalBackdrop.addEventListener('click', closeExplainer);
+        }
+
         // --- Interactive Core Ethos Modal Logic ---
         const ethosModal = document.getElementById('ethosModal');
         const openEthosLink = document.getElementById('openEthosLink');
@@ -1136,6 +1337,9 @@
             if (e.key === 'Escape' || e.key === 'Esc') {
                 if (!formulaModal.classList.contains('hidden')) {
                     closeModal();
+                }
+                if (!explainerModal.classList.contains('hidden')) {
+                    closeExplainer();
                 }
                 if (!ethosModal.classList.contains('hidden')) {
                     closeEthos();
