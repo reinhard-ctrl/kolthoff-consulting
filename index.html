@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -169,10 +169,10 @@
     <!-- Hero Section -->
     <section class="relative pt-12 pb-20 overflow-hidden px-6">
         <div class="absolute inset-0 bg-cover bg-center opacity-[0.02]" style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200');"></div>
-        <div class="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             <!-- Left Narrative -->
-            <div class="lg:col-span-7 space-y-6">
+            <div class="lg:col-span-7 space-y-6 lg:sticky lg:top-28">
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-brandTeal-500/10 border border-brandTeal-500/30 rounded text-brandTeal-400 font-mono text-[9px] uppercase tracking-widest font-extrabold">
                     <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Operational Excellence for Philippine SMEs
@@ -207,77 +207,16 @@
                 </div>
             </div>
 
-            <!-- Right Visual Graphic -->
-            <div class="lg:col-span-5 relative">
-                <div class="absolute -inset-1 bg-gradient-to-r from-brandTeal-500 to-indigo-500 rounded-2xl blur opacity-15"></div>
-                <div class="relative bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 premium-glow">
-                    <div class="flex items-center justify-between pb-4 border-b border-brandNavy-700 mb-6">
-                        <span class="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-widest">Typical Process Leakage Path</span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
-                            <span class="text-slate-500 font-mono block mb-1">Before Auditing: Unwritten Routines</span>
-                            <div class="flex justify-between items-center text-rose-450 font-bold">
-                                <span>Uncontrolled Workload Duplication</span>
-                                <span class="font-mono text-[11px]">+30% Friction Delay</span>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-xs">
-                            <span class="text-slate-500 font-mono block mb-1">Operational Risk Breakdown</span>
-                            <div class="flex justify-between items-center text-rose-450 font-bold">
-                                <span>Files Lost Across Unsecured Chat Pools</span>
-                                <span class="font-mono text-[11px]">RA 10173 Leak Risk</span>
-                            </div>
-                        </div>
-                        <div class="p-4 bg-brandTeal-500/5 rounded-lg border border-brandTeal-500/20 text-xs">
-                            <span class="text-brandTeal-400 font-mono font-bold block mb-1">After Alignment: Our Roadmap Strategy</span>
-                            <div class="flex justify-between items-center text-emerald-450 font-bold">
-                                <span>Unified Workspace Tracking &amp; Automation</span>
-                                <span class="font-mono text-[11px] font-bold text-emerald-400">100% Organized SLA</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Interactive Chaos Tax Calculator -->
-    <section id="calculator" class="py-20 border-t border-brandNavy-700/50 px-6">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
-            <!-- Explanatory Text -->
-            <div class="lg:col-span-5 space-y-6">
-                <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Interactive Financial Leak Assessment</span>
-                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
-                    What is Your Company's <span class="italic text-brandTeal-400 font-normal">Annual Operational Leakage (Chaos Tax)?</span>
-                </h2>
-                <p class="text-slate-400 text-sm leading-relaxed font-medium">
-                    Every manual status follow-up, misplaced order file, and duplicate software account represents direct leakage of your company's monthly payroll value.
-                </p>
-                <p class="text-slate-400 text-sm leading-relaxed font-medium">
-                    Use our live planning calculator to estimate how much administrative leakage is taking place in your business right now.
-                </p>
+            <!-- Right Column: Interactive Chaos Tax Calculator & Loss Formula Card -->
+            <div id="calculator" class="lg:col-span-5 space-y-4 relative scroll-mt-24 w-full">
+                <div class="absolute -inset-1 bg-gradient-to-r from-brandTeal-500 to-indigo-500 rounded-2xl blur opacity-10"></div>
                 
-                <!-- Improved Interactive Explanation Card (Clickable Trigger) -->
-                <div id="openFormulaBtnCard" class="p-5 bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/50 rounded-xl space-y-2 cursor-pointer transition-all hover:bg-brandNavy-850 group">
-                    <div class="flex items-center justify-between">
-                        <span class="text-white font-bold text-xs uppercase tracking-wider block">The Loss Formula Explained</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brandAmber-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <!-- Main Interactive Calculator Box -->
+                <div class="relative bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 space-y-6 premium-glow">
+                    <div class="border-b border-brandNavy-700 pb-3">
+                        <span class="text-[9px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block mb-1">Interactive Assessment</span>
+                        <h3 class="text-base font-bold text-white tracking-wide uppercase font-sans">Operational Leakage (Chaos Tax)</h3>
                     </div>
-                    <p class="text-slate-400 text-xs leading-relaxed font-medium">
-                        Click here to view the mathematical and operational breakdown of capacity loss, workflow waste, and regulatory liability.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Interactivity Box -->
-            <div class="lg:col-span-7">
-                <div class="bg-brandNavy-900 border border-brandNavy-700 rounded-2xl p-6 sm:p-8 space-y-6">
-                    <h3 class="text-base font-bold text-white tracking-wide border-b border-brandNavy-700 pb-3 uppercase font-sans tracking-wider">Operational Leakage Parameters</h3>
                     
                     <div class="space-y-6">
                         <!-- Slider 1 -->
@@ -301,7 +240,7 @@
                         <!-- Slider 3 -->
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Daily Wasted Hours per Employee (Coordination Delays)</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-450 font-bold">Daily Wasted Hours per Employee</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
                             <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
@@ -309,28 +248,36 @@
                     </div>
 
                     <!-- Dynamic Results Box -->
-                    <div class="p-6 bg-brandNavy-950 rounded-xl border border-brandNavy-700 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-1.5 mb-1">
-                                <span class="text-[9px] font-mono uppercase text-rose-400 font-bold tracking-widest block">Your Est. Annual Operational Leakage (Chaos Tax)</span>
-                            </div>
-                            <div class="flex items-baseline gap-2">
-                                <span id="leakageResult" class="text-3xl font-serif font-bold text-rose-500 font-mono">₱1,125,000</span>
-                            </div>
+                    <div class="p-5 bg-brandNavy-950 rounded-xl border border-brandNavy-700/80 space-y-4">
+                        <div>
+                            <span class="text-[9px] font-mono uppercase text-rose-400 font-bold tracking-widest block mb-1">Your Est. Annual Operational Leakage (Chaos Tax)</span>
+                            <span id="leakageResult" class="text-3xl font-serif font-bold text-rose-500 font-mono">₱1,125,000</span>
                         </div>
-                        <div class="text-left sm:text-right flex-1 border-t sm:border-t-0 sm:border-l border-brandNavy-700/60 pt-4 sm:pt-0 sm:pl-6">
+                        <div class="border-t border-brandNavy-700/60 pt-3">
                             <span class="text-[9px] font-mono uppercase text-brandTeal-400 font-bold tracking-widest block mb-1">Estimated Recovery Potential (First Year)</span>
                             <span id="recoveryResult" class="text-2xl font-serif font-bold text-emerald-400 font-mono">₱450,000</span>
                         </div>
                     </div>
                     
-                    <!-- Added In-Line Calculator Fiscal Disclaimer for Regulatory Compliance -->
+                    <!-- In-Line Calculator Fiscal Disclaimer -->
                     <p class="text-[9px] font-mono text-slate-500 leading-normal">
                         * Disclaimer: This calculation is an illustrative simulation based on localized SME sector averages. Final operational performance recoveries vary and are governed strictly by customized, manually validated Statements of Work (SOW).
                     </p>
                 </div>
-            </div>
 
+                <!-- Loss Formula Explained Card -->
+                <div id="openFormulaBtnCard" class="relative bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/50 rounded-xl p-5 space-y-2 cursor-pointer transition-all hover:bg-brandNavy-850 group premium-glow">
+                    <div class="flex items-center justify-between">
+                        <span class="text-white font-bold text-xs uppercase tracking-wider block">The Loss Formula Explained</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-brandAmber-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed font-medium">
+                        Click here to view the mathematical and operational breakdown of capacity loss, workflow waste, and regulatory liability.
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -541,7 +488,7 @@
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
+            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -564,7 +511,7 @@
                         <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider block">1. Calculator Logic (How We Measured Your Chaos Tax)</span>
                         <button onclick="copyToClipboard('formula-calc-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-950 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
                     </div>
-                    <div id="modal-math-container-calc" class="p-4 bg-brandNavy-950 rounded-lg border border-brandNavy-700/60 text-brandAmber-400 font-mono text-center text-xs">
+                    <div id="modal-math-container-calc" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandAmber-400 font-mono text-center text-xs">
                         $$\text{Annual Operational Leakage (Chaos Tax)} = \text{Staff Count} \times \text{Avg Monthly Salary} \times 12 \times \frac{\text{Daily Lost Hours}}{8}$$
                     </div>
                     <span id="formula-calc-text" class="hidden">\text{Annual Operational Leakage (Chaos Tax)} = \text{Staff Count} \times \text{Avg Monthly Salary} \times 12 \times \frac{\text{Daily Lost Hours}}{8}</span>
@@ -585,11 +532,11 @@
 
             <!-- Variables Explanatory Breakdown -->
             <div class="space-y-4 text-xs">
-                <h4 class="text-[9px] font-mono uppercase tracking-widest text-slate-450 font-extrabold border-b border-brandNavy-700 pb-1">Understanding Your Losses:</h4>
+                <h4 class="text-[9px] font-mono uppercase tracking-widest text-slate-455 font-extrabold border-b border-brandNavy-700 pb-1">Understanding Your Losses:</h4>
                 
                 <div class="space-y-3.5 font-medium">
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">01.</span>
+                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">01.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Monthly Payroll × Waste Rate (The Chaos Tax)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
@@ -599,7 +546,7 @@
                     </div>
 
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">02.</span>
+                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">02.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">SOP Capacity Bleed (Knowledge Flight)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
@@ -609,7 +556,7 @@
                     </div>
 
                     <div class="flex gap-2.5 items-start">
-                        <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">03.</span>
+                        <span class="text-brandTeal-505 font-mono font-bold mt-0.5 text-xs">03.</span>
                         <div>
                             <strong class="text-slate-100 block text-xs">Regulatory Non-Compliance Liabilities (Local Exposure)</strong>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
@@ -643,7 +590,7 @@
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeEthosModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
+            <button id="closeEthosModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -663,7 +610,7 @@
                 <!-- Mission & Vision Dual Layout -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Mission Card -->
-                    <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
+                    <div class="bg-brandNavy-955 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
                         <div class="flex items-start gap-4">
                             <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400 flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -681,7 +628,7 @@
                     </div>
 
                     <!-- Vision Card -->
-                    <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
+                    <div class="bg-brandNavy-955 border border-brandNavy-700/60 rounded-xl p-5 relative group overflow-hidden shadow-lg">
                         <div class="flex items-start gap-4">
                             <div class="p-2.5 bg-brandTeal-500/10 rounded-lg text-brandTeal-400 flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -709,7 +656,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                         <!-- Simple -->
-                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                        <div class="bg-brandNavy-955 border border-brandNavy-700/60 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">01 - SIMPLE</span>
                             </div>
@@ -719,7 +666,7 @@
                         </div>
 
                         <!-- Efficient -->
-                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                        <div class="bg-brandNavy-955 border border-brandNavy-700/60 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">02 - EFFICIENT</span>
                             </div>
@@ -729,7 +676,7 @@
                         </div>
 
                         <!-- Accountable -->
-                        <div class="bg-brandNavy-950 border border-brandNavy-700/60 rounded-xl p-4">
+                        <div class="bg-brandNavy-955 border border-brandNavy-700/60 rounded-xl p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded font-bold uppercase tracking-wider">03 - ACCOUNTABLE</span>
                             </div>
@@ -758,7 +705,7 @@
         <!-- Modal Card -->
         <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl premium-glow text-left overflow-y-auto max-h-[90vh] z-10">
             <!-- Close Button -->
-            <button id="closeTermsModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-950 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
+            <button id="closeTermsModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer" aria-label="Close modal">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -857,7 +804,7 @@
                     </p>
                 </div>
 
-                <!-- Updated Section 3: Dedicated Data Protection Officer Contact & Retention -->
+                <!-- Section 3: Dedicated Data Protection Officer Contact & Retention -->
                 <div>
                     <h4 class="font-bold text-white mb-1 uppercase font-mono text-[9px] tracking-wider">3. Strict Retention &amp; Data Erasure Rights</h4>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
