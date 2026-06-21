@@ -231,7 +231,7 @@
                                 <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Total Staff Count</span>
                                 <span id="staffVal" class="text-sm font-mono font-bold text-brandTeal-400">15 Employees</span>
                             </div>
-                            <input type="range" id="staffRange" min="5" max="150" value="15" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
+                            <input type="range" id="staffRange" min="5" max="150" value="15" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-2 rounded cursor-pointer">
                         </div>
 
                         <!-- Slider 2 -->
@@ -240,7 +240,7 @@
                                 <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Average Monthly Payroll Salary</span>
                                 <span id="salaryVal" class="text-sm font-mono font-bold text-brandTeal-400">₱25,000 / month</span>
                             </div>
-                            <input type="range" id="salaryRange" min="15000" max="120000" step="1000" value="25000" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
+                            <input type="range" id="salaryRange" min="15000" max="120000" step="1000" value="25000" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-2 rounded cursor-pointer">
                         </div>
 
                         <!-- Slider 3 -->
@@ -249,7 +249,7 @@
                                 <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Daily Wasted Hours per Employee</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
-                            <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-950 h-2 rounded cursor-pointer">
+                            <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-2 rounded cursor-pointer">
                         </div>
                     </div>
 
@@ -516,7 +516,7 @@
                     <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     SME Workflow Explainer
                 </h3>
-                <p class="text-[9px] text-slate-450 mt-1 font-mono uppercase tracking-wider">Systemize Workflows &amp; Eliminate the Chaos Tax</p>
+                <p class="text-[9px] text-slate-455 mt-1 font-mono uppercase tracking-wider">Systemize Workflows &amp; Eliminate the Chaos Tax</p>
             </div>
 
             <!-- Content Area: Video + Interactive Transcript Grid -->
@@ -524,7 +524,8 @@
                 <!-- Left: Video Player -->
                 <div class="lg:col-span-7 flex flex-col justify-center space-y-3">
                     <div class="relative aspect-video w-full rounded-lg overflow-hidden bg-black border border-brandNavy-700">
-                        <video id="explainerVideo" class="w-full h-full object-contain" controls preload="auto">
+                        <!-- LAZY LOADING OPTIMIZATION: preload="none" ensures we don't fetch any video data until clicked. Poster provides a visual placeholder. -->
+                        <video id="explainerVideo" class="w-full h-full object-contain" controls preload="none" poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90' fill='%2309111F'><rect width='100%25' height='100%25'/><g transform='translate(80, 45)'><circle r='14' fill='%2314B8A6' fill-opacity='0.15' stroke='%2314B8A6' stroke-width='1'/><polygon points='-4,-6 8,0 -4,6' fill='%2314B8A6'/></g><text x='50%25' y='75%25' fill='%232E4567' font-family='sans-serif' font-size='5' text-anchor='middle' font-weight='bold' letter-spacing='1'>KOLTHOFF CONSULTING • SYSTEMIZE WORKFLOWS</text></svg>">
                             <source src="Systemize_SME_Workflows.mp4" type="video/mp4">
                             Your browser does not support HTML5 video.
                         </video>
@@ -539,7 +540,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-450 px-1">
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-455 px-1">
                         <span>Format: H.264 video</span>
                         <span id="videoStatus" class="text-brandTeal-400 font-bold">Select any milestone to jump directly to it</span>
                     </div>
@@ -1178,6 +1179,10 @@
         function openExplainer() {
             explainerModal.classList.remove('hidden');
             if (explainerVideo) {
+                // LAZY LOADING: Dynamically call load() only if it hasn't started loading yet
+                if (explainerVideo.readyState === 0) { // HAVE_NOTHING
+                    explainerVideo.load();
+                }
                 explainerVideo.play().catch(error => {
                     console.log("Video autoplay prevented or file unavailable:", error);
                     // Show a fallback card if video loading fails entirely
@@ -1190,6 +1195,15 @@
             explainerModal.classList.add('hidden');
             if (explainerVideo) {
                 explainerVideo.pause();
+                // Pause download stream by forcing source reset
+                explainerVideo.removeAttribute('src'); 
+                explainerVideo.load();
+                // Restore correct video source after reset so it can play again when reopened
+                const source = document.createElement('source');
+                source.src = "Systemize_SME_Workflows.mp4";
+                source.type = "video/mp4";
+                explainerVideo.innerHTML = '';
+                explainerVideo.appendChild(source);
             }
         }
 
@@ -1205,6 +1219,10 @@
         // Interactive video timestamp scrubber logic
         function seekVideo(seconds, element) {
             if (explainerVideo) {
+                // Ensure video starts loading if user clicks a segment first
+                if (explainerVideo.readyState === 0) {
+                    explainerVideo.load();
+                }
                 explainerVideo.currentTime = seconds;
                 explainerVideo.play().catch(err => console.log("Video play error during scrubbing: ", err));
             }
@@ -1219,7 +1237,7 @@
 
             if (videoStatus) {
                 const chapterTitle = element.querySelector('h4').innerText;
-                videoStatus.innerText = `Mapsd to ${chapterTitle}`;
+                videoStatus.innerText = `Mapped to ${chapterTitle}`;
                 setTimeout(() => {
                     videoStatus.innerText = "Select any milestone to jump directly to it";
                 }, 4000);
