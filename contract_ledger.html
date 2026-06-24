@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Signature & Contract Ledger | Kolthoff OS</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Standard Fonts + 'Great Vibes' for the cursive signature simulation -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <!-- Firebase Module Initialization -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
+            authDomain: "kolthoff-portal.firebaseapp.com",
+            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kolthoff-portal",
+            storageBucket: "kolthoff-portal.firebasestorage.app",
+            messagingSenderId: "413958125034",
+            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        
+        window.appId = appId;
+        window.initialAuthToken = initialAuthToken;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+    </script>
+
+    <!-- React, ReactDOM, Babel CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' }
+                    },
+                    fontFamily: { 
+                        sans: ['"Montserrat"', 'sans-serif'], 
+                        serif: ['"Playfair Display"', 'serif'],
+                        signature: ['"Great Vibes"', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+        .client-gradient { background: radial-gradient(circle at top left, #f8fafc 0%, #e2e8f0 100%); }
+        
+        /* Signature animation */
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+    </style>
+</head>
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icons = {
+            FileSignature: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>,
+            Link: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+            Eye: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            CheckCircle: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            ShieldCheck: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+            Clock: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Reset: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+        };
+
+        const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+
+        function App() {
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [activeView, setActiveView] = useState('ledger'); // 'ledger', 'client_sign', 'audit_trail'
+            
+            const [profiles, setProfiles] = useState([]); // SOWs from internal_workbook
+            const [contracts, setContracts] = useState([]); // Signed/Sent contracts ledger
+            const [crmDeals, setCrmDeals] = useState([]); // To auto-update deals to 'Won'
+            
+            const [activeContractId, setActiveContractId] = useState(null);
+            const [toast, setToast] = useState(null);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [hasRouted, setHasRouted] = useState(false);
+
+            // Client Signing State
+            const [signatureName, setSignatureName] = useState("");
+            const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+            
+            // Contract Reset State
+            const [contractToReset, setContractToReset] = useState(null);
+
+            const isClientMode = new URLSearchParams(window.location.search).has('contract');
+
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                                setIsAuthed(true);
+
+                                const db = window.firebaseDb;
+                                const appId = window.appId;
+
+                                // 1. Fetch SOW Profiles
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles'), (snap) => {
+                                    const fetchedProfiles = [];
+                                    snap.forEach(doc => fetchedProfiles.push({ id: doc.id, ...doc.data() }));
+                                    setProfiles(fetchedProfiles);
+                                }, console.error);
+
+                                // 2. Fetch Contracts Ledger
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'contracts_ledger'), (snap) => {
+                                    const fetchedContracts = [];
+                                    snap.forEach(doc => fetchedContracts.push({ id: doc.id, ...doc.data() }));
+                                    setContracts(fetchedContracts);
+                                }, console.error);
+
+                                // 3. Fetch CRM Deals (For auto-updating to won)
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_deals'), (snap) => {
+                                    const fetchedDeals = [];
+                                    snap.forEach(doc => fetchedDeals.push({ id: doc.id, ...doc.data() }));
+                                    setCrmDeals(fetchedDeals);
+                                }, console.error);
+
+                            } catch (e) {
+                                console.error("Firebase Auth Error:", e);
+                            }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // Auto-route if accessed via a copied link
+            useEffect(() => {
+                if (!hasRouted && ledgerData && ledgerData.length > 0) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const contractParam = urlParams.get('contract');
+                    if (contractParam) {
+                        const item = ledgerData.find(d => d.profileId === contractParam);
+                        if (item) {
+                            setActiveContractId(contractParam);
+                            if (item.contractStatus === 'signed') setActiveView('audit_trail');
+                            else if (item.contractStatus === 'sent') setActiveView('client_sign');
+                        }
+                    }
+                    setHasRouted(true);
+                }
+            }, [ledgerData, hasRouted]);
+
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            // Combine Profile data with Contract Status
+            const ledgerData = useMemo(() => {
+                return profiles.map(profile => {
+                    const contract = contracts.find(c => c.profileId === profile.id);
+                    return {
+                        profileId: profile.id,
+                        clientCompany: profile.clientCompany || 'Unknown Client',
+                        quoteId: profile.quoteId || 'N/A',
+                        contractStatus: contract ? contract.status : 'draft',
+                        signedAt: contract?.signedAt || null,
+                        contractId: contract?.id || null,
+                        tasks: profile.tasks || [],
+                        contractData: contract || null
+                    };
+                }).sort((a, b) => {
+                    // Sort Signed -> Sent -> Draft
+                    const statusWeight = { 'signed': 1, 'sent': 2, 'draft': 3 };
+                    return statusWeight[a.contractStatus] - statusWeight[b.contractStatus];
+                });
+            }, [profiles, contracts]);
+
+            const activeLedgerItem = useMemo(() => ledgerData.find(item => item.profileId === activeContractId), [ledgerData, activeContractId]);
+            const activeProfileObj = useMemo(() => profiles.find(p => p.id === activeContractId), [profiles, activeContractId]);
+
+            // Accurately calculate the final SOW cost matching the Internal Workbook formulas
+            const calculateCost = (profile) => {
+                if (!profile || !profile.tasks) return 0;
+                const tasks = profile.tasks.filter(t => t.selected);
+                const frictionBuffer = profile.frictionBuffer || 0;
+                const discountPercent = profile.discountPercent || 0;
+                const includeTax = profile.includeTax || false;
+
+                const bufferMultiplier = 1 + (frictionBuffer / 100);
+                
+                const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
+
+                let projectBase = 0;
+                let retainerBase = 0;
+
+                tasks.forEach(t => {
+                    if (t.isMonthlyRetainer) {
+                        retainerBase += (t.estHours || 0) * getRate(t.tier);
+                    } else {
+                        projectBase += (t.estHours || 0) * getRate(t.tier);
+                    }
+                });
+
+                projectBase = Math.round(projectBase * bufferMultiplier);
+                retainerBase = Math.round(retainerBase * bufferMultiplier);
+
+                const discountedProject = Math.round(projectBase * (1 - discountPercent / 100));
+                const discountedRetainer = Math.round(retainerBase * (1 - discountPercent / 100));
+
+                const subtotal = discountedProject + discountedRetainer;
+                const tax = includeTax ? Math.round(subtotal * 0.12) : 0;
+
+                return subtotal + tax;
+            };
+
+            // --- ADMIN ACTIONS ---
+            const copyLink = (profileId) => {
+                const baseUrl = window.location.href.split('?')[0];
+                const link = `${baseUrl}?contract=${profileId}`;
+                
+                // Fallback for iFrames
+                const el = document.createElement('textarea');
+                el.value = link;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                showToast("Secure Client Link Copied!");
+            };
+
+            const generateSigningLink = async (profileId) => {
+                setIsProcessing(true);
+                try {
+                    const contractId = `contract-${Date.now()}`;
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'contracts_ledger', contractId);
+                    
+                    await window.setDoc(docRef, {
+                        id: contractId,
+                        profileId: profileId,
+                        status: 'sent',
+                        generatedAt: new Date().toISOString(),
+                        auditTrail: [{ action: 'Document Generated & Link Sent', timestamp: new Date().toISOString() }]
+                    });
+
+                    copyLink(profileId);
+                } catch (e) {
+                    console.error("Error generating link:", e);
+                }
+                setIsProcessing(false);
+            };
+
+            const executeResetContract = async (contractId) => {
+                setIsProcessing(true);
+                try {
+                    await window.deleteDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'contracts_ledger', contractId));
+                    showToast("Contract reset to Draft. Previous link invalidated.");
+                } catch (e) {
+                    console.error("Error resetting contract:", e);
+                    showToast("Error resetting contract.");
+                }
+                setContractToReset(null);
+                setIsProcessing(false);
+            };
+
+            // --- CLIENT SIGNING ACTIONS ---
+            const handleClientSign = async () => {
+                if (!signatureName.trim() || !hasAcceptedTerms || !activeLedgerItem || !activeLedgerItem.contractData) return;
+                
+                setIsProcessing(true);
+                try {
+                    const contractId = activeLedgerItem.contractData.id;
+                    const db = window.firebaseDb;
+                    const contractRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'contracts_ledger', contractId);
+                    
+                    const timestamp = new Date().toISOString();
+                    const simulatedIp = `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+
+                    const newAuditTrail = [
+                        ...(activeLedgerItem.contractData.auditTrail || []),
+                        { action: 'Document Viewed by Client', timestamp: new Date(Date.now() - 60000).toISOString() }, // Simulating a minute ago
+                        { action: `E-Signed by ${signatureName} (IP: ${simulatedIp})`, timestamp: timestamp }
+                    ];
+
+                    await window.setDoc(contractRef, {
+                        status: 'signed',
+                        signedAt: timestamp,
+                        signedBy: signatureName,
+                        ipAddress: simulatedIp,
+                        auditTrail: newAuditTrail
+                    }, { merge: true });
+
+                    // Auto-update CRM Deal to Won
+                    const deal = crmDeals.find(d => d.company === activeLedgerItem.clientCompany || d.leadName === activeLedgerItem.clientCompany);
+                    if (deal) {
+                        const dealRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'crm_deals', deal.id);
+                        await window.setDoc(dealRef, {
+                            status: 'Won',
+                            pipelineStatus: 'Closed Won/Lost'
+                        }, { merge: true });
+                    }
+
+                    showToast("Contract Successfully Executed!");
+                    setActiveView('audit_trail');
+                } catch (e) {
+                    console.error("Signing Error:", e);
+                    showToast("Error processing signature.");
+                }
+                setIsProcessing(false);
+            };
+
+            // ---------------------------------------------------------
+            // RENDER BLOCKS
+            // ---------------------------------------------------------
+
+            if (activeView === 'client_sign' && activeProfileObj) {
+                const totalCost = calculateCost(activeProfileObj);
+                const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
+
+                return (
+                    <div className="min-h-screen client-gradient text-slate-900 font-sans p-4 md:p-8 overflow-y-auto">
+                        <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden relative print:shadow-none print:border-none">
+                            
+                            <div className="bg-brandNavy-955 p-6 md:p-10 text-white flex justify-between items-center no-print">
+                                <div>
+                                    <h1 className="text-2xl font-serif font-bold tracking-wide">Kolthoff Consulting</h1>
+                                    <p className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase mt-1">Official Scope of Work Agreement</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs text-slate-400 font-mono">Ref: {activeProfileObj.quoteId}</p>
+                                    <p className="text-xs text-slate-400 font-mono mt-0.5">Date: {new Date().toLocaleDateString()}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-8 md:p-12 space-y-8">
+                                <div className="border-b-2 border-brandTeal-500 pb-6 mb-8">
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For</p>
+                                    <h2 className="text-2xl font-bold text-slate-900">{activeProfileObj.clientCompany}</h2>
+                                    <p className="text-sm text-slate-600 mt-1">Attention: {activeProfileObj.clientRep}</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
+                                    <div className="space-y-3">
+                                        {selectedTasks.map(task => (
+                                            <div key={task.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                                <div className="font-bold text-slate-900 text-sm">{task.deliverable}</div>
+                                                <p className="text-xs text-slate-600 mt-1">{task.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">2. Commercial Terms</h3>
+                                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 flex justify-between items-center">
+                                        <span className="font-bold text-slate-700">Total Project Investment (Base Estimate):</span>
+                                        <span className="text-xl font-bold font-mono text-brandTeal-700">{formatCurrency(totalCost)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">3. Standard Legal Terms</h3>
+                                    <p>1. <strong>Confidentiality:</strong> Both parties agree to maintain strict confidentiality regarding proprietary processes, pricing, and business data shared during this engagement.</p>
+                                    <p>2. <strong>Intellectual Property:</strong> Upon final payment, {activeProfileObj.clientCompany} receives a permanent, royalty-free license to use all custom systems and operational playbooks delivered.</p>
+                                    <p>3. <strong>E-Signature Validity:</strong> By signing below, you agree that your electronic signature carries the same legal weight as a physical signature under the Electronic Commerce Act of the Philippines (RA 8792).</p>
+                                </div>
+
+                                {/* Signature Block */}
+                                <div className="mt-12 bg-slate-100 p-8 rounded-xl border border-slate-300 no-print">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2">
+                                        <Icons.FileSignature /> Execute Agreement
+                                    </h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-700 mb-2">Type your full legal name to sign:</label>
+                                            <input 
+                                                type="text" 
+                                                value={signatureName}
+                                                onChange={e => setSignatureName(e.target.value)}
+                                                placeholder="e.g. Juan Dela Cruz"
+                                                className="w-full bg-white border-2 border-slate-300 rounded-lg p-4 text-lg focus:outline-none focus:border-brandTeal-500 transition-colors"
+                                            />
+                                        </div>
+
+                                        {/* Simulated Signature Display */}
+                                        <div className="h-24 bg-white border border-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden">
+                                            <span className="absolute top-2 left-2 text-[9px] font-mono text-slate-400 uppercase">E-Signature Preview</span>
+                                            {signatureName ? (
+                                                <span className="font-signature text-5xl text-slate-800">{signatureName}</span>
+                                            ) : (
+                                                <span className="text-slate-300 italic text-sm">Awaiting signature input...</span>
+                                            )}
+                                        </div>
+
+                                        <label className="flex items-start gap-3 cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={hasAcceptedTerms}
+                                                onChange={e => setHasAcceptedTerms(e.target.checked)}
+                                                className="mt-1 w-5 h-5 accent-brandTeal-600 cursor-pointer"
+                                            />
+                                            <span className="text-xs text-slate-700 leading-snug font-medium">
+                                                I, <strong>{signatureName || "[Signatory]"}</strong>, am an authorized representative of <strong>{activeProfileObj.clientCompany}</strong>. I have read, understood, and agree to be legally bound by the terms and conditions outlined in this Scope of Work.
+                                            </span>
+                                        </label>
+
+                                        <div className="flex gap-4 pt-4 border-t border-slate-300">
+                                            {!isClientMode && (
+                                                <button onClick={() => {setActiveView('ledger'); setSignatureName(''); setHasAcceptedTerms(false);}} className="px-6 py-3 bg-white border border-slate-300 text-slate-700 font-bold rounded-lg text-xs uppercase tracking-wider hover:bg-slate-50 transition-colors">
+                                                    Cancel (Admin)
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={handleClientSign}
+                                                disabled={!signatureName.trim() || !hasAcceptedTerms || isProcessing}
+                                                className="flex-1 py-3 bg-brandTeal-600 text-white font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg hover:bg-brandTeal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            >
+                                                <Icons.CheckCircle /> {isProcessing ? "Processing..." : "Sign & Accept Contract"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (activeView === 'audit_trail' && activeLedgerItem && activeLedgerItem.contractData) {
+                const contract = activeLedgerItem.contractData;
+                return (
+                    <div className="flex h-screen overflow-hidden font-sans">
+                        {!isClientMode && (
+                            <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                                <div className="p-6 border-b border-brandNavy-800">
+                                    <div className="flex items-center gap-3">
+                                        <Icons.ShieldCheck />
+                                        <div>
+                                            <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                            <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Immutable Ledger</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <nav className="p-4 space-y-2">
+                                    <button onClick={() => setActiveView('ledger')} className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all hover:bg-brandNavy-800 text-slate-400 hover:text-white">
+                                        ← Back to Ledger
+                                    </button>
+                                </nav>
+                            </aside>
+                        )}
+                        
+                        <main className="flex-1 overflow-y-auto bg-brandNavy-900/40 p-8">
+                            <div className="max-w-4xl mx-auto space-y-6">
+                                <div className="glass-panel p-6 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-emerald-500">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white uppercase tracking-wider font-serif">Legally Executed Contract</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-mono">Ref: {activeLedgerItem.quoteId}</p>
+                                    </div>
+                                    <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
+                                        <Icons.CheckCircle /> Verified & Locked
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="glass-panel p-6 rounded-xl space-y-4">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-brandNavy-700 pb-2">Signatory Details</h4>
+                                        <div>
+                                            <p className="text-[10px] font-mono text-slate-500 uppercase">Entity</p>
+                                            <p className="font-bold text-white text-lg">{activeLedgerItem.clientCompany}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-mono text-slate-500 uppercase">Authorized Signatory</p>
+                                            <p className="font-bold text-white text-lg">{contract.signedBy}</p>
+                                        </div>
+                                        <div className="h-20 bg-white/5 border border-brandNavy-700 rounded-lg flex items-center justify-center overflow-hidden">
+                                            <span className="font-signature text-4xl text-brandTeal-400 opacity-80">{contract.signedBy}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-panel p-6 rounded-xl space-y-4">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-brandNavy-700 pb-2">Cryptographic Audit Trail</h4>
+                                        <div className="space-y-4">
+                                            {contract.auditTrail.map((event, i) => (
+                                                <div key={i} className="flex gap-4 relative">
+                                                    {i !== contract.auditTrail.length - 1 && <div className="absolute left-2 top-6 w-0.5 h-full bg-brandNavy-700"></div>}
+                                                    <div className="w-4 h-4 rounded-full bg-brandNavy-800 border-2 border-brandTeal-500 mt-1 shrink-0 z-10"></div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-slate-200">{event.action}</p>
+                                                        <p className="text-[10px] font-mono text-slate-500">{new Date(event.timestamp).toLocaleString()}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans">
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed top-6 right-6 z-50 bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 animate-fade-in font-bold text-xs">
+                            <Icons.CheckCircle /> {toast}
+                        </div>
+                    )}
+
+                    {/* Reset Confirmation Modal */}
+                    {contractToReset && (
+                        <div className="fixed inset-0 bg-brandNavy-955/80 z-[1000] backdrop-blur-sm flex items-center justify-center p-4 no-print animate-fade-in">
+                            <div className="bg-brandNavy-900 border border-rose-900/40 p-6 rounded-xl max-w-md w-full text-center shadow-2xl">
+                                <h4 className="font-extrabold text-slate-200 text-sm uppercase tracking-wider mb-2">Confirm Reset Contract?</h4>
+                                <p className="text-[11px] text-slate-400 mb-4">This will permanently delete the current contract, invalidate any existing links, and clear the audit trail for <strong className="text-white">{contractToReset.clientCompany}</strong>.</p>
+                                <div className="flex justify-center gap-3">
+                                    <button onClick={() => executeResetContract(contractToReset.contractId)} disabled={isProcessing} className="px-4 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg uppercase disabled:opacity-50">Yes, Reset to Draft</button>
+                                    <button onClick={() => setContractToReset(null)} disabled={isProcessing} className="px-4 py-2 bg-brandNavy-955 text-slate-300 border border-brandNavy-700 text-xs font-bold rounded-lg uppercase hover:bg-brandNavy-800 disabled:opacity-50 transition-colors">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SIDEBAR NAVIGATION */}
+                    <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                        <div className="p-6 border-b border-brandNavy-800">
+                            <div className="flex items-center gap-3">
+                                <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round" />
+                                    <path d="M36 50 L46 60 L66 36" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <div>
+                                    <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                    <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Contract Ledger</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 flex-1 overflow-y-auto">
+                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-3 px-2">Ledger Operations</p>
+                            <nav className="space-y-2">
+                                <button onClick={() => setActiveView('ledger')} className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all bg-brandTeal-500 text-brandNavy-955 shadow-lg">
+                                    <Icons.FileSignature /> Master Contract List
+                                </button>
+                            </nav>
+
+                            <div className="mt-8 px-2">
+                                <div className="bg-brandNavy-900 border border-brandNavy-700 p-4 rounded-xl text-center">
+                                    <Icons.ShieldCheck />
+                                    <h4 className="text-xs font-bold text-white mt-2 mb-1">EOPT & RA 8792 Compliant</h4>
+                                    <p className="text-[9px] text-slate-400 leading-relaxed">Signatures collected via this ledger carry full legal weight under the PH Electronic Commerce Act.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
+                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold text-white font-serif tracking-wide">Secure E-Signature Ledger</h2>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Tracking generated SOWs and contract execution status.</p>
+                            </div>
+                        </header>
+
+                        <div className="p-8 max-w-6xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                <div className="glass-panel p-5 rounded-xl border-t-2 border-t-slate-500">
+                                    <p className="text-[10px] font-mono uppercase font-bold text-slate-400 mb-1">Draft SOWs</p>
+                                    <p className="text-2xl font-bold font-mono text-white">{ledgerData.filter(d => d.contractStatus === 'draft').length}</p>
+                                </div>
+                                <div className="glass-panel p-5 rounded-xl border-t-2 border-t-brandAmber-500">
+                                    <p className="text-[10px] font-mono uppercase font-bold text-brandAmber-400 mb-1">Pending Signature</p>
+                                    <p className="text-2xl font-bold font-mono text-brandAmber-400">{ledgerData.filter(d => d.contractStatus === 'sent').length}</p>
+                                </div>
+                                <div className="glass-panel p-5 rounded-xl border-t-2 border-t-emerald-500 bg-emerald-950/10">
+                                    <p className="text-[10px] font-mono uppercase font-bold text-emerald-500 mb-1">Legally Executed</p>
+                                    <p className="text-2xl font-bold font-mono text-emerald-500">{ledgerData.filter(d => d.contractStatus === 'signed').length}</p>
+                                </div>
+                            </div>
+
+                            <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                <table className="w-full text-left border-collapse text-xs">
+                                    <thead className="bg-brandNavy-950">
+                                        <tr className="text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                            <th className="p-4 w-[25%]">Client Entity</th>
+                                            <th className="p-4 w-[20%]">SOW Reference</th>
+                                            <th className="p-4 w-[15%] text-center">Value (Est)</th>
+                                            <th className="p-4 text-center">Status</th>
+                                            <th className="p-4 text-right">Ledger Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-brandNavy-800/50">
+                                        {ledgerData.map(item => {
+                                            let statusBadge = "";
+                                            if (item.contractStatus === 'draft') statusBadge = <span className="bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">Draft / Internal</span>;
+                                            else if (item.contractStatus === 'sent') statusBadge = <span className="bg-brandAmber-500/10 text-brandAmber-400 border border-brandAmber-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">Sent (Awaiting)</span>;
+                                            else if (item.contractStatus === 'signed') statusBadge = <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 w-max mx-auto"><Icons.CheckCircle /> Executed</span>;
+
+                                            const profileData = profiles.find(p => p.id === item.profileId);
+                                            const estValue = calculateCost(profileData);
+
+                                            return (
+                                                <tr key={item.profileId} className="hover:bg-brandNavy-800/30 transition-colors group">
+                                                    <td className="p-4 font-bold text-slate-200">{item.clientCompany}</td>
+                                                    <td className="p-4 text-[10px] font-mono text-slate-400">{item.quoteId}</td>
+                                                    <td className="p-4 text-center font-mono font-bold text-brandTeal-400">{formatCurrency(estValue)}</td>
+                                                    <td className="p-4 text-center">{statusBadge}</td>
+                                                    <td className="p-4 text-right space-x-2">
+                                                        {item.contractStatus === 'draft' && (
+                                                            <button 
+                                                                onClick={() => generateSigningLink(item.profileId)} 
+                                                                disabled={isProcessing}
+                                                                className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-[10px] font-bold transition-colors uppercase tracking-wider inline-flex items-center shadow-lg disabled:opacity-50"
+                                                            >
+                                                                <Icons.Link /> Generate E-Sign Link
+                                                            </button>
+                                                        )}
+                                                        {item.contractStatus === 'sent' && (
+                                                            <>
+                                                                <button onClick={() => { setActiveContractId(item.profileId); setActiveView('client_sign'); }} className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandTeal-500 border border-brandNavy-600 hover:border-brandTeal-400 rounded text-[10px] font-bold text-white transition-colors uppercase tracking-wider inline-flex items-center">
+                                                                    <Icons.Eye /> Test Client View
+                                                                </button>
+                                                                <button onClick={() => copyLink(item.profileId)} className="p-1.5 text-slate-400 hover:text-white rounded transition-colors inline-flex align-middle" title="Copy Link Again">
+                                                                    <Icons.Link />
+                                                                </button>
+                                                                <button onClick={() => setContractToReset(item)} className="p-1.5 text-rose-500 hover:text-rose-400 rounded transition-colors inline-flex align-middle" title="Reset & Revoke Link">
+                                                                    <Icons.Reset />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {item.contractStatus === 'signed' && (
+                                                            <>
+                                                                <button onClick={() => { setActiveContractId(item.profileId); setActiveView('audit_trail'); }} className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-400 rounded text-[10px] font-bold transition-colors uppercase tracking-wider inline-flex items-center shadow-lg">
+                                                                    View Audit Trail →
+                                                                </button>
+                                                                <button onClick={() => setContractToReset(item)} className="p-1.5 text-rose-500 hover:text-rose-400 rounded transition-colors inline-flex align-middle" title="Reset & Revoke Contract">
+                                                                    <Icons.Reset />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                        {ledgerData.length === 0 && (
+                                            <tr><td colSpan="5" className="p-8 text-center text-slate-500 italic">No generated SOWs found in the Internal Workbook.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
