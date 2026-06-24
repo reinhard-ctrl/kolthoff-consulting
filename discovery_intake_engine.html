@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Intake Engine | Kolthoff OS</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <!-- Firebase Module Initialization -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
+            authDomain: "kolthoff-portal.firebaseapp.com",
+            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kolthoff-portal",
+            storageBucket: "kolthoff-portal.firebasestorage.app",
+            messagingSenderId: "413958125034",
+            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        
+        window.appId = appId;
+        window.initialAuthToken = initialAuthToken;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+    </script>
+
+    <!-- React, ReactDOM, Babel CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+        .client-gradient { background: radial-gradient(circle at top left, #0F1A2C 0%, #02050e 100%); }
+    </style>
+</head>
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icons = {
+            Inbox: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>,
+            Database: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Send: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+            Link: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+            Eye: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Check: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+            Tool: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        };
+
+        // Templates that map directly to the Delivery Suite schemas
+        const TEMPLATES = [
+            {
+                id: 'tmpl-saas',
+                title: 'Software & SaaS Inventory',
+                description: 'Please list all the software tools, subscriptions, and digital services your company currently pays for.',
+                mappedTarget: 'subSaaS', // Maps to the subSaaS array in workbook_profiles
+                fields: [
+                    { name: 'tool', label: 'Software / Tool Name', type: 'text', placeholder: 'e.g., Zoom, Canva, HubSpot' },
+                    { name: 'billing', label: 'Monthly Cost (PHP)', type: 'number', placeholder: 'e.g., 1400' },
+                    { name: 'users', label: 'Active Users/Seats', type: 'number', placeholder: 'e.g., 5' },
+                    { name: 'reason', label: 'Primary Use Case', type: 'text', placeholder: 'e.g., Video calls with clients' }
+                ]
+            },
+            {
+                id: 'tmpl-roster',
+                title: 'Employee Roster & Roles',
+                description: 'Please provide a basic list of your active team members to help us map the current organizational chart.',
+                mappedTarget: 'roles', // Maps to the roles array in workbook_profiles
+                fields: [
+                    { name: 'owner', label: 'Employee Name', type: 'text', placeholder: 'e.g., Juan Dela Cruz' },
+                    { name: 'role', label: 'Job Title / Position', type: 'text', placeholder: 'e.g., Warehouse Manager' }
+                ]
+            }
+        ];
+
+        function App() {
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'builder', 'clientView', 'review'
+            
+            const [profiles, setProfiles] = useState([]);
+            const [intakeForms, setIntakeForms] = useState([]);
+            const [activeFormId, setActiveFormId] = useState(null);
+            
+            const [toast, setToast] = useState(null);
+            const [isSyncing, setIsSyncing] = useState(false);
+
+            // Form Builder State
+            const [customTemplates, setCustomTemplates] = useState([]);
+            const [builderTitle, setBuilderTitle] = useState('');
+            const [builderDesc, setBuilderDesc] = useState('');
+            const [builderTarget, setBuilderTarget] = useState('customAssets');
+            const [builderFields, setBuilderFields] = useState([]);
+
+            // Client View (Simulated) State
+            const [clientResponses, setClientResponses] = useState([]);
+
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                                setIsAuthed(true);
+
+                                // Fetch Client Profiles
+                                const profilesRef = window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles');
+                                window.onSnapshot(profilesRef, (snap) => {
+                                    const fetchedProfiles = [];
+                                    snap.forEach(doc => fetchedProfiles.push({ id: doc.id, ...doc.data() }));
+                                    setProfiles(fetchedProfiles);
+                                }, console.error);
+
+                                // Fetch Intake Forms
+                                const formsRef = window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms');
+                                window.onSnapshot(formsRef, (snap) => {
+                                    const fetchedForms = [];
+                                    snap.forEach(doc => fetchedForms.push({ id: doc.id, ...doc.data() }));
+                                    setIntakeForms(fetchedForms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+                                }, console.error);
+
+                                // Fetch Custom Templates
+                                const templatesRef = window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_templates');
+                                window.onSnapshot(templatesRef, (snap) => {
+                                    const fetchedTmpls = [];
+                                    snap.forEach(doc => fetchedTmpls.push({ id: doc.id, ...doc.data() }));
+                                    setCustomTemplates(fetchedTmpls);
+                                }, console.error);
+
+                            } catch (e) {
+                                console.error("Firebase Auth Error:", e);
+                            }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const activeForm = useMemo(() => intakeForms.find(f => f.id === activeFormId), [intakeForms, activeFormId]);
+            const activeProfile = useMemo(() => activeForm ? profiles.find(p => p.id === activeForm?.profileId) : null, [activeForm, profiles]);
+
+            const allTemplates = useMemo(() => [...TEMPLATES, ...customTemplates], [customTemplates]);
+
+            // Create a new intake request from a template
+            const createIntakeRequest = async (profileId, template) => {
+                if (!isAuthed) return;
+                const formId = `intake-${Date.now()}`;
+                const newForm = {
+                    id: formId,
+                    profileId: profileId,
+                    title: template.title,
+                    description: template.description,
+                    mappedTarget: template.mappedTarget,
+                    fields: template.fields,
+                    responses: [], // Will hold the array of submitted rows
+                    status: 'pending', // pending, completed, synced
+                    createdAt: new Date().toISOString()
+                };
+
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', formId);
+                    await window.setDoc(docRef, newForm);
+                    showToast("Intake Request Generated.");
+                } catch(e) {
+                    console.error("Error creating form:", e);
+                }
+            };
+
+            // Admin deletes a form
+            const deleteIntakeRequest = async (formId) => {
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', formId);
+                    await window.deleteDoc(docRef);
+                    if (activeFormId === formId) setActiveView('dashboard');
+                } catch(e) {
+                    console.error("Error deleting form:", e);
+                }
+            };
+
+            // Form Builder Functions
+            const addBuilderField = () => setBuilderFields([...builderFields, { id: Date.now(), label: '', type: 'text', placeholder: '' }]);
+            const removeBuilderField = (id) => setBuilderFields(builderFields.filter(f => f.id !== id));
+            const updateBuilderField = (id, key, val) => setBuilderFields(builderFields.map(f => f.id === id ? { ...f, [key]: val } : f));
+            
+            const saveCustomTemplate = async () => {
+                if (!builderTitle.trim()) return showToast("Template Title is required.");
+                if (builderFields.length === 0) return showToast("At least one field is required.");
+                
+                setIsSyncing(true);
+                try {
+                    const cleanFields = builderFields.map((f, i) => ({
+                        name: f.label.trim().replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || `field_${i}`,
+                        label: f.label || `Field ${i+1}`,
+                        type: f.type,
+                        placeholder: f.placeholder
+                    }));
+                    
+                    const newTmpl = {
+                        title: builderTitle,
+                        description: builderDesc,
+                        mappedTarget: builderTarget,
+                        fields: cleanFields,
+                        isCustom: true,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_templates', `tmpl-${Date.now()}`);
+                    await window.setDoc(docRef, newTmpl);
+                    
+                    showToast("Custom Template Saved!");
+                    setActiveView('dashboard');
+                    setBuilderTitle(''); setBuilderDesc(''); setBuilderFields([]); setBuilderTarget('customAssets');
+                } catch(e) {
+                    console.error("Save template error:", e);
+                }
+                setIsSyncing(false);
+            };
+
+            const deleteCustomTemplate = async (tmplId, e) => {
+                e.stopPropagation();
+                try {
+                    await window.deleteDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_templates', tmplId));
+                    showToast("Template deleted.");
+                } catch(err) {
+                    console.error("Delete template error:", err);
+                }
+            };
+
+            // Copy Link to clipboard (Simulation)
+            const copyLink = (formId) => {
+                // In a real app, this would be a URL with ?formId=xxx
+                navigator.clipboard.writeText(`https://kolthoff.app/intake/${formId}`)
+                    .then(() => showToast("Client Link Copied to Clipboard!"))
+                    .catch(() => {
+                        // Fallback for iframes
+                        const el = document.createElement('textarea');
+                        el.value = `https://kolthoff.app/intake/${formId}`;
+                        document.body.appendChild(el);
+                        el.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(el);
+                        showToast("Client Link Copied to Clipboard!");
+                    });
+            };
+
+            // ---------------------------------------------------------
+            // CLIENT VIEW LOGIC (Simulated Client Interaction)
+            // ---------------------------------------------------------
+            const openClientView = (form) => {
+                setActiveFormId(form.id);
+                // Pre-fill responses if it already has some, otherwise provide one empty row
+                if (form.responses && form.responses.length > 0) {
+                    setClientResponses(form.responses);
+                } else {
+                    const emptyRow = { rowId: Date.now() };
+                    form.fields.forEach(f => emptyRow[f.name] = '');
+                    setClientResponses([emptyRow]);
+                }
+                setActiveView('clientView');
+            };
+
+            const handleClientRowChange = (rowId, fieldName, value) => {
+                setClientResponses(prev => prev.map(row => 
+                    row.rowId === rowId ? { ...row, [fieldName]: value } : row
+                ));
+            };
+
+            const addClientRow = () => {
+                const emptyRow = { rowId: Date.now() };
+                activeForm.fields.forEach(f => emptyRow[f.name] = '');
+                setClientResponses(prev => [...prev, emptyRow]);
+            };
+
+            const removeClientRow = (rowId) => {
+                setClientResponses(prev => prev.filter(r => r.rowId !== rowId));
+            };
+
+            const submitClientForm = async () => {
+                setIsSyncing(true);
+                try {
+                    // Clean up rowId before saving
+                    const cleanResponses = clientResponses.map(r => {
+                        const { rowId, ...rest } = r;
+                        // Give it an id that matches Delivery Suite schema standards
+                        return { id: Date.now() + Math.random().toString().substr(2, 5), ...rest };
+                    });
+
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', activeForm.id);
+                    await window.setDoc(docRef, { 
+                        responses: cleanResponses,
+                        status: 'completed'
+                    }, { merge: true });
+                    
+                    showToast("Form successfully submitted.");
+                    setActiveView('dashboard'); // Return admin to dashboard
+                } catch(e) {
+                    console.error("Submit error:", e);
+                }
+                setIsSyncing(false);
+            };
+
+            // ---------------------------------------------------------
+            // ADMIN REVIEW & SYNC TO DELIVERY SUITE
+            // ---------------------------------------------------------
+            const syncToDeliverySuite = async () => {
+                if (!activeForm || !activeProfile) return;
+                setIsSyncing(true);
+                try {
+                    // 1. We update the workbook_profile with the mapped target array
+                    const targetField = activeForm.mappedTarget; // e.g., 'subSaaS' or 'roles'
+                    const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfile.id);
+                    
+                    // Fetch existing profile to merge or replace array safely
+                    const profileSnap = await window.getDoc(profileRef);
+                    if (profileSnap.exists()) {
+                        const profileData = profileSnap.data();
+                        
+                        // We will replace the target array with the new intake data
+                        // For numerical fields like billing/users, we should parse them
+                        const formattedResponses = activeForm.responses.map(r => {
+                            const formatted = { ...r };
+                            activeForm.fields.forEach(f => {
+                                if (f.type === 'number') {
+                                    formatted[f.name] = Number(formatted[f.name]) || 0;
+                                }
+                            });
+                            return formatted;
+                        });
+
+                        await window.setDoc(profileRef, {
+                            [targetField]: formattedResponses
+                        }, { merge: true });
+
+                        // 2. Mark intake form as synced
+                        const formRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', activeForm.id);
+                        await window.setDoc(formRef, { status: 'synced' }, { merge: true });
+
+                        showToast(`Successfully synced data into ${targetField} inside the Delivery Suite.`);
+                        setActiveView('dashboard');
+                    }
+                } catch(e) {
+                    console.error("Sync error:", e);
+                    showToast("Error syncing to Delivery Suite.");
+                }
+                setIsSyncing(false);
+            };
+
+
+            // ---------------------------------------------------------
+            // RENDER BLOCKS
+            // ---------------------------------------------------------
+
+            if (activeView === 'clientView' && activeForm) {
+                return (
+                    <div className="min-h-screen client-gradient text-slate-200 font-sans p-6 md:p-12 overflow-y-auto">
+                        <div className="max-w-4xl mx-auto bg-brandNavy-950/80 backdrop-blur-md border border-brandNavy-800 rounded-2xl shadow-2xl p-8 md:p-12 relative">
+                            {/* Branding Header */}
+                            <div className="flex justify-center mb-8">
+                                <div className="w-12 h-12 rounded-xl bg-brandTeal-500/10 border border-brandTeal-500/30 flex items-center justify-center text-brandTeal-400">
+                                    <svg className="w-6 h-6 stroke-current text-brandTeal-500" viewBox="0 0 100 100" fill="none" strokeWidth="6" strokeLinejoin="round">
+                                        <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z"/>
+                                        <path d="M36 50 L46 60 L66 36" strokeWidth="8" strokeLinecap="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <div className="text-center border-b border-brandNavy-800 pb-8 mb-8">
+                                <h1 className="text-3xl font-serif font-bold text-white mb-3">{activeForm.title}</h1>
+                                <p className="text-slate-400 text-sm max-w-2xl mx-auto leading-relaxed">{activeForm.description}</p>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Dynamic Rows */}
+                                {clientResponses.map((row, idx) => (
+                                    <div key={row.rowId} className="bg-brandNavy-900/50 border border-brandNavy-700/50 rounded-xl p-6 relative group">
+                                        <div className="absolute -top-3 left-4 bg-brandNavy-950 border border-brandNavy-700 px-2 py-0.5 rounded text-[10px] font-mono text-brandTeal-400 font-bold uppercase tracking-wider">
+                                            Item {idx + 1}
+                                        </div>
+                                        {clientResponses.length > 1 && (
+                                            <button onClick={() => removeClientRow(row.rowId)} className="absolute top-4 right-4 text-rose-500/50 hover:text-rose-400 transition-colors">
+                                                <Icons.Trash />
+                                            </button>
+                                        )}
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                                            {activeForm.fields.map(field => (
+                                                <div key={field.name} className={field.type === 'text' ? 'lg:col-span-2' : ''}>
+                                                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">{field.label}</label>
+                                                    <input 
+                                                        type={field.type === 'number' ? 'number' : 'text'} 
+                                                        value={row[field.name]}
+                                                        onChange={(e) => handleClientRowChange(row.rowId, field.name, e.target.value)}
+                                                        placeholder={field.placeholder}
+                                                        className="w-full bg-brandNavy-955 border border-brandNavy-800 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brandTeal-500 transition-colors"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button onClick={addClientRow} className="w-full py-4 border-2 border-dashed border-brandNavy-700 hover:border-brandTeal-500/50 text-slate-400 hover:text-brandTeal-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2">
+                                    <Icons.Plus /> Add Another Item
+                                </button>
+                            </div>
+
+                            <div className="mt-12 pt-8 border-t border-brandNavy-800 flex justify-between items-center">
+                                <p className="text-[10px] text-slate-500 italic">Protected by Kolthoff Consulting Secure Intake</p>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setActiveView('dashboard')} className="px-6 py-3 bg-brandNavy-800 text-slate-300 font-bold rounded-lg text-xs uppercase tracking-wider hover:bg-brandNavy-700 transition-colors">
+                                        Cancel (Admin)
+                                    </button>
+                                    <button onClick={submitClientForm} disabled={isSyncing} className="px-8 py-3 bg-brandTeal-500 text-brandNavy-955 font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg hover:bg-brandTeal-400 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                        <Icons.Check /> {isSyncing ? "Submitting..." : "Submit Securely"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans">
+                    
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed top-6 right-6 z-50 bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 animate-fade-in font-bold text-xs">
+                            <Icons.Check /> {toast}
+                        </div>
+                    )}
+
+                    {/* SIDEBAR NAVIGATION */}
+                    <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                        <div className="p-6 border-b border-brandNavy-800">
+                            <div className="flex items-center gap-3">
+                                <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round" />
+                                    <path d="M36 50 L46 60 L66 36" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <div>
+                                    <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                    <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Discovery Engine</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 flex-1 overflow-y-auto">
+                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-3 px-2">Data Operations</p>
+                            <nav className="space-y-2">
+                                <button onClick={() => setActiveView('dashboard')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'dashboard' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}>
+                                    <Icons.Inbox /> Active Forms & Sync
+                                </button>
+                                <button onClick={() => setActiveView('builder')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'builder' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}>
+                                    <Icons.Tool /> Form Builder
+                                </button>
+                            </nav>
+
+                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mt-8 mb-3 px-2">Launch New Template</p>
+                            <div className="space-y-3 px-2">
+                                <div>
+                                    <label className="text-[10px] text-slate-400 block mb-1">Target Client SOW</label>
+                                    <select id="sidebarProfileSelect" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-brandTeal-500">
+                                        {profiles.map(p => <option key={p.id} value={p.id}>{p.clientCompany}</option>)}
+                                    </select>
+                                </div>
+                                
+                                {allTemplates.map(tmpl => (
+                                    <button 
+                                        key={tmpl.id}
+                                        onClick={() => {
+                                            const sel = document.getElementById('sidebarProfileSelect');
+                                            if (sel && sel.value) createIntakeRequest(sel.value, tmpl);
+                                        }}
+                                        className="w-full text-left bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/50 p-3 rounded-xl group transition-all relative"
+                                    >
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-200 group-hover:text-brandTeal-400 mb-1 pr-4">{tmpl.title}</div>
+                                        <p className="text-[9px] text-slate-500 leading-tight">Mapped to: <span className="font-mono bg-brandNavy-955 px-1 rounded">{tmpl.mappedTarget}</span></p>
+                                        {tmpl.isCustom && (
+                                            <div onClick={(e) => deleteCustomTemplate(tmpl.id, e)} className="absolute top-2 right-2 text-rose-500/50 hover:text-rose-400 p-1">
+                                                <Icons.Trash />
+                                            </div>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
+                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold text-white font-serif tracking-wide">
+                                    {activeView === 'dashboard' && 'Intake Control Center'}
+                                    {activeView === 'builder' && 'Form Template Builder'}
+                                    {activeView === 'review' && 'Data Review & Synchronization'}
+                                </h2>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Automated data collection for Delivery Suite integration</p>
+                            </div>
+                        </header>
+
+                        <div className="p-8 max-w-6xl mx-auto">
+                            {activeView === 'dashboard' && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                        <div className="glass-panel p-5 rounded-xl border-t-2 border-t-brandAmber-500">
+                                            <p className="text-[10px] font-mono uppercase font-bold text-slate-400 mb-1">Pending Client Action</p>
+                                            <p className="text-2xl font-bold font-mono text-white">{intakeForms.filter(f => f.status === 'pending').length}</p>
+                                        </div>
+                                        <div className="glass-panel p-5 rounded-xl border-t-2 border-t-brandTeal-500">
+                                            <p className="text-[10px] font-mono uppercase font-bold text-slate-400 mb-1">Ready for Sync</p>
+                                            <p className="text-2xl font-bold font-mono text-brandTeal-400">{intakeForms.filter(f => f.status === 'completed').length}</p>
+                                        </div>
+                                        <div className="glass-panel p-5 rounded-xl border-t-2 border-t-emerald-500 bg-emerald-950/10">
+                                            <p className="text-[10px] font-mono uppercase font-bold text-slate-400 mb-1">Successfully Mapped</p>
+                                            <p className="text-2xl font-bold font-mono text-emerald-500">{intakeForms.filter(f => f.status === 'synced').length}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                        <table className="w-full text-left border-collapse text-xs">
+                                            <thead className="bg-brandNavy-950">
+                                                <tr className="text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                                    <th className="p-4 w-[25%]">Target Client</th>
+                                                    <th className="p-4 w-[30%]">Intake Request Form</th>
+                                                    <th className="p-4 text-center">Status</th>
+                                                    <th className="p-4 text-right">Admin Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-brandNavy-800/50">
+                                                {intakeForms.map(form => {
+                                                    const client = profiles.find(p => p.id === form.profileId);
+                                                    
+                                                    let statusBadge = "";
+                                                    if (form.status === 'pending') statusBadge = <span className="bg-brandAmber-500/10 text-brandAmber-400 border border-brandAmber-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">Pending Client</span>;
+                                                    else if (form.status === 'completed') statusBadge = <span className="bg-brandTeal-500/10 text-brandTeal-400 border border-brandTeal-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">Awaiting Sync</span>;
+                                                    else if (form.status === 'synced') statusBadge = <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">Mapped</span>;
+
+                                                    return (
+                                                        <tr key={form.id} className="hover:bg-brandNavy-800/30 transition-colors group">
+                                                            <td className="p-4 font-bold text-slate-200">
+                                                                {client?.clientCompany || 'Unknown'}
+                                                            </td>
+                                                            <td className="p-4">
+                                                                <div className="font-bold text-white mb-1">{form.title}</div>
+                                                                <div className="text-[9px] font-mono text-slate-500">Maps to: {form.mappedTarget}</div>
+                                                            </td>
+                                                            <td className="p-4 text-center">
+                                                                {statusBadge}
+                                                            </td>
+                                                            <td className="p-4 text-right space-x-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                                {form.status === 'pending' && (
+                                                                    <>
+                                                                        <button onClick={() => copyLink(form.id)} className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 border border-brandNavy-600 rounded text-[10px] font-bold text-white transition-colors uppercase tracking-wider inline-flex items-center">
+                                                                            <Icons.Link /> Copy Link
+                                                                        </button>
+                                                                        <button onClick={() => openClientView(form)} className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandTeal-500 border border-brandNavy-600 hover:border-brandTeal-400 rounded text-[10px] font-bold text-white transition-colors uppercase tracking-wider inline-flex items-center">
+                                                                            <Icons.Eye /> Test View
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                {form.status === 'completed' && (
+                                                                    <button onClick={() => { setActiveFormId(form.id); setActiveView('review'); }} className="px-4 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-[10px] font-bold transition-colors uppercase tracking-wider inline-flex items-center shadow-lg">
+                                                                        Review & Sync Data →
+                                                                    </button>
+                                                                )}
+                                                                {form.status === 'synced' && (
+                                                                    <button onClick={() => { setActiveFormId(form.id); setActiveView('review'); }} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center">
+                                                                        View Synced Log
+                                                                    </button>
+                                                                )}
+                                                                <button onClick={() => deleteIntakeRequest(form.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/20 rounded transition-colors inline-flex align-middle">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                                {intakeForms.length === 0 && (
+                                                    <tr><td colSpan="4" className="p-8 text-center text-slate-500 italic">No intake forms generated. Select a template from the sidebar to begin.</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeView === 'builder' && (
+                                <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+                                    <div className="glass-panel p-6 rounded-2xl shadow-xl space-y-6 border-t-4 border-t-brandTeal-500">
+                                        <div className="border-b border-brandNavy-700 pb-4">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Create Custom Intake Template</h3>
+                                            <p className="text-[10px] text-slate-400 mt-1">Design a new form to capture dynamic data from your clients. Once saved, you can send it repeatedly.</p>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Template Title *</label>
+                                                <input type="text" value={builderTitle} onChange={e => setBuilderTitle(e.target.value)} placeholder="e.g. Asset Collection Form" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brandTeal-500 transition-colors" />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Description / Client Instructions</label>
+                                                <textarea value={builderDesc} onChange={e => setBuilderDesc(e.target.value)} rows="2" placeholder="e.g. Please provide the links to all current brand assets..." className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brandTeal-500 transition-colors resize-none"></textarea>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Target Mapping Array (Delivery Suite Integration)</label>
+                                                <select value={builderTarget} onChange={e => setBuilderTarget(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brandTeal-500 transition-colors">
+                                                    <option value="customAssets">customAssets (Generic Array)</option>
+                                                    <option value="assets">assets (Vault Links Array)</option>
+                                                    <option value="subSaaS">subSaaS (Software Audit Array)</option>
+                                                    <option value="roles">roles (RACI Team Roster Array)</option>
+                                                    <option value="actionItems">actionItems (Pending Client Tasks)</option>
+                                                </select>
+                                                <p className="text-[9px] text-slate-500 mt-1">This dictates which array in the `workbook_profiles` database the submitted rows will sync into.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4">
+                                            <div className="flex justify-between items-center border-b border-brandNavy-700 pb-2 mb-4">
+                                                <h4 className="text-xs font-bold uppercase tracking-widest text-brandTeal-400">Form Fields</h4>
+                                                <button onClick={addBuilderField} className="text-[10px] font-bold bg-brandNavy-800 hover:bg-brandTeal-500 hover:text-brandNavy-955 transition-colors px-3 py-1.5 rounded flex items-center gap-1">
+                                                    <Icons.Plus /> Add Field
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="space-y-3">
+                                                {builderFields.map((field, idx) => (
+                                                    <div key={field.id} className="flex flex-col md:flex-row gap-3 items-center bg-brandNavy-950 p-4 rounded-xl border border-brandNavy-800 relative group">
+                                                        <div className="absolute -left-2 -top-2 bg-brandNavy-800 text-slate-400 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold">{idx + 1}</div>
+                                                        <div className="w-full md:w-5/12">
+                                                            <label className="text-[9px] font-mono text-slate-500 uppercase block mb-1">Field Label</label>
+                                                            <input type="text" value={field.label} onChange={e => updateBuilderField(field.id, 'label', e.target.value)} placeholder="e.g. Asset Name" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                                        </div>
+                                                        <div className="w-full md:w-3/12">
+                                                            <label className="text-[9px] font-mono text-slate-500 uppercase block mb-1">Data Type</label>
+                                                            <select value={field.type} onChange={e => updateBuilderField(field.id, 'type', e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500">
+                                                                <option value="text">Text (String)</option>
+                                                                <option value="number">Number</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="w-full md:w-4/12 flex items-end gap-2">
+                                                            <div className="w-full">
+                                                                <label className="text-[9px] font-mono text-slate-500 uppercase block mb-1">Placeholder Help</label>
+                                                                <input type="text" value={field.placeholder} onChange={e => updateBuilderField(field.id, 'placeholder', e.target.value)} placeholder="e.g. https://..." className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                                            </div>
+                                                            <button onClick={() => removeBuilderField(field.id)} className="p-2.5 text-rose-500 hover:text-white hover:bg-rose-500 bg-brandNavy-800 rounded transition-colors h-[34px] flex items-center">
+                                                                <Icons.Trash />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {builderFields.length === 0 && (
+                                                    <div className="text-center p-6 border border-dashed border-brandNavy-700 rounded-xl text-slate-500 text-[10px] uppercase tracking-widest">
+                                                        No fields added. Click "Add Field" to build your form.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 mt-6 border-t border-brandNavy-700 flex justify-end gap-3">
+                                            <button onClick={() => setActiveView('dashboard')} className="px-6 py-2.5 bg-brandNavy-800 text-slate-300 font-bold rounded-lg text-xs uppercase tracking-wider hover:bg-brandNavy-700 transition-colors">
+                                                Cancel
+                                            </button>
+                                            <button onClick={saveCustomTemplate} disabled={isSyncing} className="px-6 py-2.5 bg-brandTeal-500 text-brandNavy-955 font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg hover:bg-brandTeal-400 transition-colors disabled:opacity-50 flex items-center gap-2">
+                                                <Icons.Check /> {isSyncing ? "Saving..." : "Save Template"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeView === 'review' && activeForm && (
+                                <div className="space-y-6 animate-fade-in">
+                                    <button onClick={() => setActiveView('dashboard')} className="text-xs font-bold text-slate-400 hover:text-white uppercase tracking-wider flex items-center gap-1 mb-4">
+                                        ← Back to Control Center
+                                    </button>
+
+                                    <div className="glass-panel p-6 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-brandTeal-500">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-white">{activeForm.title}</h3>
+                                            <p className="text-xs text-slate-400 mt-1">Submitted by <strong className="text-white">{activeProfile?.clientCompany}</strong></p>
+                                        </div>
+                                        {activeForm.status === 'completed' && (
+                                            <button onClick={syncToDeliverySuite} disabled={isSyncing} className="px-6 py-3 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg transition-colors flex items-center gap-2 disabled:opacity-50">
+                                                <Icons.Database /> {isSyncing ? "Mapping Data..." : "Map to Delivery Suite"}
+                                            </button>
+                                        )}
+                                        {activeForm.status === 'synced' && (
+                                            <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
+                                                <Icons.Check /> Data Successfully Mapped
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                        <div className="p-4 border-b border-brandNavy-700 bg-brandNavy-900/50 flex justify-between items-center">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Submitted Data Payloads</h3>
+                                            <span className="text-[10px] font-mono text-slate-500">Target Field: <strong className="text-brandTeal-400 bg-brandNavy-950 px-1 rounded">{activeForm.mappedTarget}</strong></span>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse text-xs">
+                                                <thead>
+                                                    <tr className="bg-brandNavy-950 text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                                        {activeForm.fields.map(f => (
+                                                            <th key={f.name} className="p-4">{f.label}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-brandNavy-800/50">
+                                                    {activeForm.responses.map((row, i) => (
+                                                        <tr key={i} className="hover:bg-brandNavy-800/30 transition-colors">
+                                                            {activeForm.fields.map(f => (
+                                                                <td key={f.name} className="p-4 text-slate-200">
+                                                                    {f.type === 'number' ? (
+                                                                        <span className="font-mono font-bold text-brandTeal-300">{row[f.name]}</span>
+                                                                    ) : (
+                                                                        <span className="font-bold">{row[f.name]}</span>
+                                                                    )}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                    {(!activeForm.responses || activeForm.responses.length === 0) && (
+                                                        <tr><td colSpan={activeForm.fields.length} className="p-8 text-center text-slate-500 italic">No data returned.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
