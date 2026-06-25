@@ -68,6 +68,7 @@
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
+            const [authErrorDetails, setAuthErrorDetails] = useState(null);
             const [activeForm, setActiveForm] = useState(null);
             const [clientResponses, setClientResponses] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,8 +80,13 @@
                         clearInterval(checkInterval);
                         const initAuth = async () => {
                             try {
-                                await window.signInAnonymously(window.firebaseAuth);
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
                                 setIsAuthed(true);
+                                setAuthErrorDetails(null);
 
                                 const urlParams = new URLSearchParams(window.location.search);
                                 const formParam = urlParams.get('form');
@@ -103,7 +109,10 @@
                                         }
                                     }, console.error);
                                 }
-                            } catch (e) { console.error("Session matching chain down:", e); }
+                            } catch (e) { 
+                                console.error("Session matching chain down:", e);
+                                setAuthErrorDetails("Firebase Auth Blocked: Check local file origin or domain settings. " + e.message);
+                            }
                         };
                         initAuth();
                     }
@@ -140,6 +149,17 @@
                 } catch(e) { console.error(e); }
                 setIsSubmitting(false);
             };
+
+            if (authErrorDetails) {
+                return (
+                    <div className="max-w-xl mx-auto text-center py-20 bg-rose-900/20 border border-rose-800 rounded-2xl p-8 shadow-2xl animate-fade-in mt-12">
+                        <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto mb-6 text-2xl">⚠</div>
+                        <h1 className="text-2xl font-serif font-bold text-white mb-2">Connection Blocked</h1>
+                        <p className="text-slate-400 text-sm mb-4">{authErrorDetails}</p>
+                        <p className="text-slate-500 text-xs">To fix: Go to Google Cloud Console ➔ APIs & Services ➔ Credentials ➔ API Key. Under "Application restrictions", temporarily remove "HTTP referrers" or add `localhost`.</p>
+                    </div>
+                );
+            }
 
             if (formSubmitted) {
                 return (
