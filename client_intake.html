@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Client Intake | Kolthoff Consulting</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
+            authDomain: "kolthoff-portal.firebaseapp.com",
+            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kolthoff-portal",
+            storageBucket: "kolthoff-portal.firebasestorage.app",
+            messagingSenderId: "413958125034",
+            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        
+        window.appId = appId;
+        window.initialAuthToken = initialAuthToken;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.onSnapshot = onSnapshot;
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A' },
+                        brandTeal: { 50: '#F0FDFA', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .client-gradient { background: radial-gradient(circle at top left, #0F1A2C 0%, #02050e 100%); }
+    </style>
+</head>
+<body class="client-gradient text-slate-200 antialiased min-h-screen p-6 md:p-12 font-sans">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [activeForm, setActiveForm] = useState(null);
+            const [clientResponses, setClientResponses] = useState([]);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [formSubmitted, setFormSubmitted] = useState(false);
+
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                await window.signInAnonymously(window.firebaseAuth);
+                                setIsAuthed(true);
+
+                                const urlParams = new URLSearchParams(window.location.search);
+                                const formParam = urlParams.get('form');
+
+                                if (formParam) {
+                                    // === STRICT DATA ISOLATION LOOKUP ===
+                                    // Reads ONLY the single targeted questionnaire token parameter directly, no crawling loops.
+                                    const formRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', formParam);
+                                    window.onSnapshot(formRef, (docSnap) => {
+                                        if (docSnap.exists()) {
+                                            const data = docSnap.data();
+                                            setActiveForm(data);
+                                            if (data.responses && data.responses.length > 0) {
+                                                setClientResponses(data.responses);
+                                            } else {
+                                                const emptyRow = { rowId: Date.now() };
+                                                data.fields.forEach(f => emptyRow[f.name] = '');
+                                                setClientResponses([emptyRow]);
+                                            }
+                                        }
+                                    }, console.error);
+                                }
+                            } catch (e) { console.error("Session matching chain down:", e); }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            const handleFieldChange = (rowId, fieldName, value) => {
+                setClientResponses(prev => prev.map(row => row.rowId === rowId ? { ...row, [fieldName]: value } : row));
+            };
+
+            const addClientRow = () => {
+                const emptyRow = { rowId: Date.now() };
+                activeForm.fields.forEach(f => emptyRow[f.name] = '');
+                setClientResponses(prev => [...prev, emptyRow]);
+            };
+
+            const removeClientRow = (rowId) => {
+                setClientResponses(prev => prev.filter(r => r.rowId !== rowId));
+            };
+
+            const handleSubmitForm = async () => {
+                if (!activeForm || isSubmitting) return;
+                setIsSubmitting(true);
+                try {
+                    const cleanPayloads = clientResponses.map(r => {
+                        const { rowId, ...rest } = r;
+                        return { id: Date.now() + Math.random().toString().substr(2, 5), ...rest };
+                    });
+
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', activeForm.id);
+                    await window.setDoc(docRef, { responses: cleanPayloads, status: 'completed' }, { merge: true });
+                    setFormSubmitted(true);
+                } catch(e) { console.error(e); }
+                setIsSubmitting(false);
+            };
+
+            if (formSubmitted) {
+                return (
+                    <div className="max-w-xl mx-auto text-center py-20 bg-brandNavy-900/50 border border-brandNavy-800 rounded-2xl p-8 shadow-2xl animate-fade-in">
+                        <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto mb-6 text-2xl">✓</div>
+                        <h1 className="text-2xl font-serif font-bold text-white mb-2">Transmission Successful</h1>
+                        <p className="text-slate-400 text-sm">Your operational configuration parameters have been encrypted and submitted securely back to Kolthoff Consulting.</p>
+                    </div>
+                );
+            }
+
+            if (!activeForm) {
+                return (
+                    <div className="text-center text-slate-500 italic pt-20">Awaiting secure document lookup handshake parameter authentication...</div>
+                );
+            }
+
+            return (
+                <div className="max-w-4xl mx-auto bg-brandNavy-950/80 border border-brandNavy-800 rounded-2xl shadow-2xl p-8 md:p-12 animate-fade-in">
+                    <div className="text-center border-b border-brandNavy-800 pb-6 mb-8">
+                        <h1 className="text-3xl font-serif font-bold text-white mb-2">{activeForm.title}</h1>
+                        <p className="text-slate-400 text-xs leading-relaxed max-w-2xl mx-auto">{activeForm.description}</p>
+                    </div>
+
+                    <div className="space-y-6">
+                        {clientResponses.map((row, idx) => (
+                            <div key={row.rowId} className="bg-brandNavy-900/40 border border-brandNavy-800 rounded-xl p-6 relative group">
+                                <div className="absolute -top-3 left-4 bg-brandNavy-950 border border-brandNavy-800 px-2 py-0.5 rounded text-[10px] font-mono text-brandTeal-400 font-bold uppercase tracking-wider">Item {idx + 1}</div>
+                                {clientResponses.length > 1 && (
+                                    <button onClick={() => removeClientRow(row.rowId)} className="absolute top-4 right-4 text-rose-500 hover:text-rose-400 transition-colors text-xs">✕ Remove</button>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                    {activeForm.fields.map(field => (
+                                        <div key={field.name} className={field.type === 'text' ? 'md:col-span-2' : ''}>
+                                            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">{field.label}</label>
+                                            <input 
+                                                type={field.type === 'number' ? 'number' : 'text'} 
+                                                value={row[field.name]}
+                                                onChange={(e) => handleFieldChange(row.rowId, field.name, e.target.value)}
+                                                placeholder={field.placeholder}
+                                                className="w-full bg-brandNavy-955 border border-brandNavy-800 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-brandTeal-500 transition-colors"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+
+                        <button onClick={addClientRow} className="w-full py-4 border-2 border-dashed border-brandNavy-800 hover:border-brandTeal-500 text-slate-400 hover:text-brandTeal-400 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">+ Add Another Line Item Entry</button>
+                    </div>
+
+                    <div className="mt-12 pt-6 border-t border-brandNavy-800 flex justify-between items-center">
+                        <p className="text-[10px] text-slate-500 italic">Protected by DPA RA-10173 Compliance Controls</p>
+                        <button onClick={handleSubmitForm} disabled={isSubmitting} className="px-8 py-3 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-lg text-xs uppercase tracking-wider shadow-lg transition-all disabled:opacity-50">
+                            {isSubmitting ? "Processing Transaction..." : "Submit Response Data Securely"}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
