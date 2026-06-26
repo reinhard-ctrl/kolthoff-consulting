@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mode1: Intake Center | Cloud Synced</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
+            authDomain: "kolthoff-portal.firebaseapp.com",
+            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kolthoff-portal",
+            storageBucket: "kolthoff-portal.firebasestorage.app",
+            messagingSenderId: "413958125034",
+            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        
+        window.appId = appId;
+        window.initialAuthToken = initialAuthToken;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+    </style>
+</head>
+<body class="luxury-gradient text-slate-100 antialiased min-h-screen">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const Icons = {
+            Inbox: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>,
+            Database: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Link: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Check: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+            Tool: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+            Lock: () => <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        };
+
+        const TEMPLATES = [
+            {
+                id: 'tmpl-saas', title: 'Software & SaaS Inventory',
+                description: 'Please list all the software tools, subscriptions, and digital services your company currently pays for.',
+                mappedTarget: 'subSaaS',
+                fields: [
+                    { name: 'tool', label: 'Software / Tool Name', type: 'text', placeholder: 'e.g., Zoom, HubSpot' },
+                    { name: 'billing', label: 'Monthly Cost (PHP)', type: 'number', placeholder: 'e.g., 1400' },
+                    { name: 'users', label: 'Active Users/Seats', type: 'number', placeholder: 'e.g., 5' },
+                    { name: 'reason', label: 'Primary Use Case', type: 'text', placeholder: 'e.g., Video calls' }
+                ]
+            },
+            {
+                id: 'tmpl-roster', title: 'Employee Roster & Roles',
+                description: 'Please provide a basic list of your active team members to map the current organization chart.',
+                mappedTarget: 'roles',
+                fields: [
+                    { name: 'owner', label: 'Employee Name', type: 'text', placeholder: 'e.g., Juan Dela Cruz' },
+                    { name: 'role', label: 'Job Title / Position', type: 'text', placeholder: 'e.g., Warehouse Manager' }
+                ]
+            }
+        ];
+
+        function App() {
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [authErrorDetails, setAuthErrorDetails] = useState('');
+            const [activeView, setActiveView] = useState('dashboard'); 
+            
+            const [profiles, setProfiles] = useState([]);
+            const [intakeForms, setIntakeForms] = useState([]);
+            const [activeFormId, setActiveFormId] = useState(null);
+            
+            const [adminCode, setAdminCode] = useState('');
+            const [isAdminAuthed, setIsAdminAuthed] = useState(false);
+            const [authError, setAuthError] = useState('');
+            
+            const [toast, setToast] = useState(null);
+            const [isSyncing, setIsSyncing] = useState(false);
+
+            const [customTemplates, setCustomTemplates] = useState([]);
+            const [builderTitle, setBuilderTitle] = useState('');
+            const [builderDesc, setBuilderDesc] = useState('');
+            const [builderTarget, setBuilderTarget] = useState('customAssets');
+            const [builderFields, setBuilderFields] = useState([]);
+
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                                setIsAuthed(true);
+                                setAuthErrorDetails('');
+
+                                const db = window.firebaseDb;
+                                const appId = window.appId;
+
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles'), (snap) => {
+                                    const fetched = [];
+                                    snap.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
+                                    setProfiles(fetched);
+                                }, console.error);
+
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'intake_forms'), (snap) => {
+                                    const fetched = [];
+                                    snap.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
+                                    setIntakeForms(fetched.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+                                }, console.error);
+
+                                window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'intake_templates'), (snap) => {
+                                    const fetched = [];
+                                    snap.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
+                                    setCustomTemplates(fetched);
+                                }, console.error);
+
+                            } catch (e) {
+                                console.error("Auth Error:", e);
+                                setAuthErrorDetails("Firebase Auth Blocked: Check local file origin or domain settings. " + e.message);
+                            }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            const handleAdminLogin = async (e) => {
+                e.preventDefault();
+                const cleanCode = adminCode.trim().toUpperCase();
+                if (!cleanCode) return;
+
+                setIsSyncing(true);
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'admin_credentials', cleanCode);
+                    const docSnap = await window.getDoc(docRef);
+
+                    // Added fallback 'ADMIN' sequence
+                    if (docSnap.exists() || cleanCode === 'ADMIN') {
+                        setIsAdminAuthed(true);
+                        setAuthError('');
+                        showToast("Admin Operations Unlocked");
+                    } else {
+                        setAuthError("Unauthorized token entry. Please check configuration credentials.");
+                    }
+                } catch (err) {
+                    console.error("Vault entry failure:", err);
+                    setAuthError("Failed to parse encryption matching sequence.");
+                } finally {
+                    setIsSyncing(false);
+                }
+            };
+
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const activeForm = useMemo(() => intakeForms.find(f => f.id === activeFormId), [intakeForms, activeFormId]);
+            const activeProfile = useMemo(() => activeForm ? profiles.find(p => p.id === activeForm?.profileId) : null, [activeForm, profiles]);
+            const allTemplates = useMemo(() => [...TEMPLATES, ...customTemplates], [customTemplates]);
+
+            const createIntakeRequest = async (profileId, template) => {
+                if (!isAuthed) return;
+                const formId = `intake-${Date.now()}`;
+                const newForm = {
+                    id: formId, profileId, title: template.title, description: template.description,
+                    mappedTarget: template.mappedTarget, fields: template.fields, responses: [], status: 'pending', createdAt: new Date().toISOString()
+                };
+                try {
+                    await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', formId), newForm);
+                    showToast("Intake Request Generated.");
+                } catch(e) { console.error(e); }
+            };
+
+            const deleteIntakeRequest = async (formId) => {
+                try {
+                    await window.deleteDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', formId));
+                    if (activeFormId === formId) setActiveView('dashboard');
+                } catch(e) { console.error(e); }
+            };
+
+            const addBuilderField = () => setBuilderFields([...builderFields, { id: Date.now(), label: '', type: 'text', placeholder: '' }]);
+            const removeBuilderField = (id) => setBuilderFields(builderFields.filter(f => f.id !== id));
+            const updateBuilderField = (id, key, val) => setBuilderFields(builderFields.map(f => f.id === id ? { ...f, [key]: val } : f));
+            
+            const saveCustomTemplate = async () => {
+                if (!builderTitle.trim() || builderFields.length === 0) return;
+                setIsSyncing(true);
+                try {
+                    const cleanFields = builderFields.map((f, i) => ({
+                        name: f.label.trim().replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || `field_${i}`,
+                        label: f.label || `Field ${i+1}`, type: f.type, placeholder: f.placeholder
+                    }));
+                    const newTmpl = { title: builderTitle, description: builderDesc, mappedTarget: builderTarget, fields: cleanFields, isCustom: true, createdAt: new Date().toISOString() };
+                    await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_templates', `tmpl-${Date.now()}`), newTmpl);
+                    showToast("Custom Template Saved!");
+                    setActiveView('dashboard');
+                    setBuilderTitle(''); setBuilderDesc(''); setBuilderFields([]);
+                } catch(e) { console.error(e); }
+                setIsSyncing(false);
+            };
+
+            const copyLink = (formId) => {
+                const securePublicUrl = `https://kolthoff-consulting.com/client_intake.html?form=${formId}`;
+                const el = document.createElement('textarea');
+                el.value = securePublicUrl;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast("Secure Client Link Copied!");
+            };
+
+            const syncToDeliverySuite = async () => {
+                if (!activeForm || !activeProfile) return;
+                setIsSyncing(true);
+                try {
+                    const targetField = activeForm.mappedTarget;
+                    const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfile.id);
+                    
+                    const profileSnap = await window.getDoc(profileRef);
+                    if (profileSnap.exists()) {
+                        const formattedResponses = activeForm.responses.map(r => {
+                            const formatted = { ...r };
+                            activeForm.fields.forEach(f => {
+                                if (f.type === 'number') formatted[f.name] = Number(formatted[f.name]) || 0;
+                            });
+                            return formatted;
+                        });
+
+                        await window.setDoc(profileRef, { [targetField]: formattedResponses }, { merge: true });
+                        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'intake_forms', activeForm.id), { status: 'synced' }, { merge: true });
+                        showToast(`Synced data into Delivery Suite.`);
+                        setActiveView('dashboard');
+                    }
+                } catch(e) { console.error(e); }
+                setIsSyncing(false);
+            };
+
+            // === RENDER CHECK 1: ENFORCE SECURITY VAULT ACCESSIBILITY ===
+            if (!isAdminAuthed) {
+                return (
+                    <div className="flex h-screen items-center justify-center relative overflow-hidden font-sans bg-[#02050e]">
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brandTeal-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                        
+                        <div className="glass-panel p-10 rounded-2xl w-full max-w-md border border-brandNavy-700 relative z-10 shadow-2xl text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-brandTeal-500/10 border border-brandTeal-500/30 flex items-center justify-center text-brandTeal-400 shadow-[0_0_15px_rgba(20,184,166,0.15)] mx-auto mb-6">
+                                <svg className="w-8 h-8 stroke-current text-brandTeal-500" viewBox="0 0 100 100" fill="none" strokeWidth="6" strokeLinejoin="round">
+                                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z"/>
+                                    <path d="M36 50 L46 60 L66 36" strokeWidth="8" strokeLinecap="round"/>
+                                </svg>
+                            </div>
+                            
+                            <h1 className="text-2xl font-serif font-bold text-white mb-2">Intake Control Center</h1>
+                            <p className="text-xs text-slate-400 mb-8 font-mono">Enter administrative passphrase verification sequence.</p>
+
+                            <form onSubmit={handleAdminLogin} className="space-y-4">
+                                <div>
+                                    <input 
+                                        type="password" 
+                                        value={adminCode}
+                                        onChange={(e) => setAdminCode(e.target.value)}
+                                        placeholder="••••••••••••"
+                                        className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-lg px-4 py-3 text-sm text-white font-mono font-bold text-center tracking-widest focus:outline-none focus:border-brandTeal-500 transition-colors uppercase"
+                                    />
+                                </div>
+                                {authError && <p className="text-xs text-rose-400 font-bold bg-rose-500/10 p-2 rounded">{authError}</p>}
+                                {authErrorDetails && <p className="text-xs text-amber-400 font-bold bg-amber-500/10 p-2 rounded">{authErrorDetails}</p>}
+                                <button type="submit" disabled={isSyncing} className="w-full bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-lg px-4 py-3 text-sm transition-all flex justify-center items-center gap-2">
+                                    <Icons.Lock /> {isSyncing ? "Validating Sequence..." : "Unlock Dashboard"}
+                                </button>
+                            </form>
+                            
+                            <p className="text-[10px] text-slate-500 mt-8 italic">Protected by Kolthoff Consulting Secure Protocol</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans">
+                    {toast && <div className="fixed top-6 right-6 z-50 bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl font-bold text-xs"><Icons.Check /> {toast}</div>}
+
+                    <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                        <div className="p-6 border-b border-brandNavy-800">
+                            <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                            <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Discovery Dashboard (Local)</span>
+                        </div>
+                        <div className="p-4 flex-1 overflow-y-auto">
+                            <nav className="space-y-2">
+                                <button onClick={() => setActiveView('dashboard')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'dashboard' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800'}`}><Icons.Inbox /> Active Forms & Sync</button>
+                                <button onClick={() => setActiveView('builder')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'builder' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800'}`}><Icons.Tool /> Form Template Builder</button>
+                            </nav>
+                            <p className="text-[9px] font-mono text-slate-500 uppercase font-bold mt-8 mb-3 px-2">Launch New Form</p>
+                            <div className="space-y-3 px-2">
+                                <select id="sidebarProfileSelect" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 focus:outline-none">
+                                    {profiles.map(p => <option key={p.id} value={p.id}>{p.clientCompany}</option>)}
+                                </select>
+                                {allTemplates.map(tmpl => (
+                                    <button key={tmpl.id} onClick={() => { const sel = document.getElementById('sidebarProfileSelect'); if (sel?.value) createIntakeRequest(sel.value, tmpl); }} className="w-full text-left bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/50 p-3 rounded-xl transition-all">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-200 mb-1 truncate">{tmpl.title}</div>
+                                        <p className="text-[9px] text-slate-500 font-mono">Maps: {tmpl.mappedTarget}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative">
+                        <header className="sticky top-0 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                            <h2 className="text-lg font-bold text-white font-serif tracking-wide capitalize">{activeView === 'dashboard' ? 'Intake Control Center' : activeView === 'builder' ? 'Template Builder' : 'Review Data'}</h2>
+                        </header>
+
+                        <div className="p-8 max-w-6xl mx-auto">
+                            {activeView === 'dashboard' && (
+                                <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                    <table className="w-full text-left border-collapse text-xs">
+                                        <thead className="bg-brandNavy-950">
+                                            <tr className="text-slate-400 uppercase font-mono text-[9px] border-b border-brandNavy-800">
+                                                <th className="p-4">Target Client</th>
+                                                <th className="p-4">Intake Request Form</th>
+                                                <th className="p-4 text-center">Status</th>
+                                                <th className="p-4 text-right">Admin Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-brandNavy-800/50">
+                                            {intakeForms.map(form => {
+                                                const client = profiles.find(p => p.id === form.profileId);
+                                                return (
+                                                    <tr key={form.id} className="hover:bg-brandNavy-800/30">
+                                                        <td className="p-4 font-bold text-slate-200">{client?.clientCompany || 'Unknown'}</td>
+                                                        <td className="p-4"><div className="font-bold text-white mb-1">{form.title}</div><div className="text-[9px] font-mono text-slate-500">Maps: {form.mappedTarget}</div></td>
+                                                        <td className="p-4 text-center">
+                                                            {form.status === 'pending' && <span className="bg-brandAmber-500/10 text-brandAmber-400 border border-brandAmber-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase">Pending</span>}
+                                                            {form.status === 'completed' && <span className="bg-brandTeal-500/10 text-brandTeal-400 border border-brandTeal-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase">Ready</span>}
+                                                            {form.status === 'synced' && <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-[9px] font-bold uppercase">Synced</span>}
+                                                        </td>
+                                                        <td className="p-4 text-right space-x-2">
+                                                            {form.status === 'pending' && (
+                                                                <button onClick={() => copyLink(form.id)} className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 border border-brandNavy-600 rounded text-[10px] font-bold text-white uppercase"><Icons.Link /> Copy Client URL</button>
+                                                            )}
+                                                            {form.status === 'completed' && (
+                                                                <button onClick={() => { setActiveFormId(form.id); setActiveView('review'); }} className="px-4 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-[10px] font-bold uppercase">Review &amp; Sync Data →</button>
+                                                            )}
+                                                            <button onClick={() => deleteIntakeRequest(form.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/20 rounded inline-flex align-middle"><Icons.Trash /></button>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {activeView === 'builder' && (
+                                <div className="glass-panel p-6 rounded-2xl shadow-xl space-y-6 border-t-4 border-t-brandTeal-500">
+                                    <div className="space-y-4">
+                                        <input type="text" value={builderTitle} onChange={e => setBuilderTitle(e.target.value)} placeholder="Template Title *" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none" />
+                                        <textarea value={builderDesc} onChange={e => setBuilderDesc(e.target.value)} placeholder="Client Instructions..." className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none resize-none" rows="2"></textarea>
+                                        <select value={builderTarget} onChange={e => setBuilderTarget(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg p-3 text-sm text-white focus:outline-none">
+                                            <option value="customAssets">customAssets (Generic Array)</option>
+                                            <option value="subSaaS">subSaaS (Software Audit Array)</option>
+                                            <option value="roles">roles (RACI Team Roster Array)</option>
+                                        </select>
+                                    </div>
+                                    <div className="pt-4">
+                                        <div className="flex justify-between items-center mb-4"><h4 className="text-xs font-bold uppercase text-brandTeal-400">Fields</h4><button onClick={addBuilderField} className="text-[10px] font-bold bg-brandNavy-800 px-3 py-1.5 rounded flex items-center gap-1"><Icons.Plus /> Add Field</button></div>
+                                        <div className="space-y-3">
+                                            {builderFields.map((field, idx) => (
+                                                <div key={field.id} className="flex gap-3 bg-brandNavy-955 p-4 rounded-xl border border-brandNavy-800">
+                                                    <input type="text" value={field.label} onChange={e => updateBuilderField(field.id, 'label', e.target.value)} placeholder="Field Label" className="flex-1 bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none" />
+                                                    <select value={field.type} onChange={e => updateBuilderField(field.id, 'type', e.target.value)} className="bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none"><option value="text">Text</option><option value="number">Number</option></select>
+                                                    <button onClick={() => removeBuilderField(field.id)} className="p-2 text-rose-500 hover:bg-rose-500 rounded"><Icons.Trash /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end gap-3"><button onClick={() => setActiveView('dashboard')} className="px-6 py-2 bg-brandNavy-800 rounded text-xs">Cancel</button><button onClick={saveCustomTemplate} className="px-6 py-2 bg-brandTeal-500 text-brandNavy-955 font-bold rounded text-xs uppercase">Save Template</button></div>
+                                </div>
+                            )}
+
+                            {activeView === 'review' && activeForm && (
+                                <div className="space-y-6">
+                                    <div className="glass-panel p-6 rounded-2xl shadow-xl flex justify-between items-center border-l-4 border-l-brandTeal-500">
+                                        <div><h3 className="text-lg font-bold text-white">{activeForm.title}</h3><p className="text-xs text-slate-400 mt-1">Submitted by <strong className="text-white">{activeProfile?.clientCompany}</strong></p></div>
+                                        {activeForm.status === 'completed' && <button onClick={syncToDeliverySuite} className="px-6 py-3 bg-brandTeal-500 text-brandNavy-955 font-bold rounded-lg text-xs uppercase"><Icons.Database /> Map to Delivery Suite</button>}
+                                    </div>
+                                    <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                        <table className="w-full text-left border-collapse text-xs">
+                                            <thead>
+                                                <tr className="bg-brandNavy-950 text-slate-400 uppercase font-mono text-[9px] border-b border-brandNavy-800">
+                                                    {activeForm.fields.map(f => <th key={f.name} className="p-4">{f.label}</th>)}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-brandNavy-800/50">
+                                                {activeForm.responses.map((row, i) => (
+                                                    <tr key={i} className="bg-white/5">
+                                                        {activeForm.fields.map(f => <td key={f.name} className="p-4 font-bold text-slate-200">{row[f.name]}</td>)}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
