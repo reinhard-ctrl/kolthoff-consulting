@@ -107,7 +107,8 @@
             GitMerge: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/></svg>,
             FileText: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
             Save: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-            Settings: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Settings: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
+            UploadCloud: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -298,6 +299,7 @@
             const [tenantUsers, setTenantUsers] = useState([]);
             const [tenantDepts, setTenantDepts] = useState([]);
             const [tenantRequests, setTenantRequests] = useState([]);
+            const [tenantPolicies, setTenantPolicies] = useState([]);
             
             const listenersRef = useRef([]);
 
@@ -393,8 +395,11 @@
                         setTenantFeatures({ messenger: true, approvals: true, vault: false, crm: false });
                     }
                 });
+                const unsubPolicies = window.onSnapshot(window.collection(db, 'artifacts', targetId, 'public', 'data', 'core_policies'), (snap) => {
+                    const data = []; snap.forEach(d => data.push({id: d.id, ...d.data()})); setTenantPolicies(data);
+                });
 
-                listenersRef.current.push(unsubUsers, unsubDepts, unsubReqs, unsubTemplates, unsubConfig);
+                listenersRef.current.push(unsubUsers, unsubDepts, unsubReqs, unsubTemplates, unsubConfig, unsubPolicies);
                 setConnectedTenant(targetId);
                 showToast(`Connected to Tenant: ${targetId}`);
             };
@@ -485,6 +490,44 @@
                 await window.setDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', 'core_templates', newId), newTpl);
                 setShowImportModal(false);
                 showToast(`Imported "${masterTpl.name}" to tenant.`);
+            };
+
+            const deleteTenantPolicy = async (id) => {
+                if(!confirm("Are you sure you want to delete this policy?")) return;
+                await window.deleteDoc(window.doc(window.firebaseDb, 'artifacts', connectedTenant, 'public', 'data', 'core_policies', id));
+                showToast("Policy deleted.");
+            };
+
+            const handlePolicyUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const json = JSON.parse(event.target.result);
+                        const policiesArray = Array.isArray(json) ? json : [json];
+                        setIsProcessing(true);
+                        let count = 0;
+                        for (const policy of policiesArray) {
+                            const id = policy.id || generateId();
+                            const docData = {
+                                id,
+                                title: policy.title || 'Imported Policy',
+                                content: policy.content || '',
+                                lastUpdated: new Date().toISOString().split('T')[0]
+                            };
+                            await window.setDoc(window.doc(window.firebaseDb, 'artifacts', connectedTenant, 'public', 'data', 'core_policies', id), docData);
+                            count++;
+                        }
+                        showToast(`Imported ${count} policies successfully.`);
+                    } catch (err) {
+                        console.error(err);
+                        alert("Failed to parse JSON file. Ensure it is a valid export from the Policy Studio.");
+                    }
+                    setIsProcessing(false);
+                    e.target.value = null;
+                };
+                reader.readAsText(file);
             };
 
             // === RENDER GATEWAY ===
@@ -671,6 +714,7 @@
                                         <button onClick={() => setTenantTab('users')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'users' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Users & Depts</button>
                                         <button onClick={() => setTenantTab('templates')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'templates' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Templates</button>
                                         <button onClick={() => setTenantTab('features')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'features' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Features</button>
+                                        <button onClick={() => setTenantTab('policies')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'policies' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Policies</button>
                                     </div>
                                 </div>
 
@@ -796,6 +840,35 @@
                                                     </div>
                                                 ))}
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+                                {tenantTab === 'policies' && (
+                                    <div className="space-y-6 animate-fade-in">
+                                        <div className="flex justify-between items-center bg-brandNavy-900/50 p-4 rounded-xl border border-brandNavy-800">
+                                            <span className="text-sm font-semibold text-slate-300">Tenant Policies ({tenantPolicies.length})</span>
+                                            <div>
+                                                <input type="file" accept=".json" id="policyUpload" className="hidden" onChange={handlePolicyUpload} />
+                                                <label htmlFor="policyUpload" className={`cursor-pointer flex items-center gap-2 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded font-bold text-xs transition-all ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}>
+                                                    <Icons.UploadCloud /> {isProcessing ? 'Processing...' : 'Upload Policy JSON'}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {tenantPolicies.map(pol => (
+                                              <div key={pol.id} className="glass-panel border border-brandNavy-700 rounded-xl p-6 shadow-sm hover:border-brandTeal-500/50 transition-all group flex flex-col h-full">
+                                                <div className="flex justify-between items-start mb-4">
+                                                  <div className="w-12 h-12 bg-brandNavy-800 text-brandTeal-400 rounded-xl flex items-center justify-center shadow-inner"><Icons.BookOpen /></div>
+                                                  <button className="p-2 text-slate-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteTenantPolicy(pol.id)} title="Delete Policy"><Icons.Trash2 /></button>
+                                                </div>
+                                                <h4 className="font-semibold text-white text-lg mb-2 flex-1">{pol.title}</h4>
+                                                <div className="flex gap-4 text-xs text-slate-400 mt-auto pt-4 border-t border-brandNavy-800/50">
+                                                  <span className="flex items-center gap-1"><Icons.Calendar/> Updated: {pol.lastUpdated || 'N/A'}</span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                            {tenantPolicies.length === 0 && <div className="col-span-full p-8 text-center text-slate-500 italic border border-dashed border-brandNavy-700 rounded-xl">No policies uploaded yet. Export DOLE-compliant policies from the Policy Studio and upload them here.</div>}
                                         </div>
                                     </div>
                                 )}
