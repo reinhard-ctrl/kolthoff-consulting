@@ -97,6 +97,7 @@
             .text-white, .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400 { color: #0f172a !important; }
             .border-brandNavy-800, .border-brandNavy-700, .border-slate-200 { border-color: #cbd5e1 !important; }
             .max-w-4xl { max-width: 100% !important; margin: 0 !important; border: none !important; padding: 0 !important;}
+            .print-force-break { page-break-inside: avoid; break-inside: avoid; }
             @page { margin: 15mm; }
         }
     </style>
@@ -382,6 +383,83 @@
                 setIsProcessing(false);
             };
 
+            // Unified Contract Body Component used across client sign and audit trail views
+            const renderContractDetails = (profileObj, financials, selectedTasks, activePMO, activeGov) => (
+                <>
+                    <div className="border-b-2 border-brandTeal-500 pb-6 mb-8 print:border-slate-300">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For</p>
+                        <h2 className="text-2xl font-bold text-slate-900">{profileObj.clientCompany}</h2>
+                        <p className="text-sm text-slate-600 mt-1">Attention: {profileObj.clientRep}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
+                        <div className="space-y-3">
+                            {selectedTasks.map(task => (
+                                <div key={task.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200 print:bg-white print:border-slate-300">
+                                    <div className="font-bold text-slate-900 text-sm">{task.deliverable}</div>
+                                    <p className="text-xs text-slate-600 mt-1">{task.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 mt-8 print:mt-6">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">2. Commercial Terms</h3>
+                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3 print:bg-white print:border-slate-300">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="font-bold text-slate-600">Net Subtotal:</span>
+                                <span className="font-mono font-bold text-slate-800">{formatCurrency(financials.subtotal)}</span>
+                            </div>
+                            {financials.appliedCredit > 0 && (
+                                <div className="flex justify-between items-center text-sm text-emerald-600 font-medium">
+                                    <span>Module 1 Credit-Back Applied:</span>
+                                    <span className="font-mono">- {formatCurrency(financials.appliedCredit)}</span>
+                                </div>
+                            )}
+                            {financials.includeTax && (
+                                <div className="flex justify-between items-center text-sm text-slate-500 font-medium">
+                                    <span>PH VAT (12%):</span>
+                                    <span className="font-mono">{formatCurrency(financials.tax)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center border-t border-slate-200 pt-3 mt-3">
+                                <span className="font-bold text-slate-900">Total Contract Value:</span>
+                                <span className="text-xl font-bold font-mono text-brandTeal-700">{formatCurrency(financials.total)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6 mt-8 print:mt-6">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">3. Master Consulting Service Agreement (Terms of Service)</h3>
+                        <p>1. <strong>Scope & Performance:</strong> Services are rendered on a fixed, flat-rate SOW model as selected. Reinhard builds all digital workflows and documents asynchronously, guaranteeing zero scheduling delays or billing variations. Additions outside this agreement require a mutual, written amendment.</p>
+                        <p>2. <strong>Client Onboarding & On-time Cooperation:</strong> Project timelines, launch milestones, and response SLAs remain dependent on prompt access. All timelines pause automatically if client credentials, business rosters, policies, or stage-gated reviews are delayed beyond five (5) working days.</p>
+                        <p>3. <strong>Intellectual Property (IP) Assignment:</strong> Upon 100% full, non-refundable payment of all professional fees under this SOW, the Client receives a permanent, irrevocable, royalty-free local license to use, adapt, and copy all custom-designed databases, flowcharts, manuals, and handbooks created during this engagement.</p>
+                        <p>4. <strong>Late-Payment Delinquency:</strong> SOW billing milestones must be settled within seven (7) business days of invoice date. Balances remaining unpaid past this window shall accumulate a late-payment delinquency penalty of 1.5% per month, compounded monthly, until fully cleared.</p>
+                        <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific SOW.</p>
+                        <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
+                        
+                        {financials.appliedCredit > 0 && (
+                            <div className="text-[10px] text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200 mt-2 print:border-slate-300">
+                                * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {profileObj.creditBackDays || 14} calendar days of proposal receipt.
+                            </div>
+                        )}
+                    </div>
+
+                    {(activePMO || activeGov) && (
+                        <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6 mt-8 print:mt-6">
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">4. Service Level Agreement (SLA) & Data Privacy</h3>
+                            <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-3 print:bg-white print:border-slate-300">
+                                <p><strong>System Availability:</strong> Target 99.9% uptime during business hours. 48-hour notice provided for planned downtime.</p>
+                                <p><strong>Response & Resolution Matrix:</strong> Severity 1 (Critical) within 2 hours response, 8 hours resolution. Severity 2 (High) within 4 hours response, 24 hours resolution. Severity 3 (Normal) within 24 hours response, 2-5 business days resolution.</p>
+                                <p><strong>Data Processing Addendum (RA 10173):</strong> As Personal Information Processor (PIP), Service Provider processes personnel data strictly under Client instructions. All stored profiles will be securely exported and purged within <strong>{profileObj.dpaRetentionDays || 14} days</strong> of SOW termination.</p>
+                                <p><strong>Breach Remedies & Exit Clause:</strong> Service Provider is granted a <strong>{profileObj.slaCureDays || 30}-day</strong> cure period for breaches. If Severity 1 breaches repeat for <strong>{profileObj.slaRecurrenceMonths || 3} consecutive months</strong>, Client reserves the right to terminate retainers without exit penalties.</p>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+
             if (activeView === 'client_sign' && activeProfileObj) {
                 const financials = getFinancials(activeProfileObj);
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
@@ -408,77 +486,8 @@
                             </div>
 
                             <div className="p-8 md:p-12 space-y-8">
-                                <div className="border-b-2 border-brandTeal-500 pb-6 mb-8">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For</p>
-                                    <h2 className="text-2xl font-bold text-slate-900">{activeProfileObj.clientCompany}</h2>
-                                    <p className="text-sm text-slate-600 mt-1">Attention: {activeProfileObj.clientRep}</p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
-                                    <div className="space-y-3">
-                                        {selectedTasks.map(task => (
-                                            <div key={task.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                                <div className="font-bold text-slate-900 text-sm">{task.deliverable}</div>
-                                                <p className="text-xs text-slate-600 mt-1">{task.description}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">2. Commercial Terms</h3>
-                                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="font-bold text-slate-600">Net Subtotal:</span>
-                                            <span className="font-mono font-bold text-slate-800">{formatCurrency(financials.subtotal)}</span>
-                                        </div>
-                                        {financials.appliedCredit > 0 && (
-                                            <div className="flex justify-between items-center text-sm text-emerald-600 font-medium">
-                                                <span>Module 1 Credit-Back Applied:</span>
-                                                <span className="font-mono">- {formatCurrency(financials.appliedCredit)}</span>
-                                            </div>
-                                        )}
-                                        {financials.includeTax && (
-                                            <div className="flex justify-between items-center text-sm text-slate-500 font-medium">
-                                                <span>PH VAT (12%):</span>
-                                                <span className="font-mono">{formatCurrency(financials.tax)}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between items-center border-t border-slate-200 pt-3 mt-3">
-                                            <span className="font-bold text-slate-900">Total Contract Value:</span>
-                                            <span className="text-xl font-bold font-mono text-brandTeal-700">{formatCurrency(financials.total)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">3. Master Consulting Service Agreement (Terms of Service)</h3>
-                                    <p>1. <strong>Scope & Performance:</strong> Services are rendered on a fixed, flat-rate SOW model as selected. Reinhard builds all digital workflows and documents asynchronously, guaranteeing zero scheduling delays or billing variations. Additions outside this agreement require a mutual, written amendment.</p>
-                                    <p>2. <strong>Client Onboarding & On-time Cooperation:</strong> Project timelines, launch milestones, and response SLAs remain dependent on prompt access. All timelines pause automatically if client credentials, business rosters, policies, or stage-gated reviews are delayed beyond five (5) working days.</p>
-                                    <p>3. <strong>Intellectual Property (IP) Assignment:</strong> Upon 100% full, non-refundable payment of all professional fees under this SOW, the Client receives a permanent, irrevocable, royalty-free local license to use, adapt, and copy all custom-designed databases, flowcharts, manuals, and handbooks created during this engagement.</p>
-                                    <p>4. <strong>Late-Payment Delinquency:</strong> SOW billing milestones must be settled within seven (7) business days of invoice date. Balances remaining unpaid past this window shall accumulate a late-payment delinquency penalty of 1.5% per month, compounded monthly, until fully cleared.</p>
-                                    <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific SOW.</p>
-                                    <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
-                                    
-                                    {financials.appliedCredit > 0 && (
-                                        <div className="text-[10px] text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200 mt-2">
-                                            * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {activeProfileObj.creditBackDays || 14} calendar days of proposal receipt.
-                                        </div>
-                                    )}
-                                </div>
-
-                                {(activePMO || activeGov) && (
-                                    <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6">
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">4. Service Level Agreement (SLA) & Data Privacy</h3>
-                                        <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-3">
-                                            <p><strong>System Availability:</strong> Target 99.9% uptime during business hours. 48-hour notice provided for planned downtime.</p>
-                                            <p><strong>Response & Resolution Matrix:</strong> Severity 1 (Critical) within 2 hours response, 8 hours resolution. Severity 2 (High) within 4 hours response, 24 hours resolution. Severity 3 (Normal) within 24 hours response, 2-5 business days resolution.</p>
-                                            <p><strong>Data Processing Addendum (RA 10173):</strong> As Personal Information Processor (PIP), Service Provider processes personnel data strictly under Client instructions. All stored profiles will be securely exported and purged within <strong>{activeProfileObj.dpaRetentionDays || 14} days</strong> of SOW termination.</p>
-                                            <p><strong>Breach Remedies & Exit Clause:</strong> Service Provider is granted a <strong>{activeProfileObj.slaCureDays || 30}-day</strong> cure period for breaches. If Severity 1 breaches repeat for <strong>{activeProfileObj.slaRecurrenceMonths || 3} consecutive months</strong>, Client reserves the right to terminate retainers without exit penalties.</p>
-                                        </div>
-                                    </div>
-                                )}
+                                
+                                {renderContractDetails(activeProfileObj, financials, selectedTasks, activePMO, activeGov)}
 
                                 <div className="mt-12 bg-slate-100 p-8 rounded-xl border border-slate-300 no-print">
                                     <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2">
@@ -532,10 +541,15 @@
 
             if (activeView === 'audit_trail' && activeLedgerItem && activeLedgerItem.contractData) {
                 const contract = activeLedgerItem.contractData;
+                const financials = getFinancials(activeProfileObj);
+                const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
+                const activePMO = selectedTasks.some(t => t.category === 'MOD 3 - Workspace Automation');
+                const activeGov = selectedTasks.some(t => t.category === 'MOD 4 - Ongoing Support');
+
                 return (
                     <div className="flex h-screen overflow-hidden font-sans">
                         {!isClientMode && (
-                            <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                            <aside className="w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20 no-print">
                                 <div className="p-6 border-b border-brandNavy-800">
                                     <div className="flex items-center gap-3">
                                         <Icons.ShieldCheck />
@@ -553,52 +567,82 @@
                             </aside>
                         )}
                         
-                        <main className="flex-1 overflow-y-auto bg-brandNavy-900/40 p-8">
-                            <div className="max-w-4xl mx-auto space-y-6">
-                                <div className="glass-panel p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-emerald-500 print:border-l-0 print:border-b print:border-slate-300 print:rounded-none print:shadow-none print:p-0 print:pb-4 print:mb-6">
+                        <main className="flex-1 overflow-y-auto bg-brandNavy-900/40 p-4 md:p-8 print:bg-white print:p-0">
+                            <div className="max-w-4xl mx-auto space-y-6 print:space-y-0">
+                                
+                                <div className="glass-panel p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-emerald-500 no-print mb-6">
                                     <div>
-                                        <h3 className="text-xl font-bold text-white uppercase tracking-wider font-serif print:text-slate-900">Executed Contract Record</h3>
-                                        <p className="text-xs text-slate-400 mt-1 font-mono print:text-slate-600">Ref: {activeLedgerItem.quoteId}</p>
+                                        <h3 className="text-xl font-bold text-white uppercase tracking-wider font-serif">Executed Contract Record</h3>
+                                        <p className="text-xs text-slate-400 mt-1 font-mono">Ref: {activeLedgerItem.quoteId}</p>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-3">
-                                        <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2 print:bg-transparent print:border-slate-300 print:text-slate-700">
+                                        <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
                                             <Icons.CheckCircle /> Immutable & Locked
                                         </div>
                                         <button onClick={() => window.print()} className="no-print px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2 transition-colors">
-                                            <Icons.Printer /> PDF Record
+                                            <Icons.Printer /> Print Full Contract PDF
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="glass-panel p-6 rounded-xl space-y-4">
-                                        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-brandNavy-700 pb-2 print:border-slate-200">Signatory Parameters</h4>
+                                {/* Complete Executed PDF Content Body */}
+                                <div className="bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden relative print:shadow-none print:border-none print:w-full print:rounded-none">
+                                    
+                                    <div className="bg-brandNavy-955 p-6 md:p-10 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 print:bg-white print:text-slate-900 print:border-b-2 print:border-brandTeal-500 print:pb-6 print:px-0">
                                         <div>
-                                            <p className="text-[10px] font-mono text-slate-500 uppercase">Entity</p>
-                                            <p className="font-bold text-white text-lg print:text-slate-900">{activeLedgerItem.clientCompany}</p>
+                                            <h1 className="text-2xl font-serif font-bold tracking-wide">Kolthoff Consulting</h1>
+                                            <p className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase mt-1 print:text-brandTeal-600">Official Scope of Work Agreement</p>
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] font-mono text-slate-500 uppercase">Authorized Signer</p>
-                                            <p className="font-bold text-white text-lg print:text-slate-900">{contract.signedBy}</p>
-                                        </div>
-                                        <div className="h-20 bg-white/5 border border-brandNavy-700 rounded-lg flex items-center justify-center overflow-hidden print:border-slate-300">
-                                            <span className="font-signature text-4xl text-brandTeal-400 opacity-80 print:text-slate-800">{contract.signedBy}</span>
+                                        <div className="text-left md:text-right">
+                                            <p className="text-xs text-slate-400 font-mono print:text-slate-600">Ref: {activeProfileObj.quoteId}</p>
+                                            <p className="text-xs text-emerald-400 font-mono mt-0.5 font-bold print:text-slate-600">Status: Executed on {new Date(contract.signedAt).toLocaleDateString()}</p>
                                         </div>
                                     </div>
 
-                                    <div className="glass-panel p-6 rounded-xl space-y-4">
-                                        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-brandNavy-700 pb-2 print:border-slate-200">Network Audit Log</h4>
-                                        <div className="space-y-4">
-                                            {contract.auditTrail.map((event, i) => (
-                                                <div key={i} className="flex gap-4 relative">
-                                                    {i !== contract.auditTrail.length - 1 && <div className="absolute left-2 top-6 w-0.5 h-full bg-brandNavy-700 print:bg-slate-300"></div>}
-                                                    <div className="w-4 h-4 rounded-full bg-brandNavy-800 border-2 border-brandTeal-500 mt-1 shrink-0 z-10 print:bg-white"></div>
+                                    <div className="p-8 md:p-12 print:p-0 print:pt-8">
+                                        
+                                        {renderContractDetails(activeProfileObj, financials, selectedTasks, activePMO, activeGov)}
+
+                                        <div className="mt-12 border-t border-slate-200 pt-8 print-force-break">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2">
+                                                <Icons.ShieldCheck /> Final Execution & E-Signature Audit
+                                            </h3>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4 print:bg-white print:border-slate-300">
+                                                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 border-b border-slate-200 pb-2">Signatory Parameters</h4>
                                                     <div>
-                                                        <p className="text-xs font-bold text-slate-200 print:text-slate-800">{event.action}</p>
-                                                        <p className="text-[10px] font-mono text-slate-500">{new Date(event.timestamp).toLocaleString()}</p>
+                                                        <p className="text-[10px] font-mono text-slate-500 uppercase">Entity</p>
+                                                        <p className="font-bold text-slate-900 text-lg">{activeLedgerItem.clientCompany}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-mono text-slate-500 uppercase">Authorized Signer</p>
+                                                        <p className="font-bold text-slate-900 text-lg">{contract.signedBy}</p>
+                                                    </div>
+                                                    <div className="h-20 bg-white border border-slate-300 rounded-lg flex items-center justify-center overflow-hidden">
+                                                        <span className="font-signature text-4xl text-slate-800">{contract.signedBy}</span>
                                                     </div>
                                                 </div>
-                                            ))}
+
+                                                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4 print:bg-white print:border-slate-300">
+                                                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500 border-b border-slate-200 pb-2">Network Audit Log</h4>
+                                                    <div className="space-y-4">
+                                                        {contract.auditTrail.map((event, i) => (
+                                                            <div key={i} className="flex gap-4 relative">
+                                                                {i !== contract.auditTrail.length - 1 && <div className="absolute left-2 top-6 w-0.5 h-full bg-slate-300"></div>}
+                                                                <div className="w-4 h-4 rounded-full bg-white border-2 border-brandTeal-500 mt-1 shrink-0 z-10"></div>
+                                                                <div>
+                                                                    <p className="text-xs font-bold text-slate-800">{event.action}</p>
+                                                                    <p className="text-[10px] font-mono text-slate-500">{new Date(event.timestamp).toLocaleString()}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p className="text-[9px] text-slate-500 text-center mt-6 uppercase tracking-wider font-mono">
+                                                Document uniquely verified & securely hashed by Kolthoff Consulting Server.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
