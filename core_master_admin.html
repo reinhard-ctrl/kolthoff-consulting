@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Master Admin | Kolthoff Consulting</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
+            authDomain: "kolthoff-portal.firebaseapp.com",
+            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kolthoff-portal",
+            storageBucket: "kolthoff-portal.firebasestorage.app",
+            messagingSenderId: "413958125034",
+            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
+        };
+        
+        // The master app ID for authentication (same as your other admin portals)
+        const masterAppId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app'; 
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        window.firebaseAuth = getAuth(app);
+        window.firebaseDb = getFirestore(app);
+        
+        window.masterAppId = masterAppId;
+        window.initialAuthToken = initialAuthToken;
+        window.signInAnonymously = signInAnonymously;
+        window.signInWithCustomToken = signInWithCustomToken;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.getDocs = getDocs;
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46' },
+                        brandTeal: { 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        body { background-color: #02050e; }
+        .glass-panel { background: rgba(9, 17, 31, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-200 antialiased min-h-screen font-sans selection:bg-brandTeal-600 selection:text-white">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icons = {
+            Lock: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+            Check: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>,
+            Database: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Server: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>,
+            Users: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
+            Trash2: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Edit: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+            X: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            BookOpen: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Layout: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
+            AlignLeft: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>,
+            AlignJustify: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>,
+            Hash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>,
+            Calendar: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            ChevronDown: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>,
+            CircleDot: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>,
+            CheckCircle2: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M9 12l2 2 4-4"/></svg>,
+            Play: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            Square: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>,
+            ToggleLeft: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="8" cy="12" r="3"/></svg>,
+            GitMerge: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/></svg>,
+            FileText: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
+            Save: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Settings: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        };
+
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // --- Template Designers (Migrated from Workspace) ---
+        const FormDesigner = ({ template, setTemplate }) => {
+          const addField = (type) => {
+            const newField = {
+              id: generateId(), type, label: `New ${type} field`, required: false,
+              ...(['select', 'radio'].includes(type) ? { optionsStr: 'Option 1, Option 2' } : {})
+            };
+            setTemplate({ ...template, fields: [...template.fields, newField] });
+          };
+
+          const updateField = (id, updates) => setTemplate({...template, fields: template.fields.map(f => f.id === id ? { ...f, ...updates } : f)});
+          const removeField = (id) => setTemplate({ ...template, fields: template.fields.filter(f => f.id !== id) });
+
+          return (
+            <div className="flex flex-col md:flex-row h-full border border-slate-300 rounded-lg overflow-hidden bg-slate-50 text-slate-800">
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 hidden md:block">Form Layout</h3>
+                {template.fields.length === 0 ? (
+                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 md:p-12 text-center text-slate-400 bg-white">
+                    <div className="flex justify-center"><Icons.Layout /></div>
+                    <p className="mt-2 text-sm md:text-base">Form is empty. Add fields from the panel.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {template.fields.map((field) => (
+                      <div key={field.id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative group">
+                        <button onClick={() => removeField(field.id)} className="absolute top-2 right-2 p-2 text-slate-300 hover:text-red-500 md:hidden md:group-hover:block"><Icons.Trash2 /></button>
+                        <div className="flex flex-col md:flex-row gap-4 pt-4 md:pt-0">
+                          <div className="flex-1">
+                            <input type="text" value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} className="font-medium text-slate-800 border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-500 outline-none focus:ring-0 p-1 w-full mb-2 bg-transparent" placeholder="Field Label" />
+                            <div className="text-sm text-slate-400 bg-slate-50 p-2 rounded flex items-center gap-2 border border-slate-100">
+                              {field.type === 'text' && <Icons.AlignLeft />}
+                              {field.type === 'textarea' && <Icons.AlignJustify />}
+                              {field.type === 'number' && <Icons.Hash />}
+                              {field.type === 'date' && <Icons.Calendar />}
+                              {field.type === 'select' && <Icons.ChevronDown />}
+                              {field.type === 'radio' && <Icons.CircleDot />}
+                              {field.type === 'checkbox' && <Icons.CheckSquare />}
+                              Mock {field.type} Input
+                            </div>
+                            {['select', 'radio'].includes(field.type) && (
+                              <div className="mt-2">
+                                <input type="text" value={field.optionsStr || ''} onChange={(e) => updateField(field.id, { optionsStr: e.target.value })} className="w-full text-xs p-1.5 border border-slate-200 rounded text-slate-600 focus:outline-none focus:border-blue-400" placeholder="Comma separated options (e.g. Option A, Option B)"/>
+                              </div>
+                            )}
+                          </div>
+                          <div className="w-full md:w-32 flex flex-row md:flex-col justify-end md:justify-center items-center md:items-end border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0 md:pl-4 mt-2 md:mt-0">
+                            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer p-1">
+                              <input type="checkbox" checked={field.required} onChange={(e) => updateField(field.id, { required: e.target.checked })} className="rounded border-slate-300"/> Required
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="w-full md:w-64 bg-white border-t md:border-t-0 md:border-l border-slate-200 p-4 shrink-0 overflow-y-auto max-h-[40vh] md:max-h-full">
+                <h4 className="font-medium text-slate-800 mb-3 text-sm">Add Controls</h4>
+                <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                  <button onClick={() => addField('text')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.AlignLeft /> Short Text</button>
+                  <button onClick={() => addField('textarea')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.AlignJustify /> Long Text</button>
+                  <button onClick={() => addField('number')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.Hash /> Number</button>
+                  <button onClick={() => addField('date')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.Calendar /> Date</button>
+                  <button onClick={() => addField('select')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.ChevronDown /> Dropdown</button>
+                  <button onClick={() => addField('radio')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700"><Icons.CircleDot /> Radio Group</button>
+                  <button onClick={() => addField('checkbox')} className="w-full flex items-center gap-2 p-2 rounded-md border border-slate-200 hover:bg-slate-50 text-xs text-slate-700 col-span-2 md:col-span-1"><Icons.CheckCircle2 /> Single Checkbox</button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const ProcessFlowDesigner = ({ template, setTemplate, users = [] }) => {
+          const addStep = () => {
+            const newStep = { id: generateId(), type: 'manager', label: `Step ${template.flowSteps.length + 1}`, condition: null };
+            setTemplate({ ...template, flowSteps: [...template.flowSteps, newStep] });
+          };
+          const updateStep = (id, updates) => setTemplate({...template, flowSteps: template.flowSteps.map(s => s.id === id ? { ...s, ...updates } : s)});
+          const removeStep = (id) => setTemplate({ ...template, flowSteps: template.flowSteps.filter(s => s.id !== id) });
+
+          return (
+            <div className="flex h-full border border-slate-300 rounded-lg overflow-hidden bg-slate-50 text-slate-800">
+              <div className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col items-center">
+                <div className="bg-slate-800 text-white px-4 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-medium shadow-md flex items-center gap-2 z-10"><Icons.Play /> Start: Requester Submits</div>
+                {template.flowSteps.map((step, index) => (
+                  <React.Fragment key={step.id}>
+                    <div className="w-0.5 h-6 md:h-8 bg-slate-300"></div>
+                    <div className="bg-white border border-slate-200 shadow-sm rounded-lg p-4 w-full max-w-[20rem] md:max-w-sm relative group hover:border-blue-400 transition-all z-10">
+                      <button onClick={() => removeStep(step.id)} className="absolute -right-2 -top-2 md:-right-3 md:-top-3 bg-white border rounded-full p-1 text-slate-400 hover:text-red-500 shadow-sm md:hidden group-hover:block"><Icons.X /></button>
+                      <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{index + 1}</div>
+                        <input type="text" value={step.label} onChange={(e) => updateStep(step.id, { label: e.target.value })} className="font-medium text-slate-800 border-none outline-none flex-1 text-sm bg-transparent border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-500"/>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-[11px] text-slate-500 block mb-1">Approver Type</label>
+                          <select value={step.type} onChange={(e) => updateStep(step.id, { type: e.target.value, approverId: undefined })} className="w-full text-sm border-slate-300 border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800">
+                            <option value="manager">Direct Manager of Requester</option>
+                            <option value="specific">Specific Individual</option>
+                          </select>
+                        </div>
+                        {step.type === 'specific' && (
+                          <div>
+                            <label className="text-[11px] text-slate-500 block mb-1">Select User</label>
+                            {users.length > 0 ? (
+                                <select value={step.approverId || ''} onChange={(e) => updateStep(step.id, { approverId: e.target.value })} className="w-full text-sm border-slate-300 border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800">
+                                  <option value="" disabled>Choose a user...</option>
+                                  {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
+                                </select>
+                            ) : (
+                                <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">Specific user assignments must be mapped inside the tenant workspace.</div>
+                            )}
+                          </div>
+                        )}
+                        <div className="pt-2 border-t border-slate-100 mt-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-[11px] font-medium text-slate-600 flex items-center gap-1.5"><Icons.ToggleLeft /> Execution Condition</label>
+                            <input type="checkbox" checked={!!step.condition} onChange={(e) => {
+                              if (e.target.checked) updateStep(step.id, { condition: { fieldId: template.fields[0]?.id || '', operator: '==', value: '' } });
+                              else updateStep(step.id, { condition: null });
+                            }} className="rounded border-slate-300 cursor-pointer"/>
+                          </div>
+                          {step.condition && (
+                            <div className="flex flex-col gap-2 mt-2 bg-slate-50 p-2 rounded border border-slate-100">
+                              <select value={step.condition.fieldId} onChange={(e) => updateStep(step.id, { condition: { ...step.condition, fieldId: e.target.value } })} className="w-full text-xs border border-slate-300 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-800">
+                                <option value="" disabled>Select Field</option>
+                                {template.fields.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+                              </select>
+                              <div className="flex gap-2">
+                                  <select value={step.condition.operator} onChange={(e) => updateStep(step.id, { condition: { ...step.condition, operator: e.target.value } })} className="w-[45%] text-xs border border-slate-300 rounded px-1.5 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-800">
+                                    <option value="==">== (Eq)</option>
+                                    <option value="!=">!= (Not)</option>
+                                    <option value=">">&gt; (Gr)</option>
+                                    <option value="<">&lt; (Ls)</option>
+                                    <option value=">=">&gt;= (GrEq)</option>
+                                    <option value="<=">&lt;= (LsEq)</option>
+                                    <option value="contains">Contains</option>
+                                  </select>
+                                  <input type="text" value={step.condition.value} onChange={(e) => updateStep(step.id, { condition: { ...step.condition, value: e.target.value } })} placeholder="Target Value" className="w-[55%] text-xs border border-slate-300 rounded px-2 py-1.5 outline-none focus:ring-1 focus:ring-blue-500 text-slate-800"/>
+                              </div>
+                              <div className="w-full text-[10px] text-blue-600 mt-1 italic leading-tight">Note: Step auto-skips if condition is not met.</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
+                <div className="w-0.5 h-6 md:h-8 bg-slate-300"></div>
+                <button onClick={addStep} className="bg-white border-2 border-dashed border-slate-300 text-slate-500 hover:text-blue-600 px-4 md:px-6 py-2 rounded-full text-xs md:text-sm font-medium flex items-center gap-2 z-10 transition-colors"><Icons.Plus /> Add Step</button>
+                <div className="w-0.5 h-6 md:h-8 bg-slate-300"></div>
+                <div className="bg-green-100 text-green-800 border border-green-200 px-4 md:px-6 py-2 md:py-3 rounded-full text-xs md:text-sm font-medium shadow-sm flex items-center gap-2 z-10"><Icons.Square /> End: Approved</div>
+              </div>
+            </div>
+          );
+        };
+
+        function App() {
+            // Administrative Passcode Lock Gate States
+            const [adminCode, setAdminCode] = useState('');
+            const [isAdminAuthed, setIsAdminAuthed] = useState(false);
+            const [authError, setAuthError] = useState('');
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [toast, setToast] = useState(null);
+
+            // Tenant Management State
+            const [activeTenantId, setActiveTenantId] = useState('');
+            const [connectedTenant, setConnectedTenant] = useState(null);
+            
+            // New Blueprint & Tab States
+            const [activeMode, setActiveMode] = useState('tenants'); // 'tenants' | 'blueprints'
+            const [tenantTab, setTenantTab] = useState('users'); // 'users' | 'templates' | 'features'
+            const [masterTemplates, setMasterTemplates] = useState([]);
+            const [tenantTemplates, setTenantTemplates] = useState([]);
+            const [editingTemplate, setEditingTemplate] = useState(null);
+            const [editingTemplateType, setEditingTemplateType] = useState('master'); // 'master' | 'tenant'
+            const [designerTab, setDesignerTab] = useState('form');
+            const [showImportModal, setShowImportModal] = useState(false);
+            const [tenantFeatures, setTenantFeatures] = useState({ messenger: true, approvals: true, vault: false, crm: false });
+            
+            // Tenant Live Data
+            const [tenantUsers, setTenantUsers] = useState([]);
+            const [tenantDepts, setTenantDepts] = useState([]);
+            const [tenantRequests, setTenantRequests] = useState([]);
+            
+            const listenersRef = useRef([]);
+
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb && window.signInAnonymously) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                                setIsAuthed(true);
+                            } catch (e) {
+                                console.error("Authentication error:", e);
+                            }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // Fetch Master Templates globally once admin is authed
+            useEffect(() => {
+                if (!isAdminAuthed) return;
+                const db = window.firebaseDb;
+                const unsubMaster = window.onSnapshot(window.collection(db, 'artifacts', window.masterAppId, 'public', 'data', 'master_templates'), (snap) => {
+                    const data = []; snap.forEach(d => data.push(d.data())); setMasterTemplates(data);
+                });
+                return () => unsubMaster();
+            }, [isAdminAuthed]);
+
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const handleAdminLogin = async (e) => {
+                e.preventDefault();
+                const cleanCode = adminCode.trim().toUpperCase();
+                if (!cleanCode) return;
+
+                setIsProcessing(true);
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.masterAppId, 'public', 'data', 'admin_credentials', cleanCode);
+                    const docSnap = await window.getDoc(docRef);
+
+                    if (docSnap.exists() || cleanCode === 'ADMIN') {
+                        setIsAdminAuthed(true);
+                        setAuthError('');
+                        showToast("Master Console Unlocked");
+                    } else {
+                        setAuthError("Unauthorized token entry.");
+                    }
+                } catch (err) {
+                    setAuthError("Verification failed.");
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const connectToTenant = (e) => {
+                e.preventDefault();
+                const targetId = activeTenantId.trim();
+                if (!targetId) return;
+
+                // Clear existing listeners
+                listenersRef.current.forEach(unsub => unsub());
+                listenersRef.current = [];
+
+                const db = window.firebaseDb;
+                
+                // Attach new listeners to the specific tenant AppID
+                const unsubUsers = window.onSnapshot(window.collection(db, 'artifacts', targetId, 'public', 'data', 'core_users'), (snap) => {
+                    const data = []; snap.forEach(d => data.push(d.data())); setTenantUsers(data);
+                });
+                const unsubDepts = window.onSnapshot(window.collection(db, 'artifacts', targetId, 'public', 'data', 'core_departments'), (snap) => {
+                    const data = []; snap.forEach(d => data.push(d.data())); setTenantDepts(data);
+                });
+                const unsubReqs = window.onSnapshot(window.collection(db, 'artifacts', targetId, 'public', 'data', 'core_requests'), (snap) => {
+                    const data = []; snap.forEach(d => data.push(d.data())); setTenantRequests(data);
+                });
+                const unsubTemplates = window.onSnapshot(window.collection(db, 'artifacts', targetId, 'public', 'data', 'core_templates'), (snap) => {
+                    const data = []; snap.forEach(d => data.push(d.data())); setTenantTemplates(data);
+                });
+                const unsubConfig = window.onSnapshot(window.doc(db, 'artifacts', targetId, 'public', 'data', 'tenant_settings', 'config'), (snap) => {
+                    if (snap.exists() && snap.data().features) {
+                        setTenantFeatures(snap.data().features);
+                    } else {
+                        setTenantFeatures({ messenger: true, approvals: true, vault: false, crm: false });
+                    }
+                });
+
+                listenersRef.current.push(unsubUsers, unsubDepts, unsubReqs, unsubTemplates, unsubConfig);
+                setConnectedTenant(targetId);
+                showToast(`Connected to Tenant: ${targetId}`);
+            };
+
+            const provisionInitialAdmin = async () => {
+                if (!connectedTenant) return;
+                const email = prompt("Enter the email address for the initial Client Admin:");
+                if (!email) return;
+
+                setIsProcessing(true);
+                try {
+                    const db = window.firebaseDb;
+                    
+                    // Create base Management Department if none exists
+                    const mgmtDeptId = generateId();
+                    if (tenantDepts.length === 0) {
+                        await window.setDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', 'core_departments', mgmtDeptId), {
+                            id: mgmtDeptId, name: 'Executive Management', parentId: null
+                        });
+                    }
+
+                    // Create Admin User
+                    const newUserId = generateId();
+                    await window.setDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', 'core_users', newUserId), {
+                        id: newUserId,
+                        name: 'System Admin',
+                        email: email.trim(),
+                        departmentId: tenantDepts.length > 0 ? tenantDepts[0].id : mgmtDeptId,
+                        managerId: null,
+                        role: 'admin'
+                    });
+
+                    showToast("Admin Provisioned Successfully.");
+                } catch (e) {
+                    console.error(e);
+                    alert("Failed to provision admin.");
+                }
+                setIsProcessing(false);
+            };
+
+            const deleteTenantUser = async (userId) => {
+                if(!confirm("Are you sure you want to delete this user?")) return;
+                await window.deleteDoc(window.doc(window.firebaseDb, 'artifacts', connectedTenant, 'public', 'data', 'core_users', userId));
+                showToast("User deleted.");
+            };
+
+            const wipeTenantData = async () => {
+                if(!confirm(`DANGER: Are you absolutely sure you want to WIPE ALL DATA for ${connectedTenant}? This deletes users, departments, chats, and templates.`)) return;
+                
+                setIsProcessing(true);
+                try {
+                    const db = window.firebaseDb;
+                    const collectionsToWipe = ['core_users', 'core_departments', 'core_templates', 'core_requests', 'core_chats', 'core_messages'];
+                    
+                    for (const colName of collectionsToWipe) {
+                        const colRef = window.collection(db, 'artifacts', connectedTenant, 'public', 'data', colName);
+                        const snap = await window.getDocs(colRef);
+                        const deletePromises = [];
+                        snap.forEach(docSnap => {
+                            deletePromises.push(window.deleteDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', colName, docSnap.id)));
+                        });
+                        await Promise.all(deletePromises);
+                    }
+                    showToast(`Wiped all data for ${connectedTenant}`);
+                } catch(e) {
+                    console.error(e);
+                    alert("Error wiping data.");
+                }
+                setIsProcessing(false);
+            };
+
+            const handleSaveTemplate = async () => {
+                if (!editingTemplate.name.trim()) { showToast("Template needs a name"); return; }
+                const db = window.firebaseDb;
+                if (editingTemplateType === 'master') {
+                    await window.setDoc(window.doc(db, 'artifacts', window.masterAppId, 'public', 'data', 'master_templates', editingTemplate.id), editingTemplate);
+                } else {
+                    await window.setDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', 'core_templates', editingTemplate.id), editingTemplate);
+                }
+                setEditingTemplate(null);
+                showToast("Template saved successfully.");
+            };
+
+            const handleImportBlueprint = async (masterTpl) => {
+                const db = window.firebaseDb;
+                const newId = generateId();
+                const newTpl = { ...masterTpl, id: newId };
+                await window.setDoc(window.doc(db, 'artifacts', connectedTenant, 'public', 'data', 'core_templates', newId), newTpl);
+                setShowImportModal(false);
+                showToast(`Imported "${masterTpl.name}" to tenant.`);
+            };
+
+            // === RENDER GATEWAY ===
+            if (!isAdminAuthed) {
+                return (
+                    <div className="flex h-screen items-center justify-center relative overflow-hidden font-sans bg-[#02050e]">
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brandTeal-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                        
+                        <div className="glass-panel p-10 rounded-2xl w-full max-w-md border border-brandNavy-700 relative z-10 shadow-2xl text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-brandTeal-500/10 border border-brandTeal-500/30 flex items-center justify-center text-brandTeal-400 shadow-[0_0_15px_rgba(20,184,166,0.15)] mx-auto mb-6">
+                                <Icons.Server />
+                            </div>
+                            
+                            <h1 className="text-2xl font-serif font-bold text-white mb-2">Suite Provisioning Vault</h1>
+                            <p className="text-xs text-slate-400 mb-8 font-mono">Master authentication required for multi-tenant management.</p>
+
+                            <form onSubmit={handleAdminLogin} className="space-y-4">
+                                <div>
+                                    <input 
+                                        type="password" 
+                                        value={adminCode}
+                                        onChange={(e) => setAdminCode(e.target.value)}
+                                        placeholder="••••••••••••"
+                                        className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded-lg px-4 py-3 text-sm text-white font-mono font-bold text-center tracking-widest focus:outline-none focus:border-brandTeal-500 transition-colors uppercase"
+                                    />
+                                </div>
+                                {authError && <p className="text-xs text-rose-400 font-bold bg-rose-500/10 p-2 rounded">{authError}</p>}
+                                <button type="submit" disabled={isProcessing || !isAuthed} className="w-full bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-lg px-4 py-3 text-sm transition-all flex justify-center items-center gap-2 disabled:opacity-50">
+                                    <Icons.Lock /> {isProcessing ? "Validating Sequence..." : "Unlock Console"}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen overflow-hidden bg-[#02050e]">
+                    {toast && (
+                        <div className="fixed top-4 right-4 z-50 bg-brandTeal-500 text-brandNavy-955 px-4 py-2 rounded shadow-lg font-bold text-sm flex items-center gap-2 animate-fade-in">
+                            <Icons.Check /> {toast}
+                        </div>
+                    )}
+
+                    {/* SIDEBAR */}
+                    <aside className="w-80 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 relative z-20">
+                        <div className="p-6 border-b border-brandNavy-800 flex justify-between items-center">
+                            <div>
+                                <h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff Consulting</h1>
+                                <span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Master Console</span>
+                            </div>
+                        </div>
+
+                        <div className="flex border-b border-brandNavy-800 bg-brandNavy-900/50 text-[10px] uppercase font-bold tracking-wider">
+                            <button onClick={() => setActiveMode('tenants')} className={`flex-1 py-3 text-center transition-colors ${activeMode === 'tenants' ? 'text-brandTeal-400 border-b-2 border-brandTeal-500 bg-brandNavy-900' : 'text-slate-500 hover:text-slate-300'}`}>Tenant Mgmt</button>
+                            <button onClick={() => setActiveMode('blueprints')} className={`flex-1 py-3 text-center transition-colors ${activeMode === 'blueprints' ? 'text-brandTeal-400 border-b-2 border-brandTeal-500 bg-brandNavy-900' : 'text-slate-500 hover:text-slate-300'}`}>Master Blueprints</button>
+                        </div>
+
+                        <div className="p-6 flex-1 overflow-y-auto space-y-6">
+                            {activeMode === 'tenants' ? (
+                                <div>
+                                    <label className="block text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-2 font-bold">Target Workspace / App ID</label>
+                                    <form onSubmit={connectToTenant} className="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            value={activeTenantId}
+                                            onChange={(e) => setActiveTenantId(e.target.value)}
+                                            placeholder="e.g. client-acme-corp"
+                                            className="flex-1 bg-brandNavy-900 border border-brandNavy-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        />
+                                        <button type="submit" className="bg-brandNavy-800 hover:bg-brandNavy-700 text-brandTeal-400 border border-brandNavy-700 rounded px-3 py-2 text-xs font-bold transition-colors">
+                                            Connect
+                                        </button>
+                                    </form>
+                                    <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
+                                        This App ID must exactly match the <span className="text-slate-300 font-mono">__app_id</span> variable you deploy in the client's `team-os.html` file.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-slate-400 leading-relaxed">
+                                    Manage the global library of standard workflows. These templates can be pushed to any connected tenant.
+                                </div>
+                            )}
+
+                            {connectedTenant && activeMode === 'tenants' && (
+                                <div className="space-y-4 pt-4 border-t border-brandNavy-800">
+                                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        Live Status: {connectedTenant}
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-brandNavy-900 border border-brandNavy-800 p-3 rounded-lg text-center">
+                                            <div className="text-2xl font-mono text-white font-bold">{tenantUsers.length}</div>
+                                            <div className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Users</div>
+                                        </div>
+                                        <div className="bg-brandNavy-900 border border-brandNavy-800 p-3 rounded-lg text-center">
+                                            <div className="text-2xl font-mono text-brandTeal-400 font-bold">{tenantTemplates.length}</div>
+                                            <div className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Templates</div>
+                                        </div>
+                                        <div className="bg-brandNavy-900 border border-brandNavy-800 p-3 rounded-lg text-center col-span-2">
+                                            <div className="text-2xl font-mono text-brandAmber-400 font-bold">{tenantRequests.length}</div>
+                                            <div className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Approval Requests Processed</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {connectedTenant && activeMode === 'tenants' && (
+                            <div className="p-4 border-t border-brandNavy-800 space-y-3">
+                                <button 
+                                    onClick={wipeTenantData}
+                                    disabled={isProcessing}
+                                    className="w-full flex justify-center items-center gap-2 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold rounded transition-colors disabled:opacity-50 border border-rose-500/30"
+                                >
+                                    <Icons.Trash2 /> Nuke Tenant Data
+                                </button>
+                            </div>
+                        )}
+                    </aside>
+
+                    {/* MAIN EDITOR */}
+                    <main className="flex-1 overflow-y-auto bg-brandNavy-900/30 p-4 md:p-8 relative z-10 scroll-smooth">
+                        {editingTemplate ? (
+                            <div className="max-w-5xl mx-auto flex flex-col h-[calc(100vh-4rem)] bg-white border border-brandNavy-700 rounded-xl overflow-hidden shadow-lg animate-fade-in">
+                              <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:justify-between md:items-center shrink-0 gap-3">
+                                <div className="flex items-center gap-3 w-full md:w-auto flex-1">
+                                  <button onClick={() => setEditingTemplate(null)} className="text-slate-400 hover:text-slate-700 p-1 bg-white rounded border border-slate-200 shadow-sm shrink-0"><Icons.X /></button>
+                                  <input type="text" value={editingTemplate.name} onChange={(e) => setEditingTemplate({...editingTemplate, name: e.target.value})} className="text-lg md:text-xl font-bold bg-transparent border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-500 outline-none p-1 text-slate-800 w-full" placeholder="Template Name" />
+                                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-brandNavy-100 text-brandNavy-600 hidden sm:block">{editingTemplateType === 'master' ? 'Master Blueprint' : 'Tenant App'}</span>
+                                </div>
+                                <div className="flex items-center justify-between md:justify-end gap-2 w-full md:w-auto">
+                                    <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-lg">
+                                      <button onClick={() => setDesignerTab('form')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${designerTab === 'form' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-800'}`}>1. Form</button>
+                                      <button onClick={() => setDesignerTab('process')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${designerTab === 'process' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-600 hover:text-slate-800'}`}>2. Flow</button>
+                                    </div>
+                                    <button className="bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 transition-colors" onClick={handleSaveTemplate}><Icons.Save className="hidden md:block"/> Save</button>
+                                </div>
+                              </div>
+                              <div className="flex-1 overflow-hidden p-2 md:p-6 bg-slate-100/50">
+                                {designerTab === 'form' ? <FormDesigner template={editingTemplate} setTemplate={setEditingTemplate} /> : <ProcessFlowDesigner template={editingTemplate} setTemplate={setEditingTemplate} users={editingTemplateType === 'master' ? [] : tenantUsers} />}
+                              </div>
+                            </div>
+                        ) : activeMode === 'blueprints' ? (
+                            <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                                <div className="flex justify-between items-end border-b border-brandNavy-700 pb-4 sticky top-0 bg-[#02050e] pt-4 z-30">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white font-serif">Master Blueprints</h2>
+                                        <p className="text-sm text-slate-400 font-mono mt-1">Global template library available to all tenants.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => { setEditingTemplateType('master'); setEditingTemplate({ id: generateId(), name: 'New Master Template', icon: 'FileText', fields: [], flowSteps: [] }); setDesignerTab('form'); }}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded font-bold text-xs shadow-lg shadow-brandTeal-500/20 transition-all"
+                                    >
+                                        <Icons.Plus /> Create Master Blueprint
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {masterTemplates.map(tpl => (
+                                      <div key={tpl.id} className="glass-panel border border-brandNavy-700 rounded-xl p-6 shadow-sm hover:border-brandTeal-500/50 transition-all group">
+                                        <div className="flex justify-between items-start mb-4">
+                                          <div className="w-12 h-12 bg-brandNavy-800 text-brandTeal-400 rounded-xl flex items-center justify-center shadow-inner"><Icons.FileText /></div>
+                                          <button className="p-2 text-slate-400 hover:text-brandTeal-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setEditingTemplateType('master'); setEditingTemplate({...tpl}); setDesignerTab('form'); }}><Icons.Edit /></button>
+                                        </div>
+                                        <h4 className="font-semibold text-white text-lg mb-2">{tpl.name}</h4>
+                                        <div className="flex gap-4 text-xs text-slate-400">
+                                          <span className="flex items-center gap-1"><Icons.AlignLeft/> {tpl.fields?.length || 0} Fields</span>
+                                          <span className="flex items-center gap-1"><Icons.GitMerge/> {tpl.flowSteps?.length || 0} Steps</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {masterTemplates.length === 0 && <div className="col-span-full p-8 text-center text-slate-500 italic border border-dashed border-brandNavy-700 rounded-xl">No master blueprints created yet.</div>}
+                                </div>
+                            </div>
+                        ) : connectedTenant ? (
+                            <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                                <div className="flex justify-between items-end border-b border-brandNavy-700 pb-4 sticky top-0 bg-[#02050e] pt-4 z-30">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white font-serif">Workspace: {connectedTenant}</h2>
+                                        <p className="text-sm text-slate-400 font-mono mt-1">Manage core deployment configurations below.</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setTenantTab('users')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'users' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Users & Depts</button>
+                                        <button onClick={() => setTenantTab('templates')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'templates' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Templates</button>
+                                        <button onClick={() => setTenantTab('features')} className={`px-4 py-2 rounded text-xs font-bold transition-all ${tenantTab === 'features' ? 'bg-brandNavy-800 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Features</button>
+                                    </div>
+                                </div>
+
+                                {tenantTab === 'users' && (
+                                    <>
+                                        <div className="flex justify-end">
+                                            <button 
+                                                onClick={provisionInitialAdmin}
+                                                disabled={isProcessing}
+                                                className="flex items-center gap-2 px-6 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded font-bold text-xs shadow-lg shadow-brandTeal-500/20 transition-all disabled:opacity-50"
+                                            >
+                                                <Icons.Plus /> Provision Initial Admin User
+                                            </button>
+                                        </div>
+
+                                        <section className="glass-panel p-6 rounded-xl space-y-4 shadow-lg">
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-brandNavy-700 pb-2 flex items-center gap-2">
+                                                <Icons.Users /> Provisioned Users
+                                            </h3>
+                                            
+                                            <div className="border border-brandNavy-800 rounded-lg overflow-x-auto">
+                                                <table className="w-full text-left text-xs whitespace-nowrap">
+                                                    <thead className="bg-brandNavy-950 border-b border-brandNavy-800 text-slate-400 uppercase font-mono tracking-wider">
+                                                        <tr>
+                                                            <th className="px-4 py-3">Name / Role</th>
+                                                            <th className="px-4 py-3">Email Access</th>
+                                                            <th className="px-4 py-3">Department</th>
+                                                            <th className="px-4 py-3 text-right">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-brandNavy-800/50 bg-brandNavy-900/50">
+                                                        {tenantUsers.length === 0 ? (
+                                                            <tr><td colSpan="4" className="px-4 py-8 text-center text-slate-500 italic">No users provisioned in this tenant yet.</td></tr>
+                                                        ) : (
+                                                            tenantUsers.map(u => {
+                                                                const d = tenantDepts.find(dept => dept.id === u.departmentId);
+                                                                return (
+                                                                    <tr key={u.id} className="hover:bg-brandNavy-800 transition-colors">
+                                                                        <td className="px-4 py-3">
+                                                                            <div className="font-bold text-slate-200">{u.name || 'Pending Setup'}</div>
+                                                                            <div className={`text-[10px] mt-0.5 uppercase font-bold tracking-wider ${u.role === 'admin' ? 'text-brandTeal-400' : 'text-slate-500'}`}>{u.role}</div>
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-slate-300 font-mono">{u.email}</td>
+                                                                        <td className="px-4 py-3 text-slate-400">{d ? d.name : 'None'}</td>
+                                                                        <td className="px-4 py-3 text-right">
+                                                                            <button onClick={() => deleteTenantUser(u.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/20 rounded transition-colors"><Icons.Trash2 /></button>
+                                                                        </td>
+                                                                    </tr>
+                                                                )
+                                                            })
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+                                        
+                                        <section className="glass-panel p-6 rounded-xl shadow-lg mt-6 border-l-4 border-l-brandTeal-500 bg-brandTeal-500/5">
+                                            <h3 className="text-sm font-bold text-white mb-2 font-serif">Deployment Instructions</h3>
+                                            <p className="text-xs text-slate-400 leading-relaxed">
+                                                Once you have provisioned the initial Admin User (using the button above), you can safely deliver the `team-os.html` file to the client. Tell the assigned Admin to log in using that exact email address. They will then use the in-app Suite Admin tools to invite the rest of their organization and build out their custom Approval templates.
+                                            </p>
+                                        </section>
+                                    </>
+                                )}
+                                {tenantTab === 'templates' && (
+                                    <div className="space-y-6 animate-fade-in">
+                                        <div className="flex justify-between items-center bg-brandNavy-900/50 p-4 rounded-xl border border-brandNavy-800">
+                                            <span className="text-sm font-semibold text-slate-300">Tenant Templates ({tenantTemplates.length})</span>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-700 text-brandTeal-400 rounded font-bold text-xs border border-brandNavy-700 transition-all"><Icons.FileText /> Import Blueprint</button>
+                                                <button onClick={() => { setEditingTemplateType('tenant'); setEditingTemplate({ id: generateId(), name: 'New Custom Template', icon: 'FileText', fields: [], flowSteps: [] }); setDesignerTab('form'); }} className="flex items-center gap-2 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded font-bold text-xs transition-all"><Icons.Plus /> Custom Template</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {tenantTemplates.map(tpl => (
+                                              <div key={tpl.id} className="glass-panel border border-brandNavy-700 rounded-xl p-6 shadow-sm hover:border-brandTeal-500/50 transition-all group">
+                                                <div className="flex justify-between items-start mb-4">
+                                                  <div className="w-12 h-12 bg-brandNavy-800 text-brandTeal-400 rounded-xl flex items-center justify-center shadow-inner"><Icons.FileText /></div>
+                                                  <button className="p-2 text-slate-400 hover:text-brandTeal-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setEditingTemplateType('tenant'); setEditingTemplate({...tpl}); setDesignerTab('form'); }}><Icons.Edit /></button>
+                                                </div>
+                                                <h4 className="font-semibold text-white text-lg mb-2">{tpl.name}</h4>
+                                                <div className="flex gap-4 text-xs text-slate-400">
+                                                  <span className="flex items-center gap-1"><Icons.AlignLeft/> {tpl.fields?.length || 0} Fields</span>
+                                                  <span className="flex items-center gap-1"><Icons.GitMerge/> {tpl.flowSteps?.length || 0} Steps</span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                            {tenantTemplates.length === 0 && <div className="col-span-full p-8 text-center text-slate-500 italic border border-dashed border-brandNavy-700 rounded-xl">No templates found for this tenant.</div>}
+                                        </div>
+                                    </div>
+                                )}
+                                {tenantTab === 'features' && (
+                                    <div className="space-y-6 animate-fade-in">
+                                        <div className="bg-brandNavy-900/50 p-6 rounded-xl border border-brandNavy-800 space-y-6 shadow-sm">
+                                            <div className="border-b border-brandNavy-700 pb-4">
+                                                <h3 className="text-sm font-semibold text-white flex items-center gap-2"><Icons.Settings /> Feature Entitlements</h3>
+                                                <p className="text-xs text-slate-400 mt-1">Enable or disable core modules for this tenant in real-time. Changes instantly reflect in the client workspace.</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {['messenger', 'approvals', 'vault', 'crm'].map(featureKey => (
+                                                    <div key={featureKey} className="flex items-center justify-between bg-brandNavy-955 border border-brandNavy-800 p-4 rounded-lg shadow-inner">
+                                                        <div>
+                                                            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider block mb-1">{featureKey}</span>
+                                                            <span className="text-[10px] text-slate-500">
+                                                                {featureKey === 'messenger' ? 'Internal team chat & AI drafting.' : 
+                                                                 featureKey === 'approvals' ? 'Digital form routing & tracking.' : 
+                                                                 featureKey === 'vault' ? 'Read-only SOP & policy viewer.' : 
+                                                                 'Client relationship management.'}
+                                                            </span>
+                                                        </div>
+                                                        <button 
+                                                            onClick={async () => {
+                                                                const newFeatures = { ...tenantFeatures, [featureKey]: !tenantFeatures[featureKey] };
+                                                                setTenantFeatures(newFeatures);
+                                                                await window.setDoc(window.doc(window.firebaseDb, 'artifacts', connectedTenant, 'public', 'data', 'tenant_settings', 'config'), { features: newFeatures }, { merge: true });
+                                                                showToast(`${featureKey.toUpperCase()} is now ${newFeatures[featureKey] ? 'ENABLED' : 'DISABLED'}.`);
+                                                            }} 
+                                                            className={`w-12 h-6 flex items-center rounded-full p-1 transition-all duration-300 ${tenantFeatures[featureKey] ? 'bg-brandTeal-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}
+                                                        >
+                                                            <span className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-all duration-300 ${tenantFeatures[featureKey] ? 'translate-x-6' : 'translate-x-0'}`} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500 flex-col gap-4">
+                                <div className="w-20 h-20 rounded-full border-4 border-brandNavy-800 border-dashed flex items-center justify-center mb-2">
+                                    <Icons.Database />
+                                </div>
+                                <div className="text-lg font-bold text-slate-400 font-serif">No Tenant Selected</div>
+                                <div className="text-sm font-mono">Enter an App ID in the sidebar to connect to a workspace.</div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Import Master Blueprint Modal */}
+                    {showImportModal && (
+                        <div className="fixed inset-0 bg-[#02050e]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                            <div className="bg-brandNavy-900 border border-brandNavy-700 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[80vh]">
+                                <div className="p-4 border-b border-brandNavy-800 flex justify-between items-center bg-brandNavy-950 shrink-0">
+                                    <h3 className="font-bold text-white flex items-center gap-2"><Icons.FileText /> Import Master Blueprint</h3>
+                                    <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-white"><Icons.X /></button>
+                                </div>
+                                <div className="p-4 flex-1 overflow-y-auto space-y-2">
+                                    {masterTemplates.length === 0 ? (
+                                        <p className="text-slate-400 text-sm text-center py-4">No master blueprints available in global library.</p>
+                                    ) : (
+                                        masterTemplates.map(tpl => (
+                                            <div key={tpl.id} className="flex justify-between items-center p-4 bg-brandNavy-955 border border-brandNavy-800 rounded-lg hover:border-brandTeal-500/50 transition-colors">
+                                                <div>
+                                                    <div className="font-bold text-slate-200 text-sm mb-1">{tpl.name}</div>
+                                                    <div className="text-[10px] text-slate-500 font-mono">{tpl.fields?.length || 0} Fields · {tpl.flowSteps?.length || 0} Steps</div>
+                                                </div>
+                                                <button onClick={() => handleImportBlueprint(tpl)} className="px-3 py-1.5 bg-brandTeal-500/10 text-brandTeal-400 hover:bg-brandTeal-500 hover:text-brandNavy-955 rounded text-xs font-bold transition-all border border-brandTeal-500/20">Import</button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
