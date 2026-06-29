@@ -13,7 +13,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -37,6 +37,8 @@
     window.signInWithCustomToken = signInWithCustomToken;
     window.doc = doc;
     window.setDoc = setDoc;
+    window.getDoc = getDoc;
+    window.getDocs = getDocs;
     window.deleteDoc = deleteDoc;
     window.onSnapshot = onSnapshot;
     window.collection = collection;
@@ -484,6 +486,8 @@
       const [authErrorDetails, setAuthErrorDetails] = useState(null);
       const [crmDeals, setCrmDeals] = useState([]);
       const [isSaving, setIsSaving] = useState(false);
+      const [isPulling, setIsPulling] = useState(false);
+      const [syncToast, setSyncToast] = useState(null);
       const [view, setView] = useState('sandbox');
       const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -706,6 +710,11 @@
         setInvoiceDueDate(p.invoiceDueDate || '');
       }, [activeProfileId, profiles]);
 
+      const showSyncToast = (msg) => {
+        setSyncToast(msg);
+        setTimeout(() => setSyncToast(null), 2800);
+      };
+
       const handleSaveToCloud = async () => {
         if (!isAuthed) return;
         setIsSaving(true);
@@ -721,12 +730,53 @@
             customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
             staffCount, monthlySalary, wastedHours, annualOperationalLeakage 
           };
-          const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await setDoc(docRef, currentProfilePayload);
+          const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          await window.setDoc(docRef, currentProfilePayload);
+          showSyncToast("SOW saved to cloud.");
         } catch (e) {
           console.error("Error saving to cloud:", e);
+          showSyncToast("Save failed — check connection.");
         }
         setTimeout(() => setIsSaving(false), 800);
+      };
+
+      const handlePullFromCloud = async () => {
+        if (!isAuthed || !activeProfileId) return;
+        setIsPulling(true);
+        try {
+          const db = window.firebaseDb;
+          const appId = window.appId;
+          const profilesRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles');
+          const profileRef = window.doc(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          const [profilesSnap, activeSnap] = await Promise.all([
+            window.getDocs(profilesRef),
+            window.getDoc(profileRef)
+          ]);
+
+          const fetchedProfiles = [];
+          profilesSnap.forEach(d => fetchedProfiles.push({ id: d.id, ...d.data() }));
+
+          if (activeSnap.exists()) {
+            const cloudProfile = { id: activeSnap.id, ...activeSnap.data() };
+            const idx = fetchedProfiles.findIndex(p => p.id === cloudProfile.id);
+            if (idx >= 0) fetchedProfiles[idx] = cloudProfile;
+            else fetchedProfiles.push(cloudProfile);
+          }
+
+          if (fetchedProfiles.length === 0) {
+            showSyncToast("No cloud workspaces found.");
+          } else {
+            const pulledName = activeSnap.exists() ? (activeSnap.data().clientCompany || 'workspace') : fetchedProfiles[0].clientCompany;
+            setProfiles(fetchedProfiles);
+            setActiveProfileId(currId => fetchedProfiles.find(p => p.id === currId) ? currId : fetchedProfiles[0].id);
+            showSyncToast(`Pulled "${pulledName}" from cloud.`);
+          }
+        } catch (e) {
+          console.error("Error pulling from cloud:", e);
+          showSyncToast("Pull failed — check connection.");
+        } finally {
+          setTimeout(() => setIsPulling(false), 400);
+        }
       };
 
       const handleCreateNewWorkspace = () => {
@@ -2239,6 +2289,11 @@
 
       return (
         <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans">
+          {syncToast && (
+            <div className="fixed top-6 right-6 z-[2000] bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl font-bold text-xs no-print animate-fade-in">
+              {syncToast}
+            </div>
+          )}
           <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print">
             <div className="max-w-[1600px] mx-auto px-6 sm:px-8 h-20 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -2282,8 +2337,11 @@
                   <option value="">+ Import CRM Deal</option>
                   {crmDeals.map(d => <option key={d.id} value={d.id}>{d.leadName} ({d.company || 'Individual'})</option>)}
                 </select>
-                <button onClick={handleSaveToCloud} disabled={isSaving || !isAuthed} className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold rounded-lg transition-all text-[11px] uppercase tracking-wider flex items-center shadow-md disabled:opacity-50 font-sans">
-                  {isSaving ? "Syncing..." : "💾 Save SOW"}
+                <button onClick={handlePullFromCloud} disabled={isPulling || isSaving || !isAuthed} className="px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/40 font-bold rounded-lg transition-all text-[11px] uppercase tracking-wider flex items-center shadow-md disabled:opacity-50 font-sans" title="Reload this workspace from Firebase (discards unsaved local edits)">
+                  {isPulling ? "Pulling..." : "⬇ Pull SOW"}
+                </button>
+                <button onClick={handleSaveToCloud} disabled={isSaving || isPulling || !isAuthed} className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold rounded-lg transition-all text-[11px] uppercase tracking-wider flex items-center shadow-md disabled:opacity-50 font-sans">
+                  {isSaving ? "Syncing..." : "⬆ Save SOW"}
                 </button>
                 <button onClick={handleCreateNewWorkspace} className="px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg text-[11px] uppercase flex items-center font-sans"><IconPlus /> New Blank</button>
                 <button onClick={handleCloneCurrentWorkspace} className="px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg text-[11px] uppercase font-sans">📂 Clone</button>
