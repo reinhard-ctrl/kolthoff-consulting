@@ -13,6 +13,14 @@ const files = [
   'admin/legacy/core_workspace_app.html',
   'apps/public/portal.html',
   'apps/public/client_intake.html',
+  'apps/delivery/project_planner.html',
+  'apps/delivery/diagnoses_report.html',
+  'apps/operations/crm_pipeline.html',
+  'apps/operations/policy_studio.html',
+  'apps/operations/workflow_builder.html',
+  'apps/analytics/firm_analytics_dashboard.html',
+  'apps/analytics/resource_capacity_manager.html',
+  'apps/analytics/time_tracking_variance_analyzer.html',
 ];
 
 const firebaseInitReplacement = `    <script type="module" src="../../shared/firebase-init.js"></script>`;

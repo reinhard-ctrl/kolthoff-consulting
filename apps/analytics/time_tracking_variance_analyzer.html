@@ -1,104 +1,581 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Tracking Variance | Kolthoff OS</title>
-  <script type="module" src="../../shared/firebase-init.js"></script>
-  <script type="module" src="../delivery/project_planner_helpers.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracking & Variance Analyzer | Kolthoff OS</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+        <script type="module" src="../../shared/firebase-init.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' },
+                        brandAmber: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' }
+                    },
+                    fontFamily: { 
+                        sans: ['"Montserrat"', 'sans-serif'], 
+                        serif: ['"Playfair Display"', 'serif'] 
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #0F1A2C; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen">
-  <div id="root"></div>
-  <script type="module">
-    import * as PlannerHelpers from '../delivery/project_planner_helpers.js';
-    window.PlannerHelpers = PlannerHelpers;
-  </script>
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-    const genId = () => Math.random().toString(36).substr(2, 9);
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
 
-    function App() {
-      const [ready, setReady] = useState(false);
-      const [entries, setEntries] = useState([]);
-      const [profiles, setProfiles] = useState([]);
-      const [form, setForm] = useState({ profileId: '', taskName: '', planned: 0, actual: 0, member: '' });
+    <div id="root"></div>
 
-      useEffect(() => {
-        const t = setInterval(async () => {
-          if (window.firebaseDb && window.bootstrapAuth) {
-            clearInterval(t);
-            await window.bootstrapAuth();
-            setReady(true);
-          }
-        }, 50);
-        return () => clearInterval(t);
-      }, []);
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-      useEffect(() => {
-        if (!ready) return;
-        const base = ['artifacts', window.appId, 'public', 'data'];
-        const u1 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'time_entries'), s => {
-          const e = []; s.forEach(d => e.push({ id: d.id, ...d.data() })); setEntries(e);
-        });
-        const u2 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'workbook_profiles'), s => {
-          const p = []; s.forEach(d => p.push({ id: d.id, ...d.data() })); setProfiles(p);
-        });
-        return () => { u1(); u2(); };
-      }, [ready]);
+        const Icons = {
+            Clock: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Chart: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>,
+            TrendingUp: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+            TrendingDown: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>,
+            Target: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        };
 
-      const variance = useMemo(() => entries.map(e => ({
-        ...e,
-        variance: (e.actual || 0) - (e.planned || 0),
-        pct: e.planned ? Math.round(((e.actual - e.planned) / e.planned) * 100) : 0
-      })), [entries]);
+        const RATES = {
+            principal: 3500,
+            senior: 2500,
+            associate: 1500,
+            partner: 2000
+        };
 
-      const add = async (e) => {
-        e.preventDefault();
-        const id = genId();
-        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'time_entries', id), { ...form, id, createdAt: Date.now() });
-        setForm({ profileId: '', taskName: '', planned: 0, actual: 0, member: '' });
-      };
+        const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
 
-      if (!ready) return <div className="p-8">Loading...</div>;
+        function App() {
+            const [user, setUser] = useState(null);
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [authError, setAuthError] = useState(null);
+            
+            const [activeView, setActiveView] = useState('logger'); // 'logger' or 'analyzer'
+            const [profiles, setProfiles] = useState([]);
+            const [timeLogs, setTimeLogs] = useState([]);
+            const [activeProfileId, setActiveProfileId] = useState("");
+            
+            // Logger Form State
+            const [selectedTaskId, setSelectedTaskId] = useState("");
+            const [hoursLogged, setHoursLogged] = useState("");
+            const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+            const [consultantName, setConsultantName] = useState("");
+            const [logNotes, setLogNotes] = useState("");
+            const [isSaving, setIsSaving] = useState(false);
+            const [toast, setToast] = useState(null);
 
-      return (
-        <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-2xl font-bold text-teal-400 mb-6">Time Tracking Variance Analyzer</h1>
-          <form onSubmit={add} className="grid grid-cols-3 gap-3 mb-6 p-4 bg-slate-900 rounded-xl border border-slate-700">
-            <select value={form.profileId} onChange={e => setForm({...form, profileId: e.target.value})} className="p-2 rounded bg-slate-800" required>
-              <option value="">SOW Profile...</option>
-              {profiles.map(p => <option key={p.id} value={p.id}>{p.clientName || p.id}</option>)}
-            </select>
-            <input value={form.taskName} onChange={e => setForm({...form, taskName: e.target.value})} placeholder="Task" className="p-2 rounded bg-slate-800" required />
-            <input value={form.member} onChange={e => setForm({...form, member: e.target.value})} placeholder="Member" className="p-2 rounded bg-slate-800" />
-            <input type="number" value={form.planned} onChange={e => setForm({...form, planned: +e.target.value})} placeholder="Planned hrs" className="p-2 rounded bg-slate-800" />
-            <input type="number" value={form.actual} onChange={e => setForm({...form, actual: +e.target.value})} placeholder="Actual hrs" className="p-2 rounded bg-slate-800" />
-            <button className="py-2 bg-teal-600 rounded font-bold">Log Entry</button>
-          </form>
-          <table className="w-full text-sm">
-            <thead><tr className="text-slate-500 border-b border-slate-700">
-              <th className="text-left py-2">Task</th><th>Planned</th><th>Actual</th><th>Variance</th><th>%</th>
-            </tr></thead>
-            <tbody>
-              {variance.map(v => (
-                <tr key={v.id} className="border-b border-slate-800">
-                  <td className="py-2">{v.taskName} <span className="text-slate-500 text-xs">({v.member})</span></td>
-                  <td className="text-center">{v.planned}h</td>
-                  <td className="text-center">{v.actual}h</td>
-                  <td className={`text-center ${v.variance > 0 ? 'text-red-400' : 'text-green-400'}`}>{v.variance > 0 ? '+' : ''}{v.variance}h</td>
-                  <td className="text-center">{v.pct}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+            // 1) Auth Decoupling
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.signInAnonymously) {
+                        clearInterval(checkInterval);
+                        
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    try {
+                                        await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                    } catch (tokenErr) {
+                                        console.warn("Token auth failed, trying anonymous auth fallback:", tokenErr);
+                                        await window.signInAnonymously(window.firebaseAuth);
+                                    }
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                            } catch (e) {
+                                console.error("Firebase Auth Blocked:", e);
+                                setAuthError(e.message || "Referrer restricted");
+                            }
+                        };
+                        initAuth();
+
+                        const unsubscribe = window.onAuthStateChanged(window.firebaseAuth, (currentUser) => {
+                            setUser(currentUser);
+                            if (currentUser) {
+                                setIsAuthed(true);
+                                setAuthError(null);
+                            } else {
+                                setIsAuthed(false);
+                            }
+                        });
+                        return () => unsubscribe();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // 2) Data Fetching tied strictly to Authenticated User
+            useEffect(() => {
+                if (!user) return;
+                
+                const db = window.firebaseDb;
+                const appId = window.appId;
+                const unsubs = [];
+
+                // Fetch SOW Profiles
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles'), (snap) => {
+                    const fetchedProfiles = [];
+                    snap.forEach(doc => fetchedProfiles.push({ id: doc.id, ...doc.data() }));
+                    setProfiles(fetchedProfiles);
+                    setActiveProfileId(current => {
+                        if (!fetchedProfiles.find(p => p.id === current) && fetchedProfiles.length > 0) return fetchedProfiles[0].id;
+                        return current;
+                    });
+                }, console.error));
+
+                // Fetch Time Logs
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'time_logs'), (snap) => {
+                    const fetchedLogs = [];
+                    snap.forEach(doc => fetchedLogs.push({ id: doc.id, ...doc.data() }));
+                    // Sort by date descending
+                    fetchedLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    setTimeLogs(fetchedLogs);
+                }, console.error));
+
+                return () => unsubs.forEach(u => u());
+            }, [user]);
+
+            const activeProfile = useMemo(() => profiles.find(p => p.id === activeProfileId) || null, [profiles, activeProfileId]);
+            
+            // Only tasks that were selected in the SOW
+            const activeTasks = useMemo(() => {
+                if (!activeProfile || !activeProfile.tasks) return [];
+                return activeProfile.tasks.filter(t => t.selected);
+            }, [activeProfile]);
+
+            // Calculate aggregations for the active profile
+            const taskAnalytics = useMemo(() => {
+                if (!activeProfile) return [];
+                const profileLogs = timeLogs.filter(log => log.profileId === activeProfileId);
+                
+                return activeTasks.map(task => {
+                    const logsForTask = profileLogs.filter(log => log.taskId === task.id);
+                    const actualHours = logsForTask.reduce((sum, log) => sum + Number(log.hours), 0);
+                    const estimatedHours = task.estHours || 0;
+                    const hourlyRate = RATES[task.tier] || RATES.associate;
+                    
+                    const estimatedCost = estimatedHours * hourlyRate;
+                    const actualCost = actualHours * hourlyRate;
+                    const varianceHours = actualHours - estimatedHours;
+                    const varianceCost = actualCost - estimatedCost; // Positive means overrun/loss
+
+                    return {
+                        ...task,
+                        actualHours,
+                        estimatedHours,
+                        varianceHours,
+                        varianceCost,
+                        hourlyRate,
+                        logs: logsForTask,
+                        status: actualHours > estimatedHours ? 'overrun' : (actualHours === estimatedHours ? 'complete' : 'on-track')
+                    };
+                });
+            }, [activeTasks, timeLogs, activeProfileId, activeProfile]);
+
+            const globalMetrics = useMemo(() => {
+                let totalEst = 0;
+                let totalAct = 0;
+                let totalVarCost = 0;
+
+                taskAnalytics.forEach(t => {
+                    totalEst += t.estimatedHours;
+                    totalAct += t.actualHours;
+                    totalVarCost += t.varianceCost;
+                });
+
+                return { totalEst, totalAct, totalVarCost };
+            }, [taskAnalytics]);
+
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            const handleLogTime = async (e) => {
+                e.preventDefault();
+                if (authError) {
+                    showToast("❌ Cloud Sync Disabled (GCP API Key Restricts Null Referrers)");
+                    return;
+                }
+                if (!isAuthed || !selectedTaskId || !hoursLogged || !logDate || !consultantName) return;
+                
+                setIsSaving(true);
+                const logId = `log-${Date.now()}`;
+                const newLog = {
+                    id: logId,
+                    profileId: activeProfileId,
+                    taskId: selectedTaskId,
+                    date: logDate,
+                    hours: Number(hoursLogged),
+                    consultantName: consultantName,
+                    notes: logNotes,
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'time_logs', logId);
+                    await window.setDoc(docRef, newLog);
+                    setHoursLogged("");
+                    setLogNotes("");
+                    showToast("Time successfully logged!");
+                } catch(err) {
+                    console.error("Error logging time:", err);
+                    showToast("❌ Error saving to cloud.");
+                }
+                setIsSaving(false);
+            };
+
+            const handleDeleteLog = async (logId) => {
+                if (authError) {
+                    showToast("❌ Cloud Sync Disabled (Offline Mode Active)");
+                    return;
+                }
+                try {
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'time_logs', logId);
+                    await window.deleteDoc(docRef);
+                    showToast("Log removed.");
+                } catch(err) {
+                    console.error("Error deleting log:", err);
+                }
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans">
+                    
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed top-6 right-6 z-50 bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-2 animate-fade-in font-bold text-xs">
+                            <span className="text-sm">✓</span> {toast}
+                        </div>
+                    )}
+
+                    {/* SIDEBAR NAVIGATION */}
+                    <aside className="w-64 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                        <div className="p-6 border-b border-brandNavy-800 group relative">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round" />
+                                        <path d="M36 50 L46 60 L66 36" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <div>
+                                        <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                        <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Variance Engine</span>
+                                    </div>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
+                            </div>
+                            
+                            {authError && (
+                                <div className="absolute left-6 top-full mt-2 w-48 bg-rose-950/90 border border-rose-500/50 p-2 rounded text-[9px] text-rose-200 hidden group-hover:block z-50 shadow-xl backdrop-blur-sm text-left">
+                                    <strong className="text-rose-400 block mb-1">Sync Disabled (Offline Mode)</strong>
+                                    Your GCP API Key restricts `null` referrers. Fix in Google Cloud Console to enable cloud sync. App functions are locally available.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-b border-brandNavy-800 bg-brandNavy-950">
+                            <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1.5 block">Active Workspace (SOW)</label>
+                            <select 
+                                value={activeProfileId} 
+                                onChange={(e) => { setActiveProfileId(e.target.value); setSelectedTaskId(""); }}
+                                className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                disabled={!!authError}
+                            >
+                                {profiles.length === 0 && <option value="">{authError ? "Offline Sync Disabled" : "No Active SOWs found..."}</option>}
+                                {profiles.map(p => <option key={p.id} value={p.id}>{p.clientCompany}</option>)}
+                            </select>
+                        </div>
+
+                        <nav className="p-4 space-y-2 flex-1">
+                            <button 
+                                onClick={() => setActiveView('logger')} 
+                                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'logger' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
+                            >
+                                <Icons.Clock /> Daily Time Logger
+                            </button>
+                            <button 
+                                onClick={() => setActiveView('analyzer')} 
+                                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'analyzer' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
+                            >
+                                <Icons.Chart /> Variance Dashboard
+                            </button>
+                        </nav>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 overflow-y-auto bg-brandNavy-900/40 relative z-10">
+                        {/* Header */}
+                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold text-white font-serif tracking-wide">
+                                    {activeView === 'logger' ? 'Daily Time Logging' : 'Project Profitability & Variance'}
+                                </h2>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Tracking against SOW estimates for {activeProfile?.clientCompany || '...'}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {activeView === 'analyzer' && (
+                                    <div className={`px-3 py-1.5 rounded border text-xs font-bold font-mono ${globalMetrics.totalVarCost > 0 ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
+                                        Net Variance: {globalMetrics.totalVarCost > 0 ? '-' : '+'}{formatCurrency(Math.abs(globalMetrics.totalVarCost))}
+                                    </div>
+                                )}
+                            </div>
+                        </header>
+
+                        <div className="p-8 max-w-7xl mx-auto space-y-8">
+                            {!activeProfile && !authError ? (
+                                <div className="text-center p-12 glass-panel rounded-xl text-slate-500">
+                                    Select an active client SOW from the sidebar to begin tracking.
+                                </div>
+                            ) : activeView === 'logger' ? (
+                                // ==========================================
+                                // VIEW: TIME LOGGER
+                                // ==========================================
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                    
+                                    {/* Left: Input Form */}
+                                    <div className="lg:col-span-4 space-y-6">
+                                        <div className="glass-panel rounded-2xl p-6 shadow-xl border-t-4 border-t-brandTeal-500">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white border-b border-brandNavy-700 pb-3 mb-4">Log Execution Time</h3>
+                                            <form onSubmit={handleLogTime} className="space-y-4">
+                                                <div>
+                                                    <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Consultant Name</label>
+                                                    <input type="text" required value={consultantName} onChange={e => setConsultantName(e.target.value)} placeholder="Your Name" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" disabled={!!authError} />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">SOW Deliverable (Task)</label>
+                                                    <select required value={selectedTaskId} onChange={e => setSelectedTaskId(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" disabled={!!authError}>
+                                                        <option value="">-- Select a Task --</option>
+                                                        {activeTasks.map(t => <option key={t.id} value={t.id}>{t.deliverable}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Date</label>
+                                                        <input type="date" required value={logDate} onChange={e => setLogDate(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" disabled={!!authError} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-mono text-brandTeal-400 uppercase font-bold block mb-1">Hours Spent</label>
+                                                        <input type="number" required min="0.1" step="0.1" value={hoursLogged} onChange={e => setHoursLogged(e.target.value)} placeholder="e.g. 2.5" className="w-full bg-brandNavy-950 border border-brandTeal-500/50 rounded p-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-brandTeal-500" disabled={!!authError} />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Execution Notes</label>
+                                                    <textarea value={logNotes} onChange={e => setLogNotes(e.target.value)} rows="3" placeholder="What was accomplished?" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500 resize-none" disabled={!!authError}></textarea>
+                                                </div>
+                                                <button type="submit" disabled={isSaving || !!authError} className={`w-full py-2.5 font-bold rounded text-xs uppercase tracking-wider transition-colors disabled:opacity-50 ${authError ? 'bg-brandNavy-800 text-slate-500 border border-brandNavy-700 cursor-not-allowed' : 'bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955'}`}>
+                                                    {isSaving ? 'Logging...' : (authError ? 'Offline Mode' : '+ Submit Time Log')}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: Task Progress & Recent Logs */}
+                                    <div className="lg:col-span-8 space-y-6">
+                                        
+                                        {/* Progress Bars */}
+                                        <div className="glass-panel rounded-2xl p-6 shadow-xl">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white border-b border-brandNavy-700 pb-3 mb-4">Task Burn-Down Tracker</h3>
+                                            <div className="space-y-5 max-h-[300px] overflow-y-auto pr-2">
+                                                {taskAnalytics.map(task => {
+                                                    const percent = task.estimatedHours > 0 ? Math.min(100, (task.actualHours / task.estimatedHours) * 100) : 0;
+                                                    let barColor = "bg-brandTeal-500";
+                                                    if (task.status === 'overrun') barColor = "bg-rose-500";
+                                                    else if (percent > 80) barColor = "bg-brandAmber-500";
+
+                                                    return (
+                                                        <div key={task.id} className="relative">
+                                                            <div className="flex justify-between items-end mb-1">
+                                                                <span className="text-xs font-bold text-slate-200 truncate pr-4">{task.deliverable}</span>
+                                                                <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                                                    <strong className={task.status === 'overrun' ? 'text-rose-400' : 'text-white'}>{task.actualHours.toFixed(1)}</strong> / {task.estimatedHours} hrs
+                                                                </span>
+                                                            </div>
+                                                            <div className="w-full bg-brandNavy-950 rounded-full h-2 border border-brandNavy-800 overflow-hidden">
+                                                                <div className={`h-2 rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${percent}%` }}></div>
+                                                            </div>
+                                                            {task.status === 'overrun' && (
+                                                                <p className="text-[9px] text-rose-500 mt-1 font-bold italic">Overrun by {(task.actualHours - task.estimatedHours).toFixed(1)} hrs</p>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+                                                {taskAnalytics.length === 0 && <p className="text-xs text-slate-500">No active tasks found in this SOW.</p>}
+                                            </div>
+                                        </div>
+
+                                        {/* Recent Logs Table */}
+                                        <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                            <div className="p-4 border-b border-brandNavy-700 bg-brandNavy-900/50">
+                                                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Recent Time Entries</h3>
+                                            </div>
+                                            <div className="overflow-x-auto max-h-[300px]">
+                                                <table className="w-full text-left border-collapse text-xs">
+                                                    <thead className="sticky top-0 bg-brandNavy-950">
+                                                        <tr className="text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                                            <th className="p-3">Date</th>
+                                                            <th className="p-3">Consultant</th>
+                                                            <th className="p-3">Task</th>
+                                                            <th className="p-3 text-center">Hours</th>
+                                                            <th className="p-3 text-right">Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-brandNavy-800/50">
+                                                        {timeLogs.filter(log => log.profileId === activeProfileId).map(log => {
+                                                            const taskName = activeTasks.find(t => t.id === log.taskId)?.deliverable || 'Unknown Task';
+                                                            return (
+                                                                <tr key={log.id} className="hover:bg-brandNavy-800/30 transition-colors">
+                                                                    <td className="p-3 font-mono text-slate-300">{log.date}</td>
+                                                                    <td className="p-3 font-bold text-slate-200">{log.consultantName}</td>
+                                                                    <td className="p-3 text-slate-400 truncate max-w-[200px]" title={taskName}>{taskName}</td>
+                                                                    <td className="p-3 text-center font-mono font-bold text-brandTeal-400">{log.hours.toFixed(1)}</td>
+                                                                    <td className="p-3 text-right">
+                                                                        <button onClick={() => handleDeleteLog(log.id)} disabled={!!authError} className="p-1.5 text-rose-500 hover:bg-rose-500/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Icons.Trash /></button>
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        })}
+                                                        {timeLogs.filter(log => log.profileId === activeProfileId).length === 0 && (
+                                                            <tr><td colSpan="5" className="p-6 text-center text-slate-500 italic">No time logs recorded yet.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            ) : (
+                                // ==========================================
+                                // VIEW: VARIANCE ANALYZER
+                                // ==========================================
+                                <div className="space-y-8 animate-fade-in">
+                                    
+                                    {/* Macro Scorecards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div className="glass-panel rounded-xl p-5 border-t-2 border-t-slate-500">
+                                            <p className="text-[10px] font-mono text-slate-400 uppercase font-bold mb-1">Total Estimated Effort</p>
+                                            <div className="text-2xl font-mono font-black text-white">{globalMetrics.totalEst.toFixed(1)} <span className="text-sm font-sans text-slate-500 font-normal">hrs</span></div>
+                                        </div>
+                                        <div className="glass-panel rounded-xl p-5 border-t-2 border-t-brandTeal-500">
+                                            <p className="text-[10px] font-mono text-brandTeal-400 uppercase font-bold mb-1">Actual Logged Time</p>
+                                            <div className="text-2xl font-mono font-black text-brandTeal-300">{globalMetrics.totalAct.toFixed(1)} <span className="text-sm font-sans text-brandTeal-500/50 font-normal">hrs</span></div>
+                                        </div>
+                                        <div className={`glass-panel rounded-xl p-5 border-t-2 ${globalMetrics.totalAct > globalMetrics.totalEst ? 'border-t-rose-500' : 'border-t-emerald-500'}`}>
+                                            <p className="text-[10px] font-mono text-slate-400 uppercase font-bold mb-1">Time Variance</p>
+                                            <div className={`text-2xl font-mono font-black ${globalMetrics.totalAct > globalMetrics.totalEst ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                                {globalMetrics.totalAct > globalMetrics.totalEst ? '+' : ''}{(globalMetrics.totalAct - globalMetrics.totalEst).toFixed(1)} <span className="text-sm font-sans opacity-60 font-normal">hrs</span>
+                                            </div>
+                                        </div>
+                                        <div className={`glass-panel rounded-xl p-5 border-t-2 ${globalMetrics.totalVarCost > 0 ? 'border-t-rose-500 bg-rose-950/10' : 'border-t-emerald-500 bg-emerald-950/10'}`}>
+                                            <p className="text-[10px] font-mono uppercase font-bold mb-1 flex items-center gap-1.5 opacity-80">
+                                                {globalMetrics.totalVarCost > 0 ? <Icons.TrendingDown /> : <Icons.TrendingUp />}
+                                                Profit Margin Impact
+                                            </p>
+                                            <div className={`text-2xl font-mono font-black ${globalMetrics.totalVarCost > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                {globalMetrics.totalVarCost > 0 ? '-' : '+'}{formatCurrency(Math.abs(globalMetrics.totalVarCost))}
+                                            </div>
+                                            <p className="text-[9px] mt-1 opacity-70 italic">Calculated based on tier billing rates.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Detailed Analytics Table */}
+                                    <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                        <div className="p-5 border-b border-brandNavy-700 bg-brandNavy-900/50 flex justify-between items-center">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Deliverable Variance Analysis</h3>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse text-xs">
+                                                <thead>
+                                                    <tr className="bg-brandNavy-950 text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                                        <th className="p-4 w-[30%]">SOW Task & Category</th>
+                                                        <th className="p-4 text-center">Tier Rate</th>
+                                                        <th className="p-4 text-center">Est. Hrs</th>
+                                                        <th className="p-4 text-center">Act. Hrs</th>
+                                                        <th className="p-4 text-center">Variance (Hrs)</th>
+                                                        <th className="p-4 text-right w-[15%]">Financial Impact</th>
+                                                        <th className="p-4 text-center">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-brandNavy-800/50">
+                                                    {taskAnalytics.map(task => {
+                                                        const isOverrun = task.varianceCost > 0;
+                                                        const isUnderrun = task.varianceCost < 0;
+                                                        
+                                                        return (
+                                                            <tr key={task.id} className="hover:bg-brandNavy-800/30 transition-colors group">
+                                                                <td className="p-4">
+                                                                    <div className="font-bold text-slate-200 mb-1">{task.deliverable}</div>
+                                                                    <div className="text-[9px] font-mono text-slate-500">{task.category}</div>
+                                                                </td>
+                                                                <td className="p-4 text-center font-mono text-slate-400">₱{task.hourlyRate}</td>
+                                                                <td className="p-4 text-center font-mono text-slate-300">{task.estimatedHours.toFixed(1)}</td>
+                                                                <td className="p-4 text-center font-mono font-bold text-white">{task.actualHours.toFixed(1)}</td>
+                                                                <td className="p-4 text-center font-mono font-bold">
+                                                                    <span className={task.varianceHours > 0 ? 'text-rose-400' : (task.varianceHours < 0 ? 'text-emerald-400' : 'text-slate-500')}>
+                                                                        {task.varianceHours > 0 ? '+' : ''}{task.varianceHours.toFixed(1)}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4 text-right font-mono font-bold">
+                                                                    <span className={isOverrun ? 'text-rose-500' : (isUnderrun ? 'text-emerald-500' : 'text-slate-500')}>
+                                                                        {isOverrun ? '-' : (isUnderrun ? '+' : '')}{formatCurrency(Math.abs(task.varianceCost))}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-4 text-center">
+                                                                    {isOverrun ? (
+                                                                        <span className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[9px] uppercase font-bold rounded">Bleeding</span>
+                                                                    ) : isUnderrun ? (
+                                                                        <span className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] uppercase font-bold rounded">Efficient</span>
+                                                                    ) : (
+                                                                        <span className="px-2 py-1 bg-slate-800 border border-slate-700 text-slate-400 text-[9px] uppercase font-bold rounded">On Track</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    })}
+                                                    {taskAnalytics.length === 0 && (
+                                                        <tr><td colSpan="7" className="p-8 text-center text-slate-500 italic">No tasks available for analysis.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
 </body>
 </html>

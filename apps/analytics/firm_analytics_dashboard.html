@@ -1,91 +1,489 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firm Analytics | Kolthoff OS</title>
-  <script type="module" src="../../shared/firebase-init.js"></script>
-  <script type="module" src="../delivery/project_planner_helpers.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firm Analytics Dashboard | Kolthoff OS</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <!-- Firebase Module Initialization -->
+        <script type="module" src="../../shared/firebase-init.js"></script>
+    <!-- React, ReactDOM, Babel CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+        .chart-bar { transition: height 1s ease-out, width 1s ease-out; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen">
-  <div id="root"></div>
-  <script type="module">
-    import * as PlannerHelpers from '../delivery/project_planner_helpers.js';
-    window.PlannerHelpers = PlannerHelpers;
-  </script>
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
 
-    function App() {
-      const [ready, setReady] = useState(false);
-      const [profiles, setProfiles] = useState([]);
-      const [deals, setDeals] = useState([]);
-      const [contracts, setContracts] = useState([]);
+    <div id="root"></div>
 
-      useEffect(() => {
-        const t = setInterval(async () => {
-          if (window.firebaseDb && window.bootstrapAuth) {
-            clearInterval(t);
-            await window.bootstrapAuth();
-            setReady(true);
-          }
-        }, 50);
-        return () => clearInterval(t);
-      }, []);
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-      useEffect(() => {
-        if (!ready) return;
-        const base = ['artifacts', window.appId, 'public', 'data'];
-        const u1 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'workbook_profiles'), s => { const p=[]; s.forEach(d=>p.push({id:d.id,...d.data()})); setProfiles(p); });
-        const u2 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'core_crm_deals'), s => { const d=[]; s.forEach(x=>d.push({id:x.id,...x.data()})); setDeals(d); });
-        const u3 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'contracts_ledger'), s => { const c=[]; s.forEach(x=>c.push({id:x.id,...x.data()})); setContracts(c); });
-        return () => { u1(); u2(); u3(); };
-      }, [ready]);
+        const Icons = {
+            Activity: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+            TrendingUp: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+            TrendingDown: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>,
+            PieChart: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>,
+            Zap: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+            CheckCircle: () => <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+        };
 
-      const metrics = useMemo(() => {
-        const pipelineValue = profiles.reduce((acc, p) => acc + (window.PlannerHelpers.getFinancials(p).total || 0), 0);
-        const wonDeals = deals.filter(d => d.stage === 'won').reduce((acc, d) => acc + (d.value || 0), 0);
-        const signed = contracts.filter(c => c.status === 'signed').length;
-        return { profiles: profiles.length, pipelineValue, activeDeals: deals.length, wonDeals, signedContracts: signed };
-      }, [profiles, deals, contracts]);
+        const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val || 0);
+        
+        // Base billing rates for variance calculation
+        const RATES = { principal: 3500, senior: 2500, associate: 1500, partner: 2000 };
 
-      const fmt = (n) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
+        function App() {
+            const [user, setUser] = useState(null);
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [authError, setAuthError] = useState(null);
+            
+            // Central Data Store
+            const [crmDeals, setCrmDeals] = useState([]);
+            const [profiles, setProfiles] = useState([]);
+            const [contracts, setContracts] = useState([]);
+            const [timeLogs, setTimeLogs] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
 
-      if (!ready) return <div className="p-8">Loading analytics...</div>;
+            // 1) Auth Decoupling
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.signInAnonymously) {
+                        clearInterval(checkInterval);
+                        
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    try {
+                                        await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                    } catch (tokenErr) {
+                                        console.warn("Token auth failed, trying anonymous auth fallback:", tokenErr);
+                                        await window.signInAnonymously(window.firebaseAuth);
+                                    }
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                            } catch (e) {
+                                console.error("Firebase Auth Blocked:", e);
+                                setAuthError(e.message || "Referrer restricted");
+                                setIsLoading(false); // Unblock UI for Offline Mode
+                            }
+                        };
+                        initAuth();
 
-      return (
-        <div className="p-6 max-w-5xl mx-auto">
-          <h1 className="text-2xl font-bold text-teal-400 mb-8">Firm Analytics Dashboard</h1>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-              ['SOW Profiles', metrics.profiles, ''],
-              ['Pipeline Value', fmt(metrics.pipelineValue), 'text-teal-300'],
-              ['Active Deals', metrics.activeDeals, ''],
-              ['Signed Contracts', metrics.signedContracts, 'text-green-400'],
-            ].map(([label, val, cls]) => (
-              <div key={label} className="p-4 bg-slate-900 rounded-xl border border-slate-700">
-                <div className="text-xs text-slate-500 uppercase">{label}</div>
-                <div className={`text-2xl font-bold mt-1 ${cls}`}>{val}</div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 bg-slate-900 rounded-xl border border-slate-700">
-            <h2 className="font-bold mb-3">CRM by Stage</h2>
-            {['lead','qualified','proposal','negotiation','won','lost'].map(stage => (
-              <div key={stage} className="flex justify-between py-1 text-sm border-b border-slate-800">
-                <span className="capitalize">{stage}</span>
-                <span>{deals.filter(d => d.stage === stage).length}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+                        const unsubscribe = window.onAuthStateChanged(window.firebaseAuth, (currentUser) => {
+                            setUser(currentUser);
+                            if (currentUser) {
+                                setIsAuthed(true);
+                                setAuthError(null);
+                            } else {
+                                setIsAuthed(false);
+                            }
+                        });
+                        return () => unsubscribe();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // 2) Data Fetching tied strictly to Authenticated User
+            useEffect(() => {
+                if (!user) return;
+                
+                const db = window.firebaseDb;
+                const appId = window.appId;
+                const unsubs = [];
+
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_deals'), (snap) => {
+                    const data = []; snap.forEach(d => data.push({id: d.id, ...d.data()})); setCrmDeals(data);
+                }, console.error));
+                
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles'), (snap) => {
+                    const data = []; snap.forEach(d => data.push({id: d.id, ...d.data()})); setProfiles(data);
+                }, console.error));
+                
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'contracts_ledger'), (snap) => {
+                    const data = []; snap.forEach(d => data.push({id: d.id, ...d.data()})); setContracts(data);
+                }, console.error));
+                
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'time_logs'), (snap) => {
+                    const data = []; snap.forEach(d => data.push({id: d.id, ...d.data()})); setTimeLogs(data);
+                    setIsLoading(false); // Done loading when last fast stream hits
+                }, console.error));
+
+                return () => unsubs.forEach(u => u());
+            }, [user]);
+
+            // ==========================================
+            // MACRO METRICS ENGINE
+            // ==========================================
+
+            // 1. CRM & Revenue Analytics
+            const revenueMetrics = useMemo(() => {
+                let pipelineValue = 0;
+                let wonValue = 0;
+                let lostValue = 0;
+                let activeDeals = 0;
+                let wonDeals = 0;
+                let lostDeals = 0;
+
+                crmDeals.forEach(deal => {
+                    const val = Number(deal.estValue) || 0;
+                    if (deal.status === 'Won') { wonValue += val; wonDeals++; }
+                    else if (deal.status === 'Lost') { lostValue += val; lostDeals++; }
+                    else { pipelineValue += val; activeDeals++; } // Active
+                });
+
+                const totalClosed = wonDeals + lostDeals;
+                const winRate = totalClosed > 0 ? (wonDeals / totalClosed) * 100 : 0;
+
+                return { pipelineValue, wonValue, lostValue, activeDeals, wonDeals, lostDeals, winRate };
+            }, [crmDeals]);
+
+            // 2. Operational Variance (Firm-Wide Profitability)
+            const varianceMetrics = useMemo(() => {
+                let totalEstimatedCost = 0;
+                let totalActualCost = 0;
+
+                // Loop through all generated SOWs
+                profiles.forEach(profile => {
+                    if (!profile.tasks) return;
+                    
+                    const selectedTasks = profile.tasks.filter(t => t.selected);
+                    
+                    selectedTasks.forEach(task => {
+                        const rate = RATES[task.tier] || RATES.associate;
+                        const estHours = Number(task.estHours) || 0;
+                        
+                        // Find logged time for this exact task inside this SOW
+                        const logs = timeLogs.filter(l => l.profileId === profile.id && l.taskId === task.id);
+                        const actHours = logs.reduce((sum, l) => sum + (Number(l.hours) || 0), 0);
+
+                        totalEstimatedCost += (estHours * rate);
+                        totalActualCost += (actHours * rate);
+                    });
+                });
+
+                const netVariance = totalEstimatedCost - totalActualCost; // Positive is good (underrun), Negative is bad (overrun)
+                const marginImpact = totalEstimatedCost > 0 ? (netVariance / totalEstimatedCost) * 100 : 0;
+
+                return { totalEstimatedCost, totalActualCost, netVariance, marginImpact };
+            }, [profiles, timeLogs]);
+
+            // 3. Deal Velocity (Avg days from Contract Sent -> Signed)
+            const velocityMetrics = useMemo(() => {
+                const signedContracts = contracts.filter(c => c.status === 'signed' && c.generatedAt && c.signedAt);
+                if (signedContracts.length === 0) return { avgDays: 0, contracts: [] };
+
+                let totalDiff = 0;
+                signedContracts.forEach(c => {
+                    const generated = new Date(c.generatedAt);
+                    const signed = new Date(c.signedAt);
+                    const diffTime = Math.abs(signed - generated);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    totalDiff += diffDays;
+                });
+
+                return { avgDays: totalDiff / signedContracts.length, contracts: signedContracts };
+            }, [contracts]);
+
+            // 4. Service Popularity & Retainers
+            const serviceMetrics = useMemo(() => {
+                const moduleCounts = { 'MOD 1': 0, 'MOD 2': 0, 'MOD 3': 0, 'MOD 4': 0 };
+                let activeRetainers = 0;
+
+                profiles.forEach(profile => {
+                    if (!profile.tasks) return;
+                    let hasMod4 = false;
+                    profile.tasks.filter(t => t.selected).forEach(task => {
+                        if (task.category.includes('MOD 1')) moduleCounts['MOD 1']++;
+                        if (task.category.includes('MOD 2')) moduleCounts['MOD 2']++;
+                        if (task.category.includes('MOD 3')) moduleCounts['MOD 3']++;
+                        if (task.category.includes('MOD 4')) {
+                            moduleCounts['MOD 4']++;
+                            hasMod4 = true;
+                        }
+                    });
+                    
+                    // If they have Mod 4 tasks and the contract is signed (or they are an active client)
+                    const contract = contracts.find(c => c.profileId === profile.id);
+                    if (hasMod4 && contract?.status === 'signed') {
+                        activeRetainers++;
+                    }
+                });
+
+                // Find max for chart scaling
+                const maxCount = Math.max(...Object.values(moduleCounts), 1);
+
+                return { moduleCounts, maxCount, activeRetainers };
+            }, [profiles, contracts]);
+
+            if (isLoading) {
+                return (
+                    <div className="flex h-screen items-center justify-center font-sans">
+                        <div className="text-center animate-pulse text-brandTeal-400 font-bold tracking-widest text-sm uppercase flex flex-col items-center gap-4">
+                            <div className="w-12 h-12 border-4 border-brandTeal-500/30 border-t-brandTeal-500 rounded-full animate-spin"></div>
+                            Aggregating Firm Data...
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans">
+                    
+                    {/* SIDEBAR NAVIGATION */}
+                    <aside className="w-64 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                        <div className="p-6 border-b border-brandNavy-800 group relative">
+                            <div className="flex items-center gap-3">
+                                <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round" />
+                                    <path d="M36 50 L46 60 L66 36" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <div>
+                                    <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                    <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Firm Analytics</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <nav className="p-4 space-y-2 flex-1">
+                            <button className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all bg-brandTeal-500 text-brandNavy-955 shadow-lg">
+                                <Icons.PieChart /> Executive Overview
+                            </button>
+                        </nav>
+
+                        <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950 text-center relative group/status">
+                            <div className={`w-2 h-2 rounded-full inline-block mb-2 cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
+                            <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">System Status</h4>
+                            <p className="text-[9px] text-slate-500 mt-1">
+                                {authError ? "Offline Mode: Sync Disabled" : `All ${crmDeals.length} pipelines and ${profiles.length} SOWs synced.`}
+                            </p>
+                            
+                            {authError && (
+                                <div className="absolute left-0 bottom-full mb-2 w-full bg-rose-950/90 border border-rose-500/50 p-2 rounded text-[9px] text-rose-200 hidden group-hover/status:block z-50 shadow-xl backdrop-blur-sm text-left">
+                                    <strong className="text-rose-400 block mb-1">Sync Disabled (Offline Mode)</strong>
+                                    Your GCP API Key restricts `null` referrers. Fix in Google Cloud Console to enable cloud sync. App functions are locally available.
+                                </div>
+                            )}
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
+                        {/* Header */}
+                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold text-white font-serif tracking-wide">Macro Firm Dashboard</h2>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Real-time aggregation of sales, capacity, and profitability.</p>
+                            </div>
+                        </header>
+
+                        <div className="p-8 max-w-7xl mx-auto space-y-8">
+                            
+                            {/* TOP KPI ROW */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="glass-panel p-6 rounded-xl border-t-2 border-t-emerald-500 relative overflow-hidden">
+                                    <div className="absolute -right-4 -top-4 opacity-5 text-emerald-500"><Icons.TrendingUp /></div>
+                                    <p className="text-[10px] font-mono text-slate-400 uppercase font-bold mb-1">Total Recognized Revenue</p>
+                                    <h3 className="text-2xl font-mono font-black text-white">{formatCurrency(revenueMetrics.wonValue)}</h3>
+                                    <p className="text-[10px] text-emerald-400 mt-2 font-bold bg-emerald-500/10 inline-block px-2 py-0.5 rounded border border-emerald-500/20">
+                                        From {revenueMetrics.wonDeals} Closed Won Deals
+                                    </p>
+                                </div>
+
+                                <div className="glass-panel p-6 rounded-xl border-t-2 border-t-brandTeal-500 relative overflow-hidden">
+                                    <div className="absolute -right-4 -top-4 opacity-5 text-brandTeal-500"><Icons.Activity /></div>
+                                    <p className="text-[10px] font-mono text-slate-400 uppercase font-bold mb-1">Global Win Rate</p>
+                                    <h3 className="text-2xl font-mono font-black text-brandTeal-400">{revenueMetrics.winRate.toFixed(1)}%</h3>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-mono">Vs. {revenueMetrics.lostDeals} Lost Deals</p>
+                                </div>
+
+                                <div className={`glass-panel p-6 rounded-xl border-t-2 ${varianceMetrics.netVariance >= 0 ? 'border-t-emerald-500' : 'border-t-rose-500'} relative overflow-hidden`}>
+                                    <div className={`absolute -right-4 -top-4 opacity-5 ${varianceMetrics.netVariance >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}><Icons.PieChart /></div>
+                                    <p className="text-[10px] font-mono text-slate-400 uppercase font-bold mb-1">Net Delivery Variance</p>
+                                    <h3 className={`text-2xl font-mono font-black ${varianceMetrics.netVariance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {varianceMetrics.netVariance >= 0 ? '+' : '-'}{formatCurrency(Math.abs(varianceMetrics.netVariance))}
+                                    </h3>
+                                    <p className="text-[10px] text-slate-500 mt-2 font-mono">
+                                        {varianceMetrics.marginImpact > 0 ? '+' : ''}{varianceMetrics.marginImpact.toFixed(1)}% Global Margin Impact
+                                    </p>
+                                </div>
+
+                                <div className="glass-panel p-6 rounded-xl border-t-2 border-t-purple-500 relative overflow-hidden bg-purple-950/10">
+                                    <div className="absolute -right-4 -top-4 opacity-5 text-purple-500"><Icons.Zap /></div>
+                                    <p className="text-[10px] font-mono text-purple-400/80 uppercase font-bold mb-1">Active Retainers (MOD 4)</p>
+                                    <h3 className="text-2xl font-mono font-black text-white">{serviceMetrics.activeRetainers} <span className="text-sm font-sans font-normal text-slate-400">Clients</span></h3>
+                                    <p className="text-[10px] text-purple-400/80 mt-2 font-mono">Generating Monthly Recurring Rev</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                
+                                {/* REVENUE PIPELINE FUNNEL */}
+                                <div className="lg:col-span-2 glass-panel rounded-2xl p-6 shadow-xl">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-white border-b border-brandNavy-700 pb-3 mb-6">Sales Funnel & Value</h3>
+                                    
+                                    <div className="space-y-6">
+                                        <div className="relative">
+                                            <div className="flex justify-between items-end mb-1">
+                                                <span className="text-xs font-bold text-slate-300">Active Pipeline (Open)</span>
+                                                <span className="text-xs font-mono font-bold text-brandTeal-400">{formatCurrency(revenueMetrics.pipelineValue)}</span>
+                                            </div>
+                                            <div className="w-full bg-brandNavy-950 rounded-full h-4 border border-brandNavy-800 overflow-hidden">
+                                                <div className="chart-bar bg-brandNavy-600 h-full rounded-full" style={{ width: '100%' }}></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative pl-4 border-l-2 border-brandNavy-800">
+                                            <div className="flex justify-between items-end mb-1">
+                                                <span className="text-xs font-bold text-slate-300">Closed Won (Recognized)</span>
+                                                <span className="text-xs font-mono font-bold text-emerald-400">{formatCurrency(revenueMetrics.wonValue)}</span>
+                                            </div>
+                                            <div className="w-full bg-brandNavy-950 rounded-full h-4 border border-brandNavy-800 overflow-hidden">
+                                                <div className="chart-bar bg-emerald-500 h-full rounded-full" style={{ width: `${revenueMetrics.pipelineValue > 0 ? Math.min((revenueMetrics.wonValue / revenueMetrics.pipelineValue)*100, 100) : 0}%` }}></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative pl-8 border-l-2 border-brandNavy-800">
+                                            <div className="flex justify-between items-end mb-1">
+                                                <span className="text-xs font-bold text-slate-400">Closed Lost (Leakage)</span>
+                                                <span className="text-xs font-mono font-bold text-rose-400">{formatCurrency(revenueMetrics.lostValue)}</span>
+                                            </div>
+                                            <div className="w-full bg-brandNavy-950 rounded-full h-3 border border-brandNavy-800 overflow-hidden opacity-50">
+                                                <div className="chart-bar bg-rose-500 h-full rounded-full" style={{ width: `${revenueMetrics.pipelineValue > 0 ? Math.min((revenueMetrics.lostValue / revenueMetrics.pipelineValue)*100, 100) : 0}%` }}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Deal Velocity Insight */}
+                                    <div className="mt-8 pt-6 border-t border-brandNavy-700/50 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-[10px] font-mono text-slate-500 uppercase font-bold mb-1">Average Deal Velocity</p>
+                                            <p className="text-sm text-slate-300">Time from Contract Sent to E-Signed</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-2xl font-black font-mono text-white">{velocityMetrics.avgDays.toFixed(1)}</span>
+                                            <span className="text-xs text-slate-500 font-mono ml-1">Days</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* SERVICE POPULARITY */}
+                                <div className="glass-panel rounded-2xl p-6 shadow-xl">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-white border-b border-brandNavy-700 pb-3 mb-6">Service Distribution</h3>
+                                    <p className="text-[10px] text-slate-400 mb-6 leading-relaxed">Frequency of module inclusion across all generated Scopes of Work.</p>
+                                    
+                                    <div className="space-y-5">
+                                        {['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].map((mod, idx) => {
+                                            const count = serviceMetrics.moduleCounts[mod];
+                                            const percentage = (count / serviceMetrics.maxCount) * 100;
+                                            const names = ['Workflow Diagnosis', 'Organizing (SOPs)', 'Automation (PMO)', 'Ongoing Support'];
+                                            
+                                            return (
+                                                <div key={mod}>
+                                                    <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                                                        <span className="text-slate-300 uppercase tracking-wider">{mod}: {names[idx]}</span>
+                                                        <span className="text-brandTeal-400 font-mono">{count}x</span>
+                                                    </div>
+                                                    <div className="w-full bg-brandNavy-950 rounded-full h-1.5 border border-brandNavy-800 overflow-hidden">
+                                                        <div className="chart-bar bg-brandTeal-500 h-full rounded-full" style={{ width: `${percentage}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* RECENT WON DEALS LEDGER */}
+                            <div className="glass-panel rounded-2xl overflow-hidden shadow-xl">
+                                <div className="p-5 border-b border-brandNavy-700 bg-brandNavy-900/50 flex justify-between items-center">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-white">Recently Executed Contracts</h3>
+                                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                        <Icons.CheckCircle /> Sourced from Ledger
+                                    </span>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                            <tr className="bg-brandNavy-950 text-slate-400 uppercase font-mono text-[9px] tracking-wider border-b border-brandNavy-800">
+                                                <th className="p-4 w-[25%]">Client Entity</th>
+                                                <th className="p-4 w-[25%]">Signatory</th>
+                                                <th className="p-4 text-center">Execution Date</th>
+                                                <th className="p-4 text-right">Firm Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-brandNavy-800/50">
+                                            {velocityMetrics.contracts.slice(0, 5).map(contract => {
+                                                const profile = profiles.find(p => p.id === contract.profileId);
+                                                return (
+                                                    <tr key={contract.id} className="hover:bg-brandNavy-800/30 transition-colors group">
+                                                        <td className="p-4">
+                                                            <div className="font-bold text-slate-200">{profile?.clientCompany || 'Unknown'}</div>
+                                                            <div className="text-[9px] font-mono text-slate-500 mt-0.5">Ref: {profile?.quoteId || 'N/A'}</div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="font-bold text-white">{contract.signedBy}</div>
+                                                        </td>
+                                                        <td className="p-4 text-center font-mono text-slate-300">
+                                                            {new Date(contract.signedAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="p-4 text-right">
+                                                            <span className="text-emerald-400 font-bold uppercase tracking-wider text-[9px]">Revenue Recognized</span>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                            {velocityMetrics.contracts.length === 0 && (
+                                                <tr><td colSpan="4" className="p-8 text-center text-slate-500 italic">No legally executed contracts found in the ledger.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
 </body>
 </html>
