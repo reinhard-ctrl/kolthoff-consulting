@@ -112,6 +112,10 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+
+        .deal-card-frame {
+            border-left-width: 3px;
+        }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen selection:bg-brandTeal-500 selection:text-brandNavy-955">
@@ -277,25 +281,74 @@
             }, [isAuthed]);
 
             const getDealHealth = (deal) => {
-                if (deal.status === "Won") return { color: "border-brandTeal-500", dot: "bg-brandTeal-500 shadow-[0_0_8px_#14B8A6]", text: "Closed Won", icon: "🏆" };
-                if (deal.status === "Lost") return { color: "border-rose-950/60", dot: "bg-rose-500", text: "Closed Lost", icon: "❌" };
-                
+                // Ampel logic: green = on track, amber = attention today/paused, red = overdue, gray = unscheduled
+                if (deal.status === "Won") {
+                    return {
+                        text: "Closed Won",
+                        icon: "🏆",
+                        dot: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.55)]",
+                        frame: "deal-card-frame border border-emerald-500/55 border-l-emerald-400 bg-emerald-950/25",
+                        actionTint: "border-emerald-500/25 bg-emerald-950/30",
+                        glow: "won-card-active"
+                    };
+                }
+                if (deal.status === "Lost") {
+                    return {
+                        text: "Closed Lost",
+                        icon: "❌",
+                        dot: "bg-slate-500",
+                        frame: "deal-card-frame border border-slate-600/45 border-l-slate-500 bg-rose-950/15 opacity-75",
+                        actionTint: "border-slate-600/30 bg-slate-900/40"
+                    };
+                }
+
                 if (deal.nextAction && deal.nextAction.toLowerCase().includes("on hold")) {
-                    return { color: "border-amber-600/50", dot: "bg-brandAmber-500 shadow-[0_0_8px_#F59E0B]", text: "On Hold", icon: "⏸️" };
+                    return {
+                        text: "On Hold",
+                        icon: "⏸️",
+                        dot: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.45)]",
+                        frame: "deal-card-frame border border-amber-500/50 border-l-amber-400 bg-amber-950/20",
+                        actionTint: "border-amber-500/25 bg-amber-950/25"
+                    };
                 }
                 if (!deal.followUpDate) {
-                    return { color: "border-slate-800", dot: "bg-slate-600", text: "No Action Scheduled", icon: "⚠️" };
+                    return {
+                        text: "No Action Scheduled",
+                        icon: "⚪",
+                        dot: "bg-slate-500",
+                        frame: "deal-card-frame border border-slate-600/40 border-l-slate-500 bg-slate-900/35",
+                        actionTint: "border-slate-600/25 bg-slate-900/45"
+                    };
                 }
 
                 const dateVal = new Date(deal.followUpDate);
                 const todayVal = new Date(todayStr);
 
                 if (dateVal < todayVal) {
-                    return { color: "border-rose-500/40", dot: "bg-rose-500 shadow-[0_0_8px_#EF4444] animate-pulse", text: "Overdue", icon: "🔴" };
-                } else if (deal.followUpDate === todayStr) {
-                    return { color: "border-brandAmber-500/50", dot: "bg-brandAmber-400 shadow-[0_0_8px_#FBBF24]", text: "Due Today", icon: "🟡" };
+                    return {
+                        text: "Overdue",
+                        icon: "🔴",
+                        dot: "bg-rose-500 shadow-[0_0_8px_#EF4444] animate-pulse",
+                        frame: "deal-card-frame border border-rose-500/60 border-l-rose-500 bg-rose-950/25",
+                        actionTint: "border-rose-500/30 bg-rose-950/30"
+                    };
                 }
-                return { color: "border-emerald-600/40", dot: "bg-emerald-500 shadow-[0_0_8px_#10B981]", text: "Scheduled", icon: "🟢" };
+                if (deal.followUpDate === todayStr) {
+                    return {
+                        text: "Due Today",
+                        icon: "🟡",
+                        dot: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.55)]",
+                        frame: "deal-card-frame border border-amber-500/55 border-l-amber-400 bg-amber-950/20",
+                        actionTint: "border-amber-500/25 bg-amber-950/25"
+                    };
+                }
+                return {
+                    text: "Scheduled",
+                    icon: "🟢",
+                    dot: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+                    frame: "deal-card-frame border border-emerald-500/45 border-l-emerald-500 bg-emerald-950/15",
+                    actionTint: "border-emerald-500/20 bg-emerald-950/20"
+                };
             };
 
             const calculateCost = (profile) => {
@@ -830,16 +883,19 @@
                                                                         onDragStart={(e) => handleDragStart(e, deal.id)}
                                                                         onDragEnd={handleDragEnd}
                                                                         onClick={() => openDealDetails(deal)}
-                                                                        className={`p-2.5 rounded-lg border bg-[#09111F]/60 hover:bg-[#09111F]/90 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.color} ${isWon ? 'won-card-active border-brandTeal-500/50 bg-[#0d2a2f]/20' : ''} ${isLost ? 'border-rose-955/40 opacity-70 bg-rose-955/10' : ''}`}
+                                                                        className={`p-2.5 pl-2 rounded-lg hover:brightness-110 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.frame} ${health.glow || ''}`}
                                                                         role="button"
                                                                         tabIndex={0}
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDealDetails(deal); } }}
-                                                                        aria-label={`Open details for ${deal.leadName}`}
+                                                                        aria-label={`Open details for ${deal.leadName} — ${health.text}`}
                                                                     >
                                                                         
-                                                                        <div className="flex justify-between items-start gap-1">
+                                                                        <div className="flex justify-between items-start gap-1.5">
                                                                             <div className="text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate" title="SOW Reference / Deal ID">{deal.id}</div>
-                                                                            <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${health.dot}`} title={health.text}></span>
+                                                                            <span className="flex items-center gap-1 shrink-0" title={health.text}>
+                                                                                <span className={`w-2 h-2 rounded-full ${health.dot}`} aria-hidden="true"></span>
+                                                                                <span className="text-[7px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">{health.text}</span>
+                                                                            </span>
                                                                         </div>
                                                                         
                                                                         <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1">{deal.company || "Individual Lead"}</div>
@@ -847,16 +903,16 @@
                                                                         
                                                                         {deal.titleRole && (<span className="text-[9px] text-slate-400 block leading-tight truncate">{deal.titleRole}</span>)}
 
-                                                                        <div className="mt-1.5 flex items-center justify-between border-t border-brandNavy-700/30 pt-1">
+                                                                        <div className="mt-1.5 flex items-center justify-between border-t border-white/5 pt-1">
                                                                             <div className="text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
                                                                                 {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)}
                                                                                 {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[11px] leading-none">🔄</span>}
                                                                             </div>
-                                                                            <span className="text-[8px] px-1 py-0.5 bg-brandNavy-955 text-slate-400 rounded font-bold font-sans">{deal.leadSource}</span>
+                                                                            <span className="text-[8px] px-1 py-0.5 bg-black/25 text-slate-400 rounded font-bold font-sans">{deal.leadSource}</span>
                                                                         </div>
 
                                                                         {deal.nextAction && (
-                                                                            <div className="mt-1 bg-[#020613]/60 rounded p-1 border border-brandNavy-700/30">
+                                                                            <div className={`mt-1 rounded p-1 border ${health.actionTint}`}>
                                                                                 <div className="text-[10px] text-slate-200 font-semibold truncate flex items-center gap-1">
                                                                                     <span aria-hidden="true">{health.icon}</span>
                                                                                     <span className="truncate text-[9px]">{deal.nextAction}</span>
@@ -866,26 +922,23 @@
                                                                         )}
 
                                                                         {deal.notes && (
-                                                                            <div className="mt-1 bg-[#020613]/50 rounded p-1 border border-brandNavy-700/20">
+                                                                            <div className="mt-1 bg-black/20 rounded p-1 border border-white/5">
                                                                                 <div className="text-[8px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Notes</div>
                                                                                 <p className="text-[9px] text-slate-400 leading-snug line-clamp-2" title={deal.notes}>{deal.notes}</p>
                                                                             </div>
                                                                         )}
 
-                                                                        <div className="mt-2 flex items-center gap-1 justify-end border-t border-brandNavy-700/30 pt-1.5" onClick={stopCardClick}>
-                                                                            <div className="flex gap-1 w-full justify-between items-center">
-                                                                                <div className="flex gap-1">
-                                                                                    {!isWon && !isLost && (
-                                                                                        <>
-                                                                                            <button onClick={() => resolveDealStatus(deal.id, "Won")} className="px-1.5 py-0.5 rounded border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500 hover:text-brandNavy-955 font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Won"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Won</button>
-                                                                                            <button onClick={() => resolveDealStatus(deal.id, "Lost")} className="px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Lost"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> Lost</button>
-                                                                                        </>
-                                                                                    )}
-                                                                                    {(isWon || isLost) && (<button onClick={() => resolveDealStatus(deal.id, "Active")} className="px-1.5 py-0.5 rounded bg-brandNavy-955 text-slate-400 hover:text-white hover:border-brandTeal-500 font-sans font-bold text-[8px] uppercase tracking-wider border border-brandNavy-700 transition-all">Re-open</button>)}
-                                                                                </div>
-                                                                                <button onClick={() => openDealDetails(deal)} className="p-1 rounded bg-brandNavy-955 border border-brandNavy-700/60 text-slate-400 hover:text-brandTeal-400 hover:border-brandTeal-500 transition-all flex items-center justify-center" title="Configure Details"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                                                                        <div className="mt-2 flex items-center gap-1 border-t border-white/5 pt-1.5" onClick={stopCardClick}>
+                                                                                {!isWon && !isLost && (
+                                                                                    <>
+                                                                                        <button onClick={() => resolveDealStatus(deal.id, "Won")} className="px-1.5 py-0.5 rounded border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500 hover:text-brandNavy-955 font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Won"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Won</button>
+                                                                                        <button onClick={() => resolveDealStatus(deal.id, "Lost")} className="px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Lost"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> Lost</button>
+                                                                                    </>
+                                                                                )}
+                                                                                {(isWon || isLost) && (
+                                                                                    <button onClick={() => resolveDealStatus(deal.id, "Active")} className="px-1.5 py-0.5 rounded bg-brandNavy-955 text-slate-400 hover:text-white hover:border-brandTeal-500 font-sans font-bold text-[8px] uppercase tracking-wider border border-brandNavy-700 transition-all">Re-open</button>
+                                                                                )}
                                                                             </div>
-                                                                        </div>
 
                                                                     </div>
                                                                 );
