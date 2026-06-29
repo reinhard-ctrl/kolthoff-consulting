@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource & Capacity Manager | Kolthoff OS</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+
+    <!-- Firebase Module Initialization -->
+        <script type="module" src="../../shared/firebase-init.js"></script>
+    <!-- React, ReactDOM, Babel CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 955: '#02050e', 950: '#020613', 900: '#09111F', 850: '#0C1626', 800: '#0F1A2C', 750: '#15233A', 700: '#1B2C46', 600: '#2E4567' },
+                        brandTeal: { 50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 855: '#115E59', 950: '#042F2E' },
+                        brandAmber: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #1B2C46; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+        .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
+        .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
+        .kanban-col { min-height: calc(100vh - 280px); }
+        
+        .drag-over { border-color: #14B8A6 !important; background-color: rgba(20, 184, 166, 0.05) !important; }
+        .dragging { opacity: 0.5; }
+    </style>
+</head>
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // Visual SVGs mapping
+        const Icons = {
+            Kanban: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>,
+            Users: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Refresh: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>,
+            Clock: () => <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            CheckCircle: () => <svg className="w-4 h-4 text-brandTeal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Plus: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Edit: () => <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
+            Briefcase: () => <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            Menu: () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+            Close: () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Settings: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        };
+
+        const KANBAN_STAGES = [
+            { id: 'backlog', title: 'Backlog / Pending', color: 'border-slate-700' },
+            { id: 'in_progress', title: 'Active Execution', color: 'border-brandAmber-500/50' },
+            { id: 'review', title: 'Client Review / QA', color: 'border-purple-500/50' },
+            { id: 'done', title: 'Deployed & Accepted', color: 'border-brandTeal-500/50' }
+        ];
+
+        const DEMO_SOWS = [
+            {
+                id: 'sow_acme_2026',
+                clientCompany: 'Acme Cybersecurity',
+                project: 'Cloud Infrastructure Audit',
+                tasks: [
+                    { id: 't_acme_1', deliverable: 'IAM Access Matrix & Least Privilege Audit', estHours: 15, category: 'Security', tier: 'T1', selected: true },
+                    { id: 't_acme_2', deliverable: 'Zero Trust Baseline Network Diagram', estHours: 12, category: 'Infrastructure', tier: 'T1', selected: true },
+                    { id: 't_acme_3', deliverable: 'Compliance Assessment GAP Report', estHours: 20, category: 'Compliance', tier: 'T2', selected: false }
+                ]
+            },
+            {
+                id: 'sow_globex_2026',
+                clientCompany: 'Globex Logistics',
+                project: 'Custom CRM Pipeline Integration',
+                tasks: [
+                    { id: 't_globex_1', deliverable: 'PostgreSQL Legacy Schema Migration', estHours: 18, category: 'Database', tier: 'T1', selected: true },
+                    { id: 't_globex_2', deliverable: 'REST API Authentication Middleware', estHours: 8, category: 'Development', tier: 'T2', selected: true },
+                    { id: 't_globex_3', deliverable: 'User Acceptance Testing Protocol Doc', estHours: 6, category: 'QA', tier: 'T3', selected: true }
+                ]
+            },
+            {
+                id: 'sow_initech_2026',
+                clientCompany: 'Initech Automated',
+                project: 'Enterprise Workflow Bot',
+                tasks: [
+                    { id: 't_initech_1', deliverable: 'Custom Slack Workspace Bot Orchestration', estHours: 10, category: 'Automation', tier: 'T2', selected: true },
+                    { id: 't_initech_2', deliverable: 'Integrate Power Automate Reports', estHours: 16, category: 'Automation', tier: 'T1', selected: true }
+                ]
+            }
+        ];
+
+        function App() {
+            // Auth States
+            const [user, setUser] = useState(null);
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [authError, setAuthError] = useState(null);
+            
+            // View navigation and layouts
+            const [activeView, setActiveView] = useState('kanban'); // 'kanban' or 'capacity'
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [sowProfiles, setSowProfiles] = useState([]);
+            const [kanbanTasks, setKanbanTasks] = useState([]);
+            const [teamMembers, setTeamMembers] = useState([]);
+            
+            // Workspace sync configuration
+            const [selectedSowIds, setSelectedSowIds] = useState([]);
+            
+            // Action processing and notifications
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [toast, setToast] = useState(null);
+
+            // Drag State
+            const [draggedTaskId, setDraggedTaskId] = useState(null);
+            const [dragOverColumn, setDragOverColumn] = useState(null);
+
+            // Modals: Task Form State
+            const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+            const [editingTask, setEditingTask] = useState(null);
+            const [taskForm, setTaskForm] = useState({
+                clientCompany: '',
+                deliverable: '',
+                estHours: 10,
+                status: 'backlog',
+                assigneeId: '',
+                category: 'Consulting',
+                tier: 'T1'
+            });
+
+            // Modals: Member Form State
+            const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+            const [editingMember, setEditingMember] = useState(null);
+            const [memberForm, setMemberForm] = useState({
+                name: '',
+                role: '',
+                capacityHours: 40
+            });
+
+            // 1) Auth Decoupling Initialization
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.signInAnonymously) {
+                        clearInterval(checkInterval);
+                        
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    try {
+                                        await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                    } catch (tokenErr) {
+                                        console.warn("Token fallback:", tokenErr);
+                                        await window.signInAnonymously(window.firebaseAuth);
+                                    }
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                            } catch (e) {
+                                console.error("Firebase Auth Blocked:", e);
+                                setAuthError(e.message || "Referrer restricted");
+                            }
+                        };
+                        initAuth();
+
+                        const unsubscribe = window.onAuthStateChanged(window.firebaseAuth, (currentUser) => {
+                            setUser(currentUser);
+                            if (currentUser) {
+                                setIsAuthed(true);
+                                setAuthError(null);
+                            } else {
+                                setIsAuthed(false);
+                            }
+                        });
+                        return () => unsubscribe();
+                    }
+                }, 50);
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // 2) Synchronize Collections with Realtime Snapshot Engine
+            useEffect(() => {
+                if (!user) return;
+                
+                const db = window.firebaseDb;
+                const appId = window.appId;
+                const unsubs = [];
+
+                // Listen to SOW Workbook profiles
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles'), (snap) => {
+                    const fetchedProfiles = [];
+                    snap.forEach(doc => fetchedProfiles.push({ id: doc.id, ...doc.data() }));
+                    setSowProfiles(fetchedProfiles);
+                    // Select all SOW IDs by default if none are selected yet
+                    if (fetchedProfiles.length > 0) {
+                        setSelectedSowIds(prev => prev.length === 0 ? fetchedProfiles.map(p => p.id) : prev);
+                    }
+                }, console.error));
+                
+                // Listen to Resource Kanban Deliverables
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'resource_tasks'), (snap) => {
+                    const fetchedTasks = [];
+                    snap.forEach(doc => fetchedTasks.push({ id: doc.id, ...doc.data() }));
+                    setKanbanTasks(fetchedTasks);
+                }, console.error));
+
+                // Listen to Dynamic Team Members
+                unsubs.push(window.onSnapshot(window.collection(db, 'artifacts', appId, 'public', 'data', 'team_members'), (snap) => {
+                    const fetchedMembers = [];
+                    snap.forEach(doc => fetchedMembers.push({ id: doc.id, ...doc.data() }));
+                    
+                    if (fetchedMembers.length === 0) {
+                        // Seed dynamic team members if collection is empty
+                        const batch = window.writeBatch(db);
+                        const initialTeam = [
+                            { id: 't1', name: 'Reinhard Kolthoff', role: 'Principal / Strategist', capacityHours: 40, avatar: 'RK' },
+                            { id: 't2', name: 'Alex Reyes', role: 'Senior Architect', capacityHours: 40, avatar: 'AR' },
+                            { id: 't3', name: 'Maria Santos', role: 'Operations Specialist', capacityHours: 40, avatar: 'MS' },
+                            { id: 't4', name: 'David Lim', role: 'IT Integration Partner', capacityHours: 20, avatar: 'DL' }
+                        ];
+                        initialTeam.forEach(member => {
+                            const ref = window.doc(db, 'artifacts', appId, 'public', 'data', 'team_members', member.id);
+                            batch.set(ref, member);
+                        });
+                        batch.commit().catch(e => console.error("Initial team seeding failed: ", e));
+                    } else {
+                        setTeamMembers(fetchedMembers);
+                    }
+                }, console.error));
+
+                return () => unsubs.forEach(u => u());
+            }, [user]);
+
+            // Toast helper
+            const showToast = (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            };
+
+            // Seed Demo Workspaces so syncing can be fully tested if empty
+            const seedDemoWorkspaces = async () => {
+                if (!isAuthed) return;
+                setIsSyncing(true);
+                try {
+                    const db = window.firebaseDb;
+                    const batch = window.writeBatch(db);
+                    DEMO_SOWS.forEach(sow => {
+                        const ref = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', sow.id);
+                        batch.set(ref, sow);
+                    });
+                    await batch.commit();
+                    showToast("Loaded 3 demo SOWs successfully!");
+                } catch (e) {
+                    console.error("Demo seeding failed:", e);
+                    showToast("Error loading demo SOWs.");
+                }
+                setIsSyncing(false);
+            };
+
+            // Sync engine pulled with selective workspaces logic
+            const handleSyncSelectedWorkspaces = async () => {
+                if (authError) {
+                    showToast("❌ Cloud Sync Disabled (Local Sandbox Mode)");
+                    return;
+                }
+                if (!isAuthed) return;
+                if (selectedSowIds.length === 0) {
+                    showToast("⚠️ Select at least one workspace to sync.");
+                    return;
+                }
+                setIsSyncing(true);
+                
+                try {
+                    const db = window.firebaseDb;
+                    const batch = window.writeBatch(db);
+                    let newTasksCount = 0;
+
+                    // Sync only selected profiles
+                    const profilesToSync = sowProfiles.filter(p => selectedSowIds.includes(p.id));
+
+                    profilesToSync.forEach(profile => {
+                        if (!profile.tasks) return;
+                        
+                        const selectedTasks = profile.tasks.filter(t => t.selected);
+                        
+                        selectedTasks.forEach(task => {
+                            const compositeId = `${profile.id}_${task.id}`;
+                            const exists = kanbanTasks.some(kt => kt.id === compositeId);
+                            
+                            if (!exists) {
+                                const taskRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'resource_tasks', compositeId);
+                                batch.set(taskRef, {
+                                    id: compositeId,
+                                    sowId: profile.id,
+                                    originalTaskId: task.id,
+                                    clientCompany: profile.clientCompany || 'Unknown Client',
+                                    deliverable: task.deliverable,
+                                    category: task.category || 'Consulting',
+                                    estHours: task.estHours || 0,
+                                    tier: task.tier || 'T1',
+                                    status: 'backlog',
+                                    assigneeId: '',
+                                    createdAt: new Date().toISOString()
+                                });
+                                newTasksCount++;
+                            }
+                        });
+                    });
+
+                    if (newTasksCount > 0) {
+                        await batch.commit();
+                        showToast(`Successfully synced ${newTasksCount} new deliverables.`);
+                    } else {
+                        showToast("Selected workspaces are already in sync.");
+                    }
+                } catch (error) {
+                    console.error("Selective Sync Error:", error);
+                    showToast("Error executing SOW sync.");
+                }
+                setIsSyncing(false);
+            };
+
+            // Toggle single SOW ID selection
+            const toggleSowSelection = (id) => {
+                setSelectedSowIds(prev => 
+                    prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+                );
+            };
+
+            // Toggle select all workspaces
+            const toggleSelectAllWorkspaces = () => {
+                if (selectedSowIds.length === sowProfiles.length) {
+                    setSelectedSowIds([]);
+                } else {
+                    setSelectedSowIds(sowProfiles.map(p => p.id));
+                }
+            };
+
+            // Update Task Inline (Assignment, Drag status)
+            const updateTaskInline = async (taskId, updates) => {
+                try {
+                    const taskRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'resource_tasks', taskId);
+                    await window.setDoc(taskRef, updates, { merge: true });
+                } catch (error) {
+                    console.error("Inline Task Update Error:", error);
+                }
+            };
+
+            // Drag and Drop Handlers
+            const onDragStart = (e, taskId) => {
+                setDraggedTaskId(taskId);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', taskId); 
+                setTimeout(() => e.target.classList.add('dragging'), 0);
+            };
+
+            const onDragEnd = (e) => {
+                e.target.classList.remove('dragging');
+                setDraggedTaskId(null);
+                setDragOverColumn(null);
+            };
+
+            const onDragOver = (e, colId) => {
+                e.preventDefault();
+                if (dragOverColumn !== colId) {
+                    setDragOverColumn(colId);
+                }
+            };
+
+            const onDrop = async (e, colId) => {
+                e.preventDefault();
+                setDragOverColumn(null);
+                if (draggedTaskId) {
+                    await updateTaskInline(draggedTaskId, { status: colId });
+                }
+            };
+
+            // Task Form CRUD Handlers
+            const openAddTaskModal = (defaultStatus = 'backlog') => {
+                setEditingTask(null);
+                setTaskForm({
+                    clientCompany: '',
+                    deliverable: '',
+                    estHours: 10,
+                    status: defaultStatus,
+                    assigneeId: '',
+                    category: 'Architecture',
+                    tier: 'T1'
+                });
+                setIsTaskModalOpen(true);
+            };
+
+            const openEditTaskModal = (task) => {
+                setEditingTask(task);
+                setTaskForm({
+                    clientCompany: task.clientCompany || '',
+                    deliverable: task.deliverable || '',
+                    estHours: task.estHours || 10,
+                    status: task.status || 'backlog',
+                    assigneeId: task.assigneeId || '',
+                    category: task.category || 'Consulting',
+                    tier: task.tier || 'T1'
+                });
+                setIsTaskModalOpen(true);
+            };
+
+            const handleSaveTask = async (e) => {
+                e.preventDefault();
+                if (!isAuthed) return;
+                
+                try {
+                    const db = window.firebaseDb;
+                    const taskId = editingTask ? editingTask.id : `task_${Date.now()}`;
+                    const taskRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'resource_tasks', taskId);
+                    
+                    const payload = {
+                        id: taskId,
+                        clientCompany: taskForm.clientCompany,
+                        deliverable: taskForm.deliverable,
+                        estHours: Number(taskForm.estHours) || 0,
+                        status: taskForm.status,
+                        assigneeId: taskForm.assigneeId,
+                        category: taskForm.category,
+                        tier: taskForm.tier,
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    if (!editingTask) {
+                        payload.createdAt = new Date().toISOString();
+                    }
+
+                    await window.setDoc(taskRef, payload, { merge: true });
+                    setIsTaskModalOpen(false);
+                    showToast(editingTask ? "Deliverable updated successfully." : "Deliverable created.");
+                } catch (err) {
+                    console.error("Save deliverable error:", err);
+                    showToast("Error saving deliverable details.");
+                }
+            };
+
+            const handleDeleteTask = async (taskId) => {
+                if (!isAuthed) return;
+                try {
+                    const db = window.firebaseDb;
+                    const taskRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'resource_tasks', taskId);
+                    await window.deleteDoc(taskRef);
+                    setIsTaskModalOpen(false);
+                    showToast("Deliverable removed from boards.");
+                } catch (err) {
+                    console.error("Delete task error:", err);
+                    showToast("Failed to delete deliverable.");
+                }
+            };
+
+            // Consultant / Team Member CRUD Handlers
+            const openAddMemberModal = () => {
+                setEditingMember(null);
+                setMemberForm({
+                    name: '',
+                    role: '',
+                    capacityHours: 40
+                });
+                setIsMemberModalOpen(true);
+            };
+
+            const openEditMemberModal = (member) => {
+                setEditingMember(member);
+                setMemberForm({
+                    name: member.name || '',
+                    role: member.role || '',
+                    capacityHours: member.capacityHours || 40
+                });
+                setIsMemberModalOpen(true);
+            };
+
+            const handleSaveMember = async (e) => {
+                e.preventDefault();
+                if (!isAuthed) return;
+
+                try {
+                    const db = window.firebaseDb;
+                    const memberId = editingMember ? editingMember.id : `member_${Date.now()}`;
+                    const memberRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'team_members', memberId);
+                    
+                    // Generate Initials Avatar
+                    const names = memberForm.name.trim().split(' ');
+                    const avatar = names.length > 1 
+                        ? (names[0][0] + names[names.length - 1][0]).toUpperCase() 
+                        : names[0].substring(0, 2).toUpperCase();
+
+                    const payload = {
+                        id: memberId,
+                        name: memberForm.name,
+                        role: memberForm.role,
+                        capacityHours: Number(memberForm.capacityHours) || 40,
+                        avatar: avatar || '??'
+                    };
+
+                    await window.setDoc(memberRef, payload, { merge: true });
+                    setIsMemberModalOpen(false);
+                    showToast(editingMember ? "Consultant details updated." : "Consultant registered.");
+                } catch (err) {
+                    console.error("Save consultant error:", err);
+                    showToast("Failed to save consultant profile.");
+                }
+            };
+
+            const handleDeleteMember = async (memberId) => {
+                if (!isAuthed) return;
+                try {
+                    const db = window.firebaseDb;
+                    const memberRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'team_members', memberId);
+                    await window.deleteDoc(memberRef);
+
+                    // Unassign deleted member from existing board tasks
+                    const affectedTasks = kanbanTasks.filter(t => t.assigneeId === memberId);
+                    if (affectedTasks.length > 0) {
+                        const batch = window.writeBatch(db);
+                        affectedTasks.forEach(task => {
+                            const ref = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'resource_tasks', task.id);
+                            batch.update(ref, { assigneeId: '' });
+                        });
+                        await batch.commit();
+                    }
+
+                    setIsMemberModalOpen(false);
+                    showToast("Consultant deleted. Active assignments cleared.");
+                } catch (err) {
+                    console.error("Delete consultant error:", err);
+                    showToast("Failed to remove consultant.");
+                }
+            };
+
+            // Dynamic Capacity Calculations & Aggregation
+            const calculatedTeamCapacity = useMemo(() => {
+                return teamMembers.map(member => {
+                    // Filter tasks assigned to this member that are not set to 'done'
+                    const activeTasks = kanbanTasks.filter(t => t.assigneeId === member.id && t.status !== 'done');
+                    const assignedHours = activeTasks.reduce((sum, t) => sum + (Number(t.estHours) || 0), 0);
+                    
+                    return {
+                        ...member,
+                        assignedHours,
+                        utilization: Math.round((assignedHours / member.capacityHours) * 100),
+                        tasks: activeTasks
+                    };
+                });
+            }, [teamMembers, kanbanTasks]);
+
+            return (
+                <div className="flex h-screen overflow-hidden font-sans relative">
+                    
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed bottom-6 right-6 z-50 bg-brandTeal-600 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce font-bold text-xs tracking-wider border border-brandTeal-400">
+                            <Icons.CheckCircle /> {toast}
+                        </div>
+                    )}
+
+                    {/* MOBILE HAMBURGER ACTION */}
+                    <div className="md:hidden fixed top-4 right-4 z-50">
+                        <button 
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                            className="bg-brandNavy-850 border border-brandNavy-700 p-2.5 rounded-lg text-slate-300 hover:text-white"
+                            aria-label="Toggle Navigation Sidebar"
+                        >
+                            {isSidebarOpen ? <Icons.Close /> : <Icons.Menu />}
+                        </button>
+                    </div>
+
+                    {/* SIDEBAR NAVIGATION & SELECTIVE WORKSPACE MANAGER */}
+                    <aside className={`w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-40 transition-transform duration-300 fixed md:relative h-full md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                        
+                        <div className="p-6 border-b border-brandNavy-800 group relative">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="currentColor" strokeWidth="4.5" strokeLinejoin="round" />
+                                        <path d="M36 50 L46 60 L66 36" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    <div>
+                                        <span className="font-extrabold tracking-wider text-sm uppercase block text-white leading-none">KOLTHOFF</span>
+                                        <span className="text-[8px] text-brandTeal-400 font-mono tracking-widest uppercase block mt-1 font-bold">Resource Engine</span>
+                                    </div>
+                                </div>
+                                <div className={`w-2 h-2 rounded-full cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
+                            </div>
+                            
+                            {authError && (
+                                <div className="absolute left-6 top-full mt-2 w-56 bg-rose-950/90 border border-rose-500/50 p-3 rounded-lg text-[9px] text-rose-200 hidden group-hover:block z-50 shadow-xl backdrop-blur-sm text-left">
+                                    <strong className="text-rose-400 block mb-1">Sandbox Connected</strong>
+                                    GCP API restriction on localhost bypass configured. Locally saved elements can be managed directly in real-time.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* NAV ITEMS */}
+                        <nav className="p-4 space-y-1.5 border-b border-brandNavy-800">
+                            <button 
+                                onClick={() => { setActiveView('kanban'); setIsSidebarOpen(false); }} 
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'kanban' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg shadow-brandTeal-500/10 font-black' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
+                            >
+                                <Icons.Kanban /> Internal Board
+                            </button>
+                            <button 
+                                onClick={() => { setActiveView('capacity'); setIsSidebarOpen(false); }} 
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all ${activeView === 'capacity' ? 'bg-brandTeal-500 text-brandNavy-955 shadow-lg shadow-brandTeal-500/10 font-black' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
+                            >
+                                <Icons.Users /> Capacity Monitor
+                            </button>
+                        </nav>
+
+                        {/* CHOOSE WORKSPACES TO SYNC PANEL */}
+                        <div className="flex-1 p-4 flex flex-col overflow-hidden">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-black">Sync Workspaces</span>
+                                {sowProfiles.length > 0 && (
+                                    <button 
+                                        onClick={toggleSelectAllWorkspaces}
+                                        className="text-[9px] font-mono text-brandTeal-400 hover:underline hover:text-brandTeal-300 font-bold"
+                                    >
+                                        {selectedSowIds.length === sowProfiles.length ? "Deselect All" : "Select All"}
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto bg-brandNavy-900/30 rounded-xl p-2.5 border border-brandNavy-800 space-y-2 min-h-[140px]">
+                                {sowProfiles.length > 0 ? (
+                                    sowProfiles.map(sow => {
+                                        const isChecked = selectedSowIds.includes(sow.id);
+                                        const pendingDeliverables = sow.tasks ? sow.tasks.filter(t => t.selected).length : 0;
+
+                                        return (
+                                            <div 
+                                                key={sow.id}
+                                                onClick={() => toggleSowSelection(sow.id)}
+                                                className={`p-2.5 rounded-lg border transition-colors cursor-pointer flex items-start gap-3 ${isChecked ? 'bg-brandTeal-500/5 border-brandTeal-500/20' : 'bg-brandNavy-950/40 border-brandNavy-850 hover:border-brandNavy-750'}`}
+                                            >
+                                                <input 
+                                                    type="checkbox"
+                                                    checked={isChecked}
+                                                    onChange={() => {}} // Click is handled on container
+                                                    className="mt-1 accent-brandTeal-500 cursor-pointer rounded"
+                                                />
+                                                <div className="min-w-0">
+                                                    <h5 className="font-bold text-xs text-slate-200 truncate leading-tight">{sow.clientCompany}</h5>
+                                                    <p className="text-[9px] text-slate-400 truncate mt-0.5">{sow.project || 'Untitled Project'}</p>
+                                                    <span className="inline-block mt-1 bg-brandNavy-950 px-1.5 py-0.5 rounded text-[8px] font-mono text-brandTeal-400 border border-brandNavy-800">
+                                                        {pendingDeliverables} deliverable{pendingDeliverables !== 1 && 's'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center p-4 text-center">
+                                        <Icons.Briefcase />
+                                        <p className="text-[10px] text-slate-500 mt-2 font-medium">No open workspaces found.</p>
+                                        <button 
+                                            onClick={seedDemoWorkspaces}
+                                            disabled={isSyncing}
+                                            className="mt-3 px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 border border-brandNavy-600 rounded text-[9px] font-bold text-brandTeal-400 uppercase tracking-widest transition-colors"
+                                        >
+                                            ✨ Seed Demo Workspaces
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Sync Actions */}
+                            <div className="mt-3 pt-3 border-t border-brandNavy-800">
+                                <button 
+                                    onClick={handleSyncSelectedWorkspaces}
+                                    disabled={!isAuthed || isSyncing || selectedSowIds.length === 0}
+                                    className="w-full bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-30 border border-brandNavy-600 py-2.5 font-black rounded-lg text-xs tracking-wider flex items-center justify-center gap-2 transition-colors text-brandTeal-400"
+                                >
+                                    <Icons.Refresh /> {isSyncing ? "Processing Sync..." : `Sync Selected (${selectedSowIds.length})`}
+                                </button>
+                                <p className="text-[8px] text-slate-500 text-center mt-1.5 leading-relaxed">
+                                    Executes incremental ingestion for the selected active workspace portfolios.
+                                </p>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT WORKSPACE */}
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
+                        {/* Header */}
+                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-black text-white font-serif tracking-wide flex items-center gap-2">
+                                    {activeView === 'kanban' ? 'Execution Board' : 'Team Capacity Monitor'}
+                                </h2>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    {kanbanTasks.length} Deliverable{kanbanTasks.length !== 1 && 's'} in Current Board State
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                {activeView === 'kanban' ? (
+                                    <button 
+                                        onClick={() => openAddTaskModal('backlog')}
+                                        className="w-full sm:w-auto px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-brandTeal-500/10 cursor-pointer"
+                                    >
+                                        <Icons.Plus /> Add Deliverable
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={openAddMemberModal}
+                                        className="w-full sm:w-auto px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-xl font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-brandTeal-500/10 cursor-pointer"
+                                    >
+                                        <Icons.Plus /> Add Consultant
+                                    </button>
+                                )}
+                            </div>
+                        </header>
+
+                        <div className="p-6">
+                            {activeView === 'kanban' ? (
+                                /* ==========================================
+                                   VIEW: INTERACTIVE KANBAN BOARD
+                                   ========================================== */
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                                    {KANBAN_STAGES.map(stage => {
+                                        const stageTasks = kanbanTasks.filter(t => t.status === stage.id);
+                                        const totalHours = stageTasks.reduce((acc, t) => acc + (Number(t.estHours) || 0), 0);
+                                        
+                                        return (
+                                            <div 
+                                                key={stage.id}
+                                                className={`glass-panel rounded-2xl flex flex-col transition-colors duration-200 border-t-4 ${stage.color} ${dragOverColumn === stage.id ? 'drag-over' : ''}`}
+                                                onDragOver={(e) => onDragOver(e, stage.id)}
+                                                onDrop={(e) => onDrop(e, stage.id)}
+                                            >
+                                                {/* Stage Header */}
+                                                <div className="p-4 border-b border-brandNavy-700/50 flex justify-between items-center bg-brandNavy-900/30 rounded-t-xl">
+                                                    <div>
+                                                        <h3 className="font-bold text-xs uppercase tracking-widest text-slate-200">{stage.title}</h3>
+                                                        <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest flex items-center gap-1 mt-1">
+                                                            <Icons.Clock /> {totalHours.toFixed(1)} Hrs
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="bg-brandNavy-950 px-2 py-0.5 rounded text-[10px] font-mono text-brandTeal-400 font-black border border-brandNavy-800">
+                                                            {stageTasks.length}
+                                                        </span>
+                                                        <button 
+                                                            onClick={() => openAddTaskModal(stage.id)}
+                                                            className="p-1 text-slate-400 hover:text-brandTeal-400 hover:bg-brandNavy-800 rounded transition-colors"
+                                                            title={`Add deliverable to ${stage.title}`}
+                                                        >
+                                                            <Icons.Plus />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Task List container */}
+                                                <div className="flex-1 p-3 overflow-y-auto space-y-3 min-h-[300px] kanban-col">
+                                                    {stageTasks.map(task => {
+                                                        const activeAssignee = teamMembers.find(m => m.id === task.assigneeId);
+
+                                                        return (
+                                                            <div 
+                                                                key={task.id}
+                                                                draggable
+                                                                onDragStart={(e) => onDragStart(e, task.id)}
+                                                                onDragEnd={onDragEnd}
+                                                                className="group/card bg-brandNavy-950 border border-brandNavy-700 hover:border-brandTeal-500/40 p-4 rounded-xl shadow-lg cursor-grab active:cursor-grabbing transition-colors relative"
+                                                            >
+                                                                {/* Edit Trigger */}
+                                                                <button 
+                                                                    onClick={() => openEditTaskModal(task)}
+                                                                    className="absolute top-3.5 right-3.5 p-1 bg-brandNavy-900 border border-brandNavy-800 hover:border-brandTeal-500 rounded text-slate-400 hover:text-brandTeal-400 opacity-0 group-hover/card:opacity-100 transition-opacity"
+                                                                    title="Edit deliverable"
+                                                                >
+                                                                    <Icons.Edit />
+                                                                </button>
+
+                                                                <div className="flex justify-between items-start mb-2 pr-6">
+                                                                    <span className="text-[9px] uppercase font-bold tracking-widest text-brandTeal-400 truncate max-w-[120px]">
+                                                                        {task.clientCompany}
+                                                                    </span>
+                                                                    <span className="text-[9px] font-mono text-slate-400 bg-brandNavy-900 px-1.5 py-0.5 rounded shrink-0">
+                                                                        {task.estHours}h
+                                                                    </span>
+                                                                </div>
+
+                                                                <h4 className="font-bold text-sm text-slate-100 mb-2.5 leading-tight">{task.deliverable}</h4>
+                                                                
+                                                                <div className="flex flex-wrap gap-1.5 mb-3.5">
+                                                                    {task.category && (
+                                                                        <span className="text-[8px] uppercase tracking-wider font-bold bg-brandNavy-900 px-2 py-0.5 rounded-full text-slate-400 border border-brandNavy-800">
+                                                                            {task.category}
+                                                                        </span>
+                                                                    )}
+                                                                    {task.tier && (
+                                                                        <span className="text-[8px] uppercase tracking-wider font-bold bg-brandTeal-950/40 px-2 py-0.5 rounded-full text-brandTeal-400 border border-brandTeal-900/40">
+                                                                            {task.tier}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Assignee management drop list */}
+                                                                <div className="border-t border-brandNavy-800 pt-3 flex items-center justify-between gap-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        {activeAssignee ? (
+                                                                            <div className="w-5 h-5 rounded-full bg-brandTeal-500/10 border border-brandTeal-500/30 text-[9px] text-brandTeal-400 font-bold flex items-center justify-center">
+                                                                                {activeAssignee.avatar}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="w-5 h-5 rounded-full bg-brandNavy-900 border border-brandNavy-700 text-[10px] text-slate-500 flex items-center justify-center">
+                                                                                ?
+                                                                            </div>
+                                                                        )}
+                                                                        <span className="text-[10px] text-slate-400 truncate max-w-[100px]">
+                                                                            {activeAssignee ? activeAssignee.name : "Unassigned"}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    <select 
+                                                                        value={task.assigneeId || ''}
+                                                                        onChange={(e) => updateTaskInline(task.id, { assigneeId: e.target.value })}
+                                                                        className="text-[9px] bg-brandNavy-900 text-slate-400 border border-brandNavy-800 rounded p-1 focus:outline-none focus:border-brandTeal-500 cursor-pointer"
+                                                                    >
+                                                                        <option value="">Unassign</option>
+                                                                        {teamMembers.map(m => (
+                                                                            <option key={m.id} value={m.id}>{m.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    
+                                                    {stageTasks.length === 0 && (
+                                                        <div className="h-48 flex flex-col items-center justify-center text-[10px] uppercase font-bold tracking-widest text-slate-600/40 border-2 border-dashed border-brandNavy-800/60 rounded-xl">
+                                                            Empty Phase Stage
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                /* ==========================================
+                                   VIEW: DYNAMIC CAPACITY MONITOR
+                                   ========================================== */
+                                <div className="space-y-6 max-w-5xl mx-auto">
+                                    <div className="glass-panel rounded-2xl p-6 shadow-xl">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brandNavy-700 pb-4 mb-6">
+                                            <div>
+                                                <h3 className="text-base font-bold uppercase tracking-widest text-white">Consultant Weekly Bandwidth</h3>
+                                                <p className="text-xs text-slate-400 mt-1">Calculates and scales hours against active assignments (excluding deployed deliverables).</p>
+                                            </div>
+                                            <button 
+                                                onClick={openAddMemberModal}
+                                                className="px-4.5 py-2 bg-brandNavy-850 hover:bg-brandNavy-800 border border-brandNavy-700 hover:border-brandTeal-500 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                                            >
+                                                <Icons.Plus /> Add Consultant
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="space-y-5">
+                                            {calculatedTeamCapacity.map(member => {
+                                                const isOverbooked = member.utilization > 100;
+                                                const barColor = isOverbooked ? 'bg-rose-500' : (member.utilization > 80 ? 'bg-brandAmber-500' : 'bg-brandTeal-500');
+                                                const clampedWidth = Math.min(member.utilization, 100);
+
+                                                return (
+                                                    <div key={member.id} className="bg-brandNavy-950/70 border border-brandNavy-800 hover:border-brandNavy-750 p-5 rounded-2xl flex flex-col md:flex-row gap-6 items-center transition-colors group relative">
+                                                        
+                                                        {/* Edit Consultant control */}
+                                                        <button 
+                                                            onClick={() => openEditMemberModal(member)}
+                                                            className="absolute top-4 right-4 p-1.5 bg-brandNavy-900 border border-brandNavy-850 hover:border-brandTeal-500 rounded-lg text-slate-400 hover:text-brandTeal-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            title="Edit consultant"
+                                                        >
+                                                            <Icons.Edit />
+                                                        </button>
+
+                                                        <div className="flex items-center gap-4 w-full md:w-1/3">
+                                                            <div className="w-12 h-12 rounded-full bg-brandNavy-800 border border-brandNavy-700 flex items-center justify-center text-brandTeal-400 font-bold font-serif text-sm">
+                                                                {member.avatar}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <h4 className="font-bold text-white text-sm truncate">{member.name}</h4>
+                                                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5 truncate">{member.role || 'Partner'}</p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="w-full md:w-2/3">
+                                                            <div className="flex justify-between items-end mb-2">
+                                                                <span className="text-[10px] font-mono uppercase text-slate-400">Assigned Workload</span>
+                                                                <span className="text-xs font-mono font-bold">
+                                                                    <span className={isOverbooked ? 'text-rose-400' : 'text-white'}>{member.assignedHours.toFixed(1)}</span>
+                                                                    <span className="text-slate-500"> / {member.capacityHours} hrs ({member.utilization}%)</span>
+                                                                </span>
+                                                            </div>
+                                                            <div className="w-full bg-brandNavy-900 rounded-full h-3 overflow-hidden border border-brandNavy-800">
+                                                                <div className={`h-3 rounded-full transition-all duration-1000 ${barColor}`} style={{ width: `${clampedWidth}%` }}></div>
+                                                            </div>
+                                                            {isOverbooked && (
+                                                                <p className="text-[10px] text-rose-500 font-bold mt-2 animate-pulse flex items-center gap-1">
+                                                                    ⚠️ Capacity alert: Overloaded by {(member.assignedHours - member.capacityHours).toFixed(1)} hours.
+                                                                </p>
+                                                            )}
+                                                            
+                                                            {member.tasks.length > 0 ? (
+                                                                <div className="mt-4 pt-3 border-t border-brandNavy-800/50">
+                                                                    <p className="text-[9px] uppercase tracking-widest text-slate-500 mb-2 font-bold">Assigned Tasks:</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {member.tasks.map(t => (
+                                                                            <span key={t.id} className="text-[9px] font-mono bg-brandNavy-900 border border-brandNavy-800 px-2.5 py-1 rounded-lg text-slate-300">
+                                                                                {t.clientCompany}: {t.deliverable.substring(0, 24)}... ({t.estHours}h)
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-[9px] text-slate-500 mt-2 font-mono">No active project deliverables scheduled.</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* ==========================================
+                       MODAL: DELIVERABLE (TASK) CREATION / EDITING
+                       ========================================== */}
+                    {isTaskModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                            <div className="bg-brandNavy-950 border border-brandNavy-750 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-in">
+                                <div className="p-5 border-b border-brandNavy-800 flex justify-between items-center">
+                                    <h3 className="text-base font-bold text-white font-serif">
+                                        {editingTask ? 'Edit Active Deliverable' : 'Log New Deliverable'}
+                                    </h3>
+                                    <button 
+                                        onClick={() => setIsTaskModalOpen(false)}
+                                        className="text-slate-400 hover:text-white"
+                                    >
+                                        <Icons.Close />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSaveTask} className="p-6 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Client / Company Name</label>
+                                        <input 
+                                            type="text" 
+                                            required
+                                            value={taskForm.clientCompany}
+                                            onChange={e => setTaskForm({...taskForm, clientCompany: e.target.value})}
+                                            placeholder="e.g. Acme Corp"
+                                            className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Deliverable Summary</label>
+                                        <textarea 
+                                            required
+                                            value={taskForm.deliverable}
+                                            onChange={e => setTaskForm({...taskForm, deliverable: e.target.value})}
+                                            placeholder="Describe the operational target"
+                                            className="w-full h-20 bg-brandNavy-900 border border-brandNavy-750 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-brandTeal-500 resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Estimated Hours</label>
+                                            <input 
+                                                type="number" 
+                                                min="1"
+                                                required
+                                                value={taskForm.estHours}
+                                                onChange={e => setTaskForm({...taskForm, estHours: e.target.value})}
+                                                className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Stage Phase</label>
+                                            <select 
+                                                value={taskForm.status}
+                                                onChange={e => setTaskForm({...taskForm, status: e.target.value})}
+                                                className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                            >
+                                                {KANBAN_STAGES.map(stage => (
+                                                    <option key={stage.id} value={stage.id}>{stage.title}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Operational Category</label>
+                                            <input 
+                                                type="text" 
+                                                value={taskForm.category}
+                                                onChange={e => setTaskForm({...taskForm, category: e.target.value})}
+                                                placeholder="e.g. Infrastructure"
+                                                className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Urgency Tier</label>
+                                            <select 
+                                                value={taskForm.tier}
+                                                onChange={e => setTaskForm({...taskForm, tier: e.target.value})}
+                                                className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                            >
+                                                <option value="T1">T1 - Critical / High</option>
+                                                <option value="T2">T2 - Operational</option>
+                                                <option value="T3">T3 - Low Priority</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Assignee Consultant</label>
+                                        <select 
+                                            value={taskForm.assigneeId}
+                                            onChange={e => setTaskForm({...taskForm, assigneeId: e.target.value})}
+                                            className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        >
+                                            <option value="">Leave Unassigned</option>
+                                            {teamMembers.map(member => (
+                                                <option key={member.id} value={member.id}>{member.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-brandNavy-800 flex justify-between gap-3">
+                                        {editingTask ? (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleDeleteTask(editingTask.id)}
+                                                className="px-4 py-2.5 bg-red-950/20 hover:bg-red-900/40 border border-red-900/60 hover:border-red-500 text-red-200 hover:text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                                            >
+                                                <Icons.Trash /> Delete
+                                            </button>
+                                        ) : <div />}
+
+                                        <div className="flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsTaskModalOpen(false)}
+                                                className="px-4 py-2.5 bg-brandNavy-900 hover:bg-brandNavy-850 border border-brandNavy-800 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-xl text-xs tracking-wider transition-colors"
+                                            >
+                                                Save Deliverable
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ==========================================
+                       MODAL: TEAM MEMBER CREATION / EDITING
+                       ========================================== */}
+                    {isMemberModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                            <div className="bg-brandNavy-950 border border-brandNavy-750 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+                                <div className="p-5 border-b border-brandNavy-800 flex justify-between items-center">
+                                    <h3 className="text-base font-bold text-white font-serif">
+                                        {editingMember ? 'Edit Consultant Profile' : 'Register New Consultant'}
+                                    </h3>
+                                    <button 
+                                        onClick={() => setIsMemberModalOpen(false)}
+                                        className="text-slate-400 hover:text-white"
+                                    >
+                                        <Icons.Close />
+                                    </button>
+                                </div>
+
+                                <form onSubmit={handleSaveMember} className="p-6 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Full Name</label>
+                                        <input 
+                                            type="text" 
+                                            required
+                                            value={memberForm.name}
+                                            onChange={e => setMemberForm({...memberForm, name: e.target.value})}
+                                            placeholder="e.g. Reinhard Kolthoff"
+                                            className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Professional Role / Title</label>
+                                        <input 
+                                            type="text" 
+                                            required
+                                            value={memberForm.role}
+                                            onChange={e => setMemberForm({...memberForm, role: e.target.value})}
+                                            placeholder="e.g. Principal / Strategist"
+                                            className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">Weekly Capacity (Hours)</label>
+                                        <input 
+                                            type="number" 
+                                            min="1"
+                                            max="168"
+                                            required
+                                            value={memberForm.capacityHours}
+                                            onChange={e => setMemberForm({...memberForm, capacityHours: e.target.value})}
+                                            className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brandTeal-500"
+                                        />
+                                    </div>
+
+                                    <div className="pt-4 border-t border-brandNavy-800 flex justify-between gap-3">
+                                        {editingMember ? (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleDeleteMember(editingMember.id)}
+                                                className="px-4 py-2.5 bg-red-950/20 hover:bg-red-900/40 border border-red-900/60 hover:border-red-500 text-red-200 hover:text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                                            >
+                                                <Icons.Trash /> Delete
+                                            </button>
+                                        ) : <div />}
+
+                                        <div className="flex gap-3">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setIsMemberModalOpen(false)}
+                                                className="px-4 py-2.5 bg-brandNavy-900 hover:bg-brandNavy-850 border border-brandNavy-800 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-xl text-xs tracking-wider transition-colors"
+                                            >
+                                                Save Consultant
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>

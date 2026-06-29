@@ -1,0 +1,54 @@
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/workspace/**", "destination": "/workspace/index.html" },
+      { "source": "/admin", "destination": "/admin/index.html" },
+      { "source": "/admin/**", "destination": "/admin/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css|html)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }]
+      }
+    ],
+    "redirects": [
+      { "source": "/portal.html", "destination": "/apps/public/portal.html", "type": 301 },
+      { "source": "/client_intake.html", "destination": "/apps/public/client_intake.html", "type": 301 },
+      { "source": "/core_workspace_app.html", "destination": "/workspace/", "type": 301 },
+      { "source": "/admin_console.html", "destination": "/admin/", "type": 301 }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ],
+  "emulators": {
+    "auth": { "port": 9099 },
+    "functions": { "port": 5001 },
+    "firestore": { "port": 8080 },
+    "storage": { "port": 9199 },
+    "hosting": { "port": 5000 },
+    "ui": { "enabled": true }
+  }
+}

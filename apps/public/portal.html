@@ -13,36 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
-            authDomain: "kolthoff-portal.firebaseapp.com",
-            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "kolthoff-portal",
-            storageBucket: "kolthoff-portal.firebasestorage.app",
-            messagingSenderId: "413958125034",
-            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
-        };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        const app = initializeApp(firebaseConfig);
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        
-        window.appId = appId;
-        window.initialAuthToken = initialAuthToken;
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.doc = doc;
-        window.getDoc = getDoc;
-        window.onSnapshot = onSnapshot;
-    </script>
-
+        <script type="module" src="../../shared/firebase-init.js"></script>
     <!-- React and ReactDOM CDNs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
@@ -207,12 +178,32 @@
                 setActiveTab('dashboard');
             };
 
-            const handleSimulateUpload = (id) => {
-                setUploadSimulating(id);
-                setTimeout(() => {
+            const handleRealUpload = async (actionId, file) => {
+                if (!file || !activeClientData) return;
+                setUploadSimulating(actionId);
+                try {
+                    const path = `artifacts/${window.appId}/files/${activeClientData.id || accessCode}/${Date.now()}_${file.name}`;
+                    const storageRef = window.storageRef(window.firebaseStorage, path);
+                    await window.uploadBytes(storageRef, file);
+                    const url = await window.getDownloadURL(storageRef);
+                    if (window.logAudit) await window.logAudit('portal_upload', { clientId: activeClientData.id, filename: file.name });
+                    alert(`File uploaded securely: ${file.name}`);
+                } catch (err) {
+                    console.error(err);
+                    alert('Upload failed: ' + (err.message || 'Storage unavailable'));
+                } finally {
                     setUploadSimulating(false);
-                    alert("File securely uploaded to Kolthoff Consulting encrypted drive.");
-                }, 1500);
+                }
+            };
+
+            const handleSimulateUpload = (id) => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.onchange = (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleRealUpload(id, file);
+                };
+                input.click();
             };
 
             // --- LOGIN SCREEN RENDER ---

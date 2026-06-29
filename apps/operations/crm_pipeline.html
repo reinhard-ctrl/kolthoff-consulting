@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>CRM Pipeline | Cloud Synced</title>
+    
+    <!-- Custom Favicon (Aligned with Internal Workbook) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    
+    <!-- Firebase Module Initialization -->
+        <script type="module" src="../../shared/firebase-init.js"></script>
+    <!-- Tailwind CSS with Luxury Branding Colors -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: {
+                            50: '#F0F4F8', 100: '#D9E2EC', 200: '#BCCCDC', 300: '#9FB3C8', 400: '#829AB1',
+                            500: '#627D98', 600: '#486581', 700: '#1B2C46', 800: '#0F1A2C', 850: '#0C1626',
+                            900: '#09111F', 950: '#020613', 955: '#02050e',
+                        },
+                        brandTeal: {
+                            50: '#F0FDFA', 100: '#CCFBF1', 200: '#99F6E4', 300: '#5EEAD4', 400: '#2DD4BF',
+                            500: '#14B8A6', 600: '#0D9488', 700: '#0F766E', 800: '#115E59', 950: '#042F2E',
+                        },
+                        brandAmber: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' }
+                    },
+                    fontFamily: {
+                        sans: ['"Montserrat"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif'],
+                    },
+                    boxShadow: {
+                        'neon-teal': '0 0 15px rgba(20, 184, 166, 0.15)',
+                        'neon-teal-glow': '0 0 25px rgba(20, 184, 166, 0.3)',
+                        'violet-soft': '0 4px 20px -2px rgba(139, 92, 246, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #020613;
+            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
+            scrollbar-width: thin;
+            scrollbar-color: #0F1A2C #020613;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020613; }
+        ::-webkit-scrollbar-thumb { background: #0F1A2C; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+
+        .glass-panel {
+            background: rgba(9, 17, 31, 0.55);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(46, 69, 103, 0.25);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px -8px rgba(20, 184, 166, 0.12);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .pipeline-funnel-track {
+            display: flex;
+            height: 2.75rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: rgba(2, 6, 19, 0.6);
+            border: 1px solid rgba(46, 69, 103, 0.35);
+        }
+        .pipeline-funnel-segment {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            transition: flex-grow 0.5s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+            cursor: default;
+        }
+        .pipeline-funnel-segment:hover { filter: brightness(1.12); z-index: 2; }
+        .pipeline-funnel-segment + .pipeline-funnel-segment::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15%;
+            bottom: 15%;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .pipeline-funnel-segment .segment-label {
+            font-size: 0.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 0.35rem;
+            pointer-events: none;
+        }
+
+        .kanban-column {
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+        }
+        .kanban-column.drop-active {
+            border-color: rgba(20, 184, 166, 0.55) !important;
+            box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15), inset 0 0 30px rgba(20, 184, 166, 0.06);
+            transform: scale(1.005);
+        }
+        .kanban-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(20, 184, 166, 0.25) transparent;
+        }
+        .kanban-scroll::-webkit-scrollbar { width: 4px; }
+        .kanban-scroll::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.25);
+            border-radius: 4px;
+        }
+        .kanban-scroll::-webkit-scrollbar-thumb:hover { background: rgba(20, 184, 166, 0.45); }
+
+        .deal-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .deal-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 3px 0 0 3px;
+            background: var(--deal-accent, #627D98);
+        }
+        .deal-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45);
+        }
+        .deal-card .card-body { cursor: pointer; }
+        .deal-card .card-actions { cursor: default; }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .stage-value-bar {
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(46, 69, 103, 0.4);
+            overflow: hidden;
+        }
+        .stage-value-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes wonGlow {
+            0%, 100% { box-shadow: 0 0 12px rgba(20, 184, 166, 0.15); }
+            50% { box-shadow: 0 0 24px rgba(20, 184, 166, 0.4); }
+        }
+        .won-card-active { animation: wonGlow 2s infinite ease-in-out; }
+
+        @keyframes funnelPulse {
+            0%, 100% { opacity: 0.85; }
+            50% { opacity: 1; }
+        }
+        .pipeline-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen selection:bg-brandTeal-500 selection:text-brandNavy-955">
+
+    <!-- Ambient brand glow accents -->
+    <div class="pointer-events-none fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brandTeal-500/8 blur-[130px] z-0" aria-hidden="true"></div>
+    <div class="pointer-events-none fixed bottom-[10%] right-[-5%] w-[45%] h-[45%] rounded-full bg-indigo-500/6 blur-[120px] z-0" aria-hidden="true"></div>
+    <div class="pointer-events-none fixed top-[40%] left-[30%] w-[300px] h-[300px] rounded-full bg-brandTeal-400/5 blur-[100px] z-0" aria-hidden="true"></div>
+
+    <div id="root"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // SEED DATA
+        const initialDeals = [
+            { id: "KC-2026-SSL888", leadName: "Sam Koo", company: "SSL 888 Trading Inc.", titleRole: "President", email: "sam.koo@ssl888.com", mobile: "+63 917 123 4567", contactInfo: "facebook", leadSource: "Warm Referral", pipelineStatus: "Proposal", estValue: 40000, nextAction: "on Hold", followUpDate: "", notes: "Lark Approval App Setup & Training Session", status: "Active" },
+            { id: "KC-2026-GAJA", leadName: "Terence Lim", company: "Gaja Kitchen Stories Inc.", titleRole: "President", email: "terence@gajakitchen.ph", mobile: "+63 918 987 6543", contactInfo: "whatsapp", leadSource: "Warm Referral", pipelineStatus: "Proposal", estValue: 35750, nextAction: "on Hold", followUpDate: "", notes: "Busy with merger, wait for right timing to present optimized structure", status: "Active" },
+            { id: "KC-2026-SPORTS", leadName: "Andre Uy", company: "Sportsplus", titleRole: "President", email: "", mobile: "", contactInfo: "whatsapp", leadSource: "Warm Referral", pipelineStatus: "Lead / Prospect", estValue: 0, nextAction: "schedule follow up", followUpDate: "", notes: "Remind him about operational role and specific workflow constraints to solve", status: "Active" },
+            { id: "KC-2026-LIGA", leadName: "Dennis Berger", company: "LigaConnect", titleRole: "Founder", email: "d.berger@ligaconnect.com", mobile: "", contactInfo: "facebook", leadSource: "Cold Outreach", pipelineStatus: "Lead / Prospect", estValue: 0, nextAction: "on hold", followUpDate: "", notes: "Building grassroots sports communities in Manila. High strategic partner value.", status: "Active" },
+            { id: "KC-2026-GTS", leadName: "Gian Joaquin", company: "Good Transport Solutions Inc.", titleRole: "Operations Head", email: "", mobile: "", contactInfo: "linkedin", leadSource: "Linkedin Content", pipelineStatus: "Meeting", estValue: 35750, nextAction: "Meeting on Monday", followUpDate: "2026-06-22", notes: "Meeting to define SOW business process (Workflow Diagnosis)", status: "Active" },
+            { id: "KC-2026-FINCOM", leadName: "Patt & Justin", company: "FinCom Asia", titleRole: "", email: "", mobile: "", contactInfo: "whatsapp", leadSource: "Warm Referral", pipelineStatus: "Meeting", estValue: 35750, nextAction: "Reminder on Monday", followUpDate: "2026-06-22", notes: "Schedule exploratory meeting and demo system architectures", status: "Active" },
+            { id: "KC-2026-TELE", leadName: "Alexander Gendrano", company: "Telecom Corp", titleRole: "Director", email: "", mobile: "", contactInfo: "linkedin", leadSource: "Linkedin Content", pipelineStatus: "Closed Won/Lost", estValue: 120000, nextAction: "Contract Executed", followUpDate: "2026-06-19", notes: "Strategic consultation partnership signed and initialized successfully.", status: "Won" },
+            { id: "KC-2026-MINESKI", leadName: "Dar Cayabyab", company: "Mineski PH", titleRole: "Country Manager", email: "", mobile: "", contactInfo: "whatsapp", leadSource: "Warm Referral", pipelineStatus: "Closed Won/Lost", estValue: 45000, nextAction: "Lost to competitor pricing", followUpDate: "", notes: "Decided to build internal workflow manager instead of subscribing to outer studio.", status: "Lost" }
+        ];
+
+        const initialContacts = [
+            { id: "contact-1", name: "Emman Guerrero", titleRole: "Head of Legal", company: "Freelance / Corp", contactInfo: "facebook", contacted: true, label: "medium", nextAction: "pending feedback", note: "connector and strategic partner?" },
+            { id: "contact-2", name: "Tony Josue", titleRole: "Sales Consultant", company: "Independent", contactInfo: "whatsapp", contacted: true, label: "hot", nextAction: "meet monday", note: "connector and collab" },
+            { id: "contact-3", name: "Dr. Frederick Gian Carlo Joaquin", titleRole: "Head of Operations", company: "Good Transport Solutions Inc.", contactInfo: "linkedin", contacted: true, label: "hot", nextAction: "schedule meeting", note: "business process review" },
+            { id: "contact-4", name: "Benson Te", titleRole: "CEO", company: "WP / Gaming", contactInfo: "linkedin", contacted: true, label: "medium", nextAction: "schedule meeting", note: "connector and Marketing Agent" },
+            { id: "contact-5", name: "Mark Navarro", titleRole: "CEO", company: "Player Two", contactInfo: "facebook", contacted: true, label: "medium", nextAction: "schedule meeting", note: "present service at his business chapter" }
+        ];
+
+        const initialPartners = [
+            { id: "partner-1", name: "Anne Kolthoff", role: "Partner", businessProposal: "Education Center", investmentBudget: 600000, phase: "Discover", nextAction: "pending inquiry to Komun", note: "" },
+            { id: "partner-2", name: "Erwin Yaco", role: "Partner", businessProposal: "MSP", investmentBudget: 100000, phase: "Appraise", nextAction: "define SOW for MSP", note: "" },
+            { id: "partner-3", name: "Reah Molina", role: "Partner", businessProposal: "Cafe Shop", investmentBudget: 900000, phase: "Appraise", nextAction: "location research", note: "" }
+        ];
+
+        const pipelineStages = ["Lead / Prospect", "Meeting", "Proposal", "Negotiation", "Closed Won/Lost"];
+        const todayStr = "2026-06-19"; // System mock date context
+
+        const stageVisuals = {
+            "Lead / Prospect": { short: "Lead", color: "#64748B", bg: "rgba(100,116,139,0.18)", border: "border-slate-500/40", icon: "🎯" },
+            "Meeting": { short: "Meeting", color: "#3B82F6", bg: "rgba(59,130,246,0.18)", border: "border-blue-500/40", icon: "📅" },
+            "Proposal": { short: "Proposal", color: "#8B5CF6", bg: "rgba(139,92,246,0.18)", border: "border-violet-500/40", icon: "📄" },
+            "Negotiation": { short: "Negotiate", color: "#F59E0B", bg: "rgba(245,158,11,0.18)", border: "border-amber-500/40", icon: "🤝" },
+            "Closed Won/Lost": { short: "Closed", color: "#14B8A6", bg: "rgba(20,184,166,0.18)", border: "border-brandTeal-500/40", icon: "🏁" }
+        };
+
+        const formatPHP = (amount) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(amount || 0);
+
+        const getDealValue = (deal, profiles) => {
+            const syncedProfile = profiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+            return syncedProfile ? calculateCostStatic(syncedProfile) : parseFloat(deal.estValue || 0);
+        };
+
+        function calculateCostStatic(profile) {
+            if (!profile || !profile.tasks || !Array.isArray(profile.tasks)) return 0;
+            const tasks = profile.tasks.filter(t => t.selected);
+            const frictionBuffer = profile.frictionBuffer || 0;
+            const discountPercent = profile.discountPercent || 0;
+            const bufferMultiplier = 1 + (frictionBuffer / 100);
+            const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
+            let projectBaseUndiscounted = 0, retainerBaseUndiscounted = 0;
+            tasks.forEach(t => {
+                if (t.isMonthlyRetainer) retainerBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
+                else projectBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
+            });
+            projectBaseUndiscounted = Math.round(projectBaseUndiscounted * bufferMultiplier);
+            retainerBaseUndiscounted = Math.round(retainerBaseUndiscounted * bufferMultiplier);
+            return Math.round(projectBaseUndiscounted * (1 - discountPercent / 100)) + Math.round(retainerBaseUndiscounted * (1 - discountPercent / 100));
+        }
+
+        function App() {
+            // FIREBASE CLOUD STATE
+            const [isAuthed, setIsAuthed] = useState(false);
+            const [authErrorDetails, setAuthErrorDetails] = useState(null);
+            const [deals, setDeals] = useState([]);
+            const [contacts, setContacts] = useState([]);
+            const [partners, setPartners] = useState([]);
+            const [plannerProfiles, setPlannerProfiles] = useState([]);
+
+            // PIPELINE PRESENTATION MODULES
+            const [viewMode, setViewMode] = useState("board"); // "board" | "list" | "calendar"
+            const [activeTab, setActiveTab] = useState("deals");
+            const [searchQuery, setSearchQuery] = useState("");
+            const [sourceFilter, setSourceFilter] = useState("All");
+            const [statusFilter, setStatusFilter] = useState("Active");
+            const [activityFilter, setActivityFilter] = useState("All");
+            
+            // CALENDAR SPECIFIC STATE
+            const [calendarDate, setCalendarDate] = useState(new Date(`${todayStr}T00:00:00`));
+            
+            // MODAL STATES
+            const [isDealModalOpen, setIsDealModalOpen] = useState(false);
+            const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+            const [isPartnerModalOpen, setIsPartnerModalOpen] = useState(false);
+            const [editingItem, setEditingItem] = useState(null); 
+            const [deleteConfirm, setDeleteConfirm] = useState(null); 
+            const [showCelebration, setShowCelebration] = useState(false);
+            const [celebrationDetails, setCelebrationDetails] = useState({ name: "", value: "" });
+            const [dragOverStage, setDragOverStage] = useState(null);
+            const isDraggingDeal = useRef(false);
+
+            // 1. INITIALIZE FIREBASE AUTHENTICATION
+            useEffect(() => {
+                let checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb) {
+                        clearInterval(checkInterval);
+                        const initAuth = async () => {
+                            try {
+                                if (window.initialAuthToken) {
+                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
+                                } else {
+                                    await window.signInAnonymously(window.firebaseAuth);
+                                }
+                                setIsAuthed(true);
+                                setAuthErrorDetails(null);
+                            } catch (e) {
+                                console.error("Firebase Auth Error:", e);
+                                setIsAuthed(false);
+                                setAuthErrorDetails(e.message || "Authentication failed.");
+                            }
+                        };
+                        initAuth();
+                    }
+                }, 50);
+
+                return () => clearInterval(checkInterval);
+            }, []);
+
+            // 2. ATTACH CLOUD SYNC LISTENERS
+            useEffect(() => {
+                if (!isAuthed) return;
+
+                let dealsSeeded = false;
+                let contactsSeeded = false;
+                let partnersSeeded = false;
+
+                const db = window.firebaseDb;
+                const appId = window.appId;
+
+                const dealsRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_deals');
+                const unsubDeals = window.onSnapshot(dealsRef, (snap) => {
+                    if (snap.empty && !dealsSeeded) {
+                        dealsSeeded = true;
+                        initialDeals.forEach(d => window.setDoc(window.doc(dealsRef, d.id), d));
+                    } else {
+                        const fetched = [];
+                        snap.forEach(doc => fetched.push(doc.data()));
+                        fetched.sort((a, b) => a.id.localeCompare(b.id));
+                        setDeals(fetched);
+                    }
+                }, console.error);
+
+                const contactsRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_contacts');
+                const unsubContacts = window.onSnapshot(contactsRef, (snap) => {
+                    if (snap.empty && !contactsSeeded) {
+                        contactsSeeded = true;
+                        initialContacts.forEach(c => window.setDoc(window.doc(contactsRef, c.id), c));
+                    } else {
+                        const fetched = [];
+                        snap.forEach(doc => fetched.push(doc.data()));
+                        fetched.sort((a, b) => a.id.localeCompare(b.id));
+                        setContacts(fetched);
+                    }
+                }, console.error);
+
+                const partnersRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_partners');
+                const unsubPartners = window.onSnapshot(partnersRef, (snap) => {
+                    if (snap.empty && !partnersSeeded) {
+                        partnersSeeded = true;
+                        initialPartners.forEach(p => window.setDoc(window.doc(partnersRef, p.id), p));
+                    } else {
+                        const fetched = [];
+                        snap.forEach(doc => fetched.push(doc.data()));
+                        fetched.sort((a, b) => a.id.localeCompare(b.id));
+                        setPartners(fetched);
+                    }
+                }, console.error);
+
+                const profilesRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles');
+                const unsubProfiles = window.onSnapshot(profilesRef, (snap) => {
+                    const fetchedProfiles = [];
+                    snap.forEach(doc => fetchedProfiles.push({ id: doc.id, ...doc.data() }));
+                    setPlannerProfiles(fetchedProfiles);
+                }, console.error);
+
+                return () => { unsubDeals(); unsubContacts(); unsubPartners(); unsubProfiles(); };
+            }, [isAuthed]);
+
+            const getDealHealth = (deal) => {
+                if (deal.status === "Won") return { color: "border-brandTeal-500", dot: "bg-brandTeal-500 shadow-[0_0_8px_#14B8A6]", text: "Closed Won", icon: "🏆" };
+                if (deal.status === "Lost") return { color: "border-rose-950/60", dot: "bg-rose-500", text: "Closed Lost", icon: "❌" };
+                
+                if (deal.nextAction && deal.nextAction.toLowerCase().includes("on hold")) {
+                    return { color: "border-amber-600/50", dot: "bg-brandAmber-500 shadow-[0_0_8px_#F59E0B]", text: "On Hold", icon: "⏸️" };
+                }
+                if (!deal.followUpDate) {
+                    return { color: "border-slate-800", dot: "bg-slate-600", text: "No Action Scheduled", icon: "⚠️" };
+                }
+
+                const dateVal = new Date(deal.followUpDate);
+                const todayVal = new Date(todayStr);
+
+                if (dateVal < todayVal) {
+                    return { color: "border-rose-500/40", dot: "bg-rose-500 shadow-[0_0_8px_#EF4444] animate-pulse", text: "Overdue", icon: "🔴" };
+                } else if (deal.followUpDate === todayStr) {
+                    return { color: "border-brandAmber-500/50", dot: "bg-brandAmber-400 shadow-[0_0_8px_#FBBF24]", text: "Due Today", icon: "🟡" };
+                }
+                return { color: "border-emerald-600/40", dot: "bg-emerald-500 shadow-[0_0_8px_#10B981]", text: "Scheduled", icon: "🟢" };
+            };
+
+            const calculateCost = (profile) => calculateCostStatic(profile);
+
+            const stats = useMemo(() => {
+                let totalValue = 0, activeCount = 0, wonCount = 0, lostCount = 0, overdueCount = 0;
+
+                deals.forEach(d => {
+                    const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
+                    const val = syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0);
+
+                    const health = getDealHealth(d);
+                    if (d.status === "Active" || !d.status) {
+                        activeCount++;
+                        totalValue += val;
+                        if (health.text === "Overdue") overdueCount++;
+                    } else if (d.status === "Won") { wonCount++; } else if (d.status === "Lost") { lostCount++; }
+                });
+
+                const totalClosed = wonCount + lostCount;
+                const winRate = totalClosed > 0 ? Math.round((wonCount / totalClosed) * 100) : 0;
+                const avgSize = activeCount > 0 ? Math.round(totalValue / activeCount) : 0;
+
+                return { totalValue, activeCount, winRate, avgSize, overdueCount };
+            }, [deals, plannerProfiles]);
+
+            // --- FIRESTORE WRITE ACTIONS ---
+
+            const handleDragStart = (e, dealId) => {
+                e.dataTransfer.setData("dealId", dealId);
+                isDraggingDeal.current = true;
+            };
+            const handleDragEnd = () => { setTimeout(() => { isDraggingDeal.current = false; }, 0); };
+            const openDealDetails = (deal) => {
+                if (isDraggingDeal.current) return;
+                setEditingItem(deal);
+                setIsDealModalOpen(true);
+            };
+            const stopCardClick = (e) => e.stopPropagation();
+            const handleDragOver = (e, stage) => { e.preventDefault(); if (stage) setDragOverStage(stage); };
+            const handleDragLeave = (e, stage) => { if (dragOverStage === stage) setDragOverStage(null); };
+
+            // For Kanban Board Pipeline Drop
+            const handleDrop = async (e, targetStage) => {
+                e.preventDefault();
+                setDragOverStage(null);
+                const dealId = e.dataTransfer.getData("dealId");
+                if (dealId) {
+                    const deal = deals.find(d => d.id === dealId);
+                    if (deal) {
+                        let updatedStatus = deal.status || "Active";
+                        const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+                        const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+
+                        if (targetStage === "Closed Won/Lost") {
+                            if (updatedStatus !== "Won" && updatedStatus !== "Lost") {
+                                updatedStatus = "Won";
+                                setCelebrationDetails({ name: deal.leadName + " (" + (deal.company || "Individual") + ")", value: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalValue) });
+                                setShowCelebration(true); setTimeout(() => setShowCelebration(false), 4500);
+                            }
+                        } else {
+                            if (updatedStatus === "Won" || updatedStatus === "Lost") { updatedStatus = "Active"; }
+                        }
+                        
+                        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
+                        await window.setDoc(docRef, { ...deal, pipelineStatus: targetStage, status: updatedStatus, estValue: finalValue }, { merge: true });
+                    }
+                }
+            };
+
+            // For Calendar Day Drop (Rescheduling)
+            const handleCalendarDrop = async (e, targetDateStr) => {
+                e.preventDefault();
+                const dealId = e.dataTransfer.getData("dealId");
+                if (dealId) {
+                    const deal = deals.find(d => d.id === dealId);
+                    if (deal) {
+                        const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+                        const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+
+                        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
+                        await window.setDoc(docRef, { ...deal, followUpDate: targetDateStr, estValue: finalValue }, { merge: true });
+                    }
+                }
+            };
+
+            const resolveDealStatus = async (dealId, nextStatus) => {
+                const deal = deals.find(d => d.id === dealId);
+                if (deal) {
+                    const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+                    const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+
+                    if (nextStatus === "Won") {
+                        setCelebrationDetails({ name: deal.leadName + " (" + (deal.company || "Individual") + ")", value: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalValue) });
+                        setShowCelebration(true); setTimeout(() => setShowCelebration(false), 4500);
+                    }
+                    const newPipelineStatus = (nextStatus === "Won" || nextStatus === "Lost") ? "Closed Won/Lost" : "Negotiation";
+                    
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
+                    await window.setDoc(docRef, { ...deal, status: nextStatus, pipelineStatus: newPipelineStatus, estValue: finalValue }, { merge: true });
+                }
+            };
+
+            const saveDeal = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                
+                let inputStatus = formData.get("status") || "Active";
+                let inputPipelineStatus = formData.get("pipelineStatus") || "Lead / Prospect";
+
+                if (inputPipelineStatus === "Closed Won/Lost" && inputStatus === "Active") {
+                    inputStatus = "Won";
+                } else if (inputStatus !== "Active" && inputPipelineStatus !== "Closed Won/Lost") {
+                    inputPipelineStatus = "Closed Won/Lost";
+                }
+
+                const customIdInput = formData.get("customId");
+                const finalId = customIdInput ? customIdInput.trim().toUpperCase().replace(/\s+/g, '-') : `KC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+                const isCurrentlySynced = plannerProfiles.find(p => p.quoteId === finalId || p.id === finalId);
+                const finalEstValue = isCurrentlySynced ? calculateCost(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
+
+                const data = {
+                    id: finalId,
+                    leadName: formData.get("leadName"), company: formData.get("company"), titleRole: formData.get("titleRole"),
+                    email: formData.get("email") || "", mobile: formData.get("mobile") || "", contactInfo: formData.get("contactInfo"),
+                    leadSource: formData.get("leadSource"), pipelineStatus: inputPipelineStatus, estValue: finalEstValue,
+                    nextAction: formData.get("nextAction"), followUpDate: formData.get("followUpDate"), notes: formData.get("notes"),
+                    status: inputStatus
+                };
+
+                if (data.status === "Won" && (!editingItem || editingItem.status !== "Won")) {
+                    setCelebrationDetails({ name: data.leadName + " (" + (data.company || "Individual") + ")", value: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalEstValue) });
+                    setShowCelebration(true); setTimeout(() => setShowCelebration(false), 4500);
+                }
+
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', data.id);
+                await window.setDoc(docRef, data);
+
+                if (editingItem && editingItem.id && !editingItem.pipelineStatusOnly && editingItem.id !== finalId) {
+                    const oldDocRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', editingItem.id);
+                    await window.deleteDoc(oldDocRef);
+                }
+                
+                setIsDealModalOpen(false); setEditingItem(null);
+            };
+
+            const saveContact = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const id = editingItem && editingItem.id ? editingItem.id : "contact-" + Date.now();
+                const data = {
+                    id: id, name: formData.get("name"), titleRole: formData.get("titleRole"), company: formData.get("company"),
+                    contactInfo: formData.get("contactInfo"), contacted: formData.get("contacted") === "true",
+                    label: formData.get("label"), nextAction: formData.get("nextAction"), note: formData.get("note")
+                };
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_contacts', id);
+                await window.setDoc(docRef, data);
+                setIsContactModalOpen(false); setEditingItem(null);
+            };
+
+            const savePartner = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const id = editingItem && editingItem.id ? editingItem.id : "partner-" + Date.now();
+                const data = {
+                    id: id, name: formData.get("name"), role: formData.get("role") || "Partner", businessProposal: formData.get("businessProposal"),
+                    investmentBudget: parseFloat(formData.get("investmentBudget") || 0), phase: formData.get("phase"),
+                    nextAction: formData.get("nextAction"), note: formData.get("note")
+                };
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_partners', id);
+                await window.setDoc(docRef, data);
+                setIsPartnerModalOpen(false); setEditingItem(null);
+            };
+
+            const toggleContactStatus = async (contactId, currentStatus) => {
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_contacts', contactId);
+                await window.setDoc(docRef, { contacted: !currentStatus }, { merge: true });
+            };
+
+            const executeDelete = async () => {
+                if (!deleteConfirm) return;
+                let collectionName = '';
+                if (deleteConfirm.type === 'deal') collectionName = 'crm_deals';
+                if (deleteConfirm.type === 'contact') collectionName = 'crm_contacts';
+                if (deleteConfirm.type === 'partner') collectionName = 'crm_partners';
+
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', collectionName, deleteConfirm.id);
+                await window.deleteDoc(docRef);
+
+                if (deleteConfirm.type === 'deal') setIsDealModalOpen(false);
+                if (deleteConfirm.type === 'contact') setIsContactModalOpen(false);
+                if (deleteConfirm.type === 'partner') setIsPartnerModalOpen(false);
+                
+                setEditingItem(null); setDeleteConfirm(null);
+            };
+
+            // --- FILTERS ---
+            const filteredDeals = useMemo(() => {
+                return deals.filter(deal => {
+                    const matchQuery = 
+                        deal.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        deal.leadName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (deal.company && deal.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                        (deal.email && deal.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                        (deal.notes && deal.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+                    
+                    const matchSource = sourceFilter === "All" || deal.leadSource === sourceFilter;
+                    
+                    let matchStatus = true;
+                    if (viewMode === "list") {
+                        matchStatus = 
+                            statusFilter === "All" ||
+                            (statusFilter === "Active" && (deal.status === "Active" || !deal.status)) ||
+                            (statusFilter === "Won" && deal.status === "Won") ||
+                            (statusFilter === "Lost" && deal.status === "Lost");
+                    } else {
+                        if (statusFilter === "Won") { matchStatus = deal.status === "Won"; } 
+                        else if (statusFilter === "Lost") { matchStatus = deal.status === "Lost"; } 
+                        else if (statusFilter === "Active") { matchStatus = (deal.status === "Active" || !deal.status || deal.status === "Won" || deal.status === "Lost"); }
+                    }
+
+                    const health = getDealHealth(deal);
+                    const matchActivity = 
+                        activityFilter === "All" ||
+                        (activityFilter === "Overdue" && health.text === "Overdue") ||
+                        (activityFilter === "Today" && health.text === "Due Today") ||
+                        (activityFilter === "Unscheduled" && health.text === "No Action Scheduled");
+
+                    return matchQuery && matchSource && matchStatus && matchActivity;
+                });
+            }, [deals, searchQuery, sourceFilter, statusFilter, activityFilter, viewMode]);
+
+            const pipelineOverview = useMemo(() => {
+                const stageData = pipelineStages.map(stage => {
+                    const stageDeals = filteredDeals.filter(d => d.pipelineStatus === stage);
+                    const value = stageDeals.reduce((sum, d) => sum + getDealValue(d, plannerProfiles), 0);
+                    return { stage, count: stageDeals.length, value };
+                });
+                const totalCount = stageData.reduce((s, d) => s + d.count, 0);
+                const totalValue = stageData.reduce((s, d) => s + d.value, 0);
+                return stageData.map(d => ({
+                    ...d,
+                    countPct: totalCount > 0 ? Math.round((d.count / totalCount) * 100) : 0,
+                    valuePct: totalValue > 0 ? Math.round((d.value / totalValue) * 100) : 0,
+                    flexWeight: Math.max(d.count, d.value > 0 ? 1 : 0, 1)
+                }));
+            }, [filteredDeals, plannerProfiles]);
+
+            const filteredContacts = useMemo(() => {
+                return contacts.filter(c => {
+                    const q = searchQuery.toLowerCase();
+                    return (
+                        c.name.toLowerCase().includes(q) || (c.company && c.company.toLowerCase().includes(q)) ||
+                        (c.titleRole && c.titleRole.toLowerCase().includes(q)) || (c.note && c.note.toLowerCase().includes(q))
+                    );
+                });
+            }, [contacts, searchQuery]);
+
+            const filteredPartners = useMemo(() => {
+                return partners.filter(p => {
+                    const q = searchQuery.toLowerCase();
+                    return (
+                        p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) ||
+                        p.businessProposal.toLowerCase().includes(q) || (p.note && p.note.toLowerCase().includes(q))
+                    );
+                });
+            }, [partners, searchQuery]);
+
+            return (
+                <div className="min-h-screen flex flex-col pb-12 bg-gradient-to-b from-[#061727] via-[#091f33] to-[#02050e]">
+                    
+                    {/* CONFETTI & NOTIFICATION POPUP ON DEAL WON */}
+                    {showCelebration && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm transition-all duration-300" role="dialog" aria-modal="true" aria-labelledby="celebration-title">
+                            <div className="bg-gradient-to-br from-brandNavy-900 to-brandNavy-950 p-8 rounded-2xl border-2 border-brandTeal-500 max-w-md w-full mx-4 shadow-2xl shadow-brandTeal-500/20 text-center relative overflow-hidden animate-[bounce_1s_ease-out_1]">
+                                <div className="absolute -left-10 -top-10 w-28 h-28 bg-brandTeal-500/10 rounded-full blur-xl" aria-hidden="true" />
+                                <div className="absolute -right-10 -bottom-10 w-28 h-28 bg-brandTeal-500/10 rounded-full blur-xl" aria-hidden="true" />
+                                
+                                <div className="text-6xl mb-4" aria-hidden="true">🏆</div>
+                                <h3 id="celebration-title" className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brandTeal-400 to-emerald-400 tracking-tight font-serif">Deal Closed Won!</h3>
+                                <p className="text-slate-400 text-xs mt-1 uppercase tracking-widest font-sans font-bold">Kolthoff Pipeline Milestone</p>
+                                
+                                <div className="my-6 p-4 bg-brandNavy-955/70 rounded-xl border border-brandNavy-800">
+                                    <div className="text-white font-bold text-lg">{celebrationDetails.name}</div>
+                                    <div className="text-brandTeal-400 font-mono text-2xl font-bold mt-1">{celebrationDetails.value}</div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowCelebration(false)}
+                                    className="px-6 py-2.5 bg-gradient-to-r from-brandTeal-500 to-brandTeal-600 hover:from-brandTeal-600 hover:to-brandTeal-700 text-brandNavy-955 font-bold rounded-lg text-sm transition-all shadow-md shadow-brandTeal-500/20"
+                                >
+                                    Awesome! Let's Keep Rolling
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CUSTOM RECONCILED DELETE CONFIRMATION MODAL */}
+                    {deleteConfirm && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+                            <div className="bg-gradient-to-br from-[#0C1626] to-[#020613] rounded-2xl border border-rose-500/30 max-w-sm w-full p-6 shadow-2xl relative">
+                                <div className="text-center">
+                                    <div className="text-4xl" aria-hidden="true">⚠️</div>
+                                    <h3 id="delete-confirm-title" className="font-extrabold text-white text-base mt-3 font-sans">Confirm Permanent Deletion</h3>
+                                    <p className="text-slate-400 text-xs mt-2 leading-relaxed font-sans">
+                                        Are you absolutely sure you want to delete <strong className="text-slate-200">"{deleteConfirm.name}"</strong>? This record will be permanently purged across all devices.
+                                    </p>
+                                </div>
+                                <div className="flex gap-2.5 mt-6 justify-end">
+                                    <button 
+                                        onClick={() => setDeleteConfirm(null)}
+                                        className="px-4 py-2 bg-brandNavy-900 border border-brandNavy-700 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all flex-1"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={executeDelete}
+                                        className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all flex-1"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TOP BRAND BAR */}
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
+                        <div className="max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                            
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-brandTeal-500/10 border border-brandTeal-500/30 flex items-center justify-center text-brandTeal-400 font-bold shadow-neon-teal">
+                                    <svg className="w-5 h-5 stroke-current text-brandTeal-500" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                                        <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" strokeWidth="6" strokeLinejoin="round" />
+                                        <path d="M36 50 L46 60 L66 36" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-sm font-extrabold tracking-tight text-white uppercase font-sans">KOLTHOFF <span className="text-brandTeal-500">CONSULTING</span></h1>
+                                        <span className="flex items-center gap-1.5 text-[8px] bg-brandTeal-500/10 text-brandTeal-400 border border-brandTeal-500/20 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? "Cloud Synced" : "Connecting..."}></div>
+                                            PIPEDRIVE STUDIO
+                                        </span>
+                                    </div>
+                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">Premium Sales Pipeline & Partnership Tracking Studio <span className="text-brandTeal-500/70 font-mono">· build 2026.06.29</span></p>
+                                </div>
+                            </div>
+
+                            <nav aria-label="Main Navigation">
+                                <div className="flex bg-[#09111F] border border-brandNavy-700/60 p-1 rounded-xl">
+                                    <button onClick={() => setActiveTab("deals")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "deals" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
+                                        <span aria-hidden="true">💼</span> Deals Board
+                                    </button>
+                                    <button onClick={() => setActiveTab("contacts")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "contacts" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
+                                        <span aria-hidden="true">👤</span> Contacts
+                                    </button>
+                                    <button onClick={() => setActiveTab("partners")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "partners" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
+                                        <span aria-hidden="true">🤝</span> Partner Hub
+                                    </button>
+                                </div>
+                            </nav>
+
+                        </div>
+                    </header>
+
+                    {authErrorDetails && (
+                        <div className="bg-rose-500/10 border-b border-rose-500/30 px-4 md:px-8 xl:px-12 py-3">
+                            <div className="max-w-full mx-auto flex items-start gap-3">
+                                <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                <div className="text-xs text-rose-400 font-medium">
+                                    <strong className="block font-bold text-rose-300 mb-0.5">Firebase Connection Error</strong>
+                                    Your API Key restricts requests from this domain or local file path (`auth/requests-from-referer-null-are-blocked`). <br/>
+                                    <span className="text-slate-300 font-normal mt-1 block">To fix: Go to Google Cloud Console ➔ APIs & Services ➔ Credentials ➔ API Key (`AIzaSyD...`). Under "Application restrictions", temporarily remove "HTTP referrers", add `localhost`, or test this using a local web server (like VS Code Live Server) instead of opening it directly from your file system.</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DYNAMIC COMPRESSED PIPEDRIVE STATS BAR */}
+                    <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 pt-4" aria-label="Pipeline Statistics">
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-slate-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">📊</span> Active Deals</span>
+                                <div className="text-lg font-extrabold text-white leading-none">{stats.activeCount}</div>
+                            </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-brandTeal-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">💰</span> Pipeline Value</span>
+                                <div className="text-lg font-extrabold text-brandTeal-400 font-mono leading-none">{formatPHP(stats.totalValue)}</div>
+                            </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-indigo-400">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">📈</span> Avg Size</span>
+                                <div className="text-lg font-extrabold text-slate-100 font-mono leading-none">{formatPHP(stats.avgSize)}</div>
+                            </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-emerald-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">🏆</span> Win Rate</span>
+                                <div className="text-lg font-extrabold text-white font-mono leading-none">{stats.winRate}<span className="text-xs text-emerald-400 ml-0.5">%</span></div>
+                            </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 col-span-2 lg:col-span-1 flex flex-col gap-0.5 border-l-[3px] border-l-rose-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">⚠️</span> Attention</span>
+                                <div className="text-lg font-extrabold text-rose-400 leading-none flex items-center gap-1.5">
+                                    {stats.overdueCount}
+                                    {stats.overdueCount > 0 && <span className="text-[8px] text-rose-500 font-normal animate-pulse">● Overdue</span>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* PIPELINE FUNNEL VISUALIZATION */}
+                        {activeTab === "deals" && (
+                            <div className="glass-panel rounded-xl mt-3 p-3.5">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                    <div>
+                                        <h2 className="text-[10px] font-extrabold uppercase tracking-widest text-white flex items-center gap-1.5">
+                                            <span aria-hidden="true">🔀</span> Pipeline Flow
+                                        </h2>
+                                        <p className="text-[9px] text-slate-400 mt-0.5">Deal distribution by stage — width reflects count, color reflects stage</p>
+                                    </div>
+                                    <div className="text-[10px] font-mono text-brandTeal-400 font-bold">{formatPHP(pipelineOverview.reduce((s, d) => s + d.value, 0))} total</div>
+                                </div>
+                                <div className="pipeline-funnel-track" role="img" aria-label="Pipeline stage distribution chart">
+                                    {pipelineOverview.map(({ stage, count, value, flexWeight, countPct }) => {
+                                        const vis = stageVisuals[stage];
+                                        return (
+                                            <div
+                                                key={stage}
+                                                className="pipeline-funnel-segment"
+                                                style={{ flexGrow: flexWeight, background: `linear-gradient(180deg, ${vis.color}cc 0%, ${vis.color}88 100%)` }}
+                                                title={`${stage}: ${count} deal${count !== 1 ? 's' : ''} (${countPct}%) · ${formatPHP(value)}`}
+                                            >
+                                                {count > 0 && <span className="segment-label">{vis.short} · {count}</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+                                    {pipelineOverview.map(({ stage, count, value, valuePct }) => {
+                                        const vis = stageVisuals[stage];
+                                        return (
+                                            <div key={`legend-${stage}`} className="flex items-start gap-2 p-2 rounded-lg bg-[#020613]/40 border border-brandNavy-700/25">
+                                                <span className="pipeline-legend-dot mt-0.5" style={{ background: vis.color, boxShadow: `0 0 6px ${vis.color}66` }} aria-hidden="true"></span>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-[9px] font-bold text-slate-300 truncate">{vis.icon} {vis.short}</div>
+                                                    <div className="text-[10px] font-extrabold text-white">{count} <span className="text-slate-500 font-normal">deals</span></div>
+                                                    <div className="text-[9px] font-mono text-brandTeal-400/90 truncate">{formatPHP(value)}</div>
+                                                    <div className="stage-value-bar mt-1">
+                                                        <div className="stage-value-bar-fill" style={{ width: `${valuePct}%`, background: vis.color }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* INTERACTIVE CONTROLS PANEL */}
+                    <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 mt-3" aria-label="Filters and Controls">
+                        <div className="glass-panel rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between">
+                            
+                            <div className="relative w-full lg:w-80">
+                                <label htmlFor="global-search" className="sr-only">Search</label>
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 text-xs" aria-hidden="true">🔍</span>
+                                <input 
+                                    id="global-search"
+                                    type="text" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder={`Search inside active directory (${activeTab})...`}
+                                    className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"
+                                />
+                                {searchQuery && (
+                                    <button onClick={() => setSearchQuery("")} className="absolute inset-y-0 right-2 text-slate-400 hover:text-white text-[10px]">Clear</button>
+                                )}
+                            </div>
+
+                            {activeTab === "deals" && (
+                                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                    <div className="flex bg-[#020613] border border-brandNavy-700/60 p-0.5 rounded-lg mr-1 font-mono">
+                                        <button onClick={() => setViewMode("board")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "board" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                            <span aria-hidden="true">📊</span> Board
+                                        </button>
+                                        <button onClick={() => setViewMode("list")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "list" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                            <span aria-hidden="true">📋</span> List
+                                        </button>
+                                        <button onClick={() => setViewMode("calendar")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "calendar" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                            <span aria-hidden="true">📅</span> Calendar
+                                        </button>
+                                    </div>
+
+                                    <div className="flex bg-[#020613] border border-brandNavy-700/60 p-0.5 rounded-lg hidden md:flex">
+                                        {["All", "Overdue", "Today", "Unscheduled"].map(cat => (
+                                            <button key={cat} onClick={() => setActivityFilter(cat)} className={`px-2.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase transition-all ${activityFilter === cat ? "bg-[#15233A] text-brandTeal-400" : "text-slate-400 hover:text-slate-200"}`}>
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-[#020613] border border-brandNavy-700/60 rounded-lg text-[9px] font-bold tracking-wider uppercase py-1 px-2 text-slate-300 focus:outline-none">
+                                        <option value="Active">Open Deals</option>
+                                        <option value="Won">Won Deals</option>
+                                        <option value="Lost">Lost Deals</option>
+                                        <option value="All">All Pipelines</option>
+                                    </select>
+
+                                    <button onClick={() => { setEditingItem(null); setIsDealModalOpen(true); }} className="px-3 py-1 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-extrabold text-[9px] uppercase tracking-wider rounded-md transition-all ml-auto lg:ml-0">
+                                        + New Deal
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeTab === "contacts" && (
+                                <button onClick={() => { setEditingItem(null); setIsContactModalOpen(true); }} className="px-3 py-1 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-extrabold text-[9px] uppercase tracking-wider rounded-md transition-all ml-auto">
+                                        + Add Contact
+                                </button>
+                            )}
+
+                            {activeTab === "partners" && (
+                                <button onClick={() => { setEditingItem(null); setIsPartnerModalOpen(true); }} className="px-3 py-1 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-extrabold text-[9px] uppercase tracking-wider rounded-md transition-all ml-auto">
+                                    + Add Partner Item
+                                </button>
+                            )}
+
+                        </div>
+                    </section>
+
+                    <main className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 mt-4 flex-1">
+                        
+                        {/* VIEW 1: DEALS TAB */}
+                        {activeTab === "deals" && (
+                            <>
+                                {/* KANBAN BOARD */}
+                                {viewMode === "board" && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                                        {pipelineStages.map((stage) => {
+                                            const stageDeals = filteredDeals.filter(d => d.pipelineStatus === stage);
+                                            const stageValueSum = stageDeals.reduce((sum, d) => sum + getDealValue(d, plannerProfiles), 0);
+                                            const stageOverview = pipelineOverview.find(s => s.stage === stage) || { valuePct: 0, countPct: 0 };
+                                            const vis = stageVisuals[stage];
+                                            const isDropTarget = dragOverStage === stage;
+
+                                            return (
+                                                <div
+                                                    key={stage}
+                                                    onDragOver={(e) => handleDragOver(e, stage)}
+                                                    onDragLeave={(e) => handleDragLeave(e, stage)}
+                                                    onDrop={(e) => handleDrop(e, stage)}
+                                                    className={`kanban-column rounded-xl border flex flex-col h-[min(850px,calc(100vh-320px))] min-h-[420px] ${vis.border} ${isDropTarget ? 'drop-active' : 'border-brandNavy-700/30 hover:border-brandNavy-600/50'}`}
+                                                    style={{ background: `linear-gradient(180deg, ${vis.bg} 0%, rgba(2,5,14,0.35) 100%)` }}
+                                                >
+                                                    
+                                                    <div className="p-3 border-b border-brandNavy-700/40 rounded-t-xl" style={{ borderTop: `3px solid ${vis.color}` }}>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <h3 className="font-extrabold text-[10px] text-white tracking-wide uppercase flex items-center gap-1.5 min-w-0">
+                                                                <span aria-hidden="true">{vis.icon}</span>
+                                                                <span className="truncate">{stage}</span>
+                                                            </h3>
+                                                            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: `${vis.color}22`, color: vis.color, border: `1px solid ${vis.color}44` }}>{stageDeals.length}</span>
+                                                        </div>
+                                                        <div className="text-brandTeal-400 font-mono text-[11px] font-bold mt-1.5">{formatPHP(stageValueSum)}</div>
+                                                        <div className="stage-value-bar mt-2">
+                                                            <div className="stage-value-bar-fill" style={{ width: `${stageOverview.valuePct}%`, background: vis.color }}></div>
+                                                        </div>
+                                                        <div className="text-[8px] text-slate-500 mt-1 font-mono">{stageOverview.countPct}% of deals · {stageOverview.valuePct}% of value</div>
+                                                    </div>
+
+                                                    <div className="flex-1 p-2 overflow-y-auto space-y-2 kanban-scroll">
+                                                        {stageDeals.length === 0 ? (
+                                                            <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
+                                                                <span className="text-2xl opacity-30" aria-hidden="true">{vis.icon}</span>
+                                                                <span className="text-[9px] uppercase font-bold text-slate-600 tracking-widest text-center px-4">Drop deals here</span>
+                                                            </div>
+                                                        ) : (
+                                                            stageDeals.map(deal => {
+                                                                const health = getDealHealth(deal);
+                                                                const isWon = deal.status === "Won";
+                                                                const isLost = deal.status === "Lost";
+                                                                const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+                                                                const displayValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                                                                const isSynced = !!syncedProfile;
+
+                                                                return (
+                                                                    <div
+                                                                        key={deal.id}
+                                                                        draggable
+                                                                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                                                                        onDragEnd={handleDragEnd}
+                                                                        onClick={() => openDealDetails(deal)}
+                                                                        style={{ '--deal-accent': vis.color }}
+                                                                        className={`deal-card p-2.5 pl-3.5 rounded-lg border bg-[#09111F]/70 hover:bg-[#09111F]/95 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.color} ${isWon ? 'won-card-active border-brandTeal-500/50 bg-[#0d2a2f]/25' : ''} ${isLost ? 'border-rose-900/40 opacity-70 bg-rose-950/10' : ''}`}
+                                                                        role="button"
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDealDetails(deal); } }}
+                                                                        aria-label={`Open details for ${deal.leadName}`}
+                                                                    >
+                                                                        <div className="card-body">
+                                                                        <div className="flex justify-between items-start gap-1">
+                                                                            <div className="text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate" title="SOW Reference / Deal ID">{deal.id}</div>
+                                                                            <span className={`w-2 h-2 rounded-full shrink-0 mt-0.5 ${health.dot.split(' ')[0]}`} title={health.text} aria-label={health.text}></span>
+                                                                        </div>
+                                                                        
+                                                                        <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1.5">{deal.company || "Individual Lead"}</div>
+                                                                        <h4 className="font-extrabold text-[12px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5">{deal.leadName}</h4>
+                                                                        
+                                                                        {deal.titleRole && (<span className="text-[9px] text-slate-400 block leading-tight truncate">{deal.titleRole}</span>)}
+
+                                                                        <div className="mt-2 flex items-center justify-between border-t border-brandNavy-700/30 pt-1.5">
+                                                                            <div className="text-[11px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
+                                                                                {formatPHP(displayValue)}
+                                                                                {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[10px] leading-none">🔄</span>}
+                                                                            </div>
+                                                                            <span className="text-[8px] px-1.5 py-0.5 bg-brandNavy-955 text-slate-400 rounded font-bold font-sans truncate max-w-[45%]">{deal.leadSource}</span>
+                                                                        </div>
+
+                                                                        {deal.nextAction && (
+                                                                            <div className="mt-1.5 bg-[#020613]/70 rounded-md p-1.5 border border-brandNavy-700/30">
+                                                                                <div className="text-[10px] text-slate-200 font-semibold truncate flex items-center gap-1">
+                                                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${health.dot.split(' ')[0]}`} aria-hidden="true"></span>
+                                                                                    <span className="truncate text-[9px]">{deal.nextAction}</span>
+                                                                                </div>
+                                                                                {deal.followUpDate && (<div className="text-[8px] text-slate-500 font-mono mt-0.5 pl-2.5">{deal.followUpDate}</div>)}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {deal.notes && (
+                                                                            <div className="mt-1.5 bg-[#020613]/50 rounded-md p-1.5 border border-brandNavy-700/20">
+                                                                                <div className="text-[8px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Notes</div>
+                                                                                <p className="text-[9px] text-slate-400 leading-snug line-clamp-2" title={deal.notes}>{deal.notes}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        </div>
+
+                                                                        <div className="card-actions mt-2 flex items-center gap-1 justify-end border-t border-brandNavy-700/30 pt-1.5" onClick={stopCardClick}>
+                                                                            <div className="flex gap-1 w-full justify-between items-center">
+                                                                                <div className="flex gap-1">
+                                                                                    {!isWon && !isLost && (
+                                                                                        <>
+                                                                                            <button onClick={() => resolveDealStatus(deal.id, "Won")} className="px-1.5 py-0.5 rounded border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500 hover:text-brandNavy-955 font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Won"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Won</button>
+                                                                                            <button onClick={() => resolveDealStatus(deal.id, "Lost")} className="px-1.5 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white font-sans font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1" title="Archive as Closed Lost"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> Lost</button>
+                                                                                        </>
+                                                                                    )}
+                                                                                    {(isWon || isLost) && (<button onClick={() => resolveDealStatus(deal.id, "Active")} className="px-1.5 py-0.5 rounded bg-brandNavy-955 text-slate-400 hover:text-white hover:border-brandTeal-500 font-sans font-bold text-[8px] uppercase tracking-wider border border-brandNavy-700 transition-all">Re-open</button>)}
+                                                                                </div>
+                                                                                <button onClick={() => openDealDetails(deal)} className="p-1 rounded bg-brandNavy-955 border border-brandNavy-700/60 text-slate-400 hover:text-brandTeal-400 hover:border-brandTeal-500 transition-all flex items-center justify-center" title="Configure Details"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </div>
+
+                                                    <button onClick={() => { setEditingItem({ pipelineStatus: stage, pipelineStatusOnly: true }); setIsDealModalOpen(true); }} className="m-2 p-1.5 bg-brandNavy-900/30 hover:bg-brandTeal-500/10 rounded-lg border border-dashed border-brandNavy-700/60 hover:border-brandTeal-500/40 text-center text-[9px] text-slate-500 hover:text-brandTeal-400 font-bold transition-all">
+                                                        + Add to {vis.short}
+                                                    </button>
+
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {/* SPREADSHEET LIST */}
+                                {viewMode === "list" && (
+                                    <div className="glass-panel rounded-2xl overflow-hidden">
+                                        <div className="p-3 border-b border-brandNavy-700/40 bg-[#09111F]/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                                            <div>
+                                                <h3 className="font-extrabold text-white text-sm">Pipeline Deals Database</h3>
+                                                <p className="text-slate-400 text-[10px]">Spreadsheet representation of active lead milestones, valuations, and schedules</p>
+                                            </div>
+                                            <div className="text-[11px] bg-[#020613] border border-brandNavy-700/60 px-2.5 py-1 rounded-lg text-slate-300">
+                                                Total Calculated Value: <span className="text-brandTeal-400 font-mono font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(filteredDeals.reduce((sum, d) => {
+                                                    const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
+                                                    return sum + (syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0));
+                                                }, 0))}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                                        <th className="p-3" scope="col">SOW Ref / Deal ID</th><th className="p-3" scope="col">Lead & Contact</th><th className="p-3" scope="col">Company Target</th><th className="p-3" scope="col">Active Pipeline Stage</th><th className="p-3" scope="col">Est. Value (PHP)</th><th className="p-3" scope="col">Lead Source</th><th className="p-3" scope="col">Status / Health</th><th className="p-3" scope="col">Next Action Steps</th><th className="p-3 text-right" scope="col">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-brandNavy-700/30 text-xs font-semibold">
+                                                    {filteredDeals.length === 0 ? (
+                                                        <tr><td colSpan="9" className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest font-sans">No deals found matching filter metrics</td></tr>
+                                                    ) : (
+                                                        filteredDeals.map((deal) => {
+                                                            const health = getDealHealth(deal);
+                                                            const isWon = deal.status === "Won";
+                                                            const isLost = deal.status === "Lost";
+                                                            const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+                                                            const displayValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+
+                                                            return (
+                                                                <tr key={deal.id} className="hover:bg-brandNavy-900/20 transition-all group">
+                                                                    <td className="p-3 font-mono text-brandTeal-400 font-bold">{deal.id}</td>
+                                                                    <td className="p-3">
+                                                                        <div className="font-extrabold text-white text-xs group-hover:text-brandTeal-400 transition-colors">{deal.leadName}</div>
+                                                                        <span className="text-[9px] text-slate-400 block mb-1">{deal.titleRole || "Lead representative"}</span>
+                                                                    </td>
+                                                                    <td className="p-3"><span className="px-2 py-0.5 bg-brandNavy-950 border border-brandNavy-700/50 text-slate-200 rounded font-bold uppercase text-[9px]"><span aria-hidden="true">🏢</span> {deal.company || "Individual"}</span></td>
+                                                                    <td className="p-3"><span className="text-white text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1" style={{ background: `${stageVisuals[deal.pipelineStatus]?.bg || 'rgba(100,116,139,0.18)'}`, borderColor: `${stageVisuals[deal.pipelineStatus]?.color || '#64748B'}44`, color: stageVisuals[deal.pipelineStatus]?.color || '#94a3b8' }}><span aria-hidden="true">{stageVisuals[deal.pipelineStatus]?.icon}</span> {deal.pipelineStatus}</span></td>
+                                                                    <td className="p-3 font-mono font-bold text-slate-200 text-xs"><div className="flex items-center gap-1.5">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)} {syncedProfile && <span title="Value actively synced from Planner SOW" className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">Live</span>}</div></td>
+                                                                    <td className="p-3"><span className="text-slate-400 uppercase text-[8px] font-mono tracking-wider">{deal.leadSource}</span></td>
+                                                                    <td className="p-3"><span className="flex items-center gap-1.5 text-[9px] font-bold uppercase"><span className={`w-1.5 h-1.5 rounded-full ${health.dot}`} aria-hidden="true"></span><span className="text-slate-300 text-[10px]">{health.text}</span></span></td>
+                                                                    <td className="p-3 max-w-xs"><div className="text-slate-300 font-medium truncate text-xs" title={deal.notes || ""}>{deal.nextAction || "—"}</div>{deal.followUpDate && <div className="text-[9px] text-brandTeal-400 font-mono mt-0.5">Target follow up: {deal.followUpDate}</div>}</td>
+                                                                    <td className="p-3 text-right">
+                                                                        <div className="flex justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                                            {!isWon && !isLost && (<><button onClick={() => resolveDealStatus(deal.id, "Won")} className="px-2 py-0.5 rounded border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500 hover:text-brandNavy-955 font-sans font-bold text-[8px] uppercase tracking-wider transition-all">Won</button><button onClick={() => resolveDealStatus(deal.id, "Lost")} className="px-2 py-0.5 rounded border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white font-sans font-bold text-[8px] uppercase tracking-wider transition-all">Lost</button></>)}
+                                                                            {(isWon || isLost) && (<button onClick={() => resolveDealStatus(deal.id, "Active")} className="px-2 py-0.5 rounded bg-slate-900 text-slate-400 hover:text-white font-sans font-bold text-[8px] uppercase tracking-wider border border-slate-800 transition-all">Re-open</button>)}
+                                                                            <button onClick={() => { setEditingItem(deal); setIsDealModalOpen(true); }} className="p-1 px-2 bg-brandNavy-955 border border-brandNavy-800 rounded hover:border-brandTeal-500 text-[10px] text-slate-300 font-bold transition-all flex items-center justify-center gap-1"><span aria-hidden="true">📝</span> Edit</button>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CALENDAR VIEW */}
+                                {viewMode === "calendar" && (
+                                    <div className="glass-panel rounded-2xl overflow-hidden flex flex-col h-[850px]">
+                                        
+                                        <div className="p-3 border-b border-brandNavy-700/40 bg-[#09111F]/30 flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-3">
+                                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))} className="p-1.5 bg-brandNavy-900 border border-brandNavy-700 rounded hover:text-white hover:border-brandTeal-500 transition-all text-slate-400 leading-none">◀</button>
+                                                <h3 className="font-extrabold text-brandTeal-400 text-sm uppercase tracking-widest min-w-[160px] text-center font-mono">
+                                                    {calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                                </h3>
+                                                <button onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))} className="p-1.5 bg-brandNavy-900 border border-brandNavy-700 rounded hover:text-white hover:border-brandTeal-500 transition-all text-slate-400 leading-none">▶</button>
+                                                <button onClick={() => setCalendarDate(new Date(`${todayStr}T00:00:00`))} className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-brandNavy-955 border border-brandNavy-700 rounded-lg hover:text-brandTeal-400 hover:border-brandTeal-500 transition-all ml-2">Jump To Today</button>
+                                            </div>
+                                            <div className="text-[10px] text-slate-400 font-medium">Drag and drop deal cards to instantly reschedule them.</div>
+                                        </div>
+                                        
+                                        <div className="flex-1 flex flex-col p-2.5 overflow-hidden">
+                                            <div className="grid grid-cols-7 gap-1 mb-1 shrink-0">
+                                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => (
+                                                    <div key={d} className="text-center text-[9px] font-extrabold uppercase tracking-widest text-brandNavy-300 bg-brandNavy-955/50 border border-brandNavy-700/30 py-1.5 rounded-md">{d}</div>
+                                                ))}
+                                            </div>
+                                            <div className="grid grid-cols-7 gap-1.5 flex-1 min-h-0 overflow-y-auto pr-1 pb-1">
+                                                {(() => {
+                                                    const year = calendarDate.getFullYear();
+                                                    const month = calendarDate.getMonth();
+                                                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                                                    const firstDayIndex = new Date(year, month, 1).getDay();
+                                                    
+                                                    const cells = [];
+                                                    
+                                                    for (let i = 0; i < firstDayIndex; i++) {
+                                                        cells.push(<div key={`empty-${i}`} className="bg-[#02050e]/30 rounded-lg border border-brandNavy-800/30 min-h-[110px]"></div>);
+                                                    }
+                                                    
+                                                    for (let i = 1; i <= daysInMonth; i++) {
+                                                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                                        const isToday = dateStr === todayStr;
+                                                        
+                                                        // Get deals scheduled for this day
+                                                        const dayDeals = filteredDeals.filter(d => d.followUpDate === dateStr);
+                                                        
+                                                        cells.push(
+                                                            <div 
+                                                                key={`day-${i}`} 
+                                                                onDragOver={(e) => handleDragOver(e)} 
+                                                                onDrop={(e) => handleCalendarDrop(e, dateStr)}
+                                                                className={`bg-[#09111F]/50 rounded-lg border flex flex-col p-1.5 transition-all min-h-[120px] ${isToday ? 'border-brandTeal-500/50 bg-[#0d2a2f]/20 shadow-[inset_0_0_12px_rgba(20,184,166,0.15)] ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700/40 hover:border-brandNavy-700/80'}`}
+                                                            >
+                                                                <div className="flex justify-between items-center mb-1.5">
+                                                                    <span className={`text-[11px] font-bold font-mono px-1.5 rounded-sm ${isToday ? 'text-brandNavy-955 bg-brandTeal-500' : 'text-slate-500'}`}>{i}</span>
+                                                                    {dayDeals.length > 0 && <span className="text-[8px] bg-brandNavy-900 border border-brandNavy-700 text-slate-300 px-1 rounded-sm">{dayDeals.length}</span>}
+                                                                </div>
+                                                                
+                                                                <div className="flex flex-col gap-1.5 overflow-y-auto flex-1 pb-1 custom-scrollbar">
+                                                                    {dayDeals.map(deal => {
+                                                                        const health = getDealHealth(deal);
+                                                                        const isWon = deal.status === "Won";
+                                                                        return (
+                                                                            <div 
+                                                                                key={deal.id}
+                                                                                draggable
+                                                                                onDragStart={(e) => handleDragStart(e, deal.id)}
+                                                                                onDragEnd={handleDragEnd}
+                                                                                onClick={() => openDealDetails(deal)}
+                                                                                className={`p-1.5 rounded-md bg-[#02050e]/80 border text-[9px] cursor-grab active:cursor-grabbing hover:bg-brandNavy-900 hover:border-brandTeal-500/50 transition-all relative overflow-hidden group ${isWon ? 'border-brandTeal-500/30 bg-brandTeal-500/5' : 'border-brandNavy-700/60'}`}
+                                                                                title={`Edit: ${deal.leadName} - ${deal.nextAction}`}
+                                                                            >
+                                                                                <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${health.dot}`}></div>
+                                                                                <div className="pl-1.5">
+                                                                                    <div className={`font-extrabold truncate ${isWon ? 'text-brandTeal-400' : 'text-white'}`}>{deal.company || deal.leadName}</div>
+                                                                                    <div className="text-slate-400 truncate mt-0.5 leading-tight">{deal.nextAction || '—'}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return cells;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* VIEW 2: CONTACTS DIRECTORY */}
+                        {activeTab === "contacts" && (
+                            <div className="glass-panel rounded-2xl overflow-hidden">
+                                <div className="p-4 border-b border-brandNavy-700/40 bg-[#09111F]/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div><h3 className="font-extrabold text-white text-base">Client Contacts Database</h3><p className="text-slate-400 text-xs">Directory of stakeholders, prospective partners, and key connectors</p></div>
+                                    <div className="text-xs bg-brandNavy-950 border border-brandNavy-700/60 px-3 py-1.5 rounded-lg text-slate-300">Total Listed Contacts: <span className="text-white font-bold">{filteredContacts.length}</span></div>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                                <th className="p-4" scope="col">Sync ID</th><th className="p-4" scope="col">Contact Person</th><th className="p-4" scope="col">Role & Enterprise</th><th className="p-4" scope="col">Contact Info</th><th className="p-4" scope="col">Action Status</th><th className="p-4" scope="col">Relationship Label</th><th className="p-4" scope="col">Internal Notes</th><th className="p-4 text-right" scope="col">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-brandNavy-700/30 text-xs font-semibold">
+                                            {filteredContacts.length === 0 ? (
+                                                <tr><td colSpan="8" className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest font-sans">No contacts matching query</td></tr>
+                                            ) : (
+                                                filteredContacts.map(c => (
+                                                    <tr key={c.id} className="hover:bg-brandNavy-900/20 transition-all group">
+                                                        <td className="p-4 font-mono text-slate-500">#{c.id.split('-')[1] || c.id}</td>
+                                                        <td className="p-4"><div className="font-extrabold text-white text-sm group-hover:text-brandTeal-400 transition-colors">{c.name}</div></td>
+                                                        <td className="p-4 text-slate-300"><div className="font-semibold text-slate-200">{c.titleRole || "—"}</div><div className="text-[10px] text-slate-400">{c.company || "Individual"}</div></td>
+                                                        <td className="p-4"><span className="px-2.5 py-1 bg-brandNavy-950 border border-brandNavy-700/50 text-slate-300 rounded font-bold inline-flex items-center gap-1"><span className="text-[10px]" aria-hidden="true">🌐</span> {c.contactInfo || "—"}</span></td>
+                                                        <td className="p-4"><button onClick={() => toggleContactStatus(c.id, c.contacted)} className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${c.contacted ? 'bg-brandTeal-500/10 text-brandTeal-400 border-brandTeal-500/20' : 'bg-slate-900 text-slate-500 border-slate-800'}`}>{c.contacted ? "✓ Contacted" : "⏳ Pending Initial outreach"}</button></td>
+                                                        <td className="p-4">
+                                                            {c.label === "hot" && <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">🔥 Hot</span>}
+                                                            {c.label === "medium" && <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/10 text-brandAmber-500 border border-amber-500/20">⚡ Medium</span>}
+                                                            {c.label === "cold" && <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">❄️ Cold</span>}
+                                                            {!c.label && <span className="text-slate-500">—</span>}
+                                                        </td>
+                                                        <td className="p-4 max-w-xs"><div className="text-slate-300 font-medium truncate" title={c.note || ""}>{c.note || "—"}</div>{c.nextAction && (<div className="text-[10px] text-brandTeal-400 mt-1 font-mono">Next step: {c.nextAction}</div>)}</td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => { setEditingItem(c); setIsContactModalOpen(true); }} className="p-1.5 bg-brandNavy-955 border border-brandNavy-800 rounded hover:border-brandTeal-500 text-[11px] transition-all" title="Edit Contact"><span aria-hidden="true">📝</span> Edit</button>
+                                                                <button onClick={() => setDeleteConfirm({ type: 'contact', id: c.id, name: c.name })} className="p-1.5 bg-brandNavy-955 border border-brandNavy-800 rounded hover:border-rose-500 text-[11px] text-rose-400 transition-all" title="Delete Contact"><span aria-hidden="true">🗑️</span> Delete</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW 3: PARTNERS TRACKER */}
+                        {activeTab === "partners" && (
+                            <div className="glass-panel rounded-2xl overflow-hidden">
+                                <div className="p-4 border-b border-brandNavy-700/40 bg-[#09111F]/30 flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div><h3 className="font-extrabold text-white text-base">Partnership Investments</h3><p className="text-slate-400 text-xs">Tracking joint ventures, educational center development, and technological infrastructure investments</p></div>
+                                    <div className="text-xs bg-brandNavy-950 border border-brandNavy-700/60 px-3 py-1.5 rounded-lg text-slate-300">Total Partners Active: <span className="text-white font-bold">{filteredPartners.length}</span></div>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                                <th className="p-4" scope="col">ID</th><th className="p-4" scope="col">Partner Name</th><th className="p-4" scope="col">Proposed Domain</th><th className="p-4" scope="col">Investment Capacity</th><th className="p-4" scope="col">Engagement Phase</th><th className="p-4" scope="col">Follow-Up Action</th><th className="p-4" scope="col">Strategic Notes</th><th className="p-4 text-right" scope="col">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-brandNavy-700/30 text-xs font-semibold">
+                                            {filteredPartners.length === 0 ? (
+                                                <tr><td colSpan="8" className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest font-sans">No partner record matching query</td></tr>
+                                            ) : (
+                                                filteredPartners.map(p => (
+                                                    <tr key={p.id} className="hover:bg-brandNavy-900/20 transition-all group">
+                                                        <td className="p-4 font-mono text-slate-500">#{p.id.split('-')[1] || p.id}</td>
+                                                        <td className="p-4"><div className="font-extrabold text-white text-sm group-hover:text-brandTeal-400 transition-colors">{p.name}</div><div className="text-[10px] text-slate-400">{p.role || "Partner"}</div></td>
+                                                        <td className="p-4"><span className="px-2.5 py-1 bg-[#1B2C46]/55 text-brandTeal-200 border border-brandTeal-500/10 rounded font-bold"><span aria-hidden="true">💡</span> {p.businessProposal}</span></td>
+                                                        <td className="p-4"><div className="font-mono font-bold text-white text-sm">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(p.investmentBudget || 0)}</div></td>
+                                                        <td className="p-4"><span className="px-2.5 py-1 bg-brandNavy-950 text-slate-300 font-extrabold uppercase rounded border border-brandNavy-700 text-[10px] tracking-wider inline-block"><span aria-hidden="true">⚡</span> {p.phase}</span></td>
+                                                        <td className="p-4"><div className="text-brandAmber-500 font-bold font-mono">{p.nextAction || "—"}</div></td>
+                                                        <td className="p-4 max-w-xs truncate" title={p.note || ""}><span className="text-slate-300">{p.note || "—"}</span></td>
+                                                        <td className="p-4 text-right">
+                                                            <div className="flex justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => { setEditingItem(p); setIsPartnerModalOpen(true); }} className="p-1.5 bg-brandNavy-955 border border-brandNavy-800 rounded hover:border-brandTeal-500 text-[11px] transition-all"><span aria-hidden="true">📝</span> Edit</button>
+                                                                <button onClick={() => setDeleteConfirm({ type: 'partner', id: p.id, name: p.name })} className="p-1.5 bg-brandNavy-955 border border-brandNavy-800 rounded hover:border-rose-500 text-[11px] text-rose-400 transition-all"><span aria-hidden="true">🗑️</span> Delete</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                    </main>
+
+                    {/* MODAL 1: ADD & EDIT DEALS */}
+                    {isDealModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="deal-modal-title">
+                            <div className="bg-gradient-to-br from-brandNavy-900 to-brandNavy-950 rounded-2xl border border-brandNavy-700/60 max-w-xl w-full p-6 shadow-2xl relative text-xs font-semibold my-8">
+                                <div className="flex items-center justify-between border-b border-brandNavy-700/50 pb-3 mb-4">
+                                    <h3 id="deal-modal-title" className="font-extrabold text-white text-sm uppercase tracking-wide">
+                                        {editingItem && editingItem.id && !editingItem.pipelineStatusOnly ? "📝 Configure Deal Specifications" : "💼 Initiate New Pipeline Deal"}
+                                    </h3>
+                                    <button type="button" onClick={() => { setIsDealModalOpen(false); setEditingItem(null); }} className="text-slate-400 hover:text-white font-bold" aria-label="Close modal">✕</button>
+                                </div>
+
+                                <form onSubmit={saveDeal} className="space-y-4">
+                                    
+                                    <div className="bg-brandNavy-955/60 p-3 rounded-lg border border-brandTeal-500/30 shadow-inner">
+                                        <label htmlFor="deal-customId" className="block text-[9px] font-bold text-brandTeal-400 uppercase tracking-wider mb-1 font-mono">SOW Reference / Deal ID</label>
+                                        <input 
+                                            id="deal-customId" 
+                                            type="text" 
+                                            name="customId" 
+                                            defaultValue={editingItem?.id || `KC-${new Date().getFullYear()}-`} 
+                                            className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-brandTeal-300 font-mono focus:outline-none focus:border-brandTeal-500 uppercase" 
+                                            placeholder="e.g. KC-2026-CLIENT" 
+                                        />
+                                        <p className="text-[8.5px] text-slate-400 mt-1.5 font-mono leading-tight">Match this with your Planner <span className="text-brandTeal-400 font-bold">Quote ID</span> to sync identities.</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="deal-leadName" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Lead Name *</label>
+                                            <input id="deal-leadName" required type="text" name="leadName" defaultValue={editingItem?.leadName || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-company" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Company / Organization</label>
+                                            <input id="deal-company" type="text" name="company" defaultValue={editingItem?.company || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="deal-titleRole" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Corporate Title / Role</label>
+                                            <input id="deal-titleRole" type="text" name="titleRole" defaultValue={editingItem?.titleRole || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-contactInfo" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Socials / Messenger Link</label>
+                                            <input id="deal-contactInfo" type="text" name="contactInfo" placeholder="facebook, whatsapp, linkedin" defaultValue={editingItem?.contactInfo || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 bg-brandNavy-955/40 p-3 rounded-lg border border-brandNavy-700/30">
+                                        <div>
+                                            <label htmlFor="deal-email" className="block text-[9px] font-bold text-brandTeal-400/80 uppercase tracking-wider mb-1 font-mono">Email Address</label>
+                                            <input id="deal-email" type="email" name="email" placeholder="contact@company.com" defaultValue={editingItem?.email || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-mobile" className="block text-[9px] font-bold text-brandTeal-400/80 uppercase tracking-wider mb-1 font-mono">Mobile Number</label>
+                                            <input id="deal-mobile" type="tel" name="mobile" placeholder="+63 900 000 0000" defaultValue={editingItem?.mobile || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="deal-pipelineStatus" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Pipeline Status Stage</label>
+                                            <select id="deal-pipelineStatus" name="pipelineStatus" defaultValue={editingItem?.pipelineStatus || "Lead / Prospect"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                {pipelineStages.map(stg => (<option key={stg} value={stg}>{stg}</option>))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-status" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Resolution Status</label>
+                                            <select id="deal-status" name="status" defaultValue={editingItem?.status || "Active"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                <option value="Active">Active / Open In Pipeline</option>
+                                                <option value="Won">🏆 Closed Won</option>
+                                                <option value="Lost">❌ Closed Lost</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="deal-leadSource" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Lead Source</label>
+                                            <select id="deal-leadSource" name="leadSource" defaultValue={editingItem?.leadSource || "Warm Referral"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                <option value="Warm Referral">Warm Referral</option>
+                                                <option value="Cold Outreach">Cold Outreach</option>
+                                                <option value="Linkedin Content">Linkedin Content</option>
+                                                <option value="Partnership Network">Partnership Network</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-estValue" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono flex items-center justify-between">
+                                                <span>Estimated Value (₱)</span>
+                                                {editingItem && plannerProfiles.find(p => p.quoteId === editingItem.id || p.id === editingItem.id) && (
+                                                    <span className="text-emerald-400">🔄 Synced</span>
+                                                )}
+                                            </label>
+                                            {(() => {
+                                                const isCurrentlySynced = editingItem && plannerProfiles.find(p => p.quoteId === editingItem.id || p.id === editingItem.id);
+                                                return (
+                                                    <>
+                                                        <input 
+                                                            id="deal-estValue" 
+                                                            type="number" 
+                                                            name="estValue" 
+                                                            placeholder={isCurrentlySynced ? "Auto-synced from Planner" : "0.00"} 
+                                                            defaultValue={editingItem?.estValue !== undefined ? editingItem.estValue : ""} 
+                                                            disabled={!!isCurrentlySynced}
+                                                            className={`w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs font-mono focus:outline-none focus:border-brandTeal-500 ${isCurrentlySynced ? 'opacity-50 cursor-not-allowed' : 'text-white'}`} 
+                                                        />
+                                                        {isCurrentlySynced && <p className="text-[8.5px] text-emerald-400 mt-1.5 font-mono">Amount is securely locked & synced with the live SOW Subtotal from Planner.</p>}
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="deal-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Next Action Items</label>
+                                            <input id="deal-nextAction" type="text" name="nextAction" defaultValue={editingItem?.nextAction || ""} placeholder="e.g. send SOW document" className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="deal-followUpDate" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Follow-Up Date</label>
+                                            <input id="deal-followUpDate" type="date" name="followUpDate" defaultValue={editingItem?.followUpDate || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="deal-notes" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Internal Notes & Context</label>
+                                        <textarea id="deal-notes" name="notes" rows="3" defaultValue={editingItem?.notes || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Context from call, specific business processes required..."></textarea>
+                                    </div>
+
+                                    <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
+                                        {editingItem && editingItem.id && !editingItem.pipelineStatusOnly ? (
+                                            <button type="button" onClick={() => setDeleteConfirm({ type: 'deal', id: editingItem.id, name: editingItem.leadName })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">🗑️ Delete Deal</button>
+                                        ) : <span aria-hidden="true" />}
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => { setIsDealModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
+                                            <button type="submit" className="px-6 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Save Deal State</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL 2: ADD & EDIT CONTACTS */}
+                    {isContactModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+                            <div className="bg-gradient-to-br from-brandNavy-900 to-brandNavy-950 rounded-2xl border border-brandNavy-700/60 max-w-xl w-full p-6 shadow-2xl relative text-xs font-semibold">
+                                <div className="flex items-center justify-between border-b border-brandNavy-700/50 pb-3 mb-4">
+                                    <h3 id="contact-modal-title" className="font-extrabold text-white text-sm uppercase tracking-wide">{editingItem && editingItem.id ? "📝 Edit Contact Info" : "👤 Add New Contact Stakeholder"}</h3>
+                                    <button type="button" onClick={() => { setIsContactModalOpen(false); setEditingItem(null); }} className="text-slate-400 hover:text-white font-bold" aria-label="Close modal">✕</button>
+                                </div>
+                                <form onSubmit={saveContact} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="contact-name" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Full Name *</label>
+                                            <input id="contact-name" required type="text" name="name" defaultValue={editingItem?.name || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="contact-company" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Company Connection</label>
+                                            <input id="contact-company" type="text" name="company" defaultValue={editingItem?.company || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="contact-titleRole" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Title / Role</label>
+                                            <input id="contact-titleRole" type="text" name="titleRole" defaultValue={editingItem?.titleRole || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="contact-info" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Contact Details</label>
+                                            <input id="contact-info" type="text" name="contactInfo" placeholder="facebook, whatsapp, linkedin" defaultValue={editingItem?.contactInfo || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="contact-contacted" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Outreach Status</label>
+                                            <select id="contact-contacted" name="contacted" defaultValue={editingItem ? String(editingItem.contacted) : "false"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                <option value="true">Contacted (Outreach Initialized)</option>
+                                                <option value="false">Pending (Not yet contacted)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="contact-label" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Relationship Label</label>
+                                            <select id="contact-label" name="label" defaultValue={editingItem?.label || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                <option value="">No Label</option>
+                                                <option value="hot">🔥 Hot Connector</option>
+                                                <option value="medium">⚡ Medium Relationship</option>
+                                                <option value="cold">❄️ Cold Outreach</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="contact-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Immediate Next Action</label>
+                                        <input id="contact-nextAction" type="text" name="nextAction" placeholder="pending proposal delivery" defaultValue={editingItem?.nextAction || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="contact-note" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Strategic Internal Notes</label>
+                                        <textarea id="contact-note" name="note" rows="3" defaultValue={editingItem?.note || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Context from LinkedIn, relationship value, alignment on services..."></textarea>
+                                    </div>
+                                    <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
+                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'contact', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Contact</button>) : <span aria-hidden="true" />}
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => { setIsContactModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
+                                            <button type="submit" className="px-6 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Save Contact</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL 3: ADD & EDIT PARTNERS */}
+                    {isPartnerModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="partner-modal-title">
+                            <div className="bg-gradient-to-br from-brandNavy-900 to-brandNavy-950 rounded-2xl border border-brandNavy-700/60 max-w-xl w-full p-6 shadow-2xl relative text-xs font-semibold">
+                                <div className="flex items-center justify-between border-b border-brandNavy-700/50 pb-3 mb-4">
+                                    <h3 id="partner-modal-title" className="font-extrabold text-white text-sm uppercase tracking-wide">{editingItem && editingItem.id ? "📝 Configure Partner Specification" : "🤝 Register New Partnership Track"}</h3>
+                                    <button type="button" onClick={() => { setIsPartnerModalOpen(false); setEditingItem(null); }} className="text-slate-400 hover:text-white font-bold" aria-label="Close modal">✕</button>
+                                </div>
+                                <form onSubmit={savePartner} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="partner-name" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Partner Name *</label>
+                                            <input id="partner-name" required type="text" name="name" defaultValue={editingItem?.name || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="partner-role" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Role / Position</label>
+                                            <input id="partner-role" type="text" name="role" defaultValue={editingItem?.role || "Partner"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="partner-business" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Proposed Business Domain</label>
+                                            <input id="partner-business" type="text" name="businessProposal" defaultValue={editingItem?.businessProposal || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="partner-budget" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Investment Capacity (₱)</label>
+                                            <input id="partner-budget" type="number" name="investmentBudget" defaultValue={editingItem?.investmentBudget !== undefined ? editingItem.investmentBudget : ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white font-mono focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="partner-phase" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Engagement Phase</label>
+                                            <select id="partner-phase" name="phase" defaultValue={editingItem?.phase || "Discover"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                                <option value="Discover">Discover</option><option value="Appraise">Appraise</option><option value="Define">Define</option><option value="Execute">Execute</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="partner-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Immediate Next Follow-Up Action</label>
+                                            <input id="partner-nextAction" type="text" name="nextAction" defaultValue={editingItem?.nextAction || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="partner-note" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Strategic Collaboration Notes</label>
+                                        <textarea id="partner-note" name="note" rows="3" defaultValue={editingItem?.note || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Synergies, location proposals, partnership timeline..."></textarea>
+                                    </div>
+                                    <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
+                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'partner', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Partner Item</button>) : <span aria-hidden="true" />}
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => { setIsPartnerModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
+                                            <button type="submit" className="px-6 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Save Partner State</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        }
+
+        const rootElement = document.getElementById("root");
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+    </script>
+</body>
+</html>
