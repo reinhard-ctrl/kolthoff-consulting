@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>CRM Pipeline | Cloud Synced</title>
     
     <!-- Custom Favicon (Aligned with Internal Workbook) -->
@@ -62,10 +65,127 @@
         ::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
 
         .glass-panel {
-            background: rgba(9, 17, 31, 0.45);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(46, 69, 103, 0.2);
+            background: rgba(9, 17, 31, 0.55);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(46, 69, 103, 0.25);
+        }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px -8px rgba(20, 184, 166, 0.12);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.04) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .pipeline-funnel-track {
+            display: flex;
+            height: 2.75rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: rgba(2, 6, 19, 0.6);
+            border: 1px solid rgba(46, 69, 103, 0.35);
+        }
+        .pipeline-funnel-segment {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            transition: flex-grow 0.5s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+            cursor: default;
+        }
+        .pipeline-funnel-segment:hover { filter: brightness(1.12); z-index: 2; }
+        .pipeline-funnel-segment + .pipeline-funnel-segment::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 15%;
+            bottom: 15%;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .pipeline-funnel-segment .segment-label {
+            font-size: 0.55rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255, 255, 255, 0.92);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 0.35rem;
+            pointer-events: none;
+        }
+
+        .kanban-column {
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+        }
+        .kanban-column.drop-active {
+            border-color: rgba(20, 184, 166, 0.55) !important;
+            box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.15), inset 0 0 30px rgba(20, 184, 166, 0.06);
+            transform: scale(1.005);
+        }
+        .kanban-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(20, 184, 166, 0.25) transparent;
+        }
+        .kanban-scroll::-webkit-scrollbar { width: 4px; }
+        .kanban-scroll::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.25);
+            border-radius: 4px;
+        }
+        .kanban-scroll::-webkit-scrollbar-thumb:hover { background: rgba(20, 184, 166, 0.45); }
+
+        .deal-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .deal-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 3px 0 0 3px;
+            background: var(--deal-accent, #627D98);
+        }
+        .deal-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.45);
+        }
+        .deal-card .card-body { cursor: pointer; }
+        .deal-card .card-actions { cursor: default; }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .stage-value-bar {
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(46, 69, 103, 0.4);
+            overflow: hidden;
+        }
+        .stage-value-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes wonGlow {
@@ -73,14 +193,25 @@
             50% { box-shadow: 0 0 24px rgba(20, 184, 166, 0.4); }
         }
         .won-card-active { animation: wonGlow 2s infinite ease-in-out; }
+
+        @keyframes funnelPulse {
+            0%, 100% { opacity: 0.85; }
+            50% { opacity: 1; }
+        }
+        .pipeline-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen selection:bg-brandTeal-500 selection:text-brandNavy-955">
 
-    <!-- Soft Decorative Clinic Radial Accents -->
-    <div class="pointer-events-none absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-sky-200/20 blur-[130px] z-0" aria-hidden="true"></div>
-    <div class="pointer-events-none absolute bottom-[10%] right-[-5%] w-[45%] h-[45%] rounded-full bg-indigo-200/20 blur-[120px] z-0" aria-hidden="true"></div>
-    <div class="pointer-events-none absolute top-[40%] left-[30%] w-[300px] h-[300px] rounded-full bg-blue-100/30 blur-[100px] z-0" aria-hidden="true"></div>
+    <!-- Ambient brand glow accents -->
+    <div class="pointer-events-none fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-brandTeal-500/8 blur-[130px] z-0" aria-hidden="true"></div>
+    <div class="pointer-events-none fixed bottom-[10%] right-[-5%] w-[45%] h-[45%] rounded-full bg-indigo-500/6 blur-[120px] z-0" aria-hidden="true"></div>
+    <div class="pointer-events-none fixed top-[40%] left-[30%] w-[300px] h-[300px] rounded-full bg-brandTeal-400/5 blur-[100px] z-0" aria-hidden="true"></div>
 
     <div id="root"></div>
 
@@ -89,7 +220,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // SEED DATA
         const initialDeals = [
@@ -120,6 +251,38 @@
         const pipelineStages = ["Lead / Prospect", "Meeting", "Proposal", "Negotiation", "Closed Won/Lost"];
         const todayStr = "2026-06-19"; // System mock date context
 
+        const stageVisuals = {
+            "Lead / Prospect": { short: "Lead", color: "#64748B", bg: "rgba(100,116,139,0.18)", border: "border-slate-500/40", icon: "🎯" },
+            "Meeting": { short: "Meeting", color: "#3B82F6", bg: "rgba(59,130,246,0.18)", border: "border-blue-500/40", icon: "📅" },
+            "Proposal": { short: "Proposal", color: "#8B5CF6", bg: "rgba(139,92,246,0.18)", border: "border-violet-500/40", icon: "📄" },
+            "Negotiation": { short: "Negotiate", color: "#F59E0B", bg: "rgba(245,158,11,0.18)", border: "border-amber-500/40", icon: "🤝" },
+            "Closed Won/Lost": { short: "Closed", color: "#14B8A6", bg: "rgba(20,184,166,0.18)", border: "border-brandTeal-500/40", icon: "🏁" }
+        };
+
+        const formatPHP = (amount) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(amount || 0);
+
+        const getDealValue = (deal, profiles) => {
+            const syncedProfile = profiles.find(p => p.quoteId === deal.id || p.id === deal.id);
+            return syncedProfile ? calculateCostStatic(syncedProfile) : parseFloat(deal.estValue || 0);
+        };
+
+        function calculateCostStatic(profile) {
+            if (!profile || !profile.tasks || !Array.isArray(profile.tasks)) return 0;
+            const tasks = profile.tasks.filter(t => t.selected);
+            const frictionBuffer = profile.frictionBuffer || 0;
+            const discountPercent = profile.discountPercent || 0;
+            const bufferMultiplier = 1 + (frictionBuffer / 100);
+            const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
+            let projectBaseUndiscounted = 0, retainerBaseUndiscounted = 0;
+            tasks.forEach(t => {
+                if (t.isMonthlyRetainer) retainerBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
+                else projectBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
+            });
+            projectBaseUndiscounted = Math.round(projectBaseUndiscounted * bufferMultiplier);
+            retainerBaseUndiscounted = Math.round(retainerBaseUndiscounted * bufferMultiplier);
+            return Math.round(projectBaseUndiscounted * (1 - discountPercent / 100)) + Math.round(retainerBaseUndiscounted * (1 - discountPercent / 100));
+        }
+
         function App() {
             // FIREBASE CLOUD STATE
             const [isAuthed, setIsAuthed] = useState(false);
@@ -148,6 +311,8 @@
             const [deleteConfirm, setDeleteConfirm] = useState(null); 
             const [showCelebration, setShowCelebration] = useState(false);
             const [celebrationDetails, setCelebrationDetails] = useState({ name: "", value: "" });
+            const [dragOverStage, setDragOverStage] = useState(null);
+            const isDraggingDeal = useRef(false);
 
             // 1. INITIALIZE FIREBASE AUTHENTICATION
             useEffect(() => {
@@ -258,26 +423,7 @@
                 return { color: "border-emerald-600/40", dot: "bg-emerald-500 shadow-[0_0_8px_#10B981]", text: "Scheduled", icon: "🟢" };
             };
 
-            const calculateCost = (profile) => {
-                if (!profile || !profile.tasks || !Array.isArray(profile.tasks)) return 0;
-                const tasks = profile.tasks.filter(t => t.selected);
-                const frictionBuffer = profile.frictionBuffer || 0;
-                const discountPercent = profile.discountPercent || 0;
-                const bufferMultiplier = 1 + (frictionBuffer / 100);
-                const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
-
-                let projectBaseUndiscounted = 0;
-                let retainerBaseUndiscounted = 0;
-                tasks.forEach(t => {
-                    if (t.isMonthlyRetainer) retainerBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
-                    else projectBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
-                });
-
-                projectBaseUndiscounted = Math.round(projectBaseUndiscounted * bufferMultiplier);
-                retainerBaseUndiscounted = Math.round(retainerBaseUndiscounted * bufferMultiplier);
-
-                return Math.round(projectBaseUndiscounted * (1 - discountPercent / 100)) + Math.round(retainerBaseUndiscounted * (1 - discountPercent / 100));
-            };
+            const calculateCost = (profile) => calculateCostStatic(profile);
 
             const stats = useMemo(() => {
                 let totalValue = 0, activeCount = 0, wonCount = 0, lostCount = 0, overdueCount = 0;
@@ -303,12 +449,24 @@
 
             // --- FIRESTORE WRITE ACTIONS ---
 
-            const handleDragStart = (e, dealId) => { e.dataTransfer.setData("dealId", dealId); };
-            const handleDragOver = (e) => { e.preventDefault(); };
+            const handleDragStart = (e, dealId) => {
+                e.dataTransfer.setData("dealId", dealId);
+                isDraggingDeal.current = true;
+            };
+            const handleDragEnd = () => { setTimeout(() => { isDraggingDeal.current = false; }, 0); };
+            const openDealDetails = (deal) => {
+                if (isDraggingDeal.current) return;
+                setEditingItem(deal);
+                setIsDealModalOpen(true);
+            };
+            const stopCardClick = (e) => e.stopPropagation();
+            const handleDragOver = (e, stage) => { e.preventDefault(); if (stage) setDragOverStage(stage); };
+            const handleDragLeave = (e, stage) => { if (dragOverStage === stage) setDragOverStage(null); };
 
             // For Kanban Board Pipeline Drop
             const handleDrop = async (e, targetStage) => {
                 e.preventDefault();
+                setDragOverStage(null);
                 const dealId = e.dataTransfer.getData("dealId");
                 if (dealId) {
                     const deal = deals.find(d => d.id === dealId);
@@ -496,6 +654,22 @@
                 });
             }, [deals, searchQuery, sourceFilter, statusFilter, activityFilter, viewMode]);
 
+            const pipelineOverview = useMemo(() => {
+                const stageData = pipelineStages.map(stage => {
+                    const stageDeals = filteredDeals.filter(d => d.pipelineStatus === stage);
+                    const value = stageDeals.reduce((sum, d) => sum + getDealValue(d, plannerProfiles), 0);
+                    return { stage, count: stageDeals.length, value };
+                });
+                const totalCount = stageData.reduce((s, d) => s + d.count, 0);
+                const totalValue = stageData.reduce((s, d) => s + d.value, 0);
+                return stageData.map(d => ({
+                    ...d,
+                    countPct: totalCount > 0 ? Math.round((d.count / totalCount) * 100) : 0,
+                    valuePct: totalValue > 0 ? Math.round((d.value / totalValue) * 100) : 0,
+                    flexWeight: Math.max(d.count, d.value > 0 ? 1 : 0, 1)
+                }));
+            }, [filteredDeals, plannerProfiles]);
+
             const filteredContacts = useMemo(() => {
                 return contacts.filter(c => {
                     const q = searchQuery.toLowerCase();
@@ -527,7 +701,7 @@
                                 <div className="absolute -right-10 -bottom-10 w-28 h-28 bg-brandTeal-500/10 rounded-full blur-xl" aria-hidden="true" />
                                 
                                 <div className="text-6xl mb-4" aria-hidden="true">🏆</div>
-                                <h3 id="celebration-title" className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brandTeal-400 to-emerald-404 tracking-tight font-serif">Deal Closed Won!</h3>
+                                <h3 id="celebration-title" className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brandTeal-400 to-emerald-400 tracking-tight font-serif">Deal Closed Won!</h3>
                                 <p className="text-slate-400 text-xs mt-1 uppercase tracking-widest font-sans font-bold">Kolthoff Pipeline Milestone</p>
                                 
                                 <div className="my-6 p-4 bg-brandNavy-955/70 rounded-xl border border-brandNavy-800">
@@ -551,7 +725,7 @@
                                 <div className="text-center">
                                     <div className="text-4xl" aria-hidden="true">⚠️</div>
                                     <h3 id="delete-confirm-title" className="font-extrabold text-white text-base mt-3 font-sans">Confirm Permanent Deletion</h3>
-                                    <p className="text-slate-404 text-xs mt-2 leading-relaxed font-sans">
+                                    <p className="text-slate-400 text-xs mt-2 leading-relaxed font-sans">
                                         Are you absolutely sure you want to delete <strong className="text-slate-200">"{deleteConfirm.name}"</strong>? This record will be permanently purged across all devices.
                                     </p>
                                 </div>
@@ -592,7 +766,7 @@
                                             PIPEDRIVE STUDIO
                                         </span>
                                     </div>
-                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">Premium Sales Pipeline & Partnership Tracking Studio</p>
+                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">Premium Sales Pipeline & Partnership Tracking Studio <span className="text-brandTeal-500/70 font-mono">· build 2026.06.29</span></p>
                                 </div>
                             </div>
 
@@ -627,37 +801,80 @@
                     )}
 
                     {/* DYNAMIC COMPRESSED PIPEDRIVE STATS BAR */}
-                    <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 pt-3" aria-label="Pipeline Statistics">
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Active Deals</span>
-                                <div className="text-sm font-extrabold text-white">{stats.activeCount} <span className="text-[9px] text-slate-400 font-normal">Act.</span></div>
+                    <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 pt-4" aria-label="Pipeline Statistics">
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-slate-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">📊</span> Active Deals</span>
+                                <div className="text-lg font-extrabold text-white leading-none">{stats.activeCount}</div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Pipeline Value</span>
-                                <div className="text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5">
-                                    {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.totalValue)}
-                                </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-brandTeal-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">💰</span> Pipeline Value</span>
+                                <div className="text-lg font-extrabold text-brandTeal-400 font-mono leading-none">{formatPHP(stats.totalValue)}</div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Avg Size</span>
-                                <div className="text-sm font-extrabold text-slate-100 font-mono">
-                                    {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.avgSize)}
-                                </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-indigo-400">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">📈</span> Avg Size</span>
+                                <div className="text-lg font-extrabold text-slate-100 font-mono leading-none">{formatPHP(stats.avgSize)}</div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Win Rate</span>
-                                <div className="text-sm font-extrabold text-white font-mono">
-                                    {stats.winRate}% <span className="text-[9px] text-emerald-400">Won</span>
-                                </div>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 flex flex-col gap-0.5 border-l-[3px] border-l-emerald-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">🏆</span> Win Rate</span>
+                                <div className="text-lg font-extrabold text-white font-mono leading-none">{stats.winRate}<span className="text-xs text-emerald-400 ml-0.5">%</span></div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Attention</span>
-                                <div className="text-sm font-extrabold text-rose-400">
-                                    {stats.overdueCount} <span className="text-[9px] text-rose-500 font-normal animate-pulse">● Overdue</span>
+                            <div className="stat-card glass-panel rounded-xl py-2.5 px-3.5 col-span-2 lg:col-span-1 flex flex-col gap-0.5 border-l-[3px] border-l-rose-500">
+                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5"><span aria-hidden="true">⚠️</span> Attention</span>
+                                <div className="text-lg font-extrabold text-rose-400 leading-none flex items-center gap-1.5">
+                                    {stats.overdueCount}
+                                    {stats.overdueCount > 0 && <span className="text-[8px] text-rose-500 font-normal animate-pulse">● Overdue</span>}
                                 </div>
                             </div>
                         </div>
+
+                        {/* PIPELINE FUNNEL VISUALIZATION */}
+                        {activeTab === "deals" && (
+                            <div className="glass-panel rounded-xl mt-3 p-3.5">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                    <div>
+                                        <h2 className="text-[10px] font-extrabold uppercase tracking-widest text-white flex items-center gap-1.5">
+                                            <span aria-hidden="true">🔀</span> Pipeline Flow
+                                        </h2>
+                                        <p className="text-[9px] text-slate-400 mt-0.5">Deal distribution by stage — width reflects count, color reflects stage</p>
+                                    </div>
+                                    <div className="text-[10px] font-mono text-brandTeal-400 font-bold">{formatPHP(pipelineOverview.reduce((s, d) => s + d.value, 0))} total</div>
+                                </div>
+                                <div className="pipeline-funnel-track" role="img" aria-label="Pipeline stage distribution chart">
+                                    {pipelineOverview.map(({ stage, count, value, flexWeight, countPct }) => {
+                                        const vis = stageVisuals[stage];
+                                        return (
+                                            <div
+                                                key={stage}
+                                                className="pipeline-funnel-segment"
+                                                style={{ flexGrow: flexWeight, background: `linear-gradient(180deg, ${vis.color}cc 0%, ${vis.color}88 100%)` }}
+                                                title={`${stage}: ${count} deal${count !== 1 ? 's' : ''} (${countPct}%) · ${formatPHP(value)}`}
+                                            >
+                                                {count > 0 && <span className="segment-label">{vis.short} · {count}</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3">
+                                    {pipelineOverview.map(({ stage, count, value, valuePct }) => {
+                                        const vis = stageVisuals[stage];
+                                        return (
+                                            <div key={`legend-${stage}`} className="flex items-start gap-2 p-2 rounded-lg bg-[#020613]/40 border border-brandNavy-700/25">
+                                                <span className="pipeline-legend-dot mt-0.5" style={{ background: vis.color, boxShadow: `0 0 6px ${vis.color}66` }} aria-hidden="true"></span>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-[9px] font-bold text-slate-300 truncate">{vis.icon} {vis.short}</div>
+                                                    <div className="text-[10px] font-extrabold text-white">{count} <span className="text-slate-500 font-normal">deals</span></div>
+                                                    <div className="text-[9px] font-mono text-brandTeal-400/90 truncate">{formatPHP(value)}</div>
+                                                    <div className="stage-value-bar mt-1">
+                                                        <div className="stage-value-bar-fill" style={{ width: `${valuePct}%`, background: vis.color }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </section>
 
                     {/* INTERACTIVE CONTROLS PANEL */}
@@ -740,29 +957,41 @@
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
                                         {pipelineStages.map((stage) => {
                                             const stageDeals = filteredDeals.filter(d => d.pipelineStatus === stage);
-                                            const stageValueSum = stageDeals.reduce((sum, d) => {
-                                                const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
-                                                const val = syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0);
-                                                return sum + val;
-                                            }, 0);
+                                            const stageValueSum = stageDeals.reduce((sum, d) => sum + getDealValue(d, plannerProfiles), 0);
+                                            const stageOverview = pipelineOverview.find(s => s.stage === stage) || { valuePct: 0, countPct: 0 };
+                                            const vis = stageVisuals[stage];
+                                            const isDropTarget = dragOverStage === stage;
 
                                             return (
-                                                <div key={stage} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, stage)} className="bg-[#02050e]/30 rounded-xl border border-brandNavy-700/30 flex flex-col h-[850px] transition-all hover:border-brandNavy-700/50">
+                                                <div
+                                                    key={stage}
+                                                    onDragOver={(e) => handleDragOver(e, stage)}
+                                                    onDragLeave={(e) => handleDragLeave(e, stage)}
+                                                    onDrop={(e) => handleDrop(e, stage)}
+                                                    className={`kanban-column rounded-xl border flex flex-col h-[min(850px,calc(100vh-320px))] min-h-[420px] ${vis.border} ${isDropTarget ? 'drop-active' : 'border-brandNavy-700/30 hover:border-brandNavy-600/50'}`}
+                                                    style={{ background: `linear-gradient(180deg, ${vis.bg} 0%, rgba(2,5,14,0.35) 100%)` }}
+                                                >
                                                     
-                                                    <div className="p-2.5 border-b border-brandNavy-700/40 bg-[#09111F]/30 rounded-t-xl flex flex-col gap-0.5">
-                                                        <div className="flex items-center justify-between">
-                                                            <h3 className="font-extrabold text-[10px] text-white tracking-wide uppercase">{stage}</h3>
-                                                            <span className="text-[9px] px-1.5 py-0.5 bg-brandNavy-900 border border-brandNavy-700/40 rounded-full font-bold text-brandTeal-300">{stageDeals.length}</span>
+                                                    <div className="p-3 border-b border-brandNavy-700/40 rounded-t-xl" style={{ borderTop: `3px solid ${vis.color}` }}>
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <h3 className="font-extrabold text-[10px] text-white tracking-wide uppercase flex items-center gap-1.5 min-w-0">
+                                                                <span aria-hidden="true">{vis.icon}</span>
+                                                                <span className="truncate">{stage}</span>
+                                                            </h3>
+                                                            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold shrink-0" style={{ background: `${vis.color}22`, color: vis.color, border: `1px solid ${vis.color}44` }}>{stageDeals.length}</span>
                                                         </div>
-                                                        <div className="text-brandTeal-500 font-mono text-[10px] font-bold mt-0.5 flex items-center gap-1.5">
-                                                            {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stageValueSum)}
+                                                        <div className="text-brandTeal-400 font-mono text-[11px] font-bold mt-1.5">{formatPHP(stageValueSum)}</div>
+                                                        <div className="stage-value-bar mt-2">
+                                                            <div className="stage-value-bar-fill" style={{ width: `${stageOverview.valuePct}%`, background: vis.color }}></div>
                                                         </div>
+                                                        <div className="text-[8px] text-slate-500 mt-1 font-mono">{stageOverview.countPct}% of deals · {stageOverview.valuePct}% of value</div>
                                                     </div>
 
-                                                    <div className="flex-1 p-2 overflow-y-auto space-y-2">
+                                                    <div className="flex-1 p-2 overflow-y-auto space-y-2 kanban-scroll">
                                                         {stageDeals.length === 0 ? (
-                                                            <div className="h-full flex items-center justify-center">
-                                                                <span className="text-[9px] uppercase font-bold text-slate-600 tracking-widest text-center px-4">Drag & drop or add deals here</span>
+                                                            <div className="h-full flex flex-col items-center justify-center gap-2 py-8">
+                                                                <span className="text-2xl opacity-30" aria-hidden="true">{vis.icon}</span>
+                                                                <span className="text-[9px] uppercase font-bold text-slate-600 tracking-widest text-center px-4">Drop deals here</span>
                                                             </div>
                                                         ) : (
                                                             stageDeals.map(deal => {
@@ -774,37 +1003,57 @@
                                                                 const isSynced = !!syncedProfile;
 
                                                                 return (
-                                                                    <div key={deal.id} draggable onDragStart={(e) => handleDragStart(e, deal.id)} className={`p-2.5 rounded-lg border bg-[#09111F]/60 hover:bg-[#09111F]/90 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.color} ${isWon ? 'won-card-active border-brandTeal-500/50 bg-[#0d2a2f]/20' : ''} ${isLost ? 'border-rose-955/40 opacity-70 bg-rose-955/10' : ''}`}>
-                                                                        
+                                                                    <div
+                                                                        key={deal.id}
+                                                                        draggable
+                                                                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                                                                        onDragEnd={handleDragEnd}
+                                                                        onClick={() => openDealDetails(deal)}
+                                                                        style={{ '--deal-accent': vis.color }}
+                                                                        className={`deal-card p-2.5 pl-3.5 rounded-lg border bg-[#09111F]/70 hover:bg-[#09111F]/95 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.color} ${isWon ? 'won-card-active border-brandTeal-500/50 bg-[#0d2a2f]/25' : ''} ${isLost ? 'border-rose-900/40 opacity-70 bg-rose-950/10' : ''}`}
+                                                                        role="button"
+                                                                        tabIndex={0}
+                                                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDealDetails(deal); } }}
+                                                                        aria-label={`Open details for ${deal.leadName}`}
+                                                                    >
+                                                                        <div className="card-body">
                                                                         <div className="flex justify-between items-start gap-1">
                                                                             <div className="text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate" title="SOW Reference / Deal ID">{deal.id}</div>
-                                                                            <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${health.dot}`} title={health.text}></span>
+                                                                            <span className={`w-2 h-2 rounded-full shrink-0 mt-0.5 ${health.dot.split(' ')[0]}`} title={health.text} aria-label={health.text}></span>
                                                                         </div>
                                                                         
-                                                                        <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1">{deal.company || "Individual Lead"}</div>
-                                                                        <h4 className="font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5">{deal.leadName}</h4>
+                                                                        <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1.5">{deal.company || "Individual Lead"}</div>
+                                                                        <h4 className="font-extrabold text-[12px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5">{deal.leadName}</h4>
                                                                         
                                                                         {deal.titleRole && (<span className="text-[9px] text-slate-400 block leading-tight truncate">{deal.titleRole}</span>)}
 
-                                                                        <div className="mt-1.5 flex items-center justify-between border-t border-brandNavy-700/30 pt-1">
-                                                                            <div className="text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
-                                                                                {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)}
-                                                                                {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[11px] leading-none">🔄</span>}
+                                                                        <div className="mt-2 flex items-center justify-between border-t border-brandNavy-700/30 pt-1.5">
+                                                                            <div className="text-[11px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
+                                                                                {formatPHP(displayValue)}
+                                                                                {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[10px] leading-none">🔄</span>}
                                                                             </div>
-                                                                            <span className="text-[8px] px-1 py-0.5 bg-brandNavy-955 text-slate-400 rounded font-bold font-sans">{deal.leadSource}</span>
+                                                                            <span className="text-[8px] px-1.5 py-0.5 bg-brandNavy-955 text-slate-400 rounded font-bold font-sans truncate max-w-[45%]">{deal.leadSource}</span>
                                                                         </div>
 
                                                                         {deal.nextAction && (
-                                                                            <div className="mt-1 bg-[#020613]/60 rounded p-1 border border-brandNavy-700/30">
+                                                                            <div className="mt-1.5 bg-[#020613]/70 rounded-md p-1.5 border border-brandNavy-700/30">
                                                                                 <div className="text-[10px] text-slate-200 font-semibold truncate flex items-center gap-1">
-                                                                                    <span aria-hidden="true">{health.icon}</span>
+                                                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${health.dot.split(' ')[0]}`} aria-hidden="true"></span>
                                                                                     <span className="truncate text-[9px]">{deal.nextAction}</span>
                                                                                 </div>
-                                                                                {deal.followUpDate && (<div className="text-[8px] text-slate-500 font-mono mt-0.5">{deal.followUpDate}</div>)}
+                                                                                {deal.followUpDate && (<div className="text-[8px] text-slate-500 font-mono mt-0.5 pl-2.5">{deal.followUpDate}</div>)}
                                                                             </div>
                                                                         )}
 
-                                                                        <div className="mt-2 flex items-center gap-1 justify-end border-t border-brandNavy-700/30 pt-1.5">
+                                                                        {deal.notes && (
+                                                                            <div className="mt-1.5 bg-[#020613]/50 rounded-md p-1.5 border border-brandNavy-700/20">
+                                                                                <div className="text-[8px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Notes</div>
+                                                                                <p className="text-[9px] text-slate-400 leading-snug line-clamp-2" title={deal.notes}>{deal.notes}</p>
+                                                                            </div>
+                                                                        )}
+                                                                        </div>
+
+                                                                        <div className="card-actions mt-2 flex items-center gap-1 justify-end border-t border-brandNavy-700/30 pt-1.5" onClick={stopCardClick}>
                                                                             <div className="flex gap-1 w-full justify-between items-center">
                                                                                 <div className="flex gap-1">
                                                                                     {!isWon && !isLost && (
@@ -815,7 +1064,7 @@
                                                                                     )}
                                                                                     {(isWon || isLost) && (<button onClick={() => resolveDealStatus(deal.id, "Active")} className="px-1.5 py-0.5 rounded bg-brandNavy-955 text-slate-400 hover:text-white hover:border-brandTeal-500 font-sans font-bold text-[8px] uppercase tracking-wider border border-brandNavy-700 transition-all">Re-open</button>)}
                                                                                 </div>
-                                                                                <button onClick={() => { setEditingItem(deal); setIsDealModalOpen(true); }} className="p-1 rounded bg-brandNavy-955 border border-brandNavy-700/60 text-slate-400 hover:text-brandTeal-400 hover:border-brandTeal-500 transition-all flex items-center justify-center" title="Configure Details"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+                                                                                <button onClick={() => openDealDetails(deal)} className="p-1 rounded bg-brandNavy-955 border border-brandNavy-700/60 text-slate-400 hover:text-brandTeal-400 hover:border-brandTeal-500 transition-all flex items-center justify-center" title="Configure Details"><svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
                                                                             </div>
                                                                         </div>
 
@@ -825,8 +1074,8 @@
                                                         )}
                                                     </div>
 
-                                                    <button onClick={() => { setEditingItem({ pipelineStatus: stage, pipelineStatusOnly: true }); setIsDealModalOpen(true); }} className="m-2 p-1 bg-brandNavy-900/30 hover:bg-brandTeal-500/10 rounded-lg border border-dashed border-brandNavy-700/60 hover:border-brandTeal-500/40 text-center text-[9px] text-slate-404 hover:text-brandTeal-400 font-bold transition-all">
-                                                        + Add to {stage.split(' ')[0]}
+                                                    <button onClick={() => { setEditingItem({ pipelineStatus: stage, pipelineStatusOnly: true }); setIsDealModalOpen(true); }} className="m-2 p-1.5 bg-brandNavy-900/30 hover:bg-brandTeal-500/10 rounded-lg border border-dashed border-brandNavy-700/60 hover:border-brandTeal-500/40 text-center text-[9px] text-slate-500 hover:text-brandTeal-400 font-bold transition-all">
+                                                        + Add to {vis.short}
                                                     </button>
 
                                                 </div>
@@ -854,7 +1103,7 @@
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr className="bg-[#020613]/60 text-slate-404 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                                    <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
                                                         <th className="p-3" scope="col">SOW Ref / Deal ID</th><th className="p-3" scope="col">Lead & Contact</th><th className="p-3" scope="col">Company Target</th><th className="p-3" scope="col">Active Pipeline Stage</th><th className="p-3" scope="col">Est. Value (PHP)</th><th className="p-3" scope="col">Lead Source</th><th className="p-3" scope="col">Status / Health</th><th className="p-3" scope="col">Next Action Steps</th><th className="p-3 text-right" scope="col">Actions</th>
                                                     </tr>
                                                 </thead>
@@ -877,7 +1126,7 @@
                                                                         <span className="text-[9px] text-slate-400 block mb-1">{deal.titleRole || "Lead representative"}</span>
                                                                     </td>
                                                                     <td className="p-3"><span className="px-2 py-0.5 bg-brandNavy-950 border border-brandNavy-700/50 text-slate-200 rounded font-bold uppercase text-[9px]"><span aria-hidden="true">🏢</span> {deal.company || "Individual"}</span></td>
-                                                                    <td className="p-3"><span className="text-white text-[10px] font-bold bg-[#1B2C46]/50 px-2 py-0.5 rounded-full border border-brandNavy-700/30">{deal.pipelineStatus}</span></td>
+                                                                    <td className="p-3"><span className="text-white text-[10px] font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1" style={{ background: `${stageVisuals[deal.pipelineStatus]?.bg || 'rgba(100,116,139,0.18)'}`, borderColor: `${stageVisuals[deal.pipelineStatus]?.color || '#64748B'}44`, color: stageVisuals[deal.pipelineStatus]?.color || '#94a3b8' }}><span aria-hidden="true">{stageVisuals[deal.pipelineStatus]?.icon}</span> {deal.pipelineStatus}</span></td>
                                                                     <td className="p-3 font-mono font-bold text-slate-200 text-xs"><div className="flex items-center gap-1.5">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)} {syncedProfile && <span title="Value actively synced from Planner SOW" className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">Live</span>}</div></td>
                                                                     <td className="p-3"><span className="text-slate-400 uppercase text-[8px] font-mono tracking-wider">{deal.leadSource}</span></td>
                                                                     <td className="p-3"><span className="flex items-center gap-1.5 text-[9px] font-bold uppercase"><span className={`w-1.5 h-1.5 rounded-full ${health.dot}`} aria-hidden="true"></span><span className="text-slate-300 text-[10px]">{health.text}</span></span></td>
@@ -944,7 +1193,7 @@
                                                         cells.push(
                                                             <div 
                                                                 key={`day-${i}`} 
-                                                                onDragOver={handleDragOver} 
+                                                                onDragOver={(e) => handleDragOver(e)} 
                                                                 onDrop={(e) => handleCalendarDrop(e, dateStr)}
                                                                 className={`bg-[#09111F]/50 rounded-lg border flex flex-col p-1.5 transition-all min-h-[120px] ${isToday ? 'border-brandTeal-500/50 bg-[#0d2a2f]/20 shadow-[inset_0_0_12px_rgba(20,184,166,0.15)] ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700/40 hover:border-brandNavy-700/80'}`}
                                                             >
@@ -962,7 +1211,8 @@
                                                                                 key={deal.id}
                                                                                 draggable
                                                                                 onDragStart={(e) => handleDragStart(e, deal.id)}
-                                                                                onClick={() => { setEditingItem(deal); setIsDealModalOpen(true); }}
+                                                                                onDragEnd={handleDragEnd}
+                                                                                onClick={() => openDealDetails(deal)}
                                                                                 className={`p-1.5 rounded-md bg-[#02050e]/80 border text-[9px] cursor-grab active:cursor-grabbing hover:bg-brandNavy-900 hover:border-brandTeal-500/50 transition-all relative overflow-hidden group ${isWon ? 'border-brandTeal-500/30 bg-brandTeal-500/5' : 'border-brandNavy-700/60'}`}
                                                                                 title={`Edit: ${deal.leadName} - ${deal.nextAction}`}
                                                                             >
@@ -998,7 +1248,7 @@
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
-                                            <tr className="bg-[#020613]/60 text-slate-404 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                            <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
                                                 <th className="p-4" scope="col">Sync ID</th><th className="p-4" scope="col">Contact Person</th><th className="p-4" scope="col">Role & Enterprise</th><th className="p-4" scope="col">Contact Info</th><th className="p-4" scope="col">Action Status</th><th className="p-4" scope="col">Relationship Label</th><th className="p-4" scope="col">Internal Notes</th><th className="p-4 text-right" scope="col">Actions</th>
                                             </tr>
                                         </thead>
@@ -1046,13 +1296,13 @@
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
-                                            <tr className="bg-[#020613]/60 text-slate-404 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
+                                            <tr className="bg-[#020613]/60 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-700/50">
                                                 <th className="p-4" scope="col">ID</th><th className="p-4" scope="col">Partner Name</th><th className="p-4" scope="col">Proposed Domain</th><th className="p-4" scope="col">Investment Capacity</th><th className="p-4" scope="col">Engagement Phase</th><th className="p-4" scope="col">Follow-Up Action</th><th className="p-4" scope="col">Strategic Notes</th><th className="p-4 text-right" scope="col">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-brandNavy-700/30 text-xs font-semibold">
                                             {filteredPartners.length === 0 ? (
-                                                <tr><td colSpan="8" className="p-8 text-center text-slate-505 font-bold uppercase tracking-widest font-sans">No partner record matching query</td></tr>
+                                                <tr><td colSpan="8" className="p-8 text-center text-slate-500 font-bold uppercase tracking-widest font-sans">No partner record matching query</td></tr>
                                             ) : (
                                                 filteredPartners.map(p => (
                                                     <tr key={p.id} className="hover:bg-brandNavy-900/20 transition-all group">
@@ -1112,18 +1362,18 @@
                                             <input id="deal-leadName" required type="text" name="leadName" defaultValue={editingItem?.leadName || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="deal-company" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Company / Organization</label>
+                                            <label htmlFor="deal-company" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Company / Organization</label>
                                             <input id="deal-company" type="text" name="company" defaultValue={editingItem?.company || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="deal-titleRole" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Corporate Title / Role</label>
+                                            <label htmlFor="deal-titleRole" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Corporate Title / Role</label>
                                             <input id="deal-titleRole" type="text" name="titleRole" defaultValue={editingItem?.titleRole || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="deal-contactInfo" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Socials / Messenger Link</label>
+                                            <label htmlFor="deal-contactInfo" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Socials / Messenger Link</label>
                                             <input id="deal-contactInfo" type="text" name="contactInfo" placeholder="facebook, whatsapp, linkedin" defaultValue={editingItem?.contactInfo || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
@@ -1141,13 +1391,13 @@
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="deal-pipelineStatus" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Pipeline Status Stage</label>
+                                            <label htmlFor="deal-pipelineStatus" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Pipeline Status Stage</label>
                                             <select id="deal-pipelineStatus" name="pipelineStatus" defaultValue={editingItem?.pipelineStatus || "Lead / Prospect"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 {pipelineStages.map(stg => (<option key={stg} value={stg}>{stg}</option>))}
                                             </select>
                                         </div>
                                         <div>
-                                            <label htmlFor="deal-status" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Resolution Status</label>
+                                            <label htmlFor="deal-status" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Resolution Status</label>
                                             <select id="deal-status" name="status" defaultValue={editingItem?.status || "Active"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 <option value="Active">Active / Open In Pipeline</option>
                                                 <option value="Won">🏆 Closed Won</option>
@@ -1158,7 +1408,7 @@
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="deal-leadSource" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Lead Source</label>
+                                            <label htmlFor="deal-leadSource" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Lead Source</label>
                                             <select id="deal-leadSource" name="leadSource" defaultValue={editingItem?.leadSource || "Warm Referral"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 <option value="Warm Referral">Warm Referral</option>
                                                 <option value="Cold Outreach">Cold Outreach</option>
@@ -1167,7 +1417,7 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label htmlFor="deal-estValue" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono flex items-center justify-between">
+                                            <label htmlFor="deal-estValue" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono flex items-center justify-between">
                                                 <span>Estimated Value (₱)</span>
                                                 {editingItem && plannerProfiles.find(p => p.quoteId === editingItem.id || p.id === editingItem.id) && (
                                                     <span className="text-emerald-400">🔄 Synced</span>
@@ -1195,23 +1445,23 @@
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="deal-nextAction" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Next Action Items</label>
+                                            <label htmlFor="deal-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Next Action Items</label>
                                             <input id="deal-nextAction" type="text" name="nextAction" defaultValue={editingItem?.nextAction || ""} placeholder="e.g. send SOW document" className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="deal-followUpDate" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Follow-Up Date</label>
+                                            <label htmlFor="deal-followUpDate" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Follow-Up Date</label>
                                             <input id="deal-followUpDate" type="date" name="followUpDate" defaultValue={editingItem?.followUpDate || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label htmlFor="deal-notes" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Internal Notes & Context</label>
+                                        <label htmlFor="deal-notes" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Internal Notes & Context</label>
                                         <textarea id="deal-notes" name="notes" rows="3" defaultValue={editingItem?.notes || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Context from call, specific business processes required..."></textarea>
                                     </div>
 
                                     <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
                                         {editingItem && editingItem.id && !editingItem.pipelineStatusOnly ? (
-                                            <button type="button" onClick={() => setDeleteConfirm({ type: 'deal', id: editingItem.id, name: editingItem.leadName })} className="px-4 py-2 bg-rose-955 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">🗑️ Delete Deal</button>
+                                            <button type="button" onClick={() => setDeleteConfirm({ type: 'deal', id: editingItem.id, name: editingItem.leadName })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">🗑️ Delete Deal</button>
                                         ) : <span aria-hidden="true" />}
                                         <div className="flex gap-2">
                                             <button type="button" onClick={() => { setIsDealModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
@@ -1238,30 +1488,30 @@
                                             <input id="contact-name" required type="text" name="name" defaultValue={editingItem?.name || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="contact-company" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Company Connection</label>
+                                            <label htmlFor="contact-company" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Company Connection</label>
                                             <input id="contact-company" type="text" name="company" defaultValue={editingItem?.company || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="contact-titleRole" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Title / Role</label>
+                                            <label htmlFor="contact-titleRole" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Title / Role</label>
                                             <input id="contact-titleRole" type="text" name="titleRole" defaultValue={editingItem?.titleRole || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="contact-info" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Contact Details</label>
+                                            <label htmlFor="contact-info" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Contact Details</label>
                                             <input id="contact-info" type="text" name="contactInfo" placeholder="facebook, whatsapp, linkedin" defaultValue={editingItem?.contactInfo || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="contact-contacted" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Outreach Status</label>
+                                            <label htmlFor="contact-contacted" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Outreach Status</label>
                                             <select id="contact-contacted" name="contacted" defaultValue={editingItem ? String(editingItem.contacted) : "false"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 <option value="true">Contacted (Outreach Initialized)</option>
                                                 <option value="false">Pending (Not yet contacted)</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label htmlFor="contact-label" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Relationship Label</label>
+                                            <label htmlFor="contact-label" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Relationship Label</label>
                                             <select id="contact-label" name="label" defaultValue={editingItem?.label || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 <option value="">No Label</option>
                                                 <option value="hot">🔥 Hot Connector</option>
@@ -1271,15 +1521,15 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="contact-nextAction" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Immediate Next Action</label>
+                                        <label htmlFor="contact-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Immediate Next Action</label>
                                         <input id="contact-nextAction" type="text" name="nextAction" placeholder="pending proposal delivery" defaultValue={editingItem?.nextAction || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                     </div>
                                     <div>
-                                        <label htmlFor="contact-note" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Strategic Internal Notes</label>
+                                        <label htmlFor="contact-note" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Strategic Internal Notes</label>
                                         <textarea id="contact-note" name="note" rows="3" defaultValue={editingItem?.note || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Context from LinkedIn, relationship value, alignment on services..."></textarea>
                                     </div>
                                     <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
-                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'contact', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-955 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Contact</button>) : <span aria-hidden="true" />}
+                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'contact', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Contact</button>) : <span aria-hidden="true" />}
                                         <div className="flex gap-2">
                                             <button type="button" onClick={() => { setIsContactModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
                                             <button type="submit" className="px-6 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Save Contact</button>
@@ -1305,38 +1555,38 @@
                                             <input id="partner-name" required type="text" name="name" defaultValue={editingItem?.name || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="partner-role" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Role / Position</label>
+                                            <label htmlFor="partner-role" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Role / Position</label>
                                             <input id="partner-role" type="text" name="role" defaultValue={editingItem?.role || "Partner"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="partner-business" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Proposed Business Domain</label>
+                                            <label htmlFor="partner-business" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Proposed Business Domain</label>
                                             <input id="partner-business" type="text" name="businessProposal" defaultValue={editingItem?.businessProposal || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                         <div>
-                                            <label htmlFor="partner-budget" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Investment Capacity (₱)</label>
+                                            <label htmlFor="partner-budget" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Investment Capacity (₱)</label>
                                             <input id="partner-budget" type="number" name="investmentBudget" defaultValue={editingItem?.investmentBudget !== undefined ? editingItem.investmentBudget : ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white font-mono focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="partner-phase" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Engagement Phase</label>
+                                            <label htmlFor="partner-phase" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Engagement Phase</label>
                                             <select id="partner-phase" name="phase" defaultValue={editingItem?.phase || "Discover"} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
                                                 <option value="Discover">Discover</option><option value="Appraise">Appraise</option><option value="Define">Define</option><option value="Execute">Execute</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label htmlFor="partner-nextAction" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Immediate Next Follow-Up Action</label>
+                                            <label htmlFor="partner-nextAction" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Immediate Next Follow-Up Action</label>
                                             <input id="partner-nextAction" type="text" name="nextAction" defaultValue={editingItem?.nextAction || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" />
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="partner-note" className="block text-[9px] font-bold text-slate-404 uppercase tracking-wider mb-1 font-mono">Strategic Collaboration Notes</label>
+                                        <label htmlFor="partner-note" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Strategic Collaboration Notes</label>
                                         <textarea id="partner-note" name="note" rows="3" defaultValue={editingItem?.note || ""} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="Synergies, location proposals, partnership timeline..."></textarea>
                                     </div>
                                     <div className="flex items-center justify-between border-t border-brandNavy-700/50 pt-4 mt-6">
-                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'partner', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-955 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Partner Item</button>) : <span aria-hidden="true" />}
+                                        {editingItem && editingItem.id ? (<button type="button" onClick={() => setDeleteConfirm({ type: 'partner', id: editingItem.id, name: editingItem.name })} className="px-4 py-2 bg-rose-950 hover:bg-rose-900 border border-rose-500/30 text-rose-400 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Delete Partner Item</button>) : <span aria-hidden="true" />}
                                         <div className="flex gap-2">
                                             <button type="button" onClick={() => { setIsPartnerModalOpen(false); setEditingItem(null); }} className="px-4 py-2 bg-brandNavy-955 border border-brandNavy-700/60 text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-brandNavy-800 transition-all">Cancel</button>
                                             <button type="submit" className="px-6 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all">Save Partner State</button>
