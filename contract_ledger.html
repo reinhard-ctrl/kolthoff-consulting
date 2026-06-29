@@ -14,7 +14,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -39,6 +39,7 @@
         window.doc = doc;
         window.setDoc = setDoc;
         window.getDoc = getDoc;
+        window.getDocs = getDocs;
         window.deleteDoc = deleteDoc;
         window.onSnapshot = onSnapshot;
         window.collection = collection;
@@ -118,7 +119,8 @@
             Reset: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>,
             Printer: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
             Lock: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-            ArrowLeft: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            ArrowLeft: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+            CloudDownload: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M8 17l4 4 4-4"/><path d="M12 12v9"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><path d="M16 16l-4-4-4 4"/></svg>
         };
 
         const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
@@ -198,6 +200,7 @@
             const [activeContractId, setActiveContractId] = useState(null);
             const [toast, setToast] = useState(null);
             const [isProcessing, setIsProcessing] = useState(false);
+            const [isPulling, setIsPulling] = useState(false);
             const [hasRouted, setHasRouted] = useState(false);
 
             const [signatureName, setSignatureName] = useState("");
@@ -318,6 +321,64 @@
                 setToast(msg);
                 setTimeout(() => setToast(null), 3000);
             };
+
+            const handlePullFromCloud = async () => {
+                if (!isAuthed) return;
+                if (!isClientMode && !isAdminAuthed) return;
+
+                setIsPulling(true);
+                try {
+                    const db = window.firebaseDb;
+                    const appId = window.appId;
+
+                    if (isClientMode) {
+                        const contractParam = new URLSearchParams(window.location.search).get('contract');
+                        if (!contractParam) {
+                            showToast("No contract reference to pull.");
+                            return;
+                        }
+                        const [profileSnap, contractSnap] = await Promise.all([
+                            window.getDoc(window.doc(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles', contractParam)),
+                            window.getDoc(window.doc(db, 'artifacts', appId, 'public', 'data', 'contracts_ledger', `contract-${contractParam}`))
+                        ]);
+                        if (profileSnap.exists()) {
+                            setProfiles([{ id: profileSnap.id, ...profileSnap.data() }]);
+                        }
+                        if (contractSnap.exists()) {
+                            setContracts([{ id: contractSnap.id, ...contractSnap.data() }]);
+                        }
+                        showToast(profileSnap.exists() ? "Contract pulled from cloud." : "Profile not found in cloud.");
+                    } else {
+                        const [profilesSnap, contractsSnap] = await Promise.all([
+                            window.getDocs(window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles')),
+                            window.getDocs(window.collection(db, 'artifacts', appId, 'public', 'data', 'contracts_ledger'))
+                        ]);
+                        const fetchedProfiles = [];
+                        profilesSnap.forEach(d => fetchedProfiles.push({ id: d.id, ...d.data() }));
+                        const fetchedContracts = [];
+                        contractsSnap.forEach(d => fetchedContracts.push({ id: d.id, ...d.data() }));
+                        setProfiles(fetchedProfiles);
+                        setContracts(fetchedContracts);
+                        showToast(`Pulled ${fetchedProfiles.length} SOW profile(s) from cloud.`);
+                    }
+                } catch (e) {
+                    console.error("Pull from cloud failed:", e);
+                    showToast("Pull failed — check connection.");
+                } finally {
+                    setIsPulling(false);
+                }
+            };
+
+            const PullCloudButton = ({ className = '' }) => (
+                <button
+                    onClick={handlePullFromCloud}
+                    disabled={isPulling || !isAuthed || (!isClientMode && !isAdminAuthed)}
+                    title="Reload latest SOW profiles and contract records from Firebase"
+                    className={`inline-flex items-center px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/40 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 no-print ${className}`}
+                >
+                    <Icons.CloudDownload /> {isPulling ? 'Pulling...' : 'Pull from Cloud'}
+                </button>
+            );
 
             const handleAdminLogin = async (e) => {
                 e.preventDefault();
@@ -551,6 +612,9 @@
                                     </div>
                                     <div className="flex items-center gap-3 no-print">
                                         {!isClientMode && (
+                                            <PullCloudButton className="bg-white/10 hover:bg-white/20 border-white/20 text-white" />
+                                        )}
+                                        {!isClientMode && (
                                             <button
                                                 onClick={() => { setActiveView('ledger'); setSignatureName(''); setHasAcceptedTerms(false); }}
                                                 className="px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center transition-colors"
@@ -659,6 +723,7 @@
                                         <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
                                             <Icons.CheckCircle /> Immutable & Locked
                                         </div>
+                                        {!isClientMode && <PullCloudButton />}
                                         <button onClick={() => window.print()} className="no-print px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2 transition-colors">
                                             <Icons.Printer /> Print Full Contract PDF
                                         </button>
@@ -817,6 +882,7 @@
                                 <h2 className="text-lg font-bold text-white font-serif tracking-wide">Secure E-Signature Ledger</h2>
                                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">Tracking generated SOW parameters and manual verification files.</p>
                             </div>
+                            <PullCloudButton />
                         </header>
 
                         <div className="p-8 max-w-6xl mx-auto">
