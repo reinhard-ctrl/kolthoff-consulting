@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Studio | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const genId = () => Math.random().toString(36).substr(2, 9);
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [policies, setPolicies] = useState([]);
+      const [active, setActive] = useState(null);
+      const [title, setTitle] = useState('');
+      const [content, setContent] = useState('');
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        return window.onSnapshot(window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_policies'), snap => {
+          const p = []; snap.forEach(d => p.push({ id: d.id, ...d.data() })); setPolicies(p);
+        });
+      }, [ready]);
+
+      const load = (p) => { setActive(p.id); setTitle(p.title); setContent(p.content || ''); };
+      const save = async () => {
+        const id = active || genId();
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_policies', id), {
+          id, title, content, lastUpdated: new Date().toISOString().slice(0, 10)
+        });
+        setActive(id);
+        if (window.logAudit) window.logAudit('policy_save', { policyId: id, title });
+      };
+      const exportJson = () => {
+        const blob = new Blob([JSON.stringify(policies, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'policies-export.json'; a.click();
+      };
+
+      if (!ready) return <div className="p-8">Loading...</div>;
+
+      return (
+        <div className="flex min-h-screen">
+          <aside className="w-64 bg-slate-900 border-r border-slate-700 p-4">
+            <h1 className="font-bold text-teal-400 mb-4">Policy Studio</h1>
+            <button onClick={() => { setActive(null); setTitle('New Policy'); setContent('# Policy Title\n\nContent here...'); }} className="text-xs bg-teal-600 px-2 py-1 rounded mb-4">+ New</button>
+            {policies.map(p => (
+              <button key={p.id} onClick={() => load(p)} className={`block w-full text-left p-2 rounded text-sm mb-1 ${active === p.id ? 'bg-teal-600/30' : 'hover:bg-slate-800'}`}>{p.title}</button>
+            ))}
+            <button onClick={exportJson} className="text-xs text-slate-500 mt-4">Export JSON</button>
+          </aside>
+          <main className="flex-1 flex">
+            <div className="flex-1 p-4">
+              <input value={title} onChange={e => setTitle(e.target.value)} className="w-full text-xl font-bold bg-transparent border-b border-slate-700 pb-2 mb-4 outline-none" />
+              <textarea value={content} onChange={e => setContent(e.target.value)} rows={24} className="w-full bg-slate-900 p-4 rounded border border-slate-700 font-mono text-sm" />
+              <button onClick={save} className="mt-4 px-4 py-2 bg-teal-600 rounded font-bold">Publish to Vault</button>
+            </div>
+            <div className="flex-1 p-4 border-l border-slate-700 overflow-auto">
+              <h2 className="text-sm text-slate-500 mb-2">Preview</h2>
+              <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(content || '') }} />
+            </div>
+          </main>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

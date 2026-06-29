@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firm Analytics | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script type="module" src="../delivery/project_planner_helpers.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="module">
+    import * as PlannerHelpers from '../delivery/project_planner_helpers.js';
+    window.PlannerHelpers = PlannerHelpers;
+  </script>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [profiles, setProfiles] = useState([]);
+      const [deals, setDeals] = useState([]);
+      const [contracts, setContracts] = useState([]);
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        const base = ['artifacts', window.appId, 'public', 'data'];
+        const u1 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'workbook_profiles'), s => { const p=[]; s.forEach(d=>p.push({id:d.id,...d.data()})); setProfiles(p); });
+        const u2 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'core_crm_deals'), s => { const d=[]; s.forEach(x=>d.push({id:x.id,...x.data()})); setDeals(d); });
+        const u3 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'contracts_ledger'), s => { const c=[]; s.forEach(x=>c.push({id:x.id,...x.data()})); setContracts(c); });
+        return () => { u1(); u2(); u3(); };
+      }, [ready]);
+
+      const metrics = useMemo(() => {
+        const pipelineValue = profiles.reduce((acc, p) => acc + (window.PlannerHelpers.getFinancials(p).total || 0), 0);
+        const wonDeals = deals.filter(d => d.stage === 'won').reduce((acc, d) => acc + (d.value || 0), 0);
+        const signed = contracts.filter(c => c.status === 'signed').length;
+        return { profiles: profiles.length, pipelineValue, activeDeals: deals.length, wonDeals, signedContracts: signed };
+      }, [profiles, deals, contracts]);
+
+      const fmt = (n) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(n);
+
+      if (!ready) return <div className="p-8">Loading analytics...</div>;
+
+      return (
+        <div className="p-6 max-w-5xl mx-auto">
+          <h1 className="text-2xl font-bold text-teal-400 mb-8">Firm Analytics Dashboard</h1>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              ['SOW Profiles', metrics.profiles, ''],
+              ['Pipeline Value', fmt(metrics.pipelineValue), 'text-teal-300'],
+              ['Active Deals', metrics.activeDeals, ''],
+              ['Signed Contracts', metrics.signedContracts, 'text-green-400'],
+            ].map(([label, val, cls]) => (
+              <div key={label} className="p-4 bg-slate-900 rounded-xl border border-slate-700">
+                <div className="text-xs text-slate-500 uppercase">{label}</div>
+                <div className={`text-2xl font-bold mt-1 ${cls}`}>{val}</div>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 bg-slate-900 rounded-xl border border-slate-700">
+            <h2 className="font-bold mb-3">CRM by Stage</h2>
+            {['lead','qualified','proposal','negotiation','won','lost'].map(stage => (
+              <div key={stage} className="flex justify-between py-1 text-sm border-b border-slate-800">
+                <span className="capitalize">{stage}</span>
+                <span>{deals.filter(d => d.stage === stage).length}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

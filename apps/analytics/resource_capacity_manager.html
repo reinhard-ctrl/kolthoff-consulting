@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resource Capacity | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const genId = () => Math.random().toString(36).substr(2, 9);
+    const TIERS = ['principal', 'senior', 'partner', 'associate'];
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [allocations, setAllocations] = useState([]);
+      const [profiles, setProfiles] = useState([]);
+      const [form, setForm] = useState({ member: '', tier: 'senior', hours: 40, project: '' });
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        const base = ['artifacts', window.appId, 'public', 'data'];
+        const u1 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'resource_capacity'), s => {
+          const a = []; s.forEach(d => a.push({ id: d.id, ...d.data() })); setAllocations(a);
+        });
+        const u2 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'workbook_profiles'), s => {
+          const p = []; s.forEach(d => p.push({ id: d.id, clientName: d.data().clientName || d.id })); setProfiles(p);
+        });
+        return () => { u1(); u2(); };
+      }, [ready]);
+
+      const add = async (e) => {
+        e.preventDefault();
+        const id = genId();
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'resource_capacity', id), { ...form, id, createdAt: Date.now() });
+        setForm({ member: '', tier: 'senior', hours: 40, project: '' });
+      };
+
+      const totalHours = allocations.reduce((acc, a) => acc + (a.hours || 0), 0);
+
+      if (!ready) return <div className="p-8">Loading...</div>;
+
+      return (
+        <div className="max-w-3xl mx-auto p-6">
+          <h1 className="text-2xl font-bold text-teal-400 mb-2">Resource Capacity Manager</h1>
+          <p className="text-sm text-slate-500 mb-6">Total allocated: {totalHours}h / week</p>
+          <form onSubmit={add} className="grid grid-cols-2 gap-3 mb-6 p-4 bg-slate-900 rounded-xl border border-slate-700">
+            <input value={form.member} onChange={e => setForm({...form, member: e.target.value})} placeholder="Team member" className="p-2 rounded bg-slate-800" required />
+            <select value={form.tier} onChange={e => setForm({...form, tier: e.target.value})} className="p-2 rounded bg-slate-800">{TIERS.map(t => <option key={t}>{t}</option>)}</select>
+            <input type="number" value={form.hours} onChange={e => setForm({...form, hours: +e.target.value})} placeholder="Hours/week" className="p-2 rounded bg-slate-800" />
+            <select value={form.project} onChange={e => setForm({...form, project: e.target.value})} className="p-2 rounded bg-slate-800">
+              <option value="">Project...</option>
+              {profiles.map(p => <option key={p.id} value={p.id}>{p.clientName}</option>)}
+            </select>
+            <button className="col-span-2 py-2 bg-teal-600 rounded font-bold">Add Allocation</button>
+          </form>
+          <div className="space-y-2">
+            {allocations.map(a => (
+              <div key={a.id} className="flex justify-between p-3 bg-slate-900 rounded border border-slate-700 text-sm">
+                <span>{a.member} <span className="text-slate-500">({a.tier})</span></span>
+                <span>{a.hours}h → {a.project || 'unassigned'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

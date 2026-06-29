@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow Builder | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const genId = () => Math.random().toString(36).substr(2, 9);
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [workflows, setWorkflows] = useState([]);
+      const [name, setName] = useState('');
+      const [steps, setSteps] = useState([{ id: genId(), label: 'Step 1', type: 'approval' }]);
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        return window.onSnapshot(window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_workflows'), snap => {
+          const w = []; snap.forEach(d => w.push({ id: d.id, ...d.data() })); setWorkflows(w);
+        });
+      }, [ready]);
+
+      const save = async () => {
+        const id = genId();
+        const blueprint = { id, name, steps, createdAt: Date.now() };
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_workflows', id), blueprint);
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'master_templates', id), {
+          ...blueprint, fields: [], flowSteps: steps.map(s => ({ id: s.id, type: 'manager', label: s.label, condition: null }))
+        });
+        setName(''); setSteps([{ id: genId(), label: 'Step 1', type: 'approval' }]);
+      };
+
+      if (!ready) return <div className="p-8">Loading...</div>;
+
+      return (
+        <div className="max-w-2xl mx-auto p-6">
+          <h1 className="text-2xl font-bold text-teal-400 mb-6">Workflow Builder</h1>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Workflow name" className="w-full p-3 rounded bg-slate-900 border border-slate-700 mb-4" />
+          {steps.map((s, i) => (
+            <div key={s.id} className="flex gap-2 mb-2">
+              <span className="text-slate-500 pt-2">{i + 1}.</span>
+              <input value={s.label} onChange={e => setSteps(steps.map(x => x.id === s.id ? {...x, label: e.target.value} : x))}
+                className="flex-1 p-2 rounded bg-slate-900 border border-slate-700" />
+              <select value={s.type} onChange={e => setSteps(steps.map(x => x.id === s.id ? {...x, type: e.target.value} : x))}
+                className="p-2 rounded bg-slate-900 border border-slate-700">
+                <option value="approval">Approval</option>
+                <option value="notification">Notification</option>
+                <option value="task">Task</option>
+              </select>
+            </div>
+          ))}
+          <button onClick={() => setSteps([...steps, { id: genId(), label: `Step ${steps.length + 1}`, type: 'approval' }])}
+            className="text-sm text-teal-400 mb-4">+ Add Step</button>
+          <button onClick={save} disabled={!name} className="block px-6 py-2 bg-teal-600 rounded font-bold">Save Blueprint</button>
+          <div className="mt-8 space-y-2">
+            <h2 className="text-sm text-slate-500">Saved Workflows</h2>
+            {workflows.map(w => <div key={w.id} className="p-3 bg-slate-900 rounded border border-slate-700">{w.name} — {w.steps?.length || 0} steps</div>)}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

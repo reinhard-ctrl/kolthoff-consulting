@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  @apply bg-brandNavy-955 text-slate-200 antialiased min-h-screen;
+}
+
+.glass-panel {
+  @apply bg-brandNavy-900/60 backdrop-blur border border-brandNavy-700/40 rounded-xl;
+}

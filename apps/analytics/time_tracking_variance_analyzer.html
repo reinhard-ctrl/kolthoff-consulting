@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Tracking Variance | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script type="module" src="../delivery/project_planner_helpers.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="module">
+    import * as PlannerHelpers from '../delivery/project_planner_helpers.js';
+    window.PlannerHelpers = PlannerHelpers;
+  </script>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+    const genId = () => Math.random().toString(36).substr(2, 9);
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [entries, setEntries] = useState([]);
+      const [profiles, setProfiles] = useState([]);
+      const [form, setForm] = useState({ profileId: '', taskName: '', planned: 0, actual: 0, member: '' });
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        const base = ['artifacts', window.appId, 'public', 'data'];
+        const u1 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'time_entries'), s => {
+          const e = []; s.forEach(d => e.push({ id: d.id, ...d.data() })); setEntries(e);
+        });
+        const u2 = window.onSnapshot(window.collection(window.firebaseDb, ...base, 'workbook_profiles'), s => {
+          const p = []; s.forEach(d => p.push({ id: d.id, ...d.data() })); setProfiles(p);
+        });
+        return () => { u1(); u2(); };
+      }, [ready]);
+
+      const variance = useMemo(() => entries.map(e => ({
+        ...e,
+        variance: (e.actual || 0) - (e.planned || 0),
+        pct: e.planned ? Math.round(((e.actual - e.planned) / e.planned) * 100) : 0
+      })), [entries]);
+
+      const add = async (e) => {
+        e.preventDefault();
+        const id = genId();
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'time_entries', id), { ...form, id, createdAt: Date.now() });
+        setForm({ profileId: '', taskName: '', planned: 0, actual: 0, member: '' });
+      };
+
+      if (!ready) return <div className="p-8">Loading...</div>;
+
+      return (
+        <div className="max-w-4xl mx-auto p-6">
+          <h1 className="text-2xl font-bold text-teal-400 mb-6">Time Tracking Variance Analyzer</h1>
+          <form onSubmit={add} className="grid grid-cols-3 gap-3 mb-6 p-4 bg-slate-900 rounded-xl border border-slate-700">
+            <select value={form.profileId} onChange={e => setForm({...form, profileId: e.target.value})} className="p-2 rounded bg-slate-800" required>
+              <option value="">SOW Profile...</option>
+              {profiles.map(p => <option key={p.id} value={p.id}>{p.clientName || p.id}</option>)}
+            </select>
+            <input value={form.taskName} onChange={e => setForm({...form, taskName: e.target.value})} placeholder="Task" className="p-2 rounded bg-slate-800" required />
+            <input value={form.member} onChange={e => setForm({...form, member: e.target.value})} placeholder="Member" className="p-2 rounded bg-slate-800" />
+            <input type="number" value={form.planned} onChange={e => setForm({...form, planned: +e.target.value})} placeholder="Planned hrs" className="p-2 rounded bg-slate-800" />
+            <input type="number" value={form.actual} onChange={e => setForm({...form, actual: +e.target.value})} placeholder="Actual hrs" className="p-2 rounded bg-slate-800" />
+            <button className="py-2 bg-teal-600 rounded font-bold">Log Entry</button>
+          </form>
+          <table className="w-full text-sm">
+            <thead><tr className="text-slate-500 border-b border-slate-700">
+              <th className="text-left py-2">Task</th><th>Planned</th><th>Actual</th><th>Variance</th><th>%</th>
+            </tr></thead>
+            <tbody>
+              {variance.map(v => (
+                <tr key={v.id} className="border-b border-slate-800">
+                  <td className="py-2">{v.taskName} <span className="text-slate-500 text-xs">({v.member})</span></td>
+                  <td className="text-center">{v.planned}h</td>
+                  <td className="text-center">{v.actual}h</td>
+                  <td className={`text-center ${v.variance > 0 ? 'text-red-400' : 'text-green-400'}`}>{v.variance > 0 ? '+' : ''}{v.variance}h</td>
+                  <td className="text-center">{v.pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

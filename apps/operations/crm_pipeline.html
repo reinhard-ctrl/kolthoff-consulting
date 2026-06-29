@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Pipeline | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script type="module" src="../delivery/project_planner_helpers.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div id="root"></div>
+  <script type="module">
+    import * as PlannerHelpers from '../delivery/project_planner_helpers.js';
+    window.PlannerHelpers = PlannerHelpers;
+  </script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const STAGES = ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'];
+    const STAGE_COLORS = { lead: 'bg-slate-200', qualified: 'bg-blue-100', proposal: 'bg-amber-100', negotiation: 'bg-purple-100', won: 'bg-green-100', lost: 'bg-red-100' };
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [deals, setDeals] = useState([]);
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        return window.onSnapshot(window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_crm_deals'), snap => {
+          const d = []; snap.forEach(doc => d.push({ id: doc.id, ...doc.data() })); setDeals(d);
+        });
+      }, [ready]);
+
+      const addDeal = async () => {
+        const deal = window.PlannerHelpers.createDeal();
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_crm_deals', deal.id), deal);
+      };
+
+      const moveDeal = async (deal, stage) => {
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_crm_deals', deal.id), { ...deal, stage, updatedAt: Date.now() }, { merge: true });
+      };
+
+      const updateDeal = async (deal, field, value) => {
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_crm_deals', deal.id), { [field]: value, updatedAt: Date.now() }, { merge: true });
+      };
+
+      if (!ready) return <div className="p-8">Loading CRM...</div>;
+
+      return (
+        <div className="p-4 md:p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-slate-800">CRM Pipeline</h1>
+            <button onClick={addDeal} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">+ New Deal</button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            {STAGES.map(stage => (
+              <div key={stage} className="min-w-[220px] flex-shrink-0">
+                <h2 className="text-xs font-bold uppercase text-slate-500 mb-2 px-1">{stage}</h2>
+                <div className="space-y-2 min-h-[200px]">
+                  {deals.filter(d => d.stage === stage).map(deal => (
+                    <div key={deal.id} className={`p-3 rounded-lg border ${STAGE_COLORS[stage]}`}>
+                      <input value={deal.title} onChange={e => updateDeal(deal, 'title', e.target.value)}
+                        className="font-semibold w-full bg-transparent border-none outline-none text-sm" />
+                      <input value={deal.company || ''} onChange={e => updateDeal(deal, 'company', e.target.value)}
+                        placeholder="Company" className="text-xs w-full bg-transparent mt-1" />
+                      <input type="number" value={deal.value || 0} onChange={e => updateDeal(deal, 'value', +e.target.value)}
+                        className="text-xs w-full bg-transparent mt-1" />
+                      <select value={deal.stage} onChange={e => moveDeal(deal, e.target.value)} className="text-xs mt-2 w-full rounded border p-1">
+                        {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

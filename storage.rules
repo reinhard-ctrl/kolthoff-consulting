@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isKolthoffAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'kolthoff_admin';
+    }
+
+    function isTenantMember(tenantId) {
+      return isAuthenticated() && (
+        isKolthoffAdmin() ||
+        request.auth.token.tenantId == tenantId
+      );
+    }
+
+    match /artifacts/{tenantId}/files/{clientId}/{filename} {
+      allow read: if isTenantMember(tenantId) || isAuthenticated();
+      allow write: if isTenantMember(tenantId) &&
+        request.resource.size < 25 * 1024 * 1024 &&
+        request.resource.contentType.matches('application/.*|image/.*|text/.*');
+      allow delete: if isKolthoffAdmin();
+    }
+  }
+}

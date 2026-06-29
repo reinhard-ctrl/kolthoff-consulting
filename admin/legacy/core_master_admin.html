@@ -7,42 +7,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
-            authDomain: "kolthoff-portal.firebaseapp.com",
-            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "kolthoff-portal",
-            storageBucket: "kolthoff-portal.firebasestorage.app",
-            messagingSenderId: "413958125034",
-            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
-        };
-        
-        // The master app ID for authentication (same as your other admin portals)
-        const masterAppId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app'; 
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        const app = initializeApp(firebaseConfig);
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        
-        window.masterAppId = masterAppId;
-        window.initialAuthToken = initialAuthToken;
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.deleteDoc = deleteDoc;
-        window.onSnapshot = onSnapshot;
-        window.collection = collection;
-        window.getDocs = getDocs;
-    </script>
-
+        <script type="module" src="../../shared/firebase-init.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
@@ -354,10 +319,8 @@
 
                 setIsProcessing(true);
                 try {
-                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.masterAppId, 'public', 'data', 'admin_credentials', cleanCode);
-                    const docSnap = await window.getDoc(docRef);
-
-                    if (docSnap.exists() || cleanCode === 'ADMIN') {
+                    const result = await window.verifyAdminPasscode(cleanCode);
+                    if (result.valid) {
                         setIsAdminAuthed(true);
                         setAuthError('');
                         showToast("Master Console Unlocked");
@@ -365,7 +328,7 @@
                         setAuthError("Unauthorized token entry.");
                     }
                 } catch (err) {
-                    setAuthError("Verification failed.");
+                    setAuthError("Authentication failed. Deploy Cloud Functions if unavailable.");
                 } finally {
                     setIsProcessing(false);
                 }

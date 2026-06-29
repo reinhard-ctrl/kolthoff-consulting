@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnosis Report | Kolthoff OS</title>
+  <script type="module" src="../../shared/firebase-init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const genId = () => Math.random().toString(36).substr(2, 9);
+
+    function App() {
+      const [ready, setReady] = useState(false);
+      const [reports, setReports] = useState([]);
+      const [profiles, setProfiles] = useState([]);
+      const [form, setForm] = useState({ profileId: '', title: '', findings: '', recommendations: '' });
+
+      useEffect(() => {
+        const t = setInterval(async () => {
+          if (window.firebaseDb && window.bootstrapAuth) {
+            clearInterval(t);
+            await window.bootstrapAuth();
+            setReady(true);
+          }
+        }, 50);
+        return () => clearInterval(t);
+      }, []);
+
+      useEffect(() => {
+        if (!ready) return;
+        const u1 = window.onSnapshot(window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'diagnosis_reports'), snap => {
+          const r = []; snap.forEach(d => r.push({ id: d.id, ...d.data() })); setReports(r);
+        });
+        const u2 = window.onSnapshot(window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles'), snap => {
+          const p = []; snap.forEach(d => p.push({ id: d.id, ...d.data() })); setProfiles(p);
+        });
+        return () => { u1(); u2(); };
+      }, [ready]);
+
+      const save = async (e) => {
+        e.preventDefault();
+        const id = genId();
+        await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'diagnosis_reports', id), {
+          ...form, id, createdAt: Date.now()
+        });
+        setForm({ profileId: '', title: '', findings: '', recommendations: '' });
+      };
+
+      if (!ready) return <div className="p-8">Loading...</div>;
+
+      return (
+        <div className="max-w-4xl mx-auto p-6">
+          <h1 className="text-2xl font-bold text-teal-400 mb-6">MOD 1 — Diagnosis Reports</h1>
+          <form onSubmit={save} className="bg-slate-900 p-6 rounded-xl border border-slate-700 mb-8 space-y-4">
+            <select value={form.profileId} onChange={e => setForm({...form, profileId: e.target.value})} className="w-full p-2 rounded bg-slate-800" required>
+              <option value="">Link to SOW profile...</option>
+              {profiles.map(p => <option key={p.id} value={p.id}>{p.clientName || p.id}</option>)}
+            </select>
+            <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Report title" className="w-full p-2 rounded bg-slate-800" required />
+            <textarea value={form.findings} onChange={e => setForm({...form, findings: e.target.value})} placeholder="Key findings..." rows={4} className="w-full p-2 rounded bg-slate-800" />
+            <textarea value={form.recommendations} onChange={e => setForm({...form, recommendations: e.target.value})} placeholder="Recommendations..." rows={4} className="w-full p-2 rounded bg-slate-800" />
+            <button className="px-4 py-2 bg-teal-600 rounded font-bold">Save Report</button>
+          </form>
+          <div className="space-y-3">
+            {reports.map(r => (
+              <div key={r.id} className="p-4 bg-slate-900 rounded-lg border border-slate-700">
+                <h3 className="font-bold">{r.title}</h3>
+                <p className="text-xs text-slate-500">Profile: {r.profileId}</p>
+                <p className="text-sm mt-2 whitespace-pre-wrap">{r.findings}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -11,40 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Great+Vibes&display=swap" rel="stylesheet">
 
+    <script type="module" src="../../shared/firebase-init.js"></script>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
-            authDomain: "kolthoff-portal.firebaseapp.com",
-            databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "kolthoff-portal",
-            storageBucket: "kolthoff-portal.firebasestorage.app",
-            messagingSenderId: "413958125034",
-            appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
-        };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        const app = initializeApp(firebaseConfig);
-        window.firebaseAuth = getAuth(app);
-        window.firebaseDb = getFirestore(app);
-        
-        window.appId = appId;
-        window.initialAuthToken = initialAuthToken;
-        window.signInAnonymously = signInAnonymously;
-        window.signInWithCustomToken = signInWithCustomToken;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.getDocs = getDocs;
-        window.deleteDoc = deleteDoc;
-        window.onSnapshot = onSnapshot;
-        window.collection = collection;
+        import * as Financials from '../../shared/financials.js';
+        window.Financials = Financials;
     </script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
@@ -123,67 +94,8 @@
             CloudDownload: () => <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M8 17l4 4 4-4"/><path d="M12 12v9"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><path d="M16 16l-4-4-4 4"/></svg>
         };
 
-        const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
-
-        // Mirrors project_planner.html financial pipeline (buffer, discount, credit-back, subscription months)
-        const getFinancials = (profile) => {
-            const empty = { total: 0, subtotal: 0, appliedCredit: 0, tax: 0, discountPercent: 0, includeTax: false, subscriptionMonths: 6 };
-            if (!profile || !profile.tasks) return empty;
-
-            const tasks = profile.tasks.filter(t => t.selected);
-            const frictionBuffer = profile.frictionBuffer || 0;
-            const discountPercent = profile.discountPercent || 0;
-            const includeTax = profile.includeTax || false;
-            const applyCreditBack = profile.applyCreditBack || false;
-            const subscriptionMonths = profile.subscriptionMonths !== undefined ? profile.subscriptionMonths : 6;
-            const bufferMultiplier = 1 + (frictionBuffer / 100);
-            const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
-
-            const projectCostBaseUndiscounted = Math.round(
-                tasks.filter(t => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
-            );
-            const retainerCostBaseUndiscounted = Math.round(
-                tasks.filter(t => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0)
-            );
-            const mod1CostBase = Math.round(
-                tasks.filter(t => t.category.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
-            );
-
-            const activeDiag = tasks.some(t => t.category === 'MOD 1 - Workflow Diagnosis');
-            const activeSOP = tasks.some(t => t.category === 'MOD 2 - Organizing How You Work');
-            const activePMO = tasks.some(t => t.category === 'MOD 3 - Workspace Automation');
-            const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
-
-            const creditBackAmount = isCreditBackEligible ? Math.round(mod1CostBase * (1 - discountPercent / 100)) : 0;
-            const appliedCreditBackAmount = (applyCreditBack && isCreditBackEligible) ? creditBackAmount : 0;
-
-            const projectCostBase = Math.round(projectCostBaseUndiscounted * (1 - discountPercent / 100));
-            const finalProjectCostBase = Math.max(0, projectCostBase - appliedCreditBackAmount);
-            const retainerCostBase = Math.round(retainerCostBaseUndiscounted * (1 - discountPercent / 100));
-            const retainerCostTotalBaseUndiscounted = Math.round(retainerCostBaseUndiscounted * subscriptionMonths);
-            const retainerCostTotalBase = Math.round(retainerCostBase * subscriptionMonths);
-
-            const subtotal = finalProjectCostBase + retainerCostTotalBase;
-            const tax = includeTax ? Math.round(subtotal * 0.12) : 0;
-
-            return {
-                total: subtotal + tax,
-                subtotal,
-                tax,
-                appliedCredit: appliedCreditBackAmount,
-                creditBackAmount,
-                isCreditBackEligible,
-                discountPercent,
-                includeTax,
-                subscriptionMonths,
-                projectCostBaseUndiscounted,
-                retainerCostTotalBaseUndiscounted,
-                standardSubtotal: projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted,
-                discountAmount: (projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted) - (projectCostBase + retainerCostTotalBase),
-                finalProjectCostBase,
-                retainerCostTotalBase
-            };
-        };
+        const formatCurrency = (val) => window.Financials?.formatCurrency(val) || val;
+        const getFinancials = (profile) => window.Financials?.getFinancials(profile) || { total: 0, subtotal: 0 };
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
@@ -387,11 +299,8 @@
 
                 setIsProcessing(true);
                 try {
-                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'admin_credentials', cleanCode);
-                    const docSnap = await window.getDoc(docRef);
-
-                    // Added a fallback 'ADMIN' sequence
-                    if (docSnap.exists() || cleanCode === 'ADMIN') {
+                    const result = await window.verifyAdminPasscode(cleanCode);
+                    if (result.valid) {
                         setIsAdminAuthed(true);
                         setAuthError('');
                         showToast("Ledger Vault Unlocked");
@@ -400,7 +309,7 @@
                     }
                 } catch (err) {
                     console.error("Vault entry failure:", err);
-                    setAuthError("Failed to parse encryption matching sequence.");
+                    setAuthError("Authentication failed. Deploy Cloud Functions if unavailable.");
                 } finally {
                     setIsProcessing(false);
                 }

@@ -1,0 +1,85 @@
+/** Shared SOW financial pipeline — used by project_planner and contract_ledger */
+
+export const RATE_TIERS = {
+  principal: 3500,
+  senior: 2500,
+  partner: 2000,
+  associate: 1500,
+};
+
+export function getRate(tier) {
+  return RATE_TIERS[tier] ?? RATE_TIERS.associate;
+}
+
+export function formatCurrency(val) {
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
+}
+
+export function getFinancials(profile) {
+  const empty = {
+    total: 0, subtotal: 0, appliedCredit: 0, tax: 0, discountPercent: 0,
+    includeTax: false, subscriptionMonths: 6,
+  };
+  if (!profile || !profile.tasks) return empty;
+
+  const tasks = profile.tasks.filter((t) => t.selected);
+  const frictionBuffer = profile.frictionBuffer || 0;
+  const discountPercent = profile.discountPercent || 0;
+  const includeTax = profile.includeTax || false;
+  const applyCreditBack = profile.applyCreditBack || false;
+  const subscriptionMonths = profile.subscriptionMonths !== undefined ? profile.subscriptionMonths : 6;
+  const bufferMultiplier = 1 + frictionBuffer / 100;
+
+  const projectCostBaseUndiscounted = Math.round(
+    tasks.filter((t) => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
+  );
+  const retainerCostBaseUndiscounted = Math.round(
+    tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0)
+  );
+  const mod1CostBase = Math.round(
+    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
+  );
+
+  const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis');
+  const activeSOP = tasks.some((t) => t.category === 'MOD 2 - Organizing How You Work');
+  const activePMO = tasks.some((t) => t.category === 'MOD 3 - Workspace Automation');
+  const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
+
+  const creditBackAmount = isCreditBackEligible ? Math.round(mod1CostBase * (1 - discountPercent / 100)) : 0;
+  const appliedCreditBackAmount = applyCreditBack && isCreditBackEligible ? creditBackAmount : 0;
+
+  const projectCostBase = Math.round(projectCostBaseUndiscounted * (1 - discountPercent / 100));
+  const finalProjectCostBase = Math.max(0, projectCostBase - appliedCreditBackAmount);
+  const retainerCostBase = Math.round(retainerCostBaseUndiscounted * (1 - discountPercent / 100));
+  const retainerCostTotalBaseUndiscounted = Math.round(retainerCostBaseUndiscounted * subscriptionMonths);
+  const retainerCostTotalBase = Math.round(retainerCostBase * subscriptionMonths);
+
+  const subtotal = finalProjectCostBase + retainerCostTotalBase;
+  const tax = includeTax ? Math.round(subtotal * 0.12) : 0;
+
+  return {
+    total: subtotal + tax,
+    subtotal,
+    tax,
+    appliedCredit: appliedCreditBackAmount,
+    creditBackAmount,
+    isCreditBackEligible,
+    discountPercent,
+    includeTax,
+    subscriptionMonths,
+    projectCostBaseUndiscounted,
+    retainerCostTotalBaseUndiscounted,
+    standardSubtotal: projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted,
+    discountAmount: (projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted) - (projectCostBase + retainerCostTotalBase),
+    finalProjectCostBase,
+    retainerCostTotalBase,
+  };
+}
+
+export const DEFAULT_TASK_CATALOG = [
+  { id: 't1', category: 'MOD 1 - Workflow Diagnosis', name: 'Process Mapping Workshop', estHours: 8, tier: 'principal', selected: false, isMonthlyRetainer: false },
+  { id: 't2', category: 'MOD 1 - Workflow Diagnosis', name: 'Friction Audit Report', estHours: 12, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't3', category: 'MOD 2 - Organizing How You Work', name: 'SOP Development', estHours: 16, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't4', category: 'MOD 3 - Workspace Automation', name: 'Workspace Deployment', estHours: 24, tier: 'principal', selected: false, isMonthlyRetainer: false },
+  { id: 't5', category: 'MOD 3 - Workspace Automation', name: 'Monthly PMO Retainer', estHours: 8, tier: 'partner', selected: false, isMonthlyRetainer: true },
+];
