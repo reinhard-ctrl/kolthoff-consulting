@@ -3,6 +3,7 @@
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
+      { "source": "/api/verify-passcode", "function": "verifyAdminPasscodeHttp" },
       { "source": "/workspace/**", "destination": "/workspace/index.html" },
       { "source": "/admin", "destination": "/admin/index.html" },
       { "source": "/admin/**", "destination": "/admin/index.html" }

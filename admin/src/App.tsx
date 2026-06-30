@@ -46,14 +46,23 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
     } catch (err) {
       if (err instanceof FirebaseError) {
         if (err.code === 'functions/internal' || err.code === 'functions/unavailable') {
-          setError('Cloud Function unreachable (internal). Run the IAM fix in Cloud Shell — see project docs — or wait for the latest deploy.');
+          setError('Cloud Function unreachable. Try again after deploy, or use /api/verify-passcode via Hosting.');
+        } else if (err.message.includes('Passcode check failed')) {
+          setError('Could not reach passcode service. Wait for deploy (~3 min) and hard-refresh.');
         } else if (err.message.includes('referer') || err.message.includes('requests-from-referer')) {
           setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers in Google Cloud Console.');
         } else {
           setError(`${err.code}: ${err.message}`);
         }
       } else {
-        setError(err instanceof Error ? err.message : 'Auth failed');
+        const msg = err instanceof Error ? err.message : 'Auth failed';
+        if (msg.includes('Passcode check failed')) {
+          setError('Passcode service not ready. Wait ~3 min for deploy, then hard-refresh (Ctrl+Shift+R).');
+        } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
+          setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers.');
+        } else {
+          setError(msg);
+        }
       }
     } finally {
       setLoading(false);

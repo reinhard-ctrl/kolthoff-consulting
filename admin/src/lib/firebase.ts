@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, collection, doc, onSnapshot, getDocs } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 const firebaseConfig = {
@@ -16,7 +15,6 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app, 'asia-southeast1');
 export const adminAppId = 'kolthoff-admin-app';
 
 export function adminCol(name: string) {
@@ -36,9 +34,15 @@ export async function bootstrapAuth() {
 }
 
 export async function verifyAdminPasscode(code: string) {
-  const fn = httpsCallable(functions, 'verifyAdminPasscode');
-  const result = await fn({ code });
-  return result.data as { valid: boolean; token?: string; role?: string };
+  const res = await fetch('/api/verify-passcode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    throw new Error(`Passcode check failed (${res.status})`);
+  }
+  return res.json() as Promise<{ valid: boolean; token?: string; role?: string }>;
 }
 
 export function initAppCheck() {

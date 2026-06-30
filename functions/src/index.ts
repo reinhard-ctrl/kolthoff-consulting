@@ -1,5 +1,5 @@
-import * as admin from 'firebase-admin';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import type { Request, Response } from 'express';
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 
@@ -8,21 +8,18 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
-/** Verify admin passcode — replaces client-side ADMIN fallback */
-export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request) => {
-  const code = (request.data?.code as string)?.trim()?.toUpperCase();
-  if (!code) throw new HttpsError('invalid-argument', 'Passcode required');
+async function verifyPasscode(code: string) {
+  const clean = code?.trim()?.toUpperCase();
+  if (!clean) return { valid: false as const };
 
   const snap = await db
-    .doc(`artifacts/kolthoff-admin-app/public/data/admin_credentials/${code}`)
+    .doc(`artifacts/kolthoff-admin-app/public/data/admin_credentials/${clean}`)
     .get();
 
-  if (!snap.exists) {
-    return { valid: false };
-  }
+  if (!snap.exists) return { valid: false as const };
 
   const role = (snap.data()?.role as string) || 'admin';
-  const uid = `admin_${code.toLowerCase()}`;
+  const uid = `admin_${clean.toLowerCase()}`;
 
   let token: string | undefined;
   try {
@@ -31,10 +28,45 @@ export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request)
       tenantId: 'kolthoff-admin-app',
     });
   } catch (err) {
-    console.error('createCustomToken failed — grant Token Creator on the functions runtime SA', err);
+    console.error('createCustomToken failed', err);
   }
 
-  return { valid: true, role, token };
+  return { valid: true as const, role, token };
+}
+
+/** Hosting rewrite endpoint — works when org policy blocks allUsers on Cloud Run */
+export const verifyAdminPasscodeHttp = onRequest(async (req: Request, res: Response) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const body = req.body as { code?: string } | string | undefined;
+  let code: string | undefined;
+  if (body && typeof body === 'object' && 'code' in body) {
+    code = body.code;
+  } else if (typeof body === 'string') {
+    try { code = JSON.parse(body).code; } catch { /* ignore */ }
+  }
+  if (!code) {
+    res.status(400).json({ error: 'Passcode required' });
+    return;
+  }
+
+  try {
+    const result = await verifyPasscode(code);
+    res.json(result);
+  } catch (err) {
+    console.error('verifyAdminPasscodeHttp failed', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+/** Verify admin passcode — callable (requires public invoker; blocked by some org policies) */
+export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request) => {
+  const code = (request.data?.code as string)?.trim()?.toUpperCase();
+  if (!code) throw new HttpsError('invalid-argument', 'Passcode required');
+  return verifyPasscode(code);
 });
 
 /** Generate portal access token from client access code */
