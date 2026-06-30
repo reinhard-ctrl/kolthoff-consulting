@@ -82,14 +82,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
 
 const ALL_ITEMS = DEFAULT_NAV_GROUPS.flatMap((g) => g.items);
 
-export function getNavItem(id: string): (NavItem & { group: string }) | undefined {
-  for (const group of DEFAULT_NAV_GROUPS) {
-    const item = group.items.find((i) => i.id === id);
-    if (item) return { ...item, group: group.label };
-  }
-  return undefined;
-}
-
 export function getNavLink(item: NavItem): string {
   if (item.type === 'route' && item.path) return item.path;
   return `/app/${item.id}`;

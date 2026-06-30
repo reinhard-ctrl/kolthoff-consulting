@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getNavItem } from '../config/navigation';
+import { getNavItem } from '../lib/navPreferences';
 
 export default function EmbedApp({ appId }: { appId: string }) {
   const item = getNavItem(appId);

@@ -144,9 +144,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <div className="flex flex-1 min-h-0">
-        <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0 overflow-hidden">
+        <aside className="admin-sidebar w-[clamp(15rem,18vw,20rem)] bg-brandNavy-900 border-r border-brandNavy-800 p-3 sm:p-4 flex flex-col shrink-0 overflow-hidden">
           <SidebarNav />
-          <div className="text-xs text-slate-600 pt-3 border-t border-brandNavy-800 font-mono shrink-0">
+          <div className="sidebar-nav-hint text-slate-600 pt-3 border-t border-brandNavy-800 font-mono shrink-0">
             {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
           </div>
         </aside>
