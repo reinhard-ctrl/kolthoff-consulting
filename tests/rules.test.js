@@ -25,9 +25,9 @@ async function run() {
   });
 
   // Unauthenticated read should fail on tenant data
-  const anon = testEnv.unauthenticatedContext();
+  const unauth = testEnv.unauthenticatedContext();
   await assertFails(
-    anon.firestore().doc('artifacts/client-test/public/data/core_users/u1').get()
+    unauth.firestore().doc('artifacts/client-test/public/data/core_users/u1').get()
   );
 
   // Kolthoff admin can read admin namespace
@@ -38,7 +38,7 @@ async function run() {
 
   // admin_credentials: no list; authenticated get allowed (doc id is the secret)
   await assertFails(
-    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/admin_credentials/SECRET').get()
+    unauth.firestore().doc('artifacts/kolthoff-admin-app/public/data/admin_credentials/SECRET').get()
   );
   await assertFails(
     admin.firestore().collection('artifacts/kolthoff-admin-app/public/data/admin_credentials').get()
