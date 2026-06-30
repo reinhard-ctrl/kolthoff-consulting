@@ -109,6 +109,7 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 - Workspace: password required; admin passcode session auto-access
 - Tenant Manager invites via `inviteWorkspaceUser` Cloud Function
 - Single login: legacy HTML apps rely on `shared/auth-gate.js` (no second passcode screen)
+- Admin legacy HTML migrated to React SPA (`/admin/portals`, `/admin/contracts`, `/admin/intake`, `/admin/master`)
 - Phase 2 seed tooling: `scripts/seed-firestore/` + `scripts/seed-production-data.sh`
 - Client-side demo auto-seed disabled (`KOLTHOFF_DISABLE_CLIENT_SEED`)
 
@@ -118,8 +119,8 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 - Google Workspace SSO (`@kolthoff-consulting.com`)
 - App Check + reCAPTCHA
-- Suite launcher UI polish
-- Migrate legacy HTML tools into Admin SPA
+- Master Admin blueprint visual designer
+- Migrate delivery/ops/analytics HTML apps into React
 - Portal custom-token auth (replace anonymous client access)
 
 ---
