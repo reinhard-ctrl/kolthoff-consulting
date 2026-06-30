@@ -5,13 +5,17 @@
  */
 import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-import { signInWithCustomToken, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
 const ADMIN_APP = 'kolthoff-admin-app';
 const LOGIN_PATH = '/admin/';
 
 function adminSessionRef(uid) {
   return doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', uid);
+}
+
+function revealPage() {
+  if (typeof document === 'undefined') return;
+  document.documentElement.classList.remove('kolthoff-auth-pending');
 }
 
 /** Skip gate for offline Policy Studio bundles */
@@ -27,6 +31,17 @@ function isClientContractLedgerView() {
       window.location.pathname.includes('contract_sign')) &&
     new URLSearchParams(window.location.search).has('contract')
   );
+}
+
+/** Embedded in admin console iframe — never redirect to /admin/ (it blocks framing). */
+function isEmbeddedView() {
+  if (typeof window === 'undefined') return false;
+  if (new URLSearchParams(window.location.search).has('embed')) return true;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
 }
 
 export async function hasStaffAccess(user) {
@@ -49,18 +64,13 @@ export async function hasStaffAccess(user) {
   return session.exists();
 }
 
-/** Embedded in admin console iframe — never redirect to /admin/ (it blocks framing). */
-function isEmbeddedView() {
-  if (typeof window === 'undefined') return false;
-  if (new URLSearchParams(window.location.search).has('embed')) return true;
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
+async function resolveAuthUser() {
+  await auth.authStateReady();
+  return bootstrapAuth();
 }
 
 async function waitForStaffAccess(maxMs = 10000) {
+  await auth.authStateReady();
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     try {
@@ -76,7 +86,7 @@ async function waitForStaffAccess(maxMs = 10000) {
 }
 
 function showEmbedAuthRequired() {
-  document.documentElement.classList.remove('kolthoff-auth-pending');
+  revealPage();
   const url = new URL(window.location.href);
   url.searchParams.delete('embed');
   const openUrl = url.pathname + url.search + url.hash;
@@ -92,49 +102,46 @@ function showEmbedAuthRequired() {
 
 export async function requireStaffAuth() {
   if (isStandalonePolicyStudio()) {
+    revealPage();
     return { user: null, role: 'standalone' };
   }
 
   if (isClientContractLedgerView()) {
-    if (initialAuthToken) {
-      await signInWithCustomToken(auth, initialAuthToken);
-    } else if (!auth.currentUser) {
-      await signInAnonymously(auth);
-    }
+    await resolveAuthUser();
+    revealPage();
     return { user: auth.currentUser, role: 'client' };
   }
 
-  if (initialAuthToken) {
-    await signInWithCustomToken(auth, initialAuthToken);
-  }
+  try {
+    if (isEmbeddedView()) {
+      const user = await waitForStaffAccess();
+      if (user) {
+        revealPage();
+        window.__KOLTHOFF_STAFF__ = true;
+        return { user, role: 'staff' };
+      }
+      showEmbedAuthRequired();
+      return new Promise(() => {});
+    }
 
-  if (isEmbeddedView()) {
-    const user = await waitForStaffAccess();
-    if (user) {
-      document.documentElement.classList.remove('kolthoff-auth-pending');
+    const user = await resolveAuthUser();
+
+    if (await hasStaffAccess(user)) {
+      revealPage();
       window.__KOLTHOFF_STAFF__ = true;
       return { user, role: 'staff' };
     }
-    showEmbedAuthRequired();
+
+    revealPage();
+    const returnTo = encodeURIComponent(
+      window.location.pathname + window.location.search + window.location.hash
+    );
+    window.location.replace(`${LOGIN_PATH}?return=${returnTo}`);
     return new Promise(() => {});
+  } catch (err) {
+    revealPage();
+    throw err;
   }
-
-  const user = await new Promise((resolve) => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      unsub();
-      resolve(u);
-    });
-  });
-
-  if (await hasStaffAccess(user)) {
-    return { user, role: 'staff' };
-  }
-
-  const returnTo = encodeURIComponent(
-    window.location.pathname + window.location.search + window.location.hash
-  );
-  window.location.replace(`${LOGIN_PATH}?return=${returnTo}`);
-  return new Promise(() => {});
 }
 
 if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientContractLedgerView()) {
@@ -142,21 +149,34 @@ if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientC
   if (!document.getElementById('kolthoff-auth-gate-style')) {
     const style = document.createElement('style');
     style.id = 'kolthoff-auth-gate-style';
-    style.textContent = 'html.kolthoff-auth-pending body { visibility: hidden; }';
+    style.textContent = `
+      html.kolthoff-auth-pending #root { visibility: hidden; }
+      html.kolthoff-auth-pending::after {
+        content: 'Loading…';
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #020613;
+        color: #94a3b8;
+        font-family: Montserrat, system-ui, sans-serif;
+        font-size: 14px;
+        z-index: 99999;
+      }
+    `;
     document.head.appendChild(style);
   }
+  setTimeout(revealPage, 12000);
 }
 
-export const kolthoffStaffReady = (isStandalonePolicyStudio() || isClientContractLedgerView())
-  ? requireStaffAuth().then((result) => {
-      document.documentElement.classList.remove('kolthoff-auth-pending');
-      return result;
-    })
-  : requireStaffAuth().then((result) => {
-      document.documentElement.classList.remove('kolthoff-auth-pending');
-      window.__KOLTHOFF_STAFF__ = true;
-      return result;
-    });
+export const kolthoffStaffReady = requireStaffAuth().then((result) => {
+  revealPage();
+  return result;
+}).catch((err) => {
+  revealPage();
+  throw err;
+});
 
 if (typeof window !== 'undefined') {
   window.kolthoffStaffReady = kolthoffStaffReady;

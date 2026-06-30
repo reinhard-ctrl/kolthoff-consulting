@@ -126,8 +126,37 @@
 
   <script src="project_planner_helpers.js"></script>
   <script type="text/babel">
-    const { useState, useMemo, useEffect, useRef, useCallback } = React;
+    const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
+    const doc = (...args) => window.doc(...args);
+    const setDoc = (...args) => window.setDoc(...args);
+    const deleteDoc = (...args) => window.deleteDoc(...args);
+
+    class ErrorBoundary extends Component {
+      constructor(props) {
+        super(props);
+        this.state = { error: null };
+      }
+      static getDerivedStateFromError(error) {
+        return { error };
+      }
+      render() {
+        if (this.state.error) {
+          return (
+            <div className="min-h-screen flex items-center justify-center p-6 bg-brandNavy-955">
+              <div className="max-w-lg w-full bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-8">
+                <h1 className="text-xl font-bold text-red-400 mb-3">Project Planner Error</h1>
+                <p className="text-slate-300 text-sm mb-4">{this.state.error.message}</p>
+                <button type="button" onClick={() => window.location.reload()} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">
+                  Reload
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
 
     // --- PHILIPPINE TIN FORMAT VALIDATOR & GENERATOR ---
     function validatePhilippineTIN(tinString) {
@@ -459,6 +488,13 @@
     };
 
     function App() {
+      if (!H) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-6 text-slate-300">
+            <p>Planner helpers failed to load. Hard refresh or check project_planner_helpers.js.</p>
+          </div>
+        );
+      }
       // --- FIREBASE & APP STATES ---
       const [isAuthed, setIsAuthed] = useState(false);
       const [authErrorDetails, setAuthErrorDetails] = useState(null);
@@ -494,25 +530,30 @@
 
       // --- FIREBASE INITIALIZATION & SYNC ---
       useEffect(() => {
+        let cancelled = false;
         let checkInterval = setInterval(() => {
-          if (window.firebaseAuth && window.firebaseDb) {
+          if (window.firebaseAuth && window.firebaseDb && window.kolthoffStaffReady) {
             clearInterval(checkInterval);
             const initAuth = async () => {
               try {
-                await window.kolthoffStaffReady
-                setIsAuthed(true);
-                setAuthErrorDetails(null);
+                await window.kolthoffStaffReady;
+                if (!cancelled) {
+                  setIsAuthed(true);
+                  setAuthErrorDetails(null);
+                }
               } catch (e) {
                 console.error("Firebase Auth Error Caught:", e);
-                setIsAuthed(false);
-                setAuthErrorDetails(e.message || "Authentication failed.");
+                if (!cancelled) {
+                  setIsAuthed(false);
+                  setAuthErrorDetails(e.message || "Authentication failed.");
+                }
               }
             };
             initAuth();
           }
         }, 50);
 
-        return () => clearInterval(checkInterval);
+        return () => { cancelled = true; clearInterval(checkInterval); };
       }, []);
 
       useEffect(() => {
@@ -2891,7 +2932,7 @@
     }
 
     const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
+    root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 </body>
 </html>
