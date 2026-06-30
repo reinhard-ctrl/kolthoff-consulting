@@ -8,6 +8,8 @@ export type NavPreferences = {
   assignments: Record<string, string[]>;
   /** Default groups hidden from the sidebar */
   hiddenGroups?: string[];
+  /** groupId -> custom header label */
+  groupLabels?: Record<string, string>;
 };
 
 function dedupeIds(ids: string[]): string[] {
@@ -27,8 +29,19 @@ function buildItemCatalog(): Map<string, NavItem> {
   return map;
 }
 
-function defaultAssignments(): Record<string, string[]> {
-  return Object.fromEntries(DEFAULT_NAV_GROUPS.map((g) => [g.id, g.items.map((i) => i.id)]));
+function resolveGroupLabel(groupId: string, defaultLabel: string, prefs: NavPreferences | null): string {
+  const custom = prefs?.groupLabels?.[groupId]?.trim();
+  return custom || defaultLabel;
+}
+
+function buildGroupLabelsFromGroups(groups: NavGroup[]): Record<string, string> | undefined {
+  const groupLabels: Record<string, string> = {};
+  for (const group of groups) {
+    const defaultLabel = DEFAULT_NAV_GROUPS.find((g) => g.id === group.id)?.label ?? group.label;
+    const label = group.label.trim();
+    if (label && label !== defaultLabel) groupLabels[group.id] = label;
+  }
+  return Object.keys(groupLabels).length ? groupLabels : undefined;
 }
 
 function resolveGroupOrder(groups: NavGroup[], prefs: NavPreferences | null): string[] {
@@ -111,6 +124,7 @@ export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
     groupOrder: groups.map((g) => g.id),
     assignments: Object.fromEntries(groups.map((g) => [g.id, g.items.map((i) => i.id)])),
     hiddenGroups: hiddenGroups.length ? hiddenGroups : undefined,
+    groupLabels: buildGroupLabelsFromGroups(groups),
   };
 }
 
@@ -142,7 +156,11 @@ export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | 
       ]);
 
       const items = orderedIds.map((id) => catalog.get(id)!).filter(Boolean);
-      return { ...groupMeta, items };
+      return {
+        ...groupMeta,
+        label: resolveGroupLabel(groupId, groupMeta.label, prefs),
+        items,
+      };
     });
 }
 
@@ -285,4 +303,10 @@ export function addNavGroup(groups: NavGroup[], groupId: string): NavGroup[] {
   const meta = DEFAULT_NAV_GROUPS.find((g) => g.id === groupId);
   if (!meta) return groups;
   return [...groups, { ...meta, items: [] }];
+}
+
+export function renameNavGroup(groups: NavGroup[], groupId: string, label: string): NavGroup[] {
+  const trimmed = label.trim();
+  if (!trimmed) return groups;
+  return groups.map((group) => (group.id === groupId ? { ...group, label: trimmed } : group));
 }

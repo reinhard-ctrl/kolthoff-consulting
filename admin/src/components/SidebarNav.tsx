@@ -11,6 +11,7 @@ import {
   getEffectiveNavGroups,
   insertItemAt,
   removeNavGroup,
+  renameNavGroup,
   reorderGroups,
   saveNavPreferences,
   type NavGroup,
@@ -188,6 +189,14 @@ export default function SidebarNav() {
     saveNavPreferences(buildPreferencesFromGroups(next));
   };
 
+  const commitGroupLabel = (groupId: string, label: string) => {
+    setGroups((current) => {
+      const next = renameNavGroup(current, groupId, label);
+      saveNavPreferences(buildPreferencesFromGroups(next));
+      return next;
+    });
+  };
+
   const reset = () => {
     clearNavPreferences();
     setGroups(DEFAULT_NAV_GROUPS);
@@ -316,18 +325,7 @@ export default function SidebarNav() {
                   className={`sidebar-group-card rounded-lg border border-brandNavy-800/80 bg-brandNavy-950/40 p-1.5 ${groupDragging ? 'opacity-40' : ''}`}
                 >
                   <div
-                    className={`flex items-center gap-1.5 px-1 pb-1 ${customizing ? 'cursor-grab active:cursor-grabbing' : ''}`}
-                    draggable={customizing}
-                    onDragStart={
-                      customizing
-                        ? (e) => beginDrag(e, { kind: 'group', groupId: group.id })
-                        : undefined
-                    }
-                    onDragEnd={() => {
-                      dragPayloadRef.current = null;
-                      setDragging(null);
-                      setDropTarget(null);
-                    }}
+                    className="flex items-center gap-1.5 px-1 pb-1"
                     onDragEnter={customizing ? allowDrop : undefined}
                     onDragOver={
                       customizing
@@ -343,10 +341,39 @@ export default function SidebarNav() {
                         : undefined
                     }
                   >
-                    {customizing && <span className="sidebar-drag-handle text-slate-600 text-xs select-none">⠿</span>}
-                    <h2 className="sidebar-nav-group-label flex-1 font-mono font-bold uppercase tracking-[0.14em] text-slate-500 truncate pointer-events-none">
-                      {group.label}
-                    </h2>
+                    {customizing && (
+                      <span
+                        draggable
+                        onDragStart={(e) => beginDrag(e, { kind: 'group', groupId: group.id })}
+                        onDragEnd={() => {
+                          dragPayloadRef.current = null;
+                          setDragging(null);
+                          setDropTarget(null);
+                        }}
+                        className="sidebar-drag-handle text-slate-600 text-xs select-none cursor-grab active:cursor-grabbing shrink-0"
+                        aria-hidden="true"
+                      >
+                        ⠿
+                      </span>
+                    )}
+                    {customizing ? (
+                      <input
+                        type="text"
+                        value={group.label}
+                        aria-label={`${group.label} group name`}
+                        onChange={(e) => setGroups(renameNavGroup(groups, group.id, e.target.value))}
+                        onBlur={(e) => persist(renameNavGroup(groups, group.id, e.target.value))}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') e.currentTarget.blur();
+                        }}
+                        className="sidebar-nav-group-label flex-1 min-w-0 font-mono font-bold uppercase tracking-[0.14em] text-slate-300 bg-brandNavy-900/80 border border-brandNavy-700 rounded px-1 py-0.5 focus:outline-none focus:border-brandTeal-500/50"
+                      />
+                    ) : (
+                      <h2 className="sidebar-nav-group-label flex-1 font-mono font-bold uppercase tracking-[0.14em] text-slate-500 truncate">
+                        {group.label}
+                      </h2>
+                    )}
                     {customizing && (
                       <button
                         type="button"
@@ -458,7 +485,7 @@ export default function SidebarNav() {
         {customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
-              Drag cards to reorder. Drop on a group header to move between groups. Use × to remove a group card or add one back below.
+              Drag cards to reorder. Edit group names inline. Use × to remove a group or add one back below.
             </p>
             <div className="flex gap-2">
               <button
