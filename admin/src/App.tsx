@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { FirebaseError } from 'firebase/app';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { bootstrapAuth, verifyAdminPasscode, adminCol, auth } from './lib/firebase';
+import { verifyAdminPasscode, adminCol, auth } from './lib/firebase';
 import { signInWithCustomToken } from 'firebase/auth';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
@@ -40,16 +40,19 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
       }
       if (result.token) {
         await signInWithCustomToken(auth, result.token);
-      } else {
-        await bootstrapAuth();
       }
       onAuth();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Auth failed';
-      if (msg.includes('referer') || msg.includes('requests-from-referer')) {
-        setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to your API key HTTP referrers in Google Cloud Console.');
+      if (err instanceof FirebaseError) {
+        if (err.code === 'functions/internal' || err.code === 'functions/unavailable') {
+          setError('Cloud Function unreachable (internal). Run the IAM fix in Cloud Shell — see project docs — or wait for the latest deploy.');
+        } else if (err.message.includes('referer') || err.message.includes('requests-from-referer')) {
+          setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers in Google Cloud Console.');
+        } else {
+          setError(`${err.code}: ${err.message}`);
+        }
       } else {
-        setError(msg);
+        setError(err instanceof Error ? err.message : 'Auth failed');
       }
     } finally {
       setLoading(false);

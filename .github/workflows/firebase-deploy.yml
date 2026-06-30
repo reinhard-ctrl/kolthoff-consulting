@@ -104,3 +104,28 @@ jobs:
             --project kolthoff-portal \
             --non-interactive \
             --force
+
+      - name: Allow public invoke on login Cloud Functions
+        run: |
+          REGION=asia-southeast1
+          PROJECT=kolthoff-portal
+          for FN in verifyAdminPasscode generatePortalToken; do
+            gcloud functions add-iam-policy-binding "$FN" \
+              --gen2 --region="$REGION" --project="$PROJECT" \
+              --member="allUsers" \
+              --role="roles/cloudfunctions.invoker" \
+              --quiet || true
+          done
+          for SVC in verifyadminpasscode generateportaltoken; do
+            gcloud run services add-iam-policy-binding "$SVC" \
+              --region="$REGION" --project="$PROJECT" \
+              --member="allUsers" \
+              --role="roles/run.invoker" \
+              --quiet || true
+          done
+          gcloud iam service-accounts add-iam-policy-binding \
+            413958125034-compute@developer.gserviceaccount.com \
+            --project="$PROJECT" \
+            --member="serviceAccount:413958125034-compute@developer.gserviceaccount.com" \
+            --role="roles/iam.serviceAccountTokenCreator" \
+            --quiet || true

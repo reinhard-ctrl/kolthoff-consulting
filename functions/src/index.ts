@@ -23,10 +23,16 @@ export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request)
 
   const role = (snap.data()?.role as string) || 'admin';
   const uid = `admin_${code.toLowerCase()}`;
-  const token = await admin.auth().createCustomToken(uid, {
-    role: role === 'admin' ? 'kolthoff_admin' : role,
-    tenantId: 'kolthoff-admin-app',
-  });
+
+  let token: string | undefined;
+  try {
+    token = await admin.auth().createCustomToken(uid, {
+      role: role === 'admin' ? 'kolthoff_admin' : role,
+      tenantId: 'kolthoff-admin-app',
+    });
+  } catch (err) {
+    console.error('createCustomToken failed — grant Token Creator on the functions runtime SA', err);
+  }
 
   return { valid: true, role, token };
 });
