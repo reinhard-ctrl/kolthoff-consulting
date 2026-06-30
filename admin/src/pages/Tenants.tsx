@@ -17,6 +17,7 @@ export default function Tenants() {
   const [inviteName, setInviteName] = useState('');
   const [inviteStatus, setInviteStatus] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [resettingEmail, setResettingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
@@ -46,13 +47,18 @@ export default function Tenants() {
     try {
       await bootstrapAuth();
       const invite = httpsCallable(functions, 'inviteWorkspaceUser');
-      await invite({
+      const result = await invite({
         email: inviteEmail.trim(),
         name: inviteName || inviteEmail.trim(),
         tenantId,
         role: 'user',
       });
-      setInviteStatus(`Invited ${inviteEmail}. Enable Email/Password auth in Firebase if not already on.`);
+      const sent = (result.data as { passwordEmailSent?: boolean })?.passwordEmailSent;
+      setInviteStatus(
+        sent
+          ? `Invited ${inviteEmail}. A password setup link was emailed to them.`
+          : `Invited ${inviteEmail}. Could not email password link — use Reset password below or ask them to use "Forgot password" at /workspace/.`,
+      );
       setInviteEmail('');
       setInviteName('');
     } catch (err) {
@@ -62,6 +68,24 @@ export default function Tenants() {
         : msg);
     } finally {
       setInviting(false);
+    }
+  };
+
+  const sendPasswordReset = async (userEmail: string) => {
+    setResettingEmail(userEmail);
+    setInviteStatus('');
+    try {
+      await bootstrapAuth();
+      const reset = httpsCallable(functions, 'sendWorkspacePasswordReset');
+      const result = await reset({ email: userEmail, tenantId });
+      setInviteStatus((result.data as { message?: string })?.message || `Password reset sent to ${userEmail}.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Reset failed';
+      setInviteStatus(msg.includes('permission-denied')
+        ? 'Admin session required. Re-login at /admin/ and try again.'
+        : msg);
+    } finally {
+      setResettingEmail(null);
     }
   };
 
@@ -89,7 +113,7 @@ export default function Tenants() {
 
       <div className="glass-panel p-4 mb-6">
         <h2 className="font-bold mb-3">Invite Workspace User</h2>
-        <p className="text-xs text-slate-500 mb-3">Creates Firebase Auth user + core_users doc. Requires Email/Password sign-in enabled.</p>
+        <p className="text-xs text-slate-500 mb-3">Creates Firebase Auth user + core_users doc and emails a password setup link. Requires Email/Password sign-in enabled.</p>
         <div className="flex gap-2 flex-wrap">
           <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
           <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Email" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
@@ -103,9 +127,19 @@ export default function Tenants() {
       <div className="glass-panel p-4">
         <h2 className="font-bold mb-3">Users ({users.length})</h2>
         {users.map((u) => (
-          <div key={u.id} className="flex justify-between py-2 border-b border-brandNavy-800 text-sm">
+          <div key={u.id} className="flex justify-between items-center gap-3 py-2 border-b border-brandNavy-800 text-sm">
             <span>{u.name} <span className="text-slate-500">({u.email})</span></span>
-            <span className="text-brandTeal-400 uppercase text-xs">{u.role}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => sendPasswordReset(u.email)}
+                disabled={resettingEmail === u.email}
+                className="px-2 py-1 text-xs rounded border border-brandNavy-700 text-slate-400 hover:text-white disabled:opacity-50"
+              >
+                {resettingEmail === u.email ? 'Sending...' : 'Reset password'}
+              </button>
+              <span className="text-brandTeal-400 uppercase text-xs">{u.role}</span>
+            </div>
           </div>
         ))}
       </div>
