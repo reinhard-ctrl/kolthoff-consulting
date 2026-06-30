@@ -1,0 +1,32 @@
+[
+  {
+    "id": "partner-1",
+    "name": "Anne Kolthoff",
+    "role": "Partner",
+    "businessProposal": "Education Center",
+    "investmentBudget": 600000,
+    "phase": "Discover",
+    "nextAction": "pending inquiry to Komun",
+    "note": ""
+  },
+  {
+    "id": "partner-2",
+    "name": "Erwin Yaco",
+    "role": "Partner",
+    "businessProposal": "MSP",
+    "investmentBudget": 100000,
+    "phase": "Appraise",
+    "nextAction": "define SOW for MSP",
+    "note": ""
+  },
+  {
+    "id": "partner-3",
+    "name": "Reah Molina",
+    "role": "Partner",
+    "businessProposal": "Cafe Shop",
+    "investmentBudget": 900000,
+    "phase": "Appraise",
+    "nextAction": "location research",
+    "note": ""
+  }
+]

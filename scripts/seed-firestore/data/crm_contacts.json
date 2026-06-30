@@ -1,0 +1,57 @@
+[
+  {
+    "id": "contact-1",
+    "name": "Emman Guerrero",
+    "titleRole": "Head of Legal",
+    "company": "Freelance / Corp",
+    "contactInfo": "facebook",
+    "contacted": true,
+    "label": "medium",
+    "nextAction": "pending feedback",
+    "note": "connector and strategic partner?"
+  },
+  {
+    "id": "contact-2",
+    "name": "Tony Josue",
+    "titleRole": "Sales Consultant",
+    "company": "Independent",
+    "contactInfo": "whatsapp",
+    "contacted": true,
+    "label": "hot",
+    "nextAction": "meet monday",
+    "note": "connector and collab"
+  },
+  {
+    "id": "contact-3",
+    "name": "Dr. Frederick Gian Carlo Joaquin",
+    "titleRole": "Head of Operations",
+    "company": "Good Transport Solutions Inc.",
+    "contactInfo": "linkedin",
+    "contacted": true,
+    "label": "hot",
+    "nextAction": "schedule meeting",
+    "note": "business process review"
+  },
+  {
+    "id": "contact-4",
+    "name": "Benson Te",
+    "titleRole": "CEO",
+    "company": "WP / Gaming",
+    "contactInfo": "linkedin",
+    "contacted": true,
+    "label": "medium",
+    "nextAction": "schedule meeting",
+    "note": "connector and Marketing Agent"
+  },
+  {
+    "id": "contact-5",
+    "name": "Mark Navarro",
+    "titleRole": "CEO",
+    "company": "Player Two",
+    "contactInfo": "facebook",
+    "contacted": true,
+    "label": "medium",
+    "nextAction": "schedule meeting",
+    "note": "present service at his business chapter"
+  }
+]

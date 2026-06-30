@@ -13,12 +13,13 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 
 | Collection | Purpose | Key Fields |
 |------------|---------|------------|
-| `clients` | Client portal records | access code = doc ID, metrics, roadmap |
-| `workbook_profiles` | SOW planner profiles | tasks[], frictionBuffer, discountPercent |
-| `intake_forms` | Intake form definitions | fields, responses |
-| `intake_templates` | Reusable form templates | fields |
-| `contracts_ledger` | E-sign status | status, signatureName, signedAt, ip |
-| `admin_credentials` | Admin passcodes (Firestore) | role |
+| `clients` | Client portal records | access code = doc ID, metrics, roadmap, assets[].gDriveLink |
+| `workbook_profiles` | SOW planner profiles | tasks[], frictionBuffer, synthesis, tabs (diagnosis/workflow) |
+| `intake_forms` | Intake form submissions | profileId, status, responses |
+| `intake_templates` | Reusable form templates | fields, mappedTarget |
+| `contracts_ledger` | E-sign status | doc ID `contract-{profileId}`, status, signatureName, signedAt |
+| `admin_credentials` | Admin passcodes | role |
+| `admin_sessions` | Active admin login sessions | passcodeVerified, verifiedAt |
 | `core_users` | Workspace users | email, role, departmentId, firebaseUid |
 | `core_departments` | Org structure | name, parentId |
 | `core_templates` | Approval form templates | fields, flowSteps |
@@ -26,15 +27,16 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `core_chats` / `core_messages` | Messenger | participants, text, timestamp |
 | `core_policies` | Policy vault | title, content (markdown) |
 | `core_it_requests` | IT helpdesk | status, description |
-| `crm_deals` | CRM pipeline (HTML + workspace) | pipelineStatus, estValue, company |
-| `core_workflows` | Workflow blueprints | steps[] |
+| `crm_deals` | CRM pipeline | pipelineStatus, estValue, company, status |
+| `crm_contacts` | CRM network contacts | name, label, nextAction |
+| `crm_partners` | Strategic partners | businessProposal, investmentBudget, phase |
+| `policy_documents` | Policy Studio packs | keyed by profile ID |
+| `time_logs` | Time tracking entries | profileId, taskName, planned, actual |
+| `resource_tasks` | Capacity allocations | member, hours, profileId |
+| `team_members` | Resource pool | name, role, capacity |
 | `core_audit_log` | Audit trail | action, userId, timestamp |
-| `tenant_settings` | Feature flags | config.features |
+| `tenant_settings` | Feature flags | doc `config` → features.messenger/approvals/vault/crm |
 | `master_templates` | Global blueprints | fields, flowSteps |
-| `diagnosis_reports` | MOD 1 reports | profileId, findings |
-| `resource_capacity` | Team allocations | member, hours, project |
-| `time_entries` | Actual vs planned hours | planned, actual, taskName |
-| `firm_analytics` | Aggregated metrics | (computed) |
 
 ## Storage Paths
 
@@ -49,3 +51,7 @@ artifacts/{tenantId}/files/{clientId}/{filename}
 | `role` | `kolthoff_admin`, `admin`, `user`, `portal_client` |
 | `tenantId` | Tenant namespace ID |
 | `accessCode` | Portal client access code |
+
+## Seeding
+
+See `docs/data-seeding.md` and `scripts/seed-firestore/` for production data load.

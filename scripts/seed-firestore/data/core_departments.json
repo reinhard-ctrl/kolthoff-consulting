@@ -1,0 +1,17 @@
+[
+  {
+    "id": "dept_ops",
+    "name": "Operations",
+    "parentId": null
+  },
+  {
+    "id": "dept_delivery",
+    "name": "Client Delivery",
+    "parentId": "dept_ops"
+  },
+  {
+    "id": "dept_admin",
+    "name": "Administration",
+    "parentId": null
+  }
+]

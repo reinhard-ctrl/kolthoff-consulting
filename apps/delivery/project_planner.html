@@ -529,7 +529,7 @@
 
         const profilesRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles');
         const unsubProfiles = window.onSnapshot(profilesRef, (snap) => {
-          if (snap.empty && !profilesSeeded) {
+          if (snap.empty && !profilesSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
             profilesSeeded = true;
             DEFAULT_CLIENTS.forEach(p => {
               window.setDoc(window.doc(profilesRef, p.id), p);
