@@ -1,6 +1,6 @@
 import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
-import { Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
@@ -9,28 +9,9 @@ import IntakeCenter from './pages/IntakeCenter';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import MasterAdmin from './pages/MasterAdmin';
+import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
-
-const ADMIN_TOOLS = [
-  { to: '/portals', label: 'Portal Manager' },
-  { to: '/contracts', label: 'Contract Ledger' },
-  { to: '/master', label: 'Master Admin' },
-];
-
-const SUITE_LINKS = [
-  { href: '/apps/delivery/project_planner.html', label: 'Project Planner' },
-  { href: '/apps/delivery/diagnoses_report.html', label: 'Diagnosis Reports' },
-  { href: '/apps/operations/crm_pipeline.html', label: 'CRM Pipeline' },
-  { href: '/apps/operations/policy_studio.html', label: 'Policy Studio' },
-  { href: '/apps/operations/workflow_builder.html', label: 'Workflow Builder' },
-  { href: '/apps/analytics/firm_analytics_dashboard.html', label: 'Firm Analytics' },
-  { href: '/apps/analytics/resource_capacity_manager.html', label: 'Resource Capacity' },
-  { href: '/apps/analytics/time_tracking_variance_analyzer.html', label: 'Time Variance' },
-  { href: '/workspace/', label: 'Core Workspace' },
-  { href: '/apps/public/portal.html', label: 'Client Portal' },
-  { href: '/apps/public/client_intake.html', label: 'Client Intake Form' },
-  { href: '/', label: 'Marketing Site' },
-];
+import SidebarNav from './components/SidebarNav';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -163,21 +144,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <div className="flex flex-1 min-h-0">
-        <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0 overflow-y-auto">
-          <nav className="space-y-1 flex-1" aria-label="Operations Suite navigation">
-            <Link to="/" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Dashboard</Link>
-            <Link to="/tenants" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Tenant Manager</Link>
-            <Link to="/intake" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Intake Center</Link>
-            <div className="pt-4 text-xs text-slate-500 uppercase">Admin Tools</div>
-            {ADMIN_TOOLS.map((t) => (
-              <Link key={t.to} to={t.to} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{t.label}</Link>
-            ))}
-            <div className="pt-4 text-xs text-slate-500 uppercase">Delivery Suite</div>
-            {SUITE_LINKS.map((l) => (
-              <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{l.label}</a>
-            ))}
-          </nav>
-          <div className="text-xs text-slate-600 pt-4 border-t border-brandNavy-800 font-mono">
+        <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0 overflow-hidden">
+          <SidebarNav />
+          <div className="text-xs text-slate-600 pt-3 border-t border-brandNavy-800 font-mono shrink-0">
             {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
           </div>
         </aside>
@@ -185,6 +154,11 @@ function Layout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+}
+
+function EmbedAppRoute() {
+  const { appId } = useParams();
+  return <EmbedApp appId={appId ?? ''} />;
 }
 
 function AppRoutes() {
@@ -238,6 +212,7 @@ function AppRoutes() {
         <Route path="/portals" element={<PortalManager />} />
         <Route path="/contracts" element={<ContractLedger />} />
         <Route path="/master" element={<MasterAdmin />} />
+        <Route path="/app/:appId" element={<EmbedAppRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
