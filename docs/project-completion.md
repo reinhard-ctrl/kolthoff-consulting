@@ -51,6 +51,30 @@ After steps 1–3, hard-refresh and test:
 | Client portal (public) | https://kolthoff-portal.web.app/apps/public/portal.html |
 | Marketing (public) | https://kolthoff-portal.web.app/ |
 
+---
+
+## Phase 2 — Load production data
+
+After Phase 1 auth works, seed Firestore in [Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
+
+```bash
+bash scripts/seed-production-data.sh --dry-run
+bash scripts/seed-production-data.sh
+```
+
+This loads CRM deals/contacts/partners, feature flags, and org departments. Then:
+
+| Task | How |
+|------|-----|
+| SOW profiles | Project Planner UI, or edit `scripts/seed-firestore/data/workbook_profiles.json` |
+| Client portals | `/admin/portals` → Import SOW, or edit `clients.json` |
+| Team invites | `/admin/` → Tenant Manager → Invite User |
+| Google Drive links | Add `assets[].gDriveLink` on each `clients` doc manually |
+
+Full guide: **`docs/data-seeding.md`**
+
+---
+
 ### 5. DNS cutover (Squarespace)
 
 In [Firebase Hosting → Custom domains](https://console.firebase.google.com/project/kolthoff-portal/hosting/sites), add `kolthoff-consulting.com` and `www.kolthoff-consulting.com`.
@@ -85,15 +109,18 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 - Workspace: password required; admin passcode session auto-access
 - Tenant Manager invites via `inviteWorkspaceUser` Cloud Function
 - Single login: legacy HTML apps rely on `shared/auth-gate.js` (no second passcode screen)
+- Admin legacy HTML migrated to React SPA (`/admin/portals`, `/admin/contracts`, `/admin/intake`, `/admin/master`)
+- Phase 2 seed tooling: `scripts/seed-firestore/` + `scripts/seed-production-data.sh`
+- Client-side demo auto-seed disabled (`KOLTHOFF_DISABLE_CLIENT_SEED`)
 
 ---
 
-## After go-live (Phase 2)
+## After go-live (roadmap)
 
 - Google Workspace SSO (`@kolthoff-consulting.com`)
 - App Check + reCAPTCHA
-- Suite launcher UI polish (`/admin/legacy/index.html`)
-- Migrate legacy HTML tools into Admin SPA
+- Master Admin blueprint visual designer
+- Migrate delivery/ops/analytics HTML apps into React
 - Portal custom-token auth (replace anonymous client access)
 
 ---
@@ -102,5 +129,6 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 - `docs/admin-login.md` — passcode troubleshooting
 - `docs/security-access.md` — public vs staff apps
+- `docs/data-seeding.md` — Phase 2 production data load
 - `docs/data-model.md` — Firestore collections
 - `docs/dns-cutover.md` — DNS migration steps

@@ -198,7 +198,7 @@
 
                 const dealsRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_deals');
                 const unsubDeals = window.onSnapshot(dealsRef, (snap) => {
-                    if (snap.empty && !dealsSeeded) {
+                    if (snap.empty && !dealsSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
                         dealsSeeded = true;
                         initialDeals.forEach(d => window.setDoc(window.doc(dealsRef, d.id), d));
                     } else {
@@ -211,7 +211,7 @@
 
                 const contactsRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_contacts');
                 const unsubContacts = window.onSnapshot(contactsRef, (snap) => {
-                    if (snap.empty && !contactsSeeded) {
+                    if (snap.empty && !contactsSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
                         contactsSeeded = true;
                         initialContacts.forEach(c => window.setDoc(window.doc(contactsRef, c.id), c));
                     } else {
@@ -224,7 +224,7 @@
 
                 const partnersRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_partners');
                 const unsubPartners = window.onSnapshot(partnersRef, (snap) => {
-                    if (snap.empty && !partnersSeeded) {
+                    if (snap.empty && !partnersSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
                         partnersSeeded = true;
                         initialPartners.forEach(p => window.setDoc(window.doc(partnersRef, p.id), p));
                     } else {

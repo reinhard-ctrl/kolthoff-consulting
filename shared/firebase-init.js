@@ -36,6 +36,9 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
 export const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+/** When true, HTML apps must not auto-write demo data into empty Firestore collections */
+export const disableClientSeed = true;
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
@@ -141,6 +144,7 @@ if (typeof window !== 'undefined') {
   window.firebaseStorage = storage;
   window.appId = appId;
   window.initialAuthToken = initialAuthToken;
+  window.KOLTHOFF_DISABLE_CLIENT_SEED = disableClientSeed;
   window.signInAnonymously = signInAnonymously;
   window.signInWithCustomToken = signInWithCustomToken;
   window.signInWithEmailAndPassword = signInWithEmailAndPassword;

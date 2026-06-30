@@ -1,0 +1,13 @@
+{
+  "name": "kolthoff-seed-firestore",
+  "private": true,
+  "type": "module",
+  "description": "Idempotent Firestore seed loader for Kolthoff production data",
+  "scripts": {
+    "seed": "node seed.mjs",
+    "seed:dry": "node seed.mjs --dry-run"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

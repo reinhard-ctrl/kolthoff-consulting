@@ -1,0 +1,13 @@
+[
+  {
+    "id": "config",
+    "features": {
+      "messenger": true,
+      "approvals": true,
+      "vault": true,
+      "crm": true
+    },
+    "seededAt": "2026-06-29",
+    "seededBy": "scripts/seed-firestore"
+  }
+]
