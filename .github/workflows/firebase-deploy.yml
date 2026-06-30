@@ -89,6 +89,6 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
           npx --yes firebase-tools@15.22.3 deploy \
-            --only hosting,firestore:rules,storage:rules,functions \
+            --only hosting,firestore:rules,storage,functions \
             --project kolthoff-portal \
             --non-interactive
