@@ -470,7 +470,7 @@
       const [renameWorkspaceValue, setRenameWorkspaceValue] = useState('');
       const [saveStatus, setSaveStatus] = useState('saved');
       const [saveError, setSaveError] = useState(null);
-      const [lastSavedJson, setLastSavedJson] = useState('');
+      const [lastSavedFingerprint, setLastSavedFingerprint] = useState('');
       const [showUnsavedSwitchConfirm, setShowUnsavedSwitchConfirm] = useState(false);
       const [pendingProfileId, setPendingProfileId] = useState(null);
       const [showPrintValidation, setShowPrintValidation] = useState(false);
@@ -483,6 +483,8 @@
       const [localDraftBanner, setLocalDraftBanner] = useState(null);
       const autoSaveTimerRef = useRef(null);
       const isHydratingRef = useRef(true);
+      const isDirtyRef = useRef(false);
+      const dismissedDraftsRef = useRef({});
       const importFileRef = useRef(null);
       const lastHydratedProfileIdRef = useRef(null);
 
@@ -649,7 +651,8 @@
       useEffect(() => {
         const p = profiles.find(profile => profile.id === activeProfileId) || profiles[0] || DEFAULT_CLIENTS[0];
         if (!p) return;
-        if ((saveStatus === 'unsaved' || saveStatus === 'saving') && lastHydratedProfileIdRef.current === activeProfileId) return;
+        const profileSwitch = lastHydratedProfileIdRef.current !== activeProfileId;
+        if (!profileSwitch && isDirtyRef.current) return;
         lastHydratedProfileIdRef.current = activeProfileId;
         setClientCompany(p.clientCompany);
         setClientRep(p.clientRep);
@@ -728,17 +731,28 @@
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate
         }, p.annualOperationalLeakage ?? 0);
         if (p.updatedAt) hydratedPayload.updatedAt = p.updatedAt;
-        setLastSavedJson(JSON.stringify(hydratedPayload));
+        setLastSavedFingerprint(H.payloadFingerprint(hydratedPayload));
         setSaveStatus('saved');
         setSaveError(null);
-        const draft = H.loadLocalDraft(activeProfileId);
-        if (draft?.payload && draft.savedAt > (p.updatedAt || 0)) {
-          setLocalDraftBanner(draft);
-        } else {
-          setLocalDraftBanner(null);
+        isDirtyRef.current = false;
+        if (profileSwitch) {
+          const draft = H.loadLocalDraft(activeProfileId);
+          const cloudFp = H.payloadFingerprint(hydratedPayload);
+          const dismissedAt = dismissedDraftsRef.current[activeProfileId];
+          if (draft?.payload && draft.savedAt > (p.updatedAt || 0)) {
+            const draftFp = H.payloadFingerprint(draft.payload);
+            if (draftFp !== cloudFp && draft.savedAt !== dismissedAt) {
+              setLocalDraftBanner(draft);
+            } else {
+              if (draftFp === cloudFp) H.clearLocalDraft(activeProfileId);
+              setLocalDraftBanner(null);
+            }
+          } else {
+            setLocalDraftBanner(null);
+          }
         }
         setTimeout(() => { isHydratingRef.current = false; }, 0);
-      }, [activeProfileId, profiles, saveStatus]);
+      }, [activeProfileId, profiles]);
 
       const buildCurrentProfileState = useCallback(() => ({
         clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity,
@@ -762,10 +776,12 @@
         setSaveError(null);
         try {
           const currentProfilePayload = buildCurrentPayload();
+          currentProfilePayload.updatedAt = Date.now();
           const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
           await setDoc(docRef, currentProfilePayload);
-          setLastSavedJson(JSON.stringify(currentProfilePayload));
+          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
+          isDirtyRef.current = false;
           H.clearLocalDraft(activeProfileId);
           setLocalDraftBanner(null);
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, ...currentProfilePayload } : p));
@@ -785,18 +801,20 @@
       useEffect(() => {
         if (isHydratingRef.current) return;
         const payload = buildCurrentPayload();
-        const json = JSON.stringify(payload);
-        if (json === lastSavedJson) {
+        const fp = H.payloadFingerprint(payload);
+        if (fp === lastSavedFingerprint) {
+          isDirtyRef.current = false;
           if (isAuthed) setSaveStatus('saved');
           return;
         }
-        setSaveStatus(isAuthed ? 'unsaved' : 'unsaved');
-        H.saveLocalDraft(activeProfileId, payload);
+        isDirtyRef.current = true;
+        setSaveStatus('unsaved');
+        if (!isAuthed) H.saveLocalDraft(activeProfileId, payload);
         if (!isAuthed) return;
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = setTimeout(() => { handleSaveToCloud(true); }, 2500);
         return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-      }, [buildCurrentPayload, lastSavedJson, isAuthed, activeProfileId]);
+      }, [buildCurrentPayload, lastSavedFingerprint, isAuthed, activeProfileId]);
 
       useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -811,8 +829,8 @@
 
       const requestProfileSwitch = (newId) => {
         if (newId === activeProfileId) return;
-        const json = JSON.stringify(buildCurrentPayload());
-        if (json !== lastSavedJson) {
+        const fp = H.payloadFingerprint(buildCurrentPayload());
+        if (fp !== lastSavedFingerprint) {
           setPendingProfileId(newId);
           setShowUnsavedSwitchConfirm(true);
         } else {
@@ -853,7 +871,9 @@
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
         setActivePresets(H.deriveActivePresetsFromTasks(d.tasks || INITIAL_TASKS));
+        H.clearLocalDraft(activeProfileId);
         setLocalDraftBanner(null);
+        isDirtyRef.current = true;
         setSaveStatus('unsaved');
       };
 
@@ -2554,7 +2574,11 @@
                 <p className="text-xs text-amber-300 font-medium">A newer local draft was found for this workspace (saved {new Date(localDraftBanner.savedAt).toLocaleString()}).</p>
                 <div className="flex gap-2">
                   <button onClick={restoreLocalDraft} className="px-3 py-1.5 bg-amber-500 text-brandNavy-955 text-[10px] font-bold rounded-lg uppercase">Restore Draft</button>
-                  <button onClick={() => { H.clearLocalDraft(activeProfileId); setLocalDraftBanner(null); }} className="px-3 py-1.5 bg-brandNavy-800 text-slate-300 border border-brandNavy-700 text-[10px] font-bold rounded-lg uppercase">Dismiss</button>
+                  <button onClick={() => {
+                    if (localDraftBanner?.savedAt) dismissedDraftsRef.current[activeProfileId] = localDraftBanner.savedAt;
+                    H.clearLocalDraft(activeProfileId);
+                    setLocalDraftBanner(null);
+                  }} className="px-3 py-1.5 bg-brandNavy-800 text-slate-300 border border-brandNavy-700 text-[10px] font-bold rounded-lg uppercase">Dismiss</button>
                 </div>
               </div>
             </div>
