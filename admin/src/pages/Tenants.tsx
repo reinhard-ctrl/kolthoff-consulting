@@ -20,7 +20,21 @@ interface WorkspaceInstance {
   clientName: string;
   status?: string;
   workspaceUrl?: string;
+  portalAccessCode?: string;
+  portalUrl?: string;
   internal?: boolean;
+}
+
+interface PrepareResult {
+  tenantId: string;
+  clientName: string;
+  workspaceUrl: string;
+  portalUrl: string;
+  portalAccessCode: string;
+  portalDelivered: boolean;
+  passwordEmailSent: boolean;
+  mailtoUrl?: string;
+  message: string;
 }
 
 const INTERNAL_WORKSPACE: WorkspaceInstance = {
@@ -40,6 +54,17 @@ function slugifyClientName(name: string): string {
   return slug ? `client-${slug}` : '';
 }
 
+function derivePortalCode(clientName: string, tenantId: string): string {
+  const fromName = clientName
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24);
+  if (fromName) return fromName;
+  return tenantId.replace('client-', '').toUpperCase().slice(0, 24);
+}
+
 export default function Tenants() {
   const [tenantId, setTenantId] = useState('kolthoff-admin-app');
   const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
@@ -56,7 +81,14 @@ export default function Tenants() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newTenantId, setNewTenantId] = useState('');
+  const [newPortalCode, setNewPortalCode] = useState('');
+  const [newRepName, setNewRepName] = useState('');
+  const [newRepEmail, setNewRepEmail] = useState('');
+  const [deliverViaPortal, setDeliverViaPortal] = useState(true);
+  const [inviteContact, setInviteContact] = useState(true);
+  const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+  const [publishingPortal, setPublishingPortal] = useState(false);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
@@ -180,35 +212,88 @@ export default function Tenants() {
     if (!newClientName.trim()) return;
     setCreatingWorkspace(true);
     setInviteStatus('');
+    setPrepareResult(null);
     try {
       await bootstrapAuth();
-      const create = httpsCallable(functions, 'createClientWorkspace');
-      const result = await create({
+      const prepare = httpsCallable(functions, 'prepareClientWorkspace');
+      const result = await prepare({
         clientName: newClientName.trim(),
         tenantId: newTenantId.trim() || undefined,
+        portalAccessCode: newPortalCode.trim() || undefined,
+        repName: newRepName.trim() || undefined,
+        repEmail: newRepEmail.trim() || undefined,
+        deliverViaPortal,
+        inviteContact: inviteContact && !!newRepEmail.trim(),
       });
-      const data = result.data as { tenantId: string; clientName: string; workspaceUrl?: string };
+      const data = result.data as PrepareResult;
       setTenantId(data.tenantId);
-      setInviteStatus(`Created workspace for ${data.clientName}. Open it below to invite users and configure modules.`);
-      setShowCreateModal(false);
-      setNewClientName('');
-      setNewTenantId('');
+      setPrepareResult(data);
+      setInviteStatus(data.message);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Create failed';
+      const msg = err instanceof Error ? err.message : 'Prepare failed';
       setInviteStatus(msg.includes('permission-denied')
         ? 'Admin session required. Re-login at /admin/ and try again.'
-        : msg.includes('already-exists')
-          ? 'That tenant ID already exists. Choose a different slug.'
-          : msg);
+        : msg);
     } finally {
       setCreatingWorkspace(false);
+    }
+  };
+
+  const publishActiveToPortal = async () => {
+    if (tenantId === INTERNAL_WORKSPACE.tenantId || !activeWorkspace) return;
+    setPublishingPortal(true);
+    setInviteStatus('');
+    try {
+      await bootstrapAuth();
+      const prepare = httpsCallable(functions, 'prepareClientWorkspace');
+      const result = await prepare({
+        clientName: activeWorkspace.clientName,
+        tenantId,
+        portalAccessCode: activeWorkspace.portalAccessCode || derivePortalCode(activeWorkspace.clientName, tenantId),
+        deliverViaPortal: true,
+        inviteContact: false,
+      });
+      const data = result.data as PrepareResult;
+      setPrepareResult(data);
+      setInviteStatus(data.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Publish failed';
+      setInviteStatus(msg.includes('permission-denied')
+        ? 'Admin session required. Re-login at /admin/ and try again.'
+        : msg);
+    } finally {
+      setPublishingPortal(false);
     }
   };
 
   const openCreateModal = () => {
     setNewClientName('');
     setNewTenantId('');
+    setNewPortalCode('');
+    setNewRepName('');
+    setNewRepEmail('');
+    setDeliverViaPortal(true);
+    setInviteContact(true);
+    setPrepareResult(null);
     setShowCreateModal(true);
+  };
+
+  const syncPortalCode = (clientName: string, tenantSlug: string) => {
+    setNewPortalCode((current) => {
+      if (!current || current === derivePortalCode(newClientName, newTenantId || tenantSlug)) {
+        return derivePortalCode(clientName, tenantSlug);
+      }
+      return current;
+    });
+  };
+
+  const copyText = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setInviteStatus(`Copied ${label} to clipboard.`);
+    } catch {
+      setInviteStatus(`Copy failed — select and copy manually: ${value}`);
+    }
   };
 
   const workspaceHref = tenantId === 'kolthoff-admin-app'
@@ -230,7 +315,7 @@ export default function Tenants() {
             onClick={openCreateModal}
             className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
           >
-            Create Client Workspace
+            Prepare Client Workspace
           </button>
         </div>
         <div className="space-y-2">
@@ -253,7 +338,7 @@ export default function Tenants() {
                     <div className="font-mono text-xs text-slate-500">{ws.tenantId}</div>
                   </div>
                   <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {ws.internal ? 'Internal' : ws.status || 'active'}
+                    {ws.internal ? 'Internal' : ws.portalAccessCode ? `Portal ${ws.portalAccessCode}` : ws.status || 'active'}
                   </span>
                 </div>
               </button>
@@ -269,14 +354,33 @@ export default function Tenants() {
           onChange={(e) => setTenantId(e.target.value)}
           className="w-full mt-1 p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
         />
-        <div className="flex flex-wrap gap-3 mt-2 text-sm">
+        <div className="flex flex-wrap gap-3 mt-2 text-sm items-center">
           <a href={workspaceHref} target="_blank" rel="noreferrer" className="text-brandTeal-400">
             Open workspace →
           </a>
+          {tenantId !== INTERNAL_WORKSPACE.tenantId && (
+            <button
+              type="button"
+              onClick={publishActiveToPortal}
+              disabled={publishingPortal}
+              className="text-brandTeal-400 hover:text-brandTeal-300 disabled:opacity-50"
+            >
+              {publishingPortal ? 'Publishing...' : 'Publish link to Client Portal →'}
+            </button>
+          )}
           {activeWorkspace && (
             <span className="text-slate-500">Managing: {activeWorkspace.clientName}</span>
           )}
         </div>
+        {activeWorkspace?.workspaceUrl && tenantId !== INTERNAL_WORKSPACE.tenantId && (
+          <div className="mt-3 p-3 rounded border border-brandNavy-700 bg-brandNavy-900/50 text-xs space-y-1">
+            <div className="text-slate-400">Client workspace link</div>
+            <div className="font-mono text-brandTeal-400 break-all">{activeWorkspace.workspaceUrl}</div>
+            {activeWorkspace.portalAccessCode && (
+              <div className="text-slate-500">Client Portal code: <span className="font-mono text-slate-300">{activeWorkspace.portalAccessCode}</span></div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="glass-panel p-4 mb-6">
@@ -376,48 +480,153 @@ export default function Tenants() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="glass-panel p-6 w-full max-w-lg">
-            <h2 className="text-lg font-bold mb-2">Create Client Workspace</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+          <div className="glass-panel p-6 w-full max-w-2xl my-8">
+            <h2 className="text-lg font-bold mb-2">Prepare Client Workspace</h2>
             <p className="text-xs text-slate-500 mb-4">
-              Provisions a new isolated Core Workspace instance with default modules enabled (Messenger, Approvals, Policies).
+              Creates the workspace tenant, publishes the link on the Client Portal (recommended), and optionally invites the primary contact by email.
             </p>
-            <label className="text-sm text-slate-400 block mb-1">Client name</label>
-            <input
-              value={newClientName}
-              onChange={(e) => {
-                setNewClientName(e.target.value);
-                if (!newTenantId || newTenantId === slugifyClientName(newClientName)) {
-                  setNewTenantId(slugifyClientName(e.target.value));
-                }
-              }}
-              placeholder="Acme Corp"
-              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-3"
-            />
-            <label className="text-sm text-slate-400 block mb-1">Tenant ID</label>
-            <input
-              value={newTenantId}
-              onChange={(e) => setNewTenantId(e.target.value.trim().toLowerCase())}
-              placeholder="client-acme-corp"
-              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm mb-4"
-            />
-            <div className="flex flex-wrap gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 rounded text-sm border border-brandNavy-700 text-slate-400"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={createClientWorkspace}
-                disabled={creatingWorkspace || !newClientName.trim() || !newTenantId.trim()}
-                className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50"
-              >
-                {creatingWorkspace ? 'Creating...' : 'Create Workspace'}
-              </button>
-            </div>
+
+            {!prepareResult ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">Client name</label>
+                    <input
+                      value={newClientName}
+                      onChange={(e) => {
+                        const name = e.target.value;
+                        setNewClientName(name);
+                        const tenantSlug = slugifyClientName(name);
+                        if (!newTenantId || newTenantId === slugifyClientName(newClientName)) {
+                          setNewTenantId(tenantSlug);
+                        }
+                        syncPortalCode(name, tenantSlug || newTenantId);
+                      }}
+                      placeholder="Acme Corp"
+                      className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">Tenant ID</label>
+                    <input
+                      value={newTenantId}
+                      onChange={(e) => {
+                        const tenantSlug = e.target.value.trim().toLowerCase();
+                        setNewTenantId(tenantSlug);
+                        syncPortalCode(newClientName, tenantSlug);
+                      }}
+                      placeholder="client-acme-corp"
+                      className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">Client Portal access code</label>
+                    <input
+                      value={newPortalCode}
+                      onChange={(e) => setNewPortalCode(e.target.value.toUpperCase())}
+                      placeholder="ACME-CORP"
+                      className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-slate-400 block mb-1">Primary contact name</label>
+                    <input
+                      value={newRepName}
+                      onChange={(e) => setNewRepName(e.target.value)}
+                      placeholder="Jane Doe"
+                      className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm text-slate-400 block mb-1">Primary contact email</label>
+                    <input
+                      type="email"
+                      value={newRepEmail}
+                      onChange={(e) => setNewRepEmail(e.target.value)}
+                      placeholder="jane@client.com"
+                      className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4 text-xs text-slate-400">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={deliverViaPortal} onChange={(e) => setDeliverViaPortal(e.target.checked)} />
+                    Publish Core Workspace link on Client Portal (recommended)
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={inviteContact}
+                      onChange={(e) => setInviteContact(e.target.checked)}
+                      disabled={!newRepEmail.trim()}
+                    />
+                    Invite primary contact and email password setup link
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 rounded text-sm border border-brandNavy-700 text-slate-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={createClientWorkspace}
+                    disabled={creatingWorkspace || !newClientName.trim() || !newTenantId.trim()}
+                    className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50"
+                  >
+                    {creatingWorkspace ? 'Preparing...' : 'Prepare & Deliver'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-brandTeal-400">{prepareResult.message}</p>
+                <div className="space-y-3 text-xs">
+                  <div className="p-3 rounded border border-brandNavy-700 bg-brandNavy-900/50">
+                    <div className="text-slate-500 mb-1">Core Workspace</div>
+                    <div className="font-mono text-slate-200 break-all">{prepareResult.workspaceUrl}</div>
+                    <button type="button" onClick={() => copyText('workspace link', prepareResult.workspaceUrl)} className="mt-2 text-brandTeal-400 underline">
+                      Copy link
+                    </button>
+                  </div>
+                  {prepareResult.portalDelivered && (
+                    <div className="p-3 rounded border border-brandNavy-700 bg-brandNavy-900/50">
+                      <div className="text-slate-500 mb-1">Client Portal</div>
+                      <div className="font-mono text-slate-200 break-all">{prepareResult.portalUrl}</div>
+                      <div className="mt-2 text-slate-400">Access code: <span className="font-mono text-white">{prepareResult.portalAccessCode}</span></div>
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        <button type="button" onClick={() => copyText('portal URL', prepareResult.portalUrl)} className="text-brandTeal-400 underline">
+                          Copy portal URL
+                        </button>
+                        <button type="button" onClick={() => copyText('access code', prepareResult.portalAccessCode)} className="text-brandTeal-400 underline">
+                          Copy access code
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {prepareResult.mailtoUrl && (
+                    <a href={prepareResult.mailtoUrl} className="inline-block px-4 py-2 rounded border border-brandNavy-700 text-sm text-slate-300 hover:text-white">
+                      Open email draft to client
+                    </a>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

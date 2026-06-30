@@ -349,9 +349,32 @@
         const DashboardTab = ({ data, handleSimulateUpload, uploadSimulating }) => {
             const pendingActions = (data.actionItems || []).filter(a => a.status === 'pending');
             const safeMetrics = data.metrics || { annualLeakageIdentified: 0, chaosTaxEliminated: 0, saasSavingsIdentified: 0 };
+            const workspaceUrl = data.workspaceUrl || '';
 
             return (
                 <div className="space-y-8 fade-in">
+                    {workspaceUrl && (
+                        <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <p className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest font-bold mb-2">Core Workspace Ready</p>
+                                    <h3 className="text-lg font-serif font-bold text-white mb-2">Your team portal is live</h3>
+                                    <p className="text-sm text-slate-400 max-w-2xl">
+                                        Open Core Workspace to collaborate on messenger, approvals, and policies. Use your organizational email and choose first-time setup if you have not set a password yet.
+                                    </p>
+                                </div>
+                                <a
+                                    href={workspaceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-xl text-sm shrink-0"
+                                >
+                                    <Icons.Monitor /> Open Core Workspace
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Greeting & Progress */}
                     <div className="glass-panel rounded-2xl p-8 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-brandTeal-500/5 blur-[80px] rounded-full pointer-events-none"></div>
@@ -407,6 +430,16 @@
                                                 <button className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold rounded-lg transition-all flex items-center w-full sm:w-auto justify-center">
                                                     <span className="flex items-center gap-1.5"><Icons.ExternalLink /> Open Review Link</span>
                                                 </button>
+                                            )}
+                                            {action.type === 'link' && action.link && (
+                                                <a
+                                                    href={action.link}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold rounded-lg transition-all flex items-center w-full sm:w-auto justify-center"
+                                                >
+                                                    <span className="flex items-center gap-1.5"><Icons.ExternalLink /> Open Link</span>
+                                                </a>
                                             )}
                                         </div>
                                     </div>
