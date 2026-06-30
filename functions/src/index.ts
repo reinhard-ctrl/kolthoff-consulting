@@ -35,8 +35,8 @@ async function verifyPasscode(code: string) {
   return { valid: true as const, role, token };
 }
 
-/** Hosting rewrite endpoint — works when org policy blocks allUsers on Cloud Run */
-export const verifyAdminPasscodeHttp = onRequest(async (req: Request, res: Response) => {
+/** Hosting rewrite endpoint — private invoker; Hosting grants invoke access automatically */
+export const verifyAdminPasscodeHttp = onRequest({ invoker: 'private' }, async (req: Request, res: Response) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;

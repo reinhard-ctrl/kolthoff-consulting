@@ -1,6 +1,6 @@
 # Admin login troubleshooting
 
-Admin passcode verification uses **`/api/verify-passcode`** on Firebase Hosting, which rewrites to the Cloud Function `verifyAdminPasscodeHttp`. This path works when your GCP organization policy blocks granting `allUsers` the Cloud Run invoker role (common on corporate Google accounts).
+When using a rewrite to route traffic to a function, Firebase Hosting automatically grants the appropriate invoker role. The HTTP function is deployed with **private** invoker (not `allUsers`), so org policies that block public Cloud Run access still work.
 
 ## Normal flow
 
