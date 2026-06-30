@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signOut, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail as firebaseSendPasswordResetEmail, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
 import { FirebaseError } from 'firebase/app';
 
 interface CoreUser {
@@ -58,6 +58,12 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
     }
   };
 
+  const workspaceResetUrl = () => (
+    appId === 'kolthoff-admin-app'
+      ? `${window.location.origin}/workspace/`
+      : `${window.location.origin}/workspace/?tenant=${encodeURIComponent(appId)}`
+  );
+
   const handlePasswordRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,11 +80,37 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       const message = (result.data as { message?: string })?.message;
       setInfo(message || 'If that email is registered, a reset link has been sent.');
     } catch (err: unknown) {
+      const code = err instanceof FirebaseError ? err.code : '';
       const msg = err instanceof Error ? err.message : 'Request failed';
-      if (err instanceof FirebaseError && err.code === 'functions/internal') {
-        setError('Could not send reset email. Contact your Kolthoff admin.');
-      } else if (msg.includes('internal')) {
-        setError('Could not send reset email. Contact your Kolthoff admin.');
+
+      const tryClientFallback = code === 'functions/internal'
+        || code === 'functions/unavailable'
+        || code === 'functions/not-found'
+        || code === 'functions/permission-denied'
+        || msg.includes('internal');
+
+      if (tryClientFallback) {
+        try {
+          await firebaseSendPasswordResetEmail(auth, normalized, { url: workspaceResetUrl() });
+          setInfo('Password reset link sent. Check your inbox (and spam folder), then return here to sign in.');
+          return;
+        } catch (fallbackErr: unknown) {
+          const fbCode = fallbackErr instanceof FirebaseError ? fallbackErr.code : '';
+          if (fbCode === 'auth/user-not-found') {
+            setError('This email is not provisioned yet. Ask your Kolthoff admin to invite you in Tenant Manager.');
+            return;
+          }
+          if (fbCode === 'auth/too-many-requests') {
+            setError('Too many attempts. Wait a few minutes and try again.');
+            return;
+          }
+        }
+      }
+
+      if (code === 'functions/resource-exhausted' || msg.includes('Too many attempts')) {
+        setError('Too many attempts. Wait a few minutes and try again.');
+      } else if (code === 'functions/internal' || msg.includes('internal')) {
+        setError('Could not send reset email. Confirm you were invited in Tenant Manager, or contact your Kolthoff admin.');
       } else {
         setError(msg);
       }

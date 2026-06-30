@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
@@ -50,7 +50,7 @@ export async function logAudit(action: string, details: Record<string, unknown> 
   } catch (e) { console.warn('Audit log failed', e); }
 }
 
-export { signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, where, getDocs, ref, uploadBytes, getDownloadURL, httpsCallable };
+export { signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, where, getDocs, ref, uploadBytes, getDownloadURL, httpsCallable };
 
 const ADMIN_APP = 'kolthoff-admin-app';
 

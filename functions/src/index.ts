@@ -253,24 +253,98 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-async function sendPasswordResetEmail(email: string, continueUrl: string): Promise<void> {
+type OobApiError = { error?: { message?: string } };
+
+async function sendOobCode(email: string, continueUrl?: string): Promise<void> {
+  const body: Record<string, string> = {
+    requestType: 'PASSWORD_RESET',
+    email: normalizeEmail(email),
+  };
+  if (continueUrl) body.continueUrl = continueUrl;
+
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${WEB_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requestType: 'PASSWORD_RESET',
-        email: email.trim().toLowerCase(),
-        continueUrl,
-      }),
+      body: JSON.stringify(body),
     },
   );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.error('sendOobCode failed', err);
-    throw new Error('sendOobCode failed');
+  if (res.ok) return;
+
+  const err = (await res.json().catch(() => ({}))) as OobApiError;
+  const message = err?.error?.message || 'sendOobCode failed';
+  console.error('sendOobCode failed', err);
+  throw new Error(message);
+}
+
+/** Ensure Firebase Auth account exists for a core_users member before sending reset email. */
+async function ensureAuthUserForCoreMember(tenantId: string, email: string) {
+  const doc = await findCoreUserDoc(tenantId, email);
+  if (!doc) return null;
+
+  const data = doc.data() as { name?: string; role?: string };
+  const normalizedEmail = normalizeEmail(email);
+  const displayName = (data.name || normalizedEmail).trim();
+
+  let userRecord;
+  try {
+    userRecord = await admin.auth().getUserByEmail(normalizedEmail);
+    if (displayName && userRecord.displayName !== displayName) {
+      userRecord = await admin.auth().updateUser(userRecord.uid, { displayName });
+    }
+  } catch {
+    userRecord = await admin.auth().createUser({
+      email: normalizedEmail,
+      displayName,
+      emailVerified: false,
+    });
   }
+
+  await admin.auth().setCustomUserClaims(userRecord.uid, {
+    tenantId,
+    role: data.role || 'user',
+  });
+
+  await doc.ref.set({
+    firebaseUid: userRecord.uid,
+    updatedAt: Date.now(),
+  }, { merge: true });
+
+  return userRecord;
+}
+
+async function sendPasswordResetEmail(email: string, continueUrl: string): Promise<void> {
+  const normalized = normalizeEmail(email);
+  const urlCandidates = [...new Set([
+    continueUrl,
+    DEFAULT_WORKSPACE_URL,
+    'https://kolthoff-portal.firebaseapp.com/workspace/',
+  ].filter(Boolean))];
+
+  let lastError: Error | undefined;
+  for (const url of urlCandidates) {
+    try {
+      await sendOobCode(normalized, url);
+      return;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const msg = lastError.message;
+      if (msg.includes('INVALID_CONTINUE_URI') || msg.includes('UNAUTHORIZED_DOMAIN')) {
+        continue;
+      }
+      throw lastError;
+    }
+  }
+
+  try {
+    await sendOobCode(normalized);
+    return;
+  } catch (err) {
+    lastError = err instanceof Error ? err : new Error(String(err));
+  }
+
+  throw lastError || new Error('sendOobCode failed');
 }
 
 async function callerIsAdmin(uid: string | undefined, tokenRole: unknown): Promise<boolean> {
@@ -402,9 +476,14 @@ export const requestWorkspacePasswordReset = onCall({ invoker: 'public' }, async
   }
 
   try {
+    await ensureAuthUserForCoreMember(tenantId, email);
     await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
   } catch (err) {
     console.error('requestWorkspacePasswordReset failed', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('TOO_MANY_ATTEMPTS')) {
+      throw new HttpsError('resource-exhausted', 'Too many attempts. Wait a few minutes and try again.');
+    }
     throw new HttpsError('internal', 'Could not send password email. Try again or contact your admin.');
   }
 
@@ -431,6 +510,7 @@ export const sendWorkspacePasswordReset = onCall(async (request) => {
   }
 
   try {
+    await ensureAuthUserForCoreMember(tenantId, email);
     await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
   } catch (err) {
     console.error('sendWorkspacePasswordReset failed', err);
