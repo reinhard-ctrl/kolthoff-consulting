@@ -79,13 +79,13 @@ export async function verifyAdminPasscode(code: string) {
 export async function hasAdminSession(): Promise<boolean> {
   try {
     await bootstrapAuth();
+    if (!auth.currentUser) return false;
+    const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+    const snap = await getDoc(sessionRef);
+    return snap.exists();
   } catch {
     return false;
   }
-  if (!auth.currentUser) return false;
-  const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
-  const snap = await getDoc(sessionRef);
-  return snap.exists();
 }
 
 export function initAppCheck() {
