@@ -376,6 +376,13 @@
     return { ok: issues.length === 0, issues, warnings };
   }
 
+  function payloadFingerprint(payload) {
+    if (!payload) return '';
+    const copy = { ...payload };
+    delete copy.updatedAt;
+    return JSON.stringify(copy);
+  }
+
   function getLocalDraftKey(profileId) {
     return `kolthoff_planner_draft_${profileId}`;
   }
@@ -434,6 +441,7 @@
     computeProjectEconomics,
     computeBillingMilestones,
     buildProfilePayload,
+    payloadFingerprint,
     validatePrintReadiness,
     saveLocalDraft,
     loadLocalDraft,
