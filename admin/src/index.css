@@ -11,43 +11,65 @@ body {
   @apply bg-brandNavy-900/60 backdrop-blur border border-brandNavy-700/40 rounded-xl;
 }
 
-/* Sidebar: scale type to viewport / panel width */
+/* Sidebar: scale type to viewport height and width */
 .sidebar-nav-label {
-  font-size: clamp(0.72rem, 0.55rem + 0.35vw, 0.875rem);
+  font-size: clamp(0.62rem, 0.45rem + 0.28vw, 0.8rem);
 }
 
 .sidebar-nav-group-label {
-  font-size: clamp(0.58rem, 0.48rem + 0.22vw, 0.68rem);
+  font-size: clamp(0.52rem, 0.42rem + 0.18vw, 0.62rem);
 }
 
 .sidebar-nav-hint {
-  font-size: clamp(0.58rem, 0.48rem + 0.2vw, 0.65rem);
+  font-size: clamp(0.52rem, 0.42rem + 0.16vw, 0.6rem);
+}
+
+.sidebar-nav-icon-wrap {
+  width: clamp(1.35rem, 1.1rem + 0.35vw, 1.65rem);
+  height: clamp(1.35rem, 1.1rem + 0.35vw, 1.65rem);
 }
 
 .sidebar-nav-icon {
-  width: clamp(0.9rem, 0.75rem + 0.25vw, 1.05rem);
-  height: clamp(0.9rem, 0.75rem + 0.25vw, 1.05rem);
+  width: clamp(0.72rem, 0.6rem + 0.2vw, 0.88rem);
+  height: clamp(0.72rem, 0.6rem + 0.2vw, 0.88rem);
+}
+
+.sidebar-nav-item {
+  min-height: clamp(1.75rem, 1.5rem + 0.4vw, 2.1rem);
 }
 
 .sidebar-nav-btn-primary {
-  @apply px-2 py-1.5 rounded font-bold uppercase tracking-wider bg-brandTeal-500 text-brandNavy-955;
-  font-size: clamp(0.58rem, 0.48rem + 0.2vw, 0.65rem);
+  @apply px-2 py-1 rounded font-bold uppercase tracking-wider bg-brandTeal-500 text-brandNavy-955;
+  font-size: clamp(0.52rem, 0.42rem + 0.16vw, 0.6rem);
 }
 
 .sidebar-nav-btn-secondary {
-  @apply px-2 py-1.5 rounded font-bold uppercase tracking-wider border border-brandNavy-700 text-slate-500 hover:text-brandTeal-400 hover:border-brandTeal-500/30 transition-colors;
-  font-size: clamp(0.58rem, 0.48rem + 0.2vw, 0.65rem);
+  @apply px-2 py-1 rounded font-bold uppercase tracking-wider border border-brandNavy-700 text-slate-500 hover:text-brandTeal-400 hover:border-brandTeal-500/30 transition-colors;
+  font-size: clamp(0.52rem, 0.42rem + 0.16vw, 0.6rem);
 }
 
-.nav-nudge-btn {
-  @apply w-5 h-5 flex items-center justify-center rounded bg-brandNavy-800 border border-brandNavy-700 text-slate-500 hover:text-brandTeal-400 hover:border-brandTeal-500/30;
-  font-size: clamp(0.55rem, 0.45rem + 0.15vw, 0.62rem);
+.sidebar-drag-handle {
+  font-size: clamp(0.65rem, 0.55rem + 0.15vw, 0.75rem);
   line-height: 1;
+  user-select: none;
 }
 
-.sidebar-nav-scroll::-webkit-scrollbar {
-  width: 5px;
+.sidebar-drop-zone {
+  height: 3px;
+  margin: 1px 0;
+  border-radius: 2px;
+  transition: background-color 0.15s, height 0.15s;
 }
-.sidebar-nav-scroll::-webkit-scrollbar-thumb {
-  @apply bg-brandNavy-700 rounded-full;
+
+.sidebar-drop-zone-active {
+  height: 6px;
+  @apply bg-brandTeal-500/60;
+}
+
+.sidebar-nav-fit {
+  will-change: transform;
+}
+
+.sidebar-group-card {
+  transition: opacity 0.15s;
 }
