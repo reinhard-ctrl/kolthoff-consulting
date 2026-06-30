@@ -38,7 +38,10 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-      - run: npm ci && npm run build
+      - run: npm ci --include=dev && npm run build
+
+      - name: Verify Firebase CLI
+        run: test -x ./node_modules/.bin/firebase && ./node_modules/.bin/firebase --version
 
       - id: google-auth
         uses: google-github-actions/auth@v2
@@ -72,8 +75,11 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-      - run: npm ci && npm run build
-      - run: npm ci --prefix functions && npm run build --prefix functions
+      - run: npm ci --include=dev && npm run build
+      - run: npm ci --prefix functions --include=dev && npm run build --prefix functions
+
+      - name: Verify Firebase CLI
+        run: test -x ./node_modules/.bin/firebase && ./node_modules/.bin/firebase --version
 
       - id: google-auth
         uses: google-github-actions/auth@v2

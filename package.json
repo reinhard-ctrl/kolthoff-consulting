@@ -15,7 +15,7 @@
     "deploy:rules": "firebase deploy --only firestore:rules,storage:rules",
     "emulators": "firebase emulators:start"
   },
-  "devDependencies": {
+  "dependencies": {
     "firebase-tools": "^13.29.1"
   },
   "workspaces": [
