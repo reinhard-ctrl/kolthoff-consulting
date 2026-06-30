@@ -11,6 +11,18 @@ export function getRate(tier: string) {
   return RATE_TIERS[tier] ?? RATE_TIERS.associate;
 }
 
+export function getProfileRate(profile: Profile | null | undefined, tier: string) {
+  const customRates: Record<string, number | undefined> = {
+    principal: profile?.principalRate,
+    senior: profile?.seniorRate,
+    partner: profile?.partnerRate,
+    associate: profile?.associateRate,
+  };
+  const custom = customRates[tier];
+  if (custom != null && custom > 0) return custom;
+  return getRate(tier);
+}
+
 export function formatCurrency(val: number) {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
 }
@@ -30,6 +42,10 @@ interface Profile {
   includeTax?: boolean;
   applyCreditBack?: boolean;
   subscriptionMonths?: number;
+  principalRate?: number;
+  seniorRate?: number;
+  partnerRate?: number;
+  associateRate?: number;
 }
 
 export function getFinancials(profile: Profile | null | undefined) {
@@ -48,14 +64,15 @@ export function getFinancials(profile: Profile | null | undefined) {
   const subscriptionMonths = profile.subscriptionMonths ?? 6;
   const bufferMultiplier = 1 + frictionBuffer / 100;
 
+  const rateFor = (tier: string) => getProfileRate(profile, tier);
   const projectCostBaseUndiscounted = Math.round(
-    tasks.filter((t) => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier || 'associate'), 0) * bufferMultiplier
+    tasks.filter((t) => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
   );
   const retainerCostBaseUndiscounted = Math.round(
-    tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier || 'associate'), 0)
+    tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0)
   );
   const mod1CostBase = Math.round(
-    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier || 'associate'), 0) * bufferMultiplier
+    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
   );
 
   const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis');

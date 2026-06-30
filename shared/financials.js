@@ -11,6 +11,18 @@ export function getRate(tier) {
   return RATE_TIERS[tier] ?? RATE_TIERS.associate;
 }
 
+export function getProfileRate(profile, tier) {
+  const customRates = {
+    principal: profile?.principalRate,
+    senior: profile?.seniorRate,
+    partner: profile?.partnerRate,
+    associate: profile?.associateRate,
+  };
+  const custom = customRates[tier];
+  if (custom != null && custom > 0) return custom;
+  return getRate(tier);
+}
+
 export function formatCurrency(val) {
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
 }
@@ -30,14 +42,15 @@ export function getFinancials(profile) {
   const subscriptionMonths = profile.subscriptionMonths !== undefined ? profile.subscriptionMonths : 6;
   const bufferMultiplier = 1 + frictionBuffer / 100;
 
+  const rateFor = (tier) => getProfileRate(profile, tier);
   const projectCostBaseUndiscounted = Math.round(
-    tasks.filter((t) => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
+    tasks.filter((t) => !t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
   );
   const retainerCostBaseUndiscounted = Math.round(
-    tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0)
+    tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0)
   );
   const mod1CostBase = Math.round(
-    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * getRate(t.tier), 0) * bufferMultiplier
+    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
   );
 
   const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis');
