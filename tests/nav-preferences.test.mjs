@@ -102,6 +102,11 @@ function resolveGroupLabel(groupId, defaultLabel, prefs) {
   return custom || defaultLabel;
 }
 
+function resolveItemLabel(itemId, prefs) {
+  const custom = prefs?.itemLabels?.[itemId]?.trim();
+  return custom || itemId;
+}
+
 function applyNavPreferences(groups, prefs) {
   const catalog = buildItemCatalog();
   const meta = new Map(groups.map((g) => [g.id, g]));
@@ -123,7 +128,7 @@ function applyNavPreferences(groups, prefs) {
       return {
         ...groupMeta,
         label: resolveGroupLabel(groupId, groupMeta.label, prefs),
-        items: orderedIds.map((id) => ({ id })),
+        items: orderedIds.map((id) => ({ id, label: resolveItemLabel(id, prefs) })),
       };
     });
 }
@@ -191,5 +196,19 @@ const labeledApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, labeledPrefs);
 assert.equal(labeledApplied.find((g) => g.id === 'command')?.label, 'HQ');
 assert.equal(labeledApplied.find((g) => g.id === 'delivery')?.label, 'Projects');
 assert.equal(labeledApplied.find((g) => g.id === 'operations')?.label, 'Operations');
+
+const itemLabeledPrefs = {
+  ...movedPrefs,
+  itemLabels: { 'crm-pipeline': 'CRM', dashboard: 'Home' },
+};
+const itemLabeledApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, itemLabeledPrefs);
+assert.equal(
+  itemLabeledApplied.find((g) => g.id === 'operations')?.items.find((i) => i.id === 'crm-pipeline')?.label,
+  'CRM',
+);
+assert.equal(
+  itemLabeledApplied.find((g) => g.id === 'command')?.items.find((i) => i.id === 'dashboard')?.label,
+  'Home',
+);
 
 console.log('nav-preferences tests passed');

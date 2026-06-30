@@ -10,6 +10,8 @@ export type NavPreferences = {
   hiddenGroups?: string[];
   /** groupId -> custom header label */
   groupLabels?: Record<string, string>;
+  /** itemId -> custom card label */
+  itemLabels?: Record<string, string>;
 };
 
 function dedupeIds(ids: string[]): string[] {
@@ -42,6 +44,36 @@ function buildGroupLabelsFromGroups(groups: NavGroup[]): Record<string, string> 
     if (label && label !== defaultLabel) groupLabels[group.id] = label;
   }
   return Object.keys(groupLabels).length ? groupLabels : undefined;
+}
+
+function getDefaultItemLabel(itemId: string): string | undefined {
+  for (const group of DEFAULT_NAV_GROUPS) {
+    const item = group.items.find((i) => i.id === itemId);
+    if (item) return item.label;
+  }
+  return undefined;
+}
+
+function resolveItemLabel(itemId: string, defaultLabel: string, prefs: NavPreferences | null): string {
+  const custom = prefs?.itemLabels?.[itemId]?.trim();
+  return custom || defaultLabel;
+}
+
+function buildItemLabelsFromGroups(groups: NavGroup[]): Record<string, string> | undefined {
+  const itemLabels: Record<string, string> = {};
+  for (const group of groups) {
+    for (const item of group.items) {
+      const defaultLabel = getDefaultItemLabel(item.id) ?? item.label;
+      const label = item.label.trim();
+      if (label && label !== defaultLabel) itemLabels[item.id] = label;
+    }
+  }
+  return Object.keys(itemLabels).length ? itemLabels : undefined;
+}
+
+function applyItemLabel(item: NavItem, prefs: NavPreferences | null): NavItem {
+  const defaultLabel = getDefaultItemLabel(item.id) ?? item.label;
+  return { ...item, label: resolveItemLabel(item.id, defaultLabel, prefs) };
 }
 
 function resolveGroupOrder(groups: NavGroup[], prefs: NavPreferences | null): string[] {
@@ -125,6 +157,7 @@ export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
     assignments: Object.fromEntries(groups.map((g) => [g.id, g.items.map((i) => i.id)])),
     hiddenGroups: hiddenGroups.length ? hiddenGroups : undefined,
     groupLabels: buildGroupLabelsFromGroups(groups),
+    itemLabels: buildItemLabelsFromGroups(groups),
   };
 }
 
@@ -155,7 +188,10 @@ export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | 
         ...idsInGroup.filter((id) => !savedIds.includes(id) && catalog.has(id)),
       ]);
 
-      const items = orderedIds.map((id) => catalog.get(id)!).filter(Boolean);
+      const items = orderedIds
+        .map((id) => catalog.get(id)!)
+        .filter(Boolean)
+        .map((item) => applyItemLabel(item, prefs));
       return {
         ...groupMeta,
         label: resolveGroupLabel(groupId, groupMeta.label, prefs),
@@ -309,4 +345,13 @@ export function renameNavGroup(groups: NavGroup[], groupId: string, label: strin
   const trimmed = label.trim();
   if (!trimmed) return groups;
   return groups.map((group) => (group.id === groupId ? { ...group, label: trimmed } : group));
+}
+
+export function renameNavItem(groups: NavGroup[], itemId: string, label: string): NavGroup[] {
+  const trimmed = label.trim();
+  if (!trimmed) return groups;
+  return groups.map((group) => ({
+    ...group,
+    items: group.items.map((item) => (item.id === itemId ? { ...item, label: trimmed } : item)),
+  }));
 }

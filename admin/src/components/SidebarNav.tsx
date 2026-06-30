@@ -12,6 +12,7 @@ import {
   insertItemAt,
   removeNavGroup,
   renameNavGroup,
+  renameNavItem,
   reorderGroups,
   saveNavPreferences,
   type NavGroup,
@@ -60,29 +61,22 @@ function parseDrag(data: string): DragPayload | null {
 function NavItemContent({
   item,
   active,
-  customizing,
   showNewTabAffordance,
 }: {
   item: NavItem;
   active: boolean;
-  customizing: boolean;
   showNewTabAffordance?: boolean;
 }) {
   return (
     <>
-      {customizing && (
-        <span className="sidebar-drag-handle shrink-0 text-slate-600 select-none" aria-hidden="true">
-          ⠿
-        </span>
-      )}
       <span className={iconWrapClass(active)}>
         <NavIcon id={item.id} openInNewTab={item.openInNewTab} className="sidebar-nav-icon" />
       </span>
       <span className="flex-1 min-w-0 sidebar-nav-label leading-tight truncate">{item.label}</span>
-      {item.openInNewTab && !customizing && (
+      {item.openInNewTab && (
         <NavIcon id="external" className="w-2.5 h-2.5 opacity-40 shrink-0" />
       )}
-      {showNewTabAffordance && !customizing && (
+      {showNewTabAffordance && (
         <span className="sidebar-nav-external-spacer shrink-0 w-5" aria-hidden="true" />
       )}
     </>
@@ -120,6 +114,8 @@ function NavItemCard({
   onDragEnter,
   onDragOver,
   onDrop,
+  onItemLabelChange,
+  onItemLabelCommit,
 }: {
   item: NavItem;
   groupId: string;
@@ -131,19 +127,41 @@ function NavItemCard({
   onDragEnter: (e: DragEvent) => void;
   onDragOver: (e: DragEvent) => void;
   onDrop: (e: DragEvent) => void;
+  onItemLabelChange: (itemId: string, label: string) => void;
+  onItemLabelCommit: (itemId: string, label: string) => void;
 }) {
   if (customizing) {
     return (
       <div
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
         onDragEnter={onDragEnter}
         onDragOver={onDragOver}
         onDrop={onDrop}
-        className={`${navCardClass(false, dragging, dropHint)} cursor-grab active:cursor-grabbing`}
+        className={navCardClass(false, dragging, dropHint)}
       >
-        <NavItemContent item={item} active={false} customizing />
+        <span
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          className="sidebar-drag-handle shrink-0 text-slate-600 select-none cursor-grab active:cursor-grabbing"
+          aria-hidden="true"
+        >
+          ⠿
+        </span>
+        <span className={iconWrapClass(false)}>
+          <NavIcon id={item.id} openInNewTab={item.openInNewTab} className="sidebar-nav-icon" />
+        </span>
+        <input
+          type="text"
+          value={item.label}
+          aria-label={`${item.label} link name`}
+          onChange={(e) => onItemLabelChange(item.id, e.target.value)}
+          onBlur={(e) => onItemLabelCommit(item.id, e.target.value)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
+          className="sidebar-nav-label flex-1 min-w-0 leading-tight text-slate-300 bg-brandNavy-900/80 border border-brandNavy-700 rounded px-1 py-0.5 focus:outline-none focus:border-brandTeal-500/50"
+        />
       </div>
     );
   }
@@ -154,7 +172,7 @@ function NavItemCard({
     const href = item.href.startsWith('http') ? item.href : `${window.location.origin}${item.href}`;
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={card}>
-        <NavItemContent item={item} active={false} customizing={false} />
+        <NavItemContent item={item} active={false} showNewTabAffordance={false} />
       </a>
     );
   }
@@ -167,7 +185,7 @@ function NavItemCard({
     <div className="group/card relative">
       <NavLink to={to} end={item.path === '/'} className={({ isActive }) => navCardClass(isActive)}>
         {({ isActive }) => (
-          <NavItemContent item={item} active={isActive} customizing={false} showNewTabAffordance={showNewTabButton} />
+          <NavItemContent item={item} active={isActive} showNewTabAffordance={showNewTabButton} />
         )}
       </NavLink>
       {showNewTabButton && <OpenInNewTabButton item={item} />}
@@ -192,6 +210,14 @@ export default function SidebarNav() {
   const commitGroupLabel = (groupId: string, label: string) => {
     setGroups((current) => {
       const next = renameNavGroup(current, groupId, label);
+      saveNavPreferences(buildPreferencesFromGroups(next));
+      return next;
+    });
+  };
+
+  const commitItemLabel = (itemId: string, label: string) => {
+    setGroups((current) => {
+      const next = renameNavItem(current, itemId, label);
       saveNavPreferences(buildPreferencesFromGroups(next));
       return next;
     });
@@ -361,8 +387,8 @@ export default function SidebarNav() {
                         type="text"
                         value={group.label}
                         aria-label={`${group.label} group name`}
-                        onChange={(e) => setGroups(renameNavGroup(groups, group.id, e.target.value))}
-                        onBlur={(e) => persist(renameNavGroup(groups, group.id, e.target.value))}
+                        onChange={(e) => setGroups((current) => renameNavGroup(current, group.id, e.target.value))}
+                        onBlur={(e) => commitGroupLabel(group.id, e.target.value)}
                         onMouseDown={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') e.currentTarget.blur();
@@ -435,6 +461,10 @@ export default function SidebarNav() {
                             const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
                             finishDrop(e, { kind: 'item', groupId: group.id, itemId: item.id, position });
                           }}
+                          onItemLabelChange={(itemId, label) =>
+                            setGroups((current) => renameNavItem(current, itemId, label))
+                          }
+                          onItemLabelCommit={commitItemLabel}
                         />
                       </li>
                     ))}
@@ -485,7 +515,7 @@ export default function SidebarNav() {
         {customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
-              Drag cards to reorder. Edit group names inline. Use × to remove a group or add one back below.
+              Drag cards to reorder. Edit group and link names inline. Use × to remove a group or add one back below.
             </p>
             <div className="flex gap-2">
               <button
