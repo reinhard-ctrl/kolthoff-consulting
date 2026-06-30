@@ -376,7 +376,14 @@ export default function SidebarNav() {
               Drag cards onto another card to reorder. Drop on a group header to move between groups.
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setCustomizing(false)} className="flex-1 sidebar-nav-btn-primary">
+              <button
+                type="button"
+                onClick={() => {
+                  persist(groups);
+                  setCustomizing(false);
+                }}
+                className="flex-1 sidebar-nav-btn-primary"
+              >
                 Done
               </button>
               <button type="button" onClick={reset} className="sidebar-nav-btn-secondary">
