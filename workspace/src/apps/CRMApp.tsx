@@ -19,11 +19,11 @@ interface Deal {
 }
 
 export default function CRMApp({ currentUserId }: { currentUserId: string }) {
-  const { data: deals } = useFirestoreCollection<Deal>(tenantCol('core_crm_deals'));
+  const { data: deals } = useFirestoreCollection<Deal>(tenantCol('crm_deals'));
 
   const addDeal = async () => {
     const id = `deal_${Date.now()}`;
-    await setDoc(tenantDoc('core_crm_deals', id), {
+    await setDoc(tenantDoc('crm_deals', id), {
       id, title: 'New Opportunity', company: '', value: 0, stage: 'lead',
       ownerId: currentUserId, createdAt: Date.now(), updatedAt: Date.now(),
     });
@@ -31,7 +31,7 @@ export default function CRMApp({ currentUserId }: { currentUserId: string }) {
   };
 
   const update = async (deal: Deal, field: string, value: unknown) => {
-    await setDoc(tenantDoc('core_crm_deals', deal.id), { [field]: value, updatedAt: Date.now() }, { merge: true });
+    await setDoc(tenantDoc('crm_deals', deal.id), { [field]: value, updatedAt: Date.now() }, { merge: true });
   };
 
   return (

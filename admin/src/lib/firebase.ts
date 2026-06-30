@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 const firebaseConfig = {
@@ -15,6 +16,7 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app, 'asia-southeast1');
 export const adminAppId = 'kolthoff-admin-app';
 
 export function adminCol(name: string) {
@@ -87,4 +89,4 @@ export function initAppCheck() {
   }
 }
 
-export { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, doc, onSnapshot, getDocs };
+export { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, doc, onSnapshot, getDocs, httpsCallable };

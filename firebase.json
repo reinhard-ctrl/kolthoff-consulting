@@ -25,7 +25,15 @@
       { "source": "/portal.html", "destination": "/apps/public/portal.html", "type": 301 },
       { "source": "/client_intake.html", "destination": "/apps/public/client_intake.html", "type": 301 },
       { "source": "/core_workspace_app.html", "destination": "/workspace/", "type": 301 },
-      { "source": "/admin_console.html", "destination": "/admin/", "type": 301 }
+      { "source": "/admin_console.html", "destination": "/admin/", "type": 301 },
+      { "source": "/project_planner.html", "destination": "/apps/delivery/project_planner.html", "type": 301 },
+      { "source": "/crm_pipeline.html", "destination": "/apps/operations/crm_pipeline.html", "type": 301 },
+      { "source": "/policy_studio.html", "destination": "/apps/operations/policy_studio.html", "type": 301 },
+      { "source": "/workflow_builder.html", "destination": "/apps/operations/workflow_builder.html", "type": 301 },
+      { "source": "/firm_analytics_dashboard.html", "destination": "/apps/analytics/firm_analytics_dashboard.html", "type": 301 },
+      { "source": "/intake_center.html", "destination": "/admin/legacy/intake_center.html", "type": 301 },
+      { "source": "/contract_ledger.html", "destination": "/admin/legacy/contract_ledger.html", "type": 301 },
+      { "source": "/core_master_admin.html", "destination": "/admin/legacy/core_master_admin.html", "type": 301 }
     ]
   },
   "firestore": {

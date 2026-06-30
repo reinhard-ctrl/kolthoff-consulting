@@ -9,6 +9,13 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+async function callerIsAdmin(uid: string | undefined, tokenRole: unknown): Promise<boolean> {
+  if (!uid) return false;
+  if (tokenRole === 'kolthoff_admin' || tokenRole === 'admin') return true;
+  const session = await db.doc(`artifacts/kolthoff-admin-app/public/data/admin_sessions/${uid}`).get();
+  return session.exists;
+}
+
 async function verifyPasscode(code: string) {
   const clean = code?.trim()?.toUpperCase();
   if (!clean) return { valid: false as const };
@@ -95,7 +102,8 @@ export const generatePortalToken = onCall({ invoker: 'public' }, async (request)
 
 /** Invite workspace user — creates Firebase Auth user + core_users doc */
 export const inviteWorkspaceUser = onCall(async (request) => {
-  if (!request.auth?.token?.role || !['kolthoff_admin', 'admin'].includes(request.auth.token.role as string)) {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
 
@@ -133,7 +141,8 @@ export const inviteWorkspaceUser = onCall(async (request) => {
 
 /** Set custom claims — kolthoff admin only */
 export const setUserClaims = onCall(async (request) => {
-  if (request.auth?.token?.role !== 'kolthoff_admin') {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Kolthoff admin only');
   }
 

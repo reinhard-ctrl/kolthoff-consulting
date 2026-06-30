@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, tenantCol, logAudit } from '../lib/firebase';
-import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
+import { signInWithEmailAndPassword, auth, tenantCol, logAudit, getDocs, query, where } from '../lib/firebase';
+import { FirebaseError } from 'firebase/app';
 
 interface CoreUser {
   id: string;
@@ -14,41 +14,33 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { data: users } = useFirestoreCollection<CoreUser>(tenantCol('core_users'));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    const normalized = email.trim().toLowerCase();
+    if (!password) {
+      setError('Password is required. Ask your admin to provision you in Tenant Manager.');
+      setLoading(false);
+      return;
+    }
     try {
-      await signInWithEmailAndPassword(
-        (await import('../lib/firebase')).auth,
-        email.trim(),
-        password
-      );
-      const match = users.find((u) => u.email?.toLowerCase() === email.toLowerCase().trim());
-      if (match) {
-        await logAudit('workspace_login', { email: match.email });
-        onLogin(match);
-      } else {
-        // Fallback: email-only match for invited users without password yet
-        const fallback = users.find((u) => u.email?.toLowerCase() === email.toLowerCase().trim());
-        if (fallback && !password) {
-          onLogin(fallback);
-        } else if (fallback) {
-          onLogin(fallback);
-        } else {
-          setError('Email not found in organization.');
-        }
+      await signInWithEmailAndPassword(auth, normalized, password);
+      const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', normalized)));
+      if (snap.empty) {
+        setError('Email not found in organization. Contact your Kolthoff admin.');
+        return;
       }
+      const match = snap.docs[0].data() as CoreUser;
+      await logAudit('workspace_login', { email: match.email });
+      onLogin(match);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Login failed';
-      // Allow email-only login for MVP migration
-      const match = users.find((u) => u.email?.toLowerCase() === email.toLowerCase().trim());
-      if (match && !password) {
-        onLogin(match);
-      } else if (match) {
-        onLogin(match);
+      if (err instanceof FirebaseError && err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password.');
+      } else if (msg.includes('referer')) {
+        setError('Firebase Auth blocked this domain. Add this site to API key HTTP referrers.');
       } else {
         setError(msg);
       }
@@ -64,12 +56,15 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
         <p className="text-sm text-slate-400 text-center mb-6">Sign in with your organizational email</p>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
           className="w-full p-3 rounded-lg bg-slate-900 border border-slate-600 text-white mb-3" required />
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password (optional during migration)"
-          className="w-full p-3 rounded-lg bg-slate-900 border border-slate-600 text-white mb-4" />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
+          className="w-full p-3 rounded-lg bg-slate-900 border border-slate-600 text-white mb-4" required />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
         <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
+        <p className="text-xs text-slate-500 text-center mt-4">
+          Kolthoff staff with a passcode? <a href="/admin/" className="text-teal-400 underline">Sign in at Admin Console</a> first.
+        </p>
       </form>
     </div>
   );

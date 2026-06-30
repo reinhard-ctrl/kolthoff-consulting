@@ -31,4 +31,4 @@ npm run deploy
 
 Production domain: `kolthoff-consulting.com` via Firebase Hosting.
 
-See [docs/data-model.md](docs/data-model.md) for Firestore schema, [docs/admin-login.md](docs/admin-login.md) for admin login, and [docs/security-access.md](docs/security-access.md) for public vs staff apps.
+See [docs/project-completion.md](docs/project-completion.md) for the final go-live checklist.
