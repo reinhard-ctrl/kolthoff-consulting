@@ -8,31 +8,13 @@ export type NavPreferences = {
   assignments: Record<string, string[]>;
 };
 
-export function loadNavPreferences(): NavPreferences | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as NavPreferences & { itemOrder?: Record<string, string[]> };
-    if (parsed.assignments) return parsed;
-    // Migrate legacy itemOrder-only prefs
-    if (parsed.itemOrder) {
-      return {
-        groupOrder: parsed.groupOrder ?? DEFAULT_NAV_GROUPS.map((g) => g.id),
-        assignments: parsed.itemOrder,
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveNavPreferences(prefs: NavPreferences) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-}
-
-export function clearNavPreferences() {
-  localStorage.removeItem(STORAGE_KEY);
+function dedupeIds(ids: string[]): string[] {
+  const seen = new Set<string>();
+  return ids.filter((id) => {
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 function buildItemCatalog(): Map<string, NavItem> {
@@ -47,6 +29,72 @@ function defaultAssignments(): Record<string, string[]> {
   return Object.fromEntries(DEFAULT_NAV_GROUPS.map((g) => [g.id, g.items.map((i) => i.id)]));
 }
 
+function resolveGroupOrder(groups: NavGroup[], prefs: NavPreferences | null): string[] {
+  const known = new Set(groups.map((g) => g.id));
+  if (!prefs?.groupOrder?.length) return groups.map((g) => g.id);
+  return [
+    ...prefs.groupOrder.filter((id) => known.has(id)),
+    ...groups.map((g) => g.id).filter((id) => !prefs.groupOrder.includes(id)),
+  ];
+}
+
+/** Each nav item belongs to exactly one group; saved assignments override defaults. */
+function resolveItemAssignments(groups: NavGroup[], prefs: NavPreferences | null): Map<string, string> {
+  const catalog = buildItemCatalog();
+  const itemHome = new Map<string, string>();
+
+  for (const group of groups) {
+    for (const item of group.items) {
+      itemHome.set(item.id, group.id);
+    }
+  }
+
+  if (!prefs?.assignments) return itemHome;
+
+  for (const groupId of resolveGroupOrder(groups, prefs)) {
+    const savedIds = dedupeIds(prefs.assignments[groupId] ?? []);
+    for (const id of savedIds) {
+      if (catalog.has(id)) itemHome.set(id, groupId);
+    }
+  }
+
+  return itemHome;
+}
+
+export function loadNavPreferences(): NavPreferences | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as NavPreferences & { itemOrder?: Record<string, string[]> };
+    let prefs: NavPreferences | null = null;
+    if (parsed.assignments) {
+      prefs = parsed;
+    } else if (parsed.itemOrder) {
+      prefs = {
+        groupOrder: parsed.groupOrder ?? DEFAULT_NAV_GROUPS.map((g) => g.id),
+        assignments: parsed.itemOrder,
+      };
+    }
+    if (!prefs) return null;
+    const sanitized = sanitizeNavPreferences(prefs);
+    const cleaned = JSON.stringify(sanitized);
+    if (cleaned !== JSON.stringify(prefs)) {
+      localStorage.setItem(STORAGE_KEY, cleaned);
+    }
+    return sanitized;
+  } catch {
+    return null;
+  }
+}
+
+export function saveNavPreferences(prefs: NavPreferences) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeNavPreferences(prefs)));
+}
+
+export function clearNavPreferences() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
   return {
     groupOrder: groups.map((g) => g.id),
@@ -54,29 +102,36 @@ export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
   };
 }
 
+export function sanitizeNavPreferences(
+  prefs: NavPreferences,
+  groups: NavGroup[] = DEFAULT_NAV_GROUPS,
+): NavPreferences {
+  return buildPreferencesFromGroups(applyNavPreferences(groups, prefs));
+}
+
 export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | null): NavGroup[] {
   const catalog = buildItemCatalog();
   const meta = new Map(groups.map((g) => [g.id, g]));
-  const assignments = prefs?.assignments ?? defaultAssignments();
+  const itemHome = resolveItemAssignments(groups, prefs);
+  const orderedGroupIds = resolveGroupOrder(groups, prefs);
 
-  const orderedGroupIds = prefs?.groupOrder?.length
-    ? [
-        ...prefs.groupOrder.filter((id) => meta.has(id)),
-        ...groups.map((g) => g.id).filter((id) => !prefs!.groupOrder.includes(id)),
-      ]
-    : groups.map((g) => g.id);
+  return orderedGroupIds
+    .filter((id) => meta.has(id))
+    .map((groupId) => {
+      const groupMeta = meta.get(groupId)!;
+      const savedIds = dedupeIds(prefs?.assignments?.[groupId] ?? []);
+      const idsInGroup = [...itemHome.entries()]
+        .filter(([, gid]) => gid === groupId)
+        .map(([id]) => id);
 
-  return orderedGroupIds.map((groupId) => {
-    const groupMeta = meta.get(groupId)!;
-    const savedIds = assignments[groupId] ?? groupMeta.items.map((i) => i.id);
-    const defaultIds = groupMeta.items.map((i) => i.id);
-    const mergedIds = [
-      ...savedIds.filter((id) => catalog.has(id)),
-      ...defaultIds.filter((id) => !savedIds.includes(id)),
-    ];
-    const items = mergedIds.map((id) => catalog.get(id)!).filter(Boolean);
-    return { ...groupMeta, items };
-  });
+      const orderedIds = dedupeIds([
+        ...savedIds.filter((id) => itemHome.get(id) === groupId && catalog.has(id)),
+        ...idsInGroup.filter((id) => !savedIds.includes(id) && catalog.has(id)),
+      ]);
+
+      const items = orderedIds.map((id) => catalog.get(id)!).filter(Boolean);
+      return { ...groupMeta, items };
+    });
 }
 
 export function getEffectiveNavGroups(): NavGroup[] {
