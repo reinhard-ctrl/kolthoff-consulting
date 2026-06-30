@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Signature & Contract Ledger | Kolthoff OS</title>
+    <title>Contract Signing | Kolthoff Consulting</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
@@ -122,7 +122,10 @@
 
             const isClientMode = new URLSearchParams(window.location.search).has('contract');
 
-            // 1. Initial Authentication Loop
+            if (!isClientMode) {
+                window.location.replace('/admin/contracts');
+                return null;
+            }
             useEffect(() => {
                 let checkInterval = setInterval(() => {
                     if (window.firebaseAuth && window.firebaseDb) {
@@ -218,7 +221,8 @@
                         const item = ledgerData.find(d => d.profileId === contractParam);
                         if (item) {
                             setActiveContractId(contractParam);
-                            if (item.contractStatus === 'signed') setActiveView('audit_trail');
+                            const viewParam = urlParams.get('view');
+                            if (viewParam === 'audit' || item.contractStatus === 'signed') setActiveView('audit_trail');
                             else if (item.contractStatus === 'sent') setActiveView('client_sign');
                         }
                     }

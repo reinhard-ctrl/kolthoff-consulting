@@ -11,6 +11,7 @@ export const ROUTES = {
   clientIntake: '/apps/public/client_intake.html',
   projectPlanner: '/apps/delivery/project_planner.html',
   contractLedger: '/admin/contracts',
+  clientContractSign: '/apps/public/contract_sign.html',
   workspace: '/workspace/',
   adminConsole: '/admin/',
   masterAdmin: '/admin/master',

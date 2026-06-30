@@ -6,12 +6,14 @@ import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
 import IntakeCenter from './pages/IntakeCenter';
-import LegacyToolFrame from './components/LegacyToolFrame';
+import PortalManager from './pages/PortalManager';
+import ContractLedger from './pages/ContractLedger';
+import MasterAdmin from './pages/MasterAdmin';
 
 const ADMIN_TOOLS = [
-  { to: '/portals', label: 'Portal Manager', legacy: '/admin/legacy/admin_console.html' },
-  { to: '/contracts', label: 'Contract Ledger', legacy: '/admin/legacy/contract_ledger.html' },
-  { to: '/master', label: 'Master Admin', legacy: '/admin/legacy/core_master_admin.html' },
+  { to: '/portals', label: 'Portal Manager' },
+  { to: '/contracts', label: 'Contract Ledger' },
+  { to: '/master', label: 'Master Admin' },
 ];
 
 const SUITE_LINKS = [
@@ -168,9 +170,9 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/tenants" element={<Tenants />} />
         <Route path="/intake" element={<IntakeCenter />} />
-        <Route path="/portals" element={<LegacyToolFrame src="/admin/legacy/admin_console.html" title="Portal Manager" />} />
-        <Route path="/contracts" element={<LegacyToolFrame src="/admin/legacy/contract_ledger.html" title="Contract Ledger" />} />
-        <Route path="/master" element={<LegacyToolFrame src="/admin/legacy/core_master_admin.html" title="Master Admin" />} />
+        <Route path="/portals" element={<PortalManager />} />
+        <Route path="/contracts" element={<ContractLedger />} />
+        <Route path="/master" element={<MasterAdmin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
