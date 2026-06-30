@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-/** Scale sidebar nav content to fit available height without scrolling. */
+/** Scale sidebar nav content to fit available height without scrolling. Disabled during customize (breaks HTML5 DnD). */
 export function useSidebarFit(groups: unknown, customizing: boolean) {
   const shellRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -15,6 +15,13 @@ export function useSidebarFit(groups: unknown, customizing: boolean) {
       content.style.width = '100%';
       content.style.height = 'auto';
 
+      if (customizing) {
+        shell.style.setProperty('--sidebar-nav-scale', '1');
+        shell.style.overflowY = 'auto';
+        return;
+      }
+
+      shell.style.overflowY = 'hidden';
       const available = shell.clientHeight;
       const needed = content.scrollHeight;
       if (needed <= available || available <= 0) {

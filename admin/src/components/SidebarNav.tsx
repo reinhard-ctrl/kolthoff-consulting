@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { DEFAULT_NAV_GROUPS, getNavLink, type NavItem } from '../config/navigation';
 import { NavIcon } from './NavIcons';
@@ -23,10 +23,12 @@ type DropTarget =
 
 const MIME = 'application/x-kolthoff-nav';
 
-function navCardClass(active: boolean, dragging?: boolean) {
+function navCardClass(active: boolean, dragging?: boolean, dropHint?: 'before' | 'after') {
   return [
     'group flex items-center gap-2 w-full rounded-lg border transition-all duration-150 sidebar-nav-item px-2 py-1.5',
     dragging ? 'opacity-40 scale-[0.98]' : '',
+    dropHint === 'before' ? 'ring-2 ring-brandTeal-500/50 ring-offset-1 ring-offset-brandNavy-950' : '',
+    dropHint === 'after' ? 'border-b-brandTeal-500 border-b-2' : '',
     active
       ? 'bg-brandTeal-500/15 border-brandTeal-500/40 text-brandTeal-200 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.15)]'
       : 'bg-brandNavy-800/40 border-brandNavy-700/50 text-slate-300 hover:bg-brandNavy-800 hover:border-brandNavy-600 hover:text-white',
@@ -43,6 +45,7 @@ function iconWrapClass(active: boolean) {
 }
 
 function parseDrag(data: string): DragPayload | null {
+  if (!data) return null;
   try {
     return JSON.parse(data) as DragPayload;
   } catch {
@@ -54,7 +57,7 @@ function NavItemContent({ item, active, customizing }: { item: NavItem; active: 
   return (
     <>
       {customizing && (
-        <span className="sidebar-drag-handle shrink-0 text-slate-600" aria-hidden="true">
+        <span className="sidebar-drag-handle shrink-0 text-slate-600 select-none" aria-hidden="true">
           ⠿
         </span>
       )}
@@ -73,37 +76,42 @@ function NavItemCard({
   item,
   groupId,
   customizing,
-  active,
   dragging,
+  dropHint,
   onDragStart,
   onDragEnd,
+  onDragEnter,
+  onDragOver,
+  onDrop,
 }: {
   item: NavItem;
   groupId: string;
   customizing: boolean;
-  active: boolean;
   dragging: boolean;
-  onDragStart: (e: DragEvent, payload: DragPayload) => void;
+  dropHint?: 'before' | 'after';
+  onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void;
+  onDragEnter: (e: DragEvent) => void;
+  onDragOver: (e: DragEvent) => void;
+  onDrop: (e: DragEvent) => void;
 }) {
-  const card = navCardClass(active, dragging);
-
   if (customizing) {
     return (
       <div
         draggable
-        onDragStart={(e) => {
-          e.dataTransfer.setData(MIME, JSON.stringify({ kind: 'item', itemId: item.id, groupId }));
-          e.dataTransfer.effectAllowed = 'move';
-          onDragStart(e, { kind: 'item', itemId: item.id, groupId });
-        }}
+        onDragStart={onDragStart}
         onDragEnd={onDragEnd}
-        className={`${card} cursor-grab active:cursor-grabbing`}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        className={`${navCardClass(false, dragging, dropHint)} cursor-grab active:cursor-grabbing`}
       >
-        <NavItemContent item={item} active={active} customizing />
+        <NavItemContent item={item} active={false} customizing />
       </div>
     );
   }
+
+  const card = navCardClass(false, false);
 
   if (item.openInNewTab && item.href) {
     const href = item.href.startsWith('http') ? item.href : `${window.location.origin}${item.href}`;
@@ -127,6 +135,7 @@ export default function SidebarNav() {
   const [groups, setGroups] = useState<NavGroup[]>(() => getEffectiveNavGroups());
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const dragPayloadRef = useRef<DragPayload | null>(null);
 
   const { shellRef, contentRef } = useSidebarFit(groups, customizing);
 
@@ -139,6 +148,21 @@ export default function SidebarNav() {
     clearNavPreferences();
     setGroups(DEFAULT_NAV_GROUPS);
     setCustomizing(false);
+    dragPayloadRef.current = null;
+  };
+
+  const beginDrag = (e: DragEvent, payload: DragPayload) => {
+    e.stopPropagation();
+    dragPayloadRef.current = payload;
+    const json = JSON.stringify(payload);
+    e.dataTransfer.setData(MIME, json);
+    e.dataTransfer.setData('text/plain', json);
+    e.dataTransfer.effectAllowed = 'move';
+    setDragging(payload);
+  };
+
+  const readDragPayload = (e: DragEvent): DragPayload | null => {
+    return parseDrag(e.dataTransfer.getData(MIME) || e.dataTransfer.getData('text/plain')) || dragPayloadRef.current;
   };
 
   const applyDrop = (payload: DragPayload, target: DropTarget) => {
@@ -170,141 +194,173 @@ export default function SidebarNav() {
     }
   };
 
-  const handleDrop = (e: DragEvent, target: DropTarget) => {
+  const finishDrop = (e: DragEvent, target: DropTarget) => {
     e.preventDefault();
-    const raw = e.dataTransfer.getData(MIME);
-    const payload = parseDrag(raw);
+    e.stopPropagation();
+    const payload = readDragPayload(e);
     if (payload) applyDrop(payload, target);
+    dragPayloadRef.current = null;
     setDragging(null);
     setDropTarget(null);
   };
 
-  const dropZoneClass = (active: boolean) =>
-    `sidebar-drop-zone ${active ? 'sidebar-drop-zone-active' : ''}`;
+  const allowDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const dropHandlers = customizing
+    ? { onDragEnter: allowDrop, onDragOver: allowDrop }
+    : { onDragEnter: undefined, onDragOver: undefined };
+
+  const itemDropHint = (groupId: string, itemId: string): 'before' | 'after' | undefined => {
+    if (dropTarget?.kind !== 'item') return undefined;
+    if (dropTarget.groupId !== groupId || dropTarget.itemId !== itemId) return undefined;
+    return dropTarget.position;
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div ref={shellRef} className="sidebar-nav-shell flex-1 min-h-0 overflow-hidden px-2">
+      <div ref={shellRef} className="sidebar-nav-shell flex-1 min-h-0 px-2">
         <nav
           ref={contentRef}
           className="sidebar-nav-fit space-y-2"
           aria-label="Operations Suite navigation"
+          {...dropHandlers}
+          onDragLeave={customizing ? () => setDropTarget(null) : undefined}
         >
           {groups.map((group, groupIndex) => {
             const groupDragging = dragging?.kind === 'group' && dragging.groupId === group.id;
             const groupDropBefore =
-              dropTarget?.kind === 'group' && dropTarget.groupId === group.id && dropTarget.position === 'before';
+              dropTarget?.kind === 'group' &&
+              dropTarget.groupId === group.id &&
+              dropTarget.position === 'before';
             const groupDropAfter =
-              dropTarget?.kind === 'group' && dropTarget.groupId === group.id && dropTarget.position === 'after';
+              dropTarget?.kind === 'group' &&
+              dropTarget.groupId === group.id &&
+              dropTarget.position === 'after';
 
             return (
-              <div key={group.id}>
-                {customizing && (
-                  <div
-                    className={dropZoneClass(groupDropBefore)}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDropTarget({ kind: 'group', groupId: group.id, position: 'before' });
-                    }}
-                    onDrop={(e) => handleDrop(e, { kind: 'group', groupId: group.id, position: 'before' })}
-                  />
-                )}
+              <div
+                key={group.id}
+                className={`relative ${groupDropBefore ? 'sidebar-group-drop-before' : ''} ${groupDropAfter ? 'sidebar-group-drop-after' : ''}`}
+                onDragEnter={customizing ? allowDrop : undefined}
+                onDragOver={
+                  customizing
+                    ? (e) => {
+                        allowDrop(e);
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        setDropTarget({ kind: 'group', groupId: group.id, position });
+                      }
+                    : undefined
+                }
+                onDrop={
+                  customizing
+                    ? (e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        finishDrop(e, { kind: 'group', groupId: group.id, position });
+                      }
+                    : undefined
+                }
+              >
                 <section
                   className={`sidebar-group-card rounded-lg border border-brandNavy-800/80 bg-brandNavy-950/40 p-1.5 ${groupDragging ? 'opacity-40' : ''}`}
-                  draggable={customizing}
-                  onDragStart={
-                    customizing
-                      ? (e) => {
-                          e.dataTransfer.setData(MIME, JSON.stringify({ kind: 'group', groupId: group.id }));
-                          e.dataTransfer.effectAllowed = 'move';
-                          setDragging({ kind: 'group', groupId: group.id });
-                        }
-                      : undefined
-                  }
-                  onDragEnd={() => setDragging(null)}
                 >
                   <div
                     className={`flex items-center gap-1.5 px-1 pb-1 ${customizing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                    draggable={customizing}
+                    onDragStart={
+                      customizing
+                        ? (e) => beginDrag(e, { kind: 'group', groupId: group.id })
+                        : undefined
+                    }
+                    onDragEnd={() => {
+                      dragPayloadRef.current = null;
+                      setDragging(null);
+                      setDropTarget(null);
+                    }}
+                    onDragEnter={customizing ? allowDrop : undefined}
                     onDragOver={
                       customizing
                         ? (e) => {
-                            e.preventDefault();
+                            allowDrop(e);
                             setDropTarget({ kind: 'group', groupId: group.id, position: 'after' });
                           }
                         : undefined
                     }
                     onDrop={
                       customizing
-                        ? (e) => handleDrop(e, { kind: 'group', groupId: group.id, position: 'after' })
+                        ? (e) => finishDrop(e, { kind: 'group', groupId: group.id, position: 'after' })
                         : undefined
                     }
                   >
-                    {customizing && <span className="sidebar-drag-handle text-slate-600 text-xs">⠿</span>}
-                    <h2 className="sidebar-nav-group-label flex-1 font-mono font-bold uppercase tracking-[0.14em] text-slate-500 truncate">
+                    {customizing && <span className="sidebar-drag-handle text-slate-600 text-xs select-none">⠿</span>}
+                    <h2 className="sidebar-nav-group-label flex-1 font-mono font-bold uppercase tracking-[0.14em] text-slate-500 truncate pointer-events-none">
                       {group.label}
                     </h2>
                   </div>
-                  <ul className="space-y-1">
-                    {group.items.map((item) => {
-                      const itemDropBefore =
-                        dropTarget?.kind === 'item' &&
-                        dropTarget.groupId === group.id &&
-                        dropTarget.itemId === item.id &&
-                        dropTarget.position === 'before';
-                      const itemDropAfter =
-                        dropTarget?.kind === 'item' &&
-                        dropTarget.groupId === group.id &&
-                        dropTarget.itemId === item.id &&
-                        dropTarget.position === 'after';
-
-                      return (
-                        <li key={item.id}>
-                          {customizing && (
-                            <div
-                              className={dropZoneClass(!!itemDropBefore)}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                setDropTarget({ kind: 'item', groupId: group.id, itemId: item.id, position: 'before' });
-                              }}
-                              onDrop={(e) =>
-                                handleDrop(e, { kind: 'item', groupId: group.id, itemId: item.id, position: 'before' })
-                              }
-                            />
-                          )}
-                          <NavItemCard
-                            item={item}
-                            groupId={group.id}
-                            customizing={customizing}
-                            active={false}
-                            dragging={dragging?.kind === 'item' && dragging.itemId === item.id}
-                            onDragStart={(_, p) => setDragging(p)}
-                            onDragEnd={() => setDragging(null)}
-                          />
-                          {customizing && (
-                            <div
-                              className={dropZoneClass(!!itemDropAfter)}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                setDropTarget({ kind: 'item', groupId: group.id, itemId: item.id, position: 'after' });
-                              }}
-                              onDrop={(e) =>
-                                handleDrop(e, { kind: 'item', groupId: group.id, itemId: item.id, position: 'after' })
-                              }
-                            />
-                          )}
-                        </li>
-                      );
-                    })}
+                  <ul
+                    className="space-y-1 min-h-[1.5rem]"
+                    onDragEnter={customizing ? allowDrop : undefined}
+                    onDragOver={
+                      customizing
+                        ? (e) => {
+                            allowDrop(e);
+                            if (group.items.length === 0) {
+                              setDropTarget({ kind: 'group', groupId: group.id, position: 'after' });
+                            }
+                          }
+                        : undefined
+                    }
+                    onDrop={
+                      customizing && group.items.length === 0
+                        ? (e) => finishDrop(e, { kind: 'group', groupId: group.id, position: 'after' })
+                        : undefined
+                    }
+                  >
+                    {group.items.map((item) => (
+                      <li key={item.id}>
+                        <NavItemCard
+                          item={item}
+                          groupId={group.id}
+                          customizing={customizing}
+                          dragging={dragging?.kind === 'item' && dragging.itemId === item.id}
+                          dropHint={itemDropHint(group.id, item.id)}
+                          onDragStart={(e) => beginDrag(e, { kind: 'item', itemId: item.id, groupId: group.id })}
+                          onDragEnd={() => {
+                            dragPayloadRef.current = null;
+                            setDragging(null);
+                            setDropTarget(null);
+                          }}
+                          onDragEnter={allowDrop}
+                          onDragOver={(e) => {
+                            allowDrop(e);
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                            setDropTarget({ kind: 'item', groupId: group.id, itemId: item.id, position });
+                          }}
+                          onDrop={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                            finishDrop(e, { kind: 'item', groupId: group.id, itemId: item.id, position });
+                          }}
+                        />
+                      </li>
+                    ))}
                   </ul>
                 </section>
                 {customizing && groupIndex === groups.length - 1 && (
                   <div
-                    className={dropZoneClass(groupDropAfter)}
+                    className="h-4 mt-1 rounded sidebar-drop-pad"
+                    onDragEnter={allowDrop}
                     onDragOver={(e) => {
-                      e.preventDefault();
+                      allowDrop(e);
                       setDropTarget({ kind: 'group', groupId: group.id, position: 'after' });
                     }}
-                    onDrop={(e) => handleDrop(e, { kind: 'group', groupId: group.id, position: 'after' })}
+                    onDrop={(e) => finishDrop(e, { kind: 'group', groupId: group.id, position: 'after' })}
                   />
                 )}
               </div>
@@ -313,11 +369,11 @@ export default function SidebarNav() {
         </nav>
       </div>
 
-      <div className="pt-2 border-t border-brandNavy-800 space-y-1.5 shrink-0">
+      <div className="pt-2 border-t border-brandNavy-800 space-y-1.5 shrink-0 px-2">
         {customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
-              Drag cards to reorder or move between groups. Saved in this browser.
+              Drag cards onto another card to reorder. Drop on a group header to move between groups.
             </p>
             <div className="flex gap-2">
               <button type="button" onClick={() => setCustomizing(false)} className="flex-1 sidebar-nav-btn-primary">
