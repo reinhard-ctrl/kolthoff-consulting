@@ -81,6 +81,26 @@ export function getNavLink(item: NavItem): string {
   return `/app/${item.id}`;
 }
 
+/** Full-page URL for opening a nav item in a new browser tab. */
+export function getNavExternalUrl(item: NavItem): string | null {
+  if (item.openInNewTab && item.href) {
+    return item.href.startsWith('http') ? item.href : `${window.location.origin}${item.href}`;
+  }
+  if (item.type === 'embed' && item.href) {
+    return item.href.startsWith('http') ? item.href : `${window.location.origin}${item.href}`;
+  }
+  if (item.type === 'route' && item.path) {
+    const base = (import.meta.env.BASE_URL || '/admin/').replace(/\/$/, '');
+    const path = item.path === '/' ? `${base}/` : `${base}${item.path}`;
+    return `${window.location.origin}${path}`;
+  }
+  return null;
+}
+
+export function canOpenInPanel(item: NavItem): boolean {
+  return !item.openInNewTab;
+}
+
 export function listEmbedItems(): NavItem[] {
   return ALL_ITEMS.filter((i) => i.type === 'embed' && !i.openInNewTab);
 }
