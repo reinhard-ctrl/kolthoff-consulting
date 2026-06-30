@@ -91,4 +91,5 @@ jobs:
           npx --yes firebase-tools@15.22.3 deploy \
             --only hosting,firestore:rules,storage,functions \
             --project kolthoff-portal \
-            --non-interactive
+            --non-interactive \
+            --force
