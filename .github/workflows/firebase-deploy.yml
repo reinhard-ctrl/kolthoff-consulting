@@ -29,6 +29,8 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_PRODUCTION: false
     steps:
       - uses: actions/checkout@v4
 
@@ -37,8 +39,6 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci && npm run build
-        env:
-          NPM_CONFIG_PRODUCTION: false
 
       - id: google-auth
         uses: google-github-actions/auth@v2
@@ -63,6 +63,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment: production
+    env:
+      NPM_CONFIG_PRODUCTION: false
     steps:
       - uses: actions/checkout@v4
 
@@ -71,8 +73,6 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci && npm run build
-        env:
-          NPM_CONFIG_PRODUCTION: false
       - run: npm ci --prefix functions && npm run build --prefix functions
 
       - id: google-auth
