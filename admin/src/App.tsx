@@ -1,6 +1,6 @@
 import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
-import { Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
@@ -9,27 +9,9 @@ import IntakeCenter from './pages/IntakeCenter';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import MasterAdmin from './pages/MasterAdmin';
-
-const ADMIN_TOOLS = [
-  { to: '/portals', label: 'Portal Manager' },
-  { to: '/contracts', label: 'Contract Ledger' },
-  { to: '/master', label: 'Master Admin' },
-];
-
-const SUITE_LINKS = [
-  { href: '/apps/delivery/project_planner.html', label: 'Project Planner' },
-  { href: '/apps/delivery/diagnoses_report.html', label: 'Diagnosis Reports' },
-  { href: '/apps/operations/crm_pipeline.html', label: 'CRM Pipeline' },
-  { href: '/apps/operations/policy_studio.html', label: 'Policy Studio' },
-  { href: '/apps/operations/workflow_builder.html', label: 'Workflow Builder' },
-  { href: '/apps/analytics/firm_analytics_dashboard.html', label: 'Firm Analytics' },
-  { href: '/apps/analytics/resource_capacity_manager.html', label: 'Resource Capacity' },
-  { href: '/apps/analytics/time_tracking_variance_analyzer.html', label: 'Time Variance' },
-  { href: '/workspace/', label: 'Core Workspace' },
-  { href: '/apps/public/portal.html', label: 'Client Portal' },
-  { href: '/apps/public/client_intake.html', label: 'Client Intake Form' },
-  { href: '/', label: 'Marketing Site' },
-];
+import EmbedApp from './pages/EmbedApp';
+import BrandHeader from './components/BrandHeader';
+import SidebarNav from './components/SidebarNav';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -116,9 +98,14 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-brandNavy-955 p-4">
       <form onSubmit={submit} className="glass-panel p-8 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-brandTeal-400 mb-4">Kolthoff Admin Console</h1>
+        <div className="flex justify-center mb-6">
+          <BrandHeader />
+        </div>
+        <p className="text-sm text-slate-400 text-center mb-5">
+          Enter your admin passcode to access the Operations Suite.
+        </p>
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
           className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
@@ -147,30 +134,31 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0">
-        <h1 className="font-bold text-brandTeal-400 mb-1">Kolthoff OS</h1>
-        <p className="text-xs text-slate-500 mb-6">Unified Admin Console</p>
-        <nav className="space-y-1 flex-1 overflow-y-auto">
-          <Link to="/" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Dashboard</Link>
-          <Link to="/tenants" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Tenant Manager</Link>
-          <Link to="/intake" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Intake Center</Link>
-          <div className="pt-4 text-xs text-slate-500 uppercase">Admin Tools</div>
-          {ADMIN_TOOLS.map((t) => (
-            <Link key={t.to} to={t.to} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{t.label}</Link>
-          ))}
-          <div className="pt-4 text-xs text-slate-500 uppercase">Delivery Suite</div>
-          {SUITE_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{l.label}</a>
-          ))}
-        </nav>
-        <div className="text-xs text-slate-600 pt-4 border-t border-brandNavy-800">
-          {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+    <div className="min-h-screen flex flex-col bg-brandNavy-955">
+      <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md shrink-0">
+        <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
+          <BrandHeader />
+          <span className="hidden sm:inline px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
+            Internal
+          </span>
         </div>
-      </aside>
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+      </header>
+      <div className="flex flex-1 min-h-0">
+        <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0 overflow-hidden">
+          <SidebarNav />
+          <div className="text-xs text-slate-600 pt-3 border-t border-brandNavy-800 font-mono shrink-0">
+            {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+          </div>
+        </aside>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto min-w-0">{children}</main>
+      </div>
     </div>
   );
+}
+
+function EmbedAppRoute() {
+  const { appId } = useParams();
+  return <EmbedApp appId={appId ?? ''} />;
 }
 
 function AppRoutes() {
@@ -224,6 +212,7 @@ function AppRoutes() {
         <Route path="/portals" element={<PortalManager />} />
         <Route path="/contracts" element={<ContractLedger />} />
         <Route path="/master" element={<MasterAdmin />} />
+        <Route path="/app/:appId" element={<EmbedAppRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
