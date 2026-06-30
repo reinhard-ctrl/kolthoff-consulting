@@ -44,6 +44,12 @@ async function run() {
     admin.firestore().collection('artifacts/kolthoff-admin-app/public/data/admin_credentials').get()
   );
 
+  // Anonymous users cannot read firm CRM / planner data
+  const anon = testEnv.authenticatedContext('anon1', {}, { provider: 'anonymous' });
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_deals/d1').get()
+  );
+
   console.log('All rules tests passed.');
   await testEnv.cleanup();
 }

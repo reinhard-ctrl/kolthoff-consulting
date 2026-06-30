@@ -10,6 +10,7 @@
  
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js"></script>
+    <script type="module" src="../../shared/auth-gate.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1140,7 +1141,7 @@
                         const initAuth = async () => {
                             try {
                                 if (window.initialAuthToken) await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken); 
-                                else await window.signInAnonymously(window.firebaseAuth); 
+                                else await window.kolthoffStaffReady 
                             } catch (e) { setAuthError(e.message || "Referrer restricted"); }
                         };
                         initAuth();

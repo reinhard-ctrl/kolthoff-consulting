@@ -7,10 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAnonymous() {
+      return isAuthenticated() &&
+        request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    /** Kolthoff admin passcode session or custom claim */
     function isKolthoffAdmin() {
       return isAuthenticated() && (
         request.auth.token.role == 'kolthoff_admin' ||
         exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid))
+      );
+    }
+
+    /** Staff: admin session, email/Google login, or tenant claims — not anonymous browsing */
+    function isStaffMember() {
+      return isKolthoffAdmin() || (
+        isAuthenticated() && !isAnonymous()
       );
     }
 
@@ -45,10 +58,20 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Workspace login directory — MVP: readable when signed in (Phase 2: staff only)
+    match /artifacts/kolthoff-admin-app/public/data/core_users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isKolthoffAdmin();
+    }
+
+    // Firm internal data — staff only (blocks anonymous CRM/planner scraping)
+    match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
+      allow read, write: if isStaffMember();
+    }
+
     // Tenant-scoped collections
     match /artifacts/{tenantId}/public/data/{collection}/{docId} {
       allow read: if isTenantMember(tenantId) || (
-        // Public intake: write-only to specific form responses
         collection == 'intake_forms' && request.auth != null
       );
       allow create, update: if isTenantMember(tenantId) || (
@@ -58,26 +81,14 @@ service cloud.firestore {
       );
       allow delete: if isTenantAdmin(tenantId);
 
-      // Audit log — append only for members
       allow create: if collection == 'core_audit_log' && isTenantMember(tenantId);
       allow read: if collection == 'core_audit_log' && isTenantAdmin(tenantId);
     }
 
-    // Client portal access codes — read with auth
+    // Client portal access codes — authenticated portal clients
     match /artifacts/{tenantId}/public/data/clients/{clientId} {
       allow read: if isAuthenticated();
       allow write: if isKolthoffAdmin();
-    }
-
-    // Kolthoff admin app namespace
-    match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
-      allow read, write: if isKolthoffAdmin() || (
-        isAuthenticated() && collection in [
-          'workbook_profiles', 'intake_forms', 'intake_templates',
-          'contracts_ledger', 'clients', 'core_crm_deals',
-          'core_workflows', 'diagnosis_reports', 'resource_capacity', 'time_entries', 'firm_analytics'
-        ]
-      );
     }
   }
 }
