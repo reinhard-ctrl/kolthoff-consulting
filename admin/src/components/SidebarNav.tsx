@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
-import { DEFAULT_NAV_GROUPS, getNavLink, type NavItem } from '../config/navigation';
+import { DEFAULT_NAV_GROUPS, getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import {
@@ -53,7 +53,17 @@ function parseDrag(data: string): DragPayload | null {
   }
 }
 
-function NavItemContent({ item, active, customizing }: { item: NavItem; active: boolean; customizing: boolean }) {
+function NavItemContent({
+  item,
+  active,
+  customizing,
+  showNewTabAffordance,
+}: {
+  item: NavItem;
+  active: boolean;
+  customizing: boolean;
+  showNewTabAffordance?: boolean;
+}) {
   return (
     <>
       {customizing && (
@@ -68,7 +78,30 @@ function NavItemContent({ item, active, customizing }: { item: NavItem; active: 
       {item.openInNewTab && !customizing && (
         <NavIcon id="external" className="w-2.5 h-2.5 opacity-40 shrink-0" />
       )}
+      {showNewTabAffordance && !customizing && (
+        <span className="sidebar-nav-external-spacer shrink-0 w-5" aria-hidden="true" />
+      )}
     </>
+  );
+}
+
+function OpenInNewTabButton({ item }: { item: NavItem }) {
+  const url = getNavExternalUrl(item);
+  if (!url || !canOpenInPanel(item)) return null;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Open ${item.label} in new tab`}
+      aria-label={`Open ${item.label} in new tab`}
+      className="sidebar-nav-external-btn"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <NavIcon id="external" className="w-2.5 h-2.5" />
+    </a>
   );
 }
 
@@ -123,10 +156,18 @@ function NavItemCard({
   }
 
   const to = getNavLink(item);
+  const externalUrl = getNavExternalUrl(item);
+  const showNewTabButton = Boolean(externalUrl && canOpenInPanel(item));
+
   return (
-    <NavLink to={to} end={item.path === '/'} className={({ isActive }) => navCardClass(isActive)}>
-      {({ isActive }) => <NavItemContent item={item} active={isActive} customizing={false} />}
-    </NavLink>
+    <div className="group/card relative">
+      <NavLink to={to} end={item.path === '/'} className={({ isActive }) => navCardClass(isActive)}>
+        {({ isActive }) => (
+          <NavItemContent item={item} active={isActive} customizing={false} showNewTabAffordance={showNewTabButton} />
+        )}
+      </NavLink>
+      {showNewTabButton && <OpenInNewTabButton item={item} />}
+    </div>
   );
 }
 
@@ -376,7 +417,14 @@ export default function SidebarNav() {
               Drag cards onto another card to reorder. Drop on a group header to move between groups.
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => setCustomizing(false)} className="flex-1 sidebar-nav-btn-primary">
+              <button
+                type="button"
+                onClick={() => {
+                  persist(groups);
+                  setCustomizing(false);
+                }}
+                className="flex-1 sidebar-nav-btn-primary"
+              >
                 Done
               </button>
               <button type="button" onClick={reset} className="sidebar-nav-btn-secondary">

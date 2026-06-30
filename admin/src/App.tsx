@@ -1,6 +1,6 @@
 import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
@@ -118,6 +118,8 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const isEmbed = location.pathname.startsWith('/app/');
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
 
   useEffect(() => {
@@ -144,16 +146,11 @@ function Layout({ children }: { children: React.ReactNode }) {
           {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
         </div>
       </aside>
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
-        <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 shrink-0 z-50 backdrop-blur-md">
-          <div className="px-4 sm:px-6 h-12 sm:h-14 flex items-center justify-end">
-            <span className="px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
-              Internal
-            </span>
-          </div>
-        </header>
-        <main className="flex-1 p-4 sm:p-6 overflow-auto min-w-0">{children}</main>
-      </div>
+      <main
+        className={`flex-1 min-w-0 min-h-0 ${isEmbed ? 'overflow-hidden' : 'p-4 sm:p-6 overflow-auto'}`}
+      >
+        {children}
+      </main>
     </div>
   );
 }

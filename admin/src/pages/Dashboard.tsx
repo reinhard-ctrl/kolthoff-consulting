@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { adminCol } from '../lib/firebase';
+import QuickActionsBar from '../components/QuickActionsBar';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ clients: 0, profiles: 0, contracts: 0, intake: 0, tickets: 0 });
@@ -37,15 +38,7 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
-      <div className="glass-panel p-6">
-        <h2 className="font-bold mb-3">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/app/project-planner" className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">New SOW</Link>
-          <Link to="/contracts" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Contract Ledger</Link>
-          <Link to="/app/core-workspace" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Deploy Workspace</Link>
-          <Link to="/portals" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Portal Manager</Link>
-        </div>
-      </div>
+      <QuickActionsBar />
     </div>
   );
 }
