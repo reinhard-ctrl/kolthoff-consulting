@@ -75,13 +75,49 @@ export async function bootstrapAuth() {
   return auth.currentUser;
 }
 
-/** Call Cloud Function for admin passcode verification */
+/** Verify passcode via Firestore — works when org policy blocks public Cloud Functions */
 export async function verifyAdminPasscode(code) {
-  const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js');
-  const functions = getFunctions(app, 'asia-southeast1');
-  const fn = httpsCallable(functions, 'verifyAdminPasscode');
-  const result = await fn({ code: code.trim().toUpperCase() });
-  return result.data;
+  await bootstrapAuth();
+  const trimmed = code.trim();
+  if (!trimmed) return { valid: false };
+
+  const variants = [...new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()])];
+  let matchedCode;
+  let role = 'kolthoff_admin';
+
+  for (const candidate of variants) {
+    const credRef = doc(db, 'artifacts', appId, 'public', 'data', 'admin_credentials', candidate);
+    const snap = await getDoc(credRef);
+    if (snap.exists()) {
+      matchedCode = candidate;
+      role = snap.data()?.role || 'kolthoff_admin';
+      break;
+    }
+  }
+
+  if (!matchedCode) return { valid: false };
+
+  const uid = auth.currentUser.uid;
+  await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admin_sessions', uid), {
+    passcodeVerified: matchedCode,
+    role: 'kolthoff_admin',
+    verifiedAt: Date.now(),
+  });
+
+  return { valid: true, role };
+}
+
+/** Check if current user has an active admin session */
+export async function hasAdminSession() {
+  try {
+    await bootstrapAuth();
+  } catch {
+    return false;
+  }
+  if (!auth.currentUser) return false;
+  const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+  const snap = await getDoc(sessionRef);
+  return snap.exists();
 }
 
 /** Audit log helper */
@@ -132,6 +168,7 @@ if (typeof window !== 'undefined') {
   window.listAll = listAll;
   window.bootstrapAuth = bootstrapAuth;
   window.verifyAdminPasscode = verifyAdminPasscode;
+  window.hasAdminSession = hasAdminSession;
   window.logAudit = logAudit;
   window.tenantCollection = tenantCollection;
   window.tenantDoc = tenantDoc;

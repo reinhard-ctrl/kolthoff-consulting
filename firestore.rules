@@ -74,7 +74,7 @@ service cloud.firestore {
       allow read, write: if isKolthoffAdmin() || (
         isAuthenticated() && collection in [
           'workbook_profiles', 'intake_forms', 'intake_templates',
-          'contracts_ledger', 'clients', 'core_crm_deals', 'crm_deals', 'crm_contacts', 'crm_partners',
+          'contracts_ledger', 'clients', 'core_crm_deals',
           'core_workflows', 'diagnosis_reports', 'resource_capacity', 'time_entries', 'firm_analytics'
         ]
       );
