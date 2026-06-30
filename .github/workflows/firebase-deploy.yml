@@ -32,24 +32,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          project_id: kolthoff-portal
-          create_credentials_file: true
-
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
       - run: npm ci && npm run build
 
+      - id: google-auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: kolthoff-portal
+          create_credentials_file: true
+          export_environment_variables: true
+
       - name: Deploy hosting preview channel
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          npx firebase-tools hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
+          ./node_modules/.bin/firebase hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
             --expires 7d \
-            --project kolthoff-portal
+            --project kolthoff-portal \
+            --non-interactive
 
   deploy-production:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -59,13 +64,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          project_id: kolthoff-portal
-          create_credentials_file: true
-
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -73,8 +71,20 @@ jobs:
       - run: npm ci && npm run build
       - run: npm ci --prefix functions && npm run build --prefix functions
 
+      - id: google-auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: kolthoff-portal
+          create_credentials_file: true
+          export_environment_variables: true
+
       - name: Deploy to Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          npx firebase-tools deploy \
+          ./node_modules/.bin/firebase deploy \
             --only hosting,firestore:rules,storage:rules,functions \
-            --project kolthoff-portal
+            --project kolthoff-portal \
+            --non-interactive
