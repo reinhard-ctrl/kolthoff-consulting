@@ -9,6 +9,46 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+const WEB_API_KEY = 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI';
+const DEFAULT_WORKSPACE_URL = 'https://kolthoff-portal.web.app/workspace/';
+
+function workspaceContinueUrl(tenantId: string): string {
+  if (tenantId && tenantId !== 'kolthoff-admin-app') {
+    return `${DEFAULT_WORKSPACE_URL}?tenant=${encodeURIComponent(tenantId)}`;
+  }
+  return DEFAULT_WORKSPACE_URL;
+}
+
+async function coreUserExists(tenantId: string, email: string): Promise<boolean> {
+  const normalized = email.trim().toLowerCase();
+  const snap = await db
+    .collection(`artifacts/${tenantId}/public/data/core_users`)
+    .where('email', '==', normalized)
+    .limit(1)
+    .get();
+  return !snap.empty;
+}
+
+async function sendPasswordResetEmail(email: string, continueUrl: string): Promise<void> {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${WEB_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requestType: 'PASSWORD_RESET',
+        email: email.trim().toLowerCase(),
+        continueUrl,
+      }),
+    },
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error('sendOobCode failed', err);
+    throw new Error('sendOobCode failed');
+  }
+}
+
 async function callerIsAdmin(uid: string | undefined, tokenRole: unknown): Promise<boolean> {
   if (!uid) return false;
   if (tokenRole === 'kolthoff_admin' || tokenRole === 'admin') return true;
@@ -136,7 +176,63 @@ export const inviteWorkspaceUser = onCall(async (request) => {
     updatedAt: Date.now(),
   }, { merge: true });
 
-  return { userId, firebaseUid: userRecord.uid };
+  let passwordEmailSent = false;
+  try {
+    await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
+    passwordEmailSent = true;
+  } catch (err) {
+    console.warn('inviteWorkspaceUser: password email failed', err);
+  }
+
+  return { userId, firebaseUid: userRecord.uid, passwordEmailSent };
+});
+
+/** Request password reset — public; validates email against core_users server-side */
+export const requestWorkspacePasswordReset = onCall({ invoker: 'public' }, async (request) => {
+  const email = (request.data?.email as string)?.trim()?.toLowerCase();
+  const tenantId = (request.data?.tenantId as string)?.trim() || 'kolthoff-admin-app';
+  if (!email) throw new HttpsError('invalid-argument', 'Email required');
+
+  const genericMessage =
+    'If that email is registered with your organization, a password reset link has been sent.';
+
+  const exists = await coreUserExists(tenantId, email);
+  if (!exists) {
+    return { sent: true, message: genericMessage };
+  }
+
+  try {
+    await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
+  } catch (err) {
+    console.error('requestWorkspacePasswordReset failed', err);
+    throw new HttpsError('internal', 'Could not send password email. Try again or contact your admin.');
+  }
+
+  return {
+    sent: true,
+    message: 'Password reset link sent. Check your inbox (and spam folder), then return here to sign in.',
+  };
+});
+
+/** Admin-triggered password reset for a workspace user */
+export const sendWorkspacePasswordReset = onCall(async (request) => {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
+    throw new HttpsError('permission-denied', 'Admin privileges required');
+  }
+
+  const email = (request.data?.email as string)?.trim()?.toLowerCase();
+  const tenantId = (request.data?.tenantId as string)?.trim() || 'kolthoff-admin-app';
+  if (!email) throw new HttpsError('invalid-argument', 'Email required');
+
+  try {
+    await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
+  } catch (err) {
+    console.error('sendWorkspacePasswordReset failed', err);
+    throw new HttpsError('internal', 'Could not send password email.');
+  }
+
+  return { sent: true, message: `Password reset email sent to ${email}.` };
 });
 
 /** Set custom claims — kolthoff admin only */
