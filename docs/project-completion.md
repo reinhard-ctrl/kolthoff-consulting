@@ -84,6 +84,7 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 - Legacy URL redirects (`/crm_pipeline.html`, etc.)
 - Workspace: password required; admin passcode session auto-access
 - Tenant Manager invites via `inviteWorkspaceUser` Cloud Function
+- Single login: legacy HTML apps rely on `shared/auth-gate.js` (no second passcode screen)
 
 ---
 
@@ -91,7 +92,7 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 - Google Workspace SSO (`@kolthoff-consulting.com`)
 - App Check + reCAPTCHA
-- Suite launcher UI polish
+- Suite launcher UI polish (`/admin/legacy/index.html`)
 - Migrate legacy HTML tools into Admin SPA
 - Portal custom-token auth (replace anonymous client access)
 
