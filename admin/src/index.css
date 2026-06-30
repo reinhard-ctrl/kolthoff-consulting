@@ -100,3 +100,20 @@ body {
 .sidebar-group-card {
   transition: opacity 0.15s;
 }
+
+.sidebar-nav-external-btn {
+  @apply absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center rounded p-1
+    text-slate-500 opacity-0 pointer-events-none
+    hover:text-brandTeal-400 hover:bg-brandNavy-700/80
+    focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brandTeal-500/50
+    transition-all duration-150;
+}
+
+.group\/card:hover .sidebar-nav-external-btn,
+.group\/card:focus-within .sidebar-nav-external-btn {
+  @apply opacity-70 pointer-events-auto;
+}
+
+.group\/card:hover .sidebar-nav-external-btn:hover {
+  @apply opacity-100;
+}
