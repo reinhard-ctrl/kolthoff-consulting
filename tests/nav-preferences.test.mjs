@@ -68,11 +68,18 @@ function buildItemCatalog() {
 
 function resolveGroupOrder(groups, prefs) {
   const known = new Set(groups.map((g) => g.id));
-  if (!prefs?.groupOrder?.length) return groups.map((g) => g.id);
-  return [
-    ...prefs.groupOrder.filter((id) => known.has(id)),
-    ...groups.map((g) => g.id).filter((id) => !prefs.groupOrder.includes(id)),
-  ];
+  const hidden = new Set(prefs?.hiddenGroups ?? []);
+
+  if (!prefs?.groupOrder?.length) {
+    return groups.map((g) => g.id).filter((id) => !hidden.has(id));
+  }
+
+  const ordered = dedupeIds(prefs.groupOrder.filter((id) => known.has(id) && !hidden.has(id)));
+  const append = groups
+    .map((g) => g.id)
+    .filter((id) => !hidden.has(id) && !ordered.includes(id));
+
+  return [...ordered, ...append];
 }
 
 function resolveItemAssignments(groups, prefs) {
@@ -157,5 +164,14 @@ const corruptPrefs = {
 const cleaned = applyNavPreferences(DEFAULT_NAV_GROUPS, corruptPrefs);
 assertNoDuplicates(cleaned);
 assert.equal(allItemIds(cleaned).filter((id) => id === 'core-workspace').length, 1);
+
+const hiddenPrefs = {
+  groupOrder: ['command', 'delivery', 'operations', 'admin-tools', 'client'],
+  hiddenGroups: ['analytics'],
+  assignments: movedPrefs.assignments,
+};
+const hiddenApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, hiddenPrefs);
+assert.equal(hiddenApplied.some((g) => g.id === 'analytics'), false);
+assert.equal(hiddenApplied.length, 5);
 
 console.log('nav-preferences tests passed');
