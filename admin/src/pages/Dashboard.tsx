@@ -9,7 +9,11 @@ export default function Dashboard() {
   useEffect(() => {
     const cols: (keyof typeof stats)[] = ['clients', 'workbook_profiles', 'contracts_ledger', 'intake_forms', 'core_it_requests'];
     const unsubs = cols.map((col) =>
-      onSnapshot(adminCol(col), (snap) => setStats((s) => ({ ...s, [col === 'workbook_profiles' ? 'profiles' : col === 'contracts_ledger' ? 'contracts' : col === 'intake_forms' ? 'intake' : col === 'core_it_requests' ? 'tickets' : col]: snap.size })))
+      onSnapshot(
+        adminCol(col),
+        (snap) => setStats((s) => ({ ...s, [col === 'workbook_profiles' ? 'profiles' : col === 'contracts_ledger' ? 'contracts' : col === 'intake_forms' ? 'intake' : col === 'core_it_requests' ? 'tickets' : col]: snap.size })),
+        (err) => console.warn(`Dashboard listener failed (${col}):`, err.message)
+      )
     );
     return () => unsubs.forEach((u) => u());
   }, []);

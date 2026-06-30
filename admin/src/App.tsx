@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
@@ -30,6 +30,35 @@ const SUITE_LINKS = [
   { href: '/apps/public/client_intake.html', label: 'Client Intake Form' },
   { href: '/', label: 'Marketing Site' },
 ];
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-brandNavy-955">
+          <div className="glass-panel p-8 max-w-lg w-full">
+            <h1 className="text-xl font-bold text-red-400 mb-3">Admin Console Error</h1>
+            <p className="text-slate-300 text-sm mb-4">{this.state.error.message}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function getReturnUrl(): string | null {
   const raw = new URLSearchParams(window.location.search).get('return');
@@ -106,9 +135,13 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubs = ['clients', 'workbook_profiles', 'crm_deals'].map((col) =>
-      onSnapshot(adminCol(col), (snap) => {
-        setMetrics((m) => ({ ...m, [col === 'clients' ? 'clients' : col === 'workbook_profiles' ? 'profiles' : 'deals']: snap.size }));
-      })
+      onSnapshot(
+        adminCol(col),
+        (snap) => {
+          setMetrics((m) => ({ ...m, [col === 'clients' ? 'clients' : col === 'workbook_profiles' ? 'profiles' : 'deals']: snap.size }));
+        },
+        (err) => console.warn(`Sidebar metrics listener failed (${col}):`, err.message)
+      )
     );
     return () => unsubs.forEach((u) => u());
   }, []);
@@ -140,29 +173,47 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function AppRoutes() {
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [bootError, setBootError] = useState('');
 
   useEffect(() => {
-    hasAdminSession().then((ok) => {
-      const returnUrl = getReturnUrl();
-      if (ok && returnUrl) {
-        window.location.href = returnUrl;
-        return;
-      }
-      setAuthed(ok);
-    });
+    hasAdminSession()
+      .then((ok) => {
+        const returnUrl = getReturnUrl();
+        if (ok && returnUrl) {
+          window.location.href = returnUrl;
+          return;
+        }
+        setAuthed(ok);
+      })
+      .catch((err) => {
+        console.warn('Admin session check failed:', err);
+        setBootError(err instanceof Error ? err.message : 'Could not verify admin session.');
+        setAuthed(false);
+      });
   }, []);
 
   if (authed === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400">
-        Loading...
+      <div className="min-h-screen flex items-center justify-center text-slate-300 bg-brandNavy-955">
+        <p className="animate-pulse">Loading admin console…</p>
       </div>
     );
   }
 
-  if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />;
+  if (!authed) {
+    return (
+      <>
+        {bootError && (
+          <div className="fixed top-0 inset-x-0 z-50 px-4 py-2 bg-amber-500/15 border-b border-amber-500/30 text-amber-200 text-sm text-center">
+            {bootError}
+          </div>
+        )}
+        <LoginGate onAuth={() => setAuthed(true)} />
+      </>
+    );
+  }
 
   return (
     <Layout>
@@ -176,5 +227,13 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppRoutes />
+    </ErrorBoundary>
   );
 }

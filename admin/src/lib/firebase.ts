@@ -19,10 +19,12 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-southeast1');
 export const adminAppId = 'kolthoff-admin-app';
 
+/** Collection ref — must use collection(), not doc(), or Firestore throws on listeners. */
 export function adminCol(name: string) {
   return collection(db, 'artifacts', adminAppId, 'public', 'data', name);
 }
 
+/** Document ref within an admin collection. */
 export function adminDoc(col: string, id: string) {
   return doc(db, 'artifacts', adminAppId, 'public', 'data', col, id);
 }
