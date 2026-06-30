@@ -9,6 +9,7 @@ import IntakeCenter from './pages/IntakeCenter';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import MasterAdmin from './pages/MasterAdmin';
+import BrandHeader from './components/BrandHeader';
 
 const ADMIN_TOOLS = [
   { to: '/portals', label: 'Portal Manager' },
@@ -116,9 +117,14 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-brandNavy-955 p-4">
       <form onSubmit={submit} className="glass-panel p-8 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-brandTeal-400 mb-4">Kolthoff Admin Console</h1>
+        <div className="flex justify-center mb-6">
+          <BrandHeader />
+        </div>
+        <p className="text-sm text-slate-400 text-center mb-5">
+          Enter your admin passcode to access the Operations Suite.
+        </p>
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
           className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
@@ -147,28 +153,36 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0">
-        <h1 className="font-bold text-brandTeal-400 mb-1">Kolthoff OS</h1>
-        <p className="text-xs text-slate-500 mb-6">Unified Admin Console</p>
-        <nav className="space-y-1 flex-1 overflow-y-auto">
-          <Link to="/" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Dashboard</Link>
-          <Link to="/tenants" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Tenant Manager</Link>
-          <Link to="/intake" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Intake Center</Link>
-          <div className="pt-4 text-xs text-slate-500 uppercase">Admin Tools</div>
-          {ADMIN_TOOLS.map((t) => (
-            <Link key={t.to} to={t.to} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{t.label}</Link>
-          ))}
-          <div className="pt-4 text-xs text-slate-500 uppercase">Delivery Suite</div>
-          {SUITE_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{l.label}</a>
-          ))}
-        </nav>
-        <div className="text-xs text-slate-600 pt-4 border-t border-brandNavy-800">
-          {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+    <div className="min-h-screen flex flex-col bg-brandNavy-955">
+      <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md shrink-0">
+        <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
+          <BrandHeader />
+          <span className="hidden sm:inline px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
+            Internal
+          </span>
         </div>
-      </aside>
-      <main className="flex-1 p-6 overflow-auto">{children}</main>
+      </header>
+      <div className="flex flex-1 min-h-0">
+        <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0 overflow-y-auto">
+          <nav className="space-y-1 flex-1" aria-label="Operations Suite navigation">
+            <Link to="/" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Dashboard</Link>
+            <Link to="/tenants" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Tenant Manager</Link>
+            <Link to="/intake" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Intake Center</Link>
+            <div className="pt-4 text-xs text-slate-500 uppercase">Admin Tools</div>
+            {ADMIN_TOOLS.map((t) => (
+              <Link key={t.to} to={t.to} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{t.label}</Link>
+            ))}
+            <div className="pt-4 text-xs text-slate-500 uppercase">Delivery Suite</div>
+            {SUITE_LINKS.map((l) => (
+              <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{l.label}</a>
+            ))}
+          </nav>
+          <div className="text-xs text-slate-600 pt-4 border-t border-brandNavy-800 font-mono">
+            {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+          </div>
+        </aside>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto min-w-0">{children}</main>
+      </div>
     </div>
   );
 }
