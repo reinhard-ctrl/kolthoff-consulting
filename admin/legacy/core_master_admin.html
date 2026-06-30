@@ -241,7 +241,7 @@
         function App() {
             // Administrative Passcode Lock Gate States
             const [adminCode, setAdminCode] = useState('');
-            const [isAdminAuthed, setIsAdminAuthed] = useState(false);
+            const [isAdminAuthed, setIsAdminAuthed] = useState(new URLSearchParams(window.location.search).get('embedded') === '1');
             const [authError, setAuthError] = useState('');
             const [isAuthed, setIsAuthed] = useState(false);
             const [isProcessing, setIsProcessing] = useState(false);

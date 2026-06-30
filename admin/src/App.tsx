@@ -6,22 +6,27 @@ import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
 import IntakeCenter from './pages/IntakeCenter';
+import LegacyToolFrame from './components/LegacyToolFrame';
 
-const LEGACY_LINKS = [
-  { href: '/admin/legacy/admin_console.html', label: 'Portal Manager' },
-  { href: '/admin/legacy/contract_ledger.html', label: 'Contract Ledger' },
-  { href: '/admin/legacy/core_master_admin.html', label: 'Master Admin' },
-  { href: '/admin/legacy/intake_center.html', label: 'Intake Center (Legacy)' },
+const ADMIN_TOOLS = [
+  { to: '/portals', label: 'Portal Manager', legacy: '/admin/legacy/admin_console.html' },
+  { to: '/contracts', label: 'Contract Ledger', legacy: '/admin/legacy/contract_ledger.html' },
+  { to: '/master', label: 'Master Admin', legacy: '/admin/legacy/core_master_admin.html' },
 ];
 
 const SUITE_LINKS = [
-  { href: '/admin/legacy/index.html', label: 'Suite Launcher' },
   { href: '/apps/delivery/project_planner.html', label: 'Project Planner' },
+  { href: '/apps/delivery/diagnoses_report.html', label: 'Diagnosis Reports' },
   { href: '/apps/operations/crm_pipeline.html', label: 'CRM Pipeline' },
   { href: '/apps/operations/policy_studio.html', label: 'Policy Studio' },
+  { href: '/apps/operations/workflow_builder.html', label: 'Workflow Builder' },
   { href: '/apps/analytics/firm_analytics_dashboard.html', label: 'Firm Analytics' },
+  { href: '/apps/analytics/resource_capacity_manager.html', label: 'Resource Capacity' },
+  { href: '/apps/analytics/time_tracking_variance_analyzer.html', label: 'Time Variance' },
   { href: '/workspace/', label: 'Core Workspace' },
   { href: '/apps/public/portal.html', label: 'Client Portal' },
+  { href: '/apps/public/client_intake.html', label: 'Client Intake Form' },
+  { href: '/', label: 'Marketing Site' },
 ];
 
 function getReturnUrl(): string | null {
@@ -111,17 +116,17 @@ function Layout({ children }: { children: React.ReactNode }) {
       <aside className="w-64 bg-brandNavy-900 border-r border-brandNavy-800 p-4 flex flex-col shrink-0">
         <h1 className="font-bold text-brandTeal-400 mb-1">Kolthoff OS</h1>
         <p className="text-xs text-slate-500 mb-6">Unified Admin Console</p>
-        <nav className="space-y-1 flex-1">
+        <nav className="space-y-1 flex-1 overflow-y-auto">
           <Link to="/" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Dashboard</Link>
           <Link to="/tenants" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Tenant Manager</Link>
           <Link to="/intake" className="block p-2 rounded hover:bg-brandNavy-800 text-sm">Intake Center</Link>
+          <div className="pt-4 text-xs text-slate-500 uppercase">Admin Tools</div>
+          {ADMIN_TOOLS.map((t) => (
+            <Link key={t.to} to={t.to} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{t.label}</Link>
+          ))}
           <div className="pt-4 text-xs text-slate-500 uppercase">Delivery Suite</div>
           {SUITE_LINKS.map((l) => (
             <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-400">{l.label}</a>
-          ))}
-          <div className="pt-4 text-xs text-slate-500 uppercase">Legacy Tools</div>
-          {LEGACY_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="block p-2 rounded hover:bg-brandNavy-800 text-sm text-slate-500">{l.label}</a>
           ))}
         </nav>
         <div className="text-xs text-slate-600 pt-4 border-t border-brandNavy-800">
@@ -163,6 +168,9 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/tenants" element={<Tenants />} />
         <Route path="/intake" element={<IntakeCenter />} />
+        <Route path="/portals" element={<LegacyToolFrame src="/admin/legacy/admin_console.html" title="Portal Manager" />} />
+        <Route path="/contracts" element={<LegacyToolFrame src="/admin/legacy/contract_ledger.html" title="Contract Ledger" />} />
+        <Route path="/master" element={<LegacyToolFrame src="/admin/legacy/core_master_admin.html" title="Master Admin" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

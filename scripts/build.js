@@ -39,7 +39,7 @@ copyDir(path.join(root, 'apps/delivery'), path.join(dist, 'apps/delivery'));
 copyDir(path.join(root, 'apps/operations'), path.join(dist, 'apps/operations'));
 copyDir(path.join(root, 'apps/analytics'), path.join(dist, 'apps/analytics'));
 
-// Legacy admin HTML (until fully migrated)
+// Legacy admin HTML (embedded in SPA routes until fully migrated)
 copyDir(path.join(root, 'admin/legacy'), path.join(dist, 'admin/legacy'));
 
 // Root index + CNAME

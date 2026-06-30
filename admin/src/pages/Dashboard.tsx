@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { adminCol } from '../lib/firebase';
@@ -14,31 +15,39 @@ export default function Dashboard() {
   }, []);
 
   const cards = [
-    { label: 'Client Portals', value: stats.clients, href: '/admin/legacy/admin_console.html' },
+    { label: 'Client Portals', value: stats.clients, to: '/portals' },
     { label: 'SOW Profiles', value: stats.profiles, href: '/apps/delivery/project_planner.html' },
-    { label: 'Contracts', value: stats.contracts, href: '/admin/legacy/contract_ledger.html' },
-    { label: 'Intake Forms', value: stats.intake, href: '/admin/intake' },
-    { label: 'IT Tickets', value: stats.tickets, href: '/admin/legacy/core_master_admin.html' },
+    { label: 'Contracts', value: stats.contracts, to: '/contracts' },
+    { label: 'Intake Forms', value: stats.intake, to: '/intake' },
+    { label: 'IT Tickets', value: stats.tickets, to: '/master' },
   ];
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Operations Dashboard</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        {cards.map((c) => (
-          <a key={c.label} href={c.href} className="glass-panel p-5 hover:border-brandTeal-500/50 transition-colors">
-            <div className="text-xs text-slate-500 uppercase">{c.label}</div>
-            <div className="text-3xl font-bold text-brandTeal-400 mt-1">{c.value}</div>
-          </a>
-        ))}
+        {cards.map((c) => {
+          const className = 'glass-panel p-5 hover:border-brandTeal-500/50 transition-colors block';
+          return c.to ? (
+            <Link key={c.label} to={c.to} className={className}>
+              <div className="text-xs text-slate-500 uppercase">{c.label}</div>
+              <div className="text-3xl font-bold text-brandTeal-400 mt-1">{c.value}</div>
+            </Link>
+          ) : (
+            <a key={c.label} href={c.href} className={className}>
+              <div className="text-xs text-slate-500 uppercase">{c.label}</div>
+              <div className="text-3xl font-bold text-brandTeal-400 mt-1">{c.value}</div>
+            </a>
+          );
+        })}
       </div>
       <div className="glass-panel p-6">
         <h2 className="font-bold mb-3">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           <a href="/apps/delivery/project_planner.html" className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">New SOW</a>
-          <a href="/admin/legacy/contract_ledger.html" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Contract Ledger</a>
+          <Link to="/contracts" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Contract Ledger</Link>
           <a href="/workspace/" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Deploy Workspace</a>
-          <a href="/admin/legacy/index.html" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Full Suite Launcher</a>
+          <Link to="/portals" className="px-4 py-2 bg-brandNavy-800 rounded text-sm border border-brandNavy-700">Portal Manager</Link>
         </div>
       </div>
     </div>

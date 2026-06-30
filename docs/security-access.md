@@ -9,7 +9,20 @@
 ## Staff hub
 
 - **`/admin/`** — single login (passcode → Firestore session)
-- After login, open tools from the sidebar or `/admin/legacy/index.html`
+- After login, use the sidebar to open admin tools and delivery suite apps
+
+### Admin SPA routes
+
+| Route | Tool |
+|-------|------|
+| `/admin/` | Operations dashboard |
+| `/admin/tenants` | Tenant manager |
+| `/admin/intake` | Intake center (forms, templates, sync) |
+| `/admin/portals` | Client portal manager |
+| `/admin/contracts` | Contract ledger (staff view) |
+| `/admin/master` | Master admin console |
+
+Legacy HTML files under `/admin/legacy/` remain deployed for iframe embedding and direct client contract signing links.
 
 ## Internal apps (staff gate)
 
@@ -26,12 +39,12 @@ Firestore rules block **anonymous** reads on firm data (`crm_deals`, `workbook_p
 
 ## Exceptions
 
-- **Contract ledger client view:** `contract_ledger.html?contract=...` (client links)
+- **Contract ledger client view:** `/admin/legacy/contract_ledger.html?contract=...` (client e-sign links — not redirected)
 - **Policy Studio offline:** `window.STANDALONE_POLICIES` bundles
 
-## Phase 2 (planned)
+## Phase 3 (planned)
 
 - Google Workspace SSO for `@kolthoff-consulting.com`
 - App Check on all apps
 - Tighten `core_users` directory reads
-- Migrate HTML tools into authenticated Admin SPA routes
+- Full React migration of remaining legacy admin tools (portals, contracts, master admin)

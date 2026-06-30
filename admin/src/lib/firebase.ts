@@ -21,6 +21,10 @@ export function adminCol(name: string) {
   return collection(db, 'artifacts', adminAppId, 'public', 'data', name);
 }
 
+export function adminDoc(col: string, id: string) {
+  return doc(db, 'artifacts', adminAppId, 'public', 'data', col, id);
+}
+
 export async function bootstrapAuth() {
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
   if (token) {

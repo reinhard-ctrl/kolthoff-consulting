@@ -9,7 +9,8 @@ apps/public/       Marketing site, client portal, intake forms
 apps/delivery/     SOW planner, diagnosis reports
 apps/operations/   CRM, policy studio, workflow builder
 apps/analytics/    Firm analytics, capacity, time tracking
-admin/             Unified admin Vite SPA + legacy HTML tools
+admin/             Unified admin Vite SPA (dashboard, intake, embedded legacy tools)
+admin/legacy/      Legacy HTML tools embedded in SPA routes (portals, contracts, master)
 workspace/         Core workspace Vite SPA
 shared/            Firebase init, financials, auth helpers
 functions/         Cloud Functions (auth, validation)

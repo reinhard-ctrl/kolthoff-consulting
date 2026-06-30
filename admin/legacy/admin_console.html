@@ -77,7 +77,7 @@
             
             // Administrative Passcode Lock Gate States
             const [adminCode, setAdminCode] = useState('');
-            const [isAdminAuthed, setIsAdminAuthed] = useState(false);
+            const [isAdminAuthed, setIsAdminAuthed] = useState(new URLSearchParams(window.location.search).get('embedded') === '1');
             const [authError, setAuthError] = useState('');
 
             // Local Editing Draft
