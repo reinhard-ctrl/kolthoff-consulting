@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot, setDoc, doc, collection } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
 
@@ -9,8 +9,34 @@ interface TenantUser {
   role: string;
 }
 
+interface WorkspaceInstance {
+  tenantId: string;
+  clientName: string;
+  status?: string;
+  workspaceUrl?: string;
+  internal?: boolean;
+}
+
+const INTERNAL_WORKSPACE: WorkspaceInstance = {
+  tenantId: 'kolthoff-admin-app',
+  clientName: 'Kolthoff Internal',
+  status: 'active',
+  internal: true,
+};
+
+function slugifyClientName(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+  return slug ? `client-${slug}` : '';
+}
+
 export default function Tenants() {
   const [tenantId, setTenantId] = useState('kolthoff-admin-app');
+  const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: false, crm: false });
   const [inviteEmail, setInviteEmail] = useState('');
@@ -18,6 +44,23 @@ export default function Tenants() {
   const [inviteStatus, setInviteStatus] = useState('');
   const [inviting, setInviting] = useState(false);
   const [resettingEmail, setResettingEmail] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newTenantId, setNewTenantId] = useState('');
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+
+  useEffect(() => {
+    const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
+    return onSnapshot(registryRef, (snap) => {
+      const list: WorkspaceInstance[] = [];
+      snap.forEach((d) => {
+        const data = d.data() as WorkspaceInstance;
+        list.push({ ...data, tenantId: data.tenantId || d.id });
+      });
+      list.sort((a, b) => a.clientName.localeCompare(b.clientName));
+      setWorkspaces(list);
+    });
+  }, []);
 
   useEffect(() => {
     const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
@@ -33,6 +76,13 @@ export default function Tenants() {
     });
     return () => { u1(); u2(); };
   }, [tenantId]);
+
+  const allWorkspaces = useMemo(
+    () => [INTERNAL_WORKSPACE, ...workspaces.filter((w) => w.tenantId !== INTERNAL_WORKSPACE.tenantId)],
+    [workspaces],
+  );
+
+  const activeWorkspace = allWorkspaces.find((w) => w.tenantId === tenantId);
 
   const toggleFeature = async (key: keyof typeof features) => {
     const updated = { ...features, [key]: !features[key] };
@@ -89,14 +139,107 @@ export default function Tenants() {
     }
   };
 
+  const createClientWorkspace = async () => {
+    if (!newClientName.trim()) return;
+    setCreatingWorkspace(true);
+    setInviteStatus('');
+    try {
+      await bootstrapAuth();
+      const create = httpsCallable(functions, 'createClientWorkspace');
+      const result = await create({
+        clientName: newClientName.trim(),
+        tenantId: newTenantId.trim() || undefined,
+      });
+      const data = result.data as { tenantId: string; clientName: string; workspaceUrl?: string };
+      setTenantId(data.tenantId);
+      setInviteStatus(`Created workspace for ${data.clientName}. Open it below to invite users and configure modules.`);
+      setShowCreateModal(false);
+      setNewClientName('');
+      setNewTenantId('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Create failed';
+      setInviteStatus(msg.includes('permission-denied')
+        ? 'Admin session required. Re-login at /admin/ and try again.'
+        : msg.includes('already-exists')
+          ? 'That tenant ID already exists. Choose a different slug.'
+          : msg);
+    } finally {
+      setCreatingWorkspace(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    setNewClientName('');
+    setNewTenantId('');
+    setShowCreateModal(true);
+  };
+
+  const workspaceHref = tenantId === 'kolthoff-admin-app'
+    ? '/workspace/'
+    : `/workspace/?tenant=${encodeURIComponent(tenantId)}`;
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Tenant Manager</h1>
+
       <div className="glass-panel p-4 mb-6">
-        <label className="text-sm text-slate-400">Tenant App ID</label>
-        <input value={tenantId} onChange={(e) => setTenantId(e.target.value)}
-          className="w-full mt-1 p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm" />
-        <a href={`/workspace/?tenant=${tenantId}`} className="text-brandTeal-400 text-sm mt-2 inline-block">Open workspace →</a>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="font-bold">Core Workspace Instances</h2>
+            <p className="text-xs text-slate-500 mt-1">Each client gets an isolated workspace tenant with its own users and feature flags.</p>
+          </div>
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
+          >
+            Create Client Workspace
+          </button>
+        </div>
+        <div className="space-y-2">
+          {allWorkspaces.map((ws) => {
+            const active = ws.tenantId === tenantId;
+            return (
+              <button
+                key={ws.tenantId}
+                type="button"
+                onClick={() => setTenantId(ws.tenantId)}
+                className={`w-full text-left p-3 rounded border transition-colors ${
+                  active
+                    ? 'border-brandTeal-500/60 bg-brandTeal-500/10'
+                    : 'border-brandNavy-700 bg-brandNavy-900/40 hover:border-brandNavy-600'
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="font-semibold text-sm">{ws.clientName}</div>
+                    <div className="font-mono text-xs text-slate-500">{ws.tenantId}</div>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                    {ws.internal ? 'Internal' : ws.status || 'active'}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="glass-panel p-4 mb-6">
+        <label className="text-sm text-slate-400">Active Tenant App ID</label>
+        <input
+          value={tenantId}
+          onChange={(e) => setTenantId(e.target.value)}
+          className="w-full mt-1 p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+        />
+        <div className="flex flex-wrap gap-3 mt-2 text-sm">
+          <a href={workspaceHref} target="_blank" rel="noreferrer" className="text-brandTeal-400">
+            Open workspace →
+          </a>
+          {activeWorkspace && (
+            <span className="text-slate-500">Managing: {activeWorkspace.clientName}</span>
+          )}
+        </div>
       </div>
 
       <div className="glass-panel p-4 mb-6">
@@ -126,6 +269,9 @@ export default function Tenants() {
 
       <div className="glass-panel p-4">
         <h2 className="font-bold mb-3">Users ({users.length})</h2>
+        {users.length === 0 && (
+          <p className="text-sm text-slate-500 mb-3">No users yet. Invite the client team after creating their workspace.</p>
+        )}
         {users.map((u) => (
           <div key={u.id} className="flex justify-between items-center gap-3 py-2 border-b border-brandNavy-800 text-sm">
             <span>{u.name} <span className="text-slate-500">({u.email})</span></span>
@@ -143,6 +289,53 @@ export default function Tenants() {
           </div>
         ))}
       </div>
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="glass-panel p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold mb-2">Create Client Workspace</h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Provisions a new isolated Core Workspace instance with default modules enabled (Messenger, Approvals, Policies).
+            </p>
+            <label className="text-sm text-slate-400 block mb-1">Client name</label>
+            <input
+              value={newClientName}
+              onChange={(e) => {
+                setNewClientName(e.target.value);
+                if (!newTenantId || newTenantId === slugifyClientName(newClientName)) {
+                  setNewTenantId(slugifyClientName(e.target.value));
+                }
+              }}
+              placeholder="Acme Corp"
+              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-3"
+            />
+            <label className="text-sm text-slate-400 block mb-1">Tenant ID</label>
+            <input
+              value={newTenantId}
+              onChange={(e) => setNewTenantId(e.target.value.trim().toLowerCase())}
+              placeholder="client-acme-corp"
+              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm mb-4"
+            />
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 rounded text-sm border border-brandNavy-700 text-slate-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={createClientWorkspace}
+                disabled={creatingWorkspace || !newClientName.trim() || !newTenantId.trim()}
+                className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50"
+              >
+                {creatingWorkspace ? 'Creating...' : 'Create Workspace'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
