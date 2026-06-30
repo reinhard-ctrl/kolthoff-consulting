@@ -67,7 +67,7 @@ This loads CRM deals/contacts/partners, feature flags, and org departments. Then
 | Task | How |
 |------|-----|
 | SOW profiles | Project Planner UI, or edit `scripts/seed-firestore/data/workbook_profiles.json` |
-| Client portals | Admin Console → Import Profile, or edit `clients.json` |
+| Client portals | `/admin/portals` → Import SOW, or edit `clients.json` |
 | Team invites | `/admin/` → Tenant Manager → Invite User |
 | Google Drive links | Add `assets[].gDriveLink` on each `clients` doc manually |
 
