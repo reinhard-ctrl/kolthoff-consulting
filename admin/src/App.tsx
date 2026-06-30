@@ -134,22 +134,24 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-brandNavy-955 overflow-hidden">
-      <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 shrink-0 z-50 backdrop-blur-md">
-        <div className="px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
-          <BrandHeader />
-          <span className="hidden sm:inline px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
-            Internal
-          </span>
+    <div className="h-screen flex bg-brandNavy-955 overflow-hidden">
+      <aside className="admin-sidebar w-[clamp(14rem,17vw,18rem)] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 overflow-hidden min-h-0 pl-0 pr-2 py-2">
+        <div className="px-2 pb-2 border-b border-brandNavy-800 shrink-0">
+          <BrandHeader compact />
         </div>
-      </header>
-      <div className="flex flex-1 min-h-0">
-        <aside className="admin-sidebar w-[clamp(14rem,17vw,18rem)] bg-brandNavy-900 border-r border-brandNavy-800 p-2 sm:p-3 flex flex-col shrink-0 overflow-hidden min-h-0">
-          <SidebarNav />
-          <div className="sidebar-nav-hint text-slate-600 pt-2 border-t border-brandNavy-800 font-mono shrink-0 truncate">
-            {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+        <SidebarNav />
+        <div className="sidebar-nav-hint text-slate-600 px-2 pt-2 border-t border-brandNavy-800 font-mono shrink-0 truncate">
+          {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+        </div>
+      </aside>
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 shrink-0 z-50 backdrop-blur-md">
+          <div className="px-4 sm:px-6 h-12 sm:h-14 flex items-center justify-end">
+            <span className="px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
+              Internal
+            </span>
           </div>
-        </aside>
+        </header>
         <main className="flex-1 p-4 sm:p-6 overflow-auto min-w-0">{children}</main>
       </div>
     </div>

@@ -24,7 +24,7 @@ export function useSidebarFit(groups: unknown, customizing: boolean) {
 
       const scale = Math.max(0.52, available / needed);
       content.style.transform = `scale(${scale})`;
-      content.style.transformOrigin = 'top center';
+      content.style.transformOrigin = 'top left';
       content.style.width = `${100 / scale}%`;
       shell.style.setProperty('--sidebar-nav-scale', String(scale));
     };

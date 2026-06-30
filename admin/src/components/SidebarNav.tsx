@@ -6,7 +6,6 @@ import { useSidebarFit } from '../hooks/useSidebarFit';
 import {
   buildPreferencesFromGroups,
   clearNavPreferences,
-  findItemGroup,
   getEffectiveNavGroups,
   insertItemAt,
   reorderGroups,
@@ -185,7 +184,7 @@ export default function SidebarNav() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div ref={shellRef} className="flex-1 min-h-0 overflow-hidden">
+      <div ref={shellRef} className="sidebar-nav-shell flex-1 min-h-0 overflow-hidden px-2">
         <nav
           ref={contentRef}
           className="sidebar-nav-fit space-y-2"

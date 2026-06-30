@@ -66,8 +66,17 @@ body {
   @apply bg-brandTeal-500/60;
 }
 
+.admin-sidebar {
+  @apply items-stretch text-left;
+}
+
 .sidebar-nav-fit {
   will-change: transform;
+  @apply w-full text-left;
+}
+
+.sidebar-nav-shell {
+  @apply w-full overflow-hidden;
 }
 
 .sidebar-group-card {
