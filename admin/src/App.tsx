@@ -134,9 +134,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-brandNavy-955">
-      <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md shrink-0">
-        <div className="px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="h-screen flex flex-col bg-brandNavy-955 overflow-hidden">
+      <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 shrink-0 z-50 backdrop-blur-md">
+        <div className="px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <BrandHeader />
           <span className="hidden sm:inline px-2.5 py-1 rounded font-mono text-[9px] uppercase font-bold border border-brandTeal-500/30 bg-brandTeal-500/10 text-brandTeal-400 tracking-wider">
             Internal
@@ -144,9 +144,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <div className="flex flex-1 min-h-0">
-        <aside className="admin-sidebar w-[clamp(15rem,18vw,20rem)] bg-brandNavy-900 border-r border-brandNavy-800 p-3 sm:p-4 flex flex-col shrink-0 overflow-hidden">
+        <aside className="admin-sidebar w-[clamp(14rem,17vw,18rem)] bg-brandNavy-900 border-r border-brandNavy-800 p-2 sm:p-3 flex flex-col shrink-0 overflow-hidden min-h-0">
           <SidebarNav />
-          <div className="sidebar-nav-hint text-slate-600 pt-3 border-t border-brandNavy-800 font-mono shrink-0">
+          <div className="sidebar-nav-hint text-slate-600 pt-2 border-t border-brandNavy-800 font-mono shrink-0 truncate">
             {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
           </div>
         </aside>

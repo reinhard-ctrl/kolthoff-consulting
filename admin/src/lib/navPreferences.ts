@@ -124,6 +124,55 @@ export function moveItemToGroup(groups: NavGroup[], itemId: string, fromGroupId:
   );
 }
 
+export function reorderGroups(groups: NavGroup[], fromIndex: number, toIndex: number): NavGroup[] {
+  if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= groups.length || toIndex >= groups.length) {
+    return groups;
+  }
+  const copy = [...groups];
+  const [removed] = copy.splice(fromIndex, 1);
+  copy.splice(toIndex, 0, removed);
+  return copy;
+}
+
+export function insertItemAt(
+  groups: NavGroup[],
+  itemId: string,
+  fromGroupId: string,
+  toGroupId: string,
+  toIndex: number
+): NavGroup[] {
+  const fromGroup = groups.find((g) => g.id === fromGroupId);
+  const fromIndex = fromGroup?.items.findIndex((i) => i.id === itemId) ?? -1;
+  if (fromIndex < 0) return groups;
+
+  let adjustedIndex = toIndex;
+  if (fromGroupId === toGroupId && fromIndex < toIndex) {
+    adjustedIndex -= 1;
+  }
+
+  let moved: NavItem | undefined;
+  const stripped = groups.map((group) => {
+    if (group.id !== fromGroupId) return group;
+    const items = group.items.filter((item) => {
+      if (item.id === itemId) {
+        moved = item;
+        return false;
+      }
+      return true;
+    });
+    return { ...group, items };
+  });
+  if (!moved) return groups;
+
+  return stripped.map((group) => {
+    if (group.id !== toGroupId) return group;
+    const items = [...group.items];
+    const index = Math.max(0, Math.min(adjustedIndex, items.length));
+    items.splice(index, 0, moved!);
+    return { ...group, items };
+  });
+}
+
 export function findItemGroup(groups: NavGroup[], itemId: string): string | undefined {
   return groups.find((g) => g.items.some((i) => i.id === itemId))?.id;
 }
