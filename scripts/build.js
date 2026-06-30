@@ -39,9 +39,10 @@ copyDir(path.join(root, 'apps/delivery'), path.join(dist, 'apps/delivery'));
 copyDir(path.join(root, 'apps/operations'), path.join(dist, 'apps/operations'));
 copyDir(path.join(root, 'apps/analytics'), path.join(dist, 'apps/analytics'));
 
-// Root index + CNAME
+// Root index + optional CNAME (custom domain)
 copyFile(path.join(root, 'apps/public/index.html'), path.join(dist, 'index.html'));
-copyFile(path.join(root, 'CNAME'), path.join(dist, 'CNAME'));
+const cname = path.join(root, 'CNAME');
+if (fs.existsSync(cname)) copyFile(cname, path.join(dist, 'CNAME'));
 
 // Build Vite apps if node_modules exist
 for (const app of ['workspace', 'admin']) {
