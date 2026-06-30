@@ -39,21 +39,33 @@ export async function bootstrapAuth() {
 /** Verify passcode via Firestore — works when org policy blocks public Cloud Functions */
 export async function verifyAdminPasscode(code: string) {
   await bootstrapAuth();
-  const clean = code.trim().toUpperCase();
-  if (!clean) return { valid: false as const };
+  const trimmed = code.trim();
+  if (!trimmed) return { valid: false as const };
 
-  const credRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_credentials', clean);
-  const snap = await getDoc(credRef);
-  if (!snap.exists()) return { valid: false as const };
+  const variants = [...new Set([trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()])];
+  let matchedCode: string | undefined;
+  let role = 'kolthoff_admin';
+
+  for (const candidate of variants) {
+    const credRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_credentials', candidate);
+    const snap = await getDoc(credRef);
+    if (snap.exists()) {
+      matchedCode = candidate;
+      role = (snap.data()?.role as string) || 'kolthoff_admin';
+      break;
+    }
+  }
+
+  if (!matchedCode) return { valid: false as const };
 
   const uid = auth.currentUser!.uid;
   await setDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', uid), {
-    passcodeVerified: clean,
+    passcodeVerified: matchedCode,
     role: 'kolthoff_admin',
     verifiedAt: Date.now(),
   });
 
-  return { valid: true as const, role: (snap.data()?.role as string) || 'kolthoff_admin' };
+  return { valid: true as const, role };
 }
 
 export async function hasAdminSession(): Promise<boolean> {

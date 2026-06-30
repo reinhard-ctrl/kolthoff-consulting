@@ -33,9 +33,13 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
     setLoading(true);
     setError('');
     try {
-      const result = await verifyAdminPasscode(code.trim().toUpperCase());
+      const result = await verifyAdminPasscode(code);
       if (!result.valid) {
-        setError('Invalid passcode');
+        setError(
+          'Invalid passcode. Create a Firestore document at ' +
+          'artifacts/kolthoff-admin-app/public/data/admin_credentials/YOUR_CODE ' +
+          'with field role = kolthoff_admin (see docs/admin-login.md).'
+        );
         return;
       }
       onAuth();

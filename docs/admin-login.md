@@ -13,10 +13,16 @@ Admin passcode login uses **Firestore directly** (no public Cloud Function requi
 
 ### Firestore passcode document
 
-Create in Firebase Console → Firestore:
+Create in Firebase Console → Firestore, **or** run in [Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
 
-- Path: `artifacts/kolthoff-admin-app/public/data/admin_credentials/{YOUR_PASSCODE}`
-- Document ID: your passcode (e.g. `KOLTHOFF2026`)
+```bash
+bash scripts/seed-admin-passcode.sh kolthoff2026
+```
+
+Manual path in Firestore:
+
+- Path: `artifacts/kolthoff-admin-app/public/data/admin_credentials/kolthoff2026`
+- Document ID: your passcode (case-sensitive in Firestore; the app tries upper/lower variants)
 - Field: `role` = `kolthoff_admin`
 
 ### Firebase Auth
