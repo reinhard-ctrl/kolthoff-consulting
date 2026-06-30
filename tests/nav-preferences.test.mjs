@@ -97,6 +97,11 @@ function resolveItemAssignments(groups, prefs) {
   return itemHome;
 }
 
+function resolveGroupLabel(groupId, defaultLabel, prefs) {
+  const custom = prefs?.groupLabels?.[groupId]?.trim();
+  return custom || defaultLabel;
+}
+
 function applyNavPreferences(groups, prefs) {
   const catalog = buildItemCatalog();
   const meta = new Map(groups.map((g) => [g.id, g]));
@@ -115,7 +120,11 @@ function applyNavPreferences(groups, prefs) {
         ...savedIds.filter((id) => itemHome.get(id) === groupId && catalog.has(id)),
         ...idsInGroup.filter((id) => !savedIds.includes(id) && catalog.has(id)),
       ]);
-      return { ...groupMeta, items: orderedIds.map((id) => ({ id })) };
+      return {
+        ...groupMeta,
+        label: resolveGroupLabel(groupId, groupMeta.label, prefs),
+        items: orderedIds.map((id) => ({ id })),
+      };
     });
 }
 
@@ -173,5 +182,14 @@ const hiddenPrefs = {
 const hiddenApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, hiddenPrefs);
 assert.equal(hiddenApplied.some((g) => g.id === 'analytics'), false);
 assert.equal(hiddenApplied.length, 5);
+
+const labeledPrefs = {
+  ...movedPrefs,
+  groupLabels: { command: 'HQ', delivery: 'Projects' },
+};
+const labeledApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, labeledPrefs);
+assert.equal(labeledApplied.find((g) => g.id === 'command')?.label, 'HQ');
+assert.equal(labeledApplied.find((g) => g.id === 'delivery')?.label, 'Projects');
+assert.equal(labeledApplied.find((g) => g.id === 'operations')?.label, 'Operations');
 
 console.log('nav-preferences tests passed');
