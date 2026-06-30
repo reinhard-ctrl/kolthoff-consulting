@@ -37,6 +37,8 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci && npm run build
+        env:
+          NPM_CONFIG_PRODUCTION: false
 
       - id: google-auth
         uses: google-github-actions/auth@v2
@@ -51,7 +53,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          ./node_modules/.bin/firebase hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
+          npm exec -- firebase-tools -- hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
             --expires 7d \
             --project kolthoff-portal \
             --non-interactive
@@ -69,6 +71,8 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci && npm run build
+        env:
+          NPM_CONFIG_PRODUCTION: false
       - run: npm ci --prefix functions && npm run build --prefix functions
 
       - id: google-auth
@@ -84,7 +88,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          ./node_modules/.bin/firebase deploy \
+          npm exec -- firebase-tools -- deploy \
             --only hosting,firestore:rules,storage:rules,functions \
             --project kolthoff-portal \
             --non-interactive
