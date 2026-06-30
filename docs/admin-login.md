@@ -47,6 +47,8 @@ Browser key prefix: `AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI`
 | `Invalid passcode` | Create the Firestore credentials doc; passcode is case-insensitive |
 | `permission-denied` | Deploy latest Firestore rules; enable Anonymous auth |
 | Stuck on "Loading..." | Anonymous auth blocked — check referrers and Auth settings |
+| Black screen after login | Redeploy latest admin build — a bad deploy used `doc()` for collection paths and React crashed silently |
+| Blank page, no UI at all | Check browser console for JS 404s; ensure `/admin/assets/*.js` loads (rebuild with `npm run build`) |
 
 ## Optional: Cloud Function path (org policy must allow public invoke)
 

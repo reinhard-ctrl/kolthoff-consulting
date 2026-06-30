@@ -11,6 +11,10 @@
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js"></script>
     <script type="module" src="../../shared/auth-gate.js"></script>
+    <script type="module">
+        import * as Financials from '../../shared/financials.js';
+        window.Financials = Financials;
+    </script>
     <!-- Tailwind CSS with Luxury Branding Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -316,33 +320,40 @@
                 };
             };
 
-            const calculateCost = (profile) => {
-                if (!profile || !profile.tasks || !Array.isArray(profile.tasks)) return 0;
-                const tasks = profile.tasks.filter(t => t.selected);
-                const frictionBuffer = profile.frictionBuffer || 0;
-                const discountPercent = profile.discountPercent || 0;
-                const bufferMultiplier = 1 + (frictionBuffer / 100);
-                const getRate = (tier) => tier === 'principal' ? 3500 : (tier === 'senior' ? 2500 : (tier === 'partner' ? 2000 : 1500));
+            const findSyncedProfile = (dealId) => plannerProfiles.find(p => p.quoteId === dealId || p.id === dealId);
 
-                let projectBaseUndiscounted = 0;
-                let retainerBaseUndiscounted = 0;
-                tasks.forEach(t => {
-                    if (t.isMonthlyRetainer) retainerBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
-                    else projectBaseUndiscounted += (t.estHours || 0) * getRate(t.tier);
-                });
-
-                projectBaseUndiscounted = Math.round(projectBaseUndiscounted * bufferMultiplier);
-                retainerBaseUndiscounted = Math.round(retainerBaseUndiscounted * bufferMultiplier);
-
-                return Math.round(projectBaseUndiscounted * (1 - discountPercent / 100)) + Math.round(retainerBaseUndiscounted * (1 - discountPercent / 100));
+            const getProfileSubtotal = (profile) => {
+                if (!profile) return 0;
+                return window.Financials?.getFinancials(profile)?.subtotal ?? 0;
             };
+
+            const getDealDisplayValue = (deal) => {
+                const syncedProfile = findSyncedProfile(deal.id);
+                return syncedProfile ? getProfileSubtotal(syncedProfile) : parseFloat(deal.estValue || 0);
+            };
+
+            // Keep stored deal values aligned when linked planner SOWs change
+            useEffect(() => {
+                if (!isAuthed || !window.firebaseDb || !window.Financials || deals.length === 0) return;
+
+                deals.forEach((deal) => {
+                    const syncedProfile = findSyncedProfile(deal.id);
+                    if (!syncedProfile) return;
+
+                    const syncedValue = getProfileSubtotal(syncedProfile);
+                    const storedValue = Math.round(parseFloat(deal.estValue || 0));
+                    if (storedValue === syncedValue) return;
+
+                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', deal.id);
+                    window.setDoc(docRef, { estValue: syncedValue }, { merge: true }).catch(console.error);
+                });
+            }, [deals, plannerProfiles, isAuthed]);
 
             const stats = useMemo(() => {
                 let totalValue = 0, activeCount = 0, wonCount = 0, lostCount = 0, overdueCount = 0;
 
                 deals.forEach(d => {
-                    const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
-                    const val = syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0);
+                    const val = getDealDisplayValue(d);
 
                     const health = getDealHealth(d);
                     if (d.status === "Active" || !d.status) {
@@ -382,8 +393,7 @@
                     const deal = deals.find(d => d.id === dealId);
                     if (deal) {
                         let updatedStatus = deal.status || "Active";
-                        const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
-                        const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                        const finalValue = getDealDisplayValue(deal);
 
                         if (targetStage === "Closed Won/Lost") {
                             if (updatedStatus !== "Won" && updatedStatus !== "Lost") {
@@ -408,8 +418,7 @@
                 if (dealId) {
                     const deal = deals.find(d => d.id === dealId);
                     if (deal) {
-                        const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
-                        const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                        const finalValue = getDealDisplayValue(deal);
 
                         const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
                         await window.setDoc(docRef, { ...deal, followUpDate: targetDateStr, estValue: finalValue }, { merge: true });
@@ -420,8 +429,7 @@
             const resolveDealStatus = async (dealId, nextStatus) => {
                 const deal = deals.find(d => d.id === dealId);
                 if (deal) {
-                    const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
-                    const finalValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                    const finalValue = getDealDisplayValue(deal);
 
                     if (nextStatus === "Won") {
                         setCelebrationDetails({ name: deal.leadName + " (" + (deal.company || "Individual") + ")", value: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(finalValue) });
@@ -450,8 +458,8 @@
                 const customIdInput = formData.get("customId");
                 const finalId = customIdInput ? customIdInput.trim().toUpperCase().replace(/\s+/g, '-') : `KC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-                const isCurrentlySynced = plannerProfiles.find(p => p.quoteId === finalId || p.id === finalId);
-                const finalEstValue = isCurrentlySynced ? calculateCost(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
+                const isCurrentlySynced = findSyncedProfile(finalId);
+                const finalEstValue = isCurrentlySynced ? getProfileSubtotal(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
 
                 const data = {
                     id: finalId,
@@ -823,8 +831,7 @@
                                         {pipelineStages.map((stage) => {
                                             const stageDeals = filteredDeals.filter(d => d.pipelineStatus === stage);
                                             const stageValueSum = stageDeals.reduce((sum, d) => {
-                                                const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
-                                                const val = syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0);
+                                                const val = getDealDisplayValue(d);
                                                 return sum + val;
                                             }, 0);
 
@@ -851,8 +858,8 @@
                                                                 const health = getDealHealth(deal);
                                                                 const isWon = deal.status === "Won";
                                                                 const isLost = deal.status === "Lost";
-                                                                const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
-                                                                const displayValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                                                                const syncedProfile = findSyncedProfile(deal.id);
+                                                                const displayValue = getDealDisplayValue(deal);
                                                                 const isSynced = !!syncedProfile;
 
                                                                 return (
@@ -945,8 +952,7 @@
                                             </div>
                                             <div className="text-[11px] bg-[#020613] border border-brandNavy-700/60 px-2.5 py-1 rounded-lg text-slate-300">
                                                 Total Calculated Value: <span className="text-brandTeal-400 font-mono font-bold">{new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(filteredDeals.reduce((sum, d) => {
-                                                    const syncedProfile = plannerProfiles.find(p => p.quoteId === d.id || p.id === d.id);
-                                                    return sum + (syncedProfile ? calculateCost(syncedProfile) : parseFloat(d.estValue || 0));
+                                                    return sum + getDealDisplayValue(d);
                                                 }, 0))}</span>
                                             </div>
                                         </div>
@@ -966,8 +972,8 @@
                                                             const health = getDealHealth(deal);
                                                             const isWon = deal.status === "Won";
                                                             const isLost = deal.status === "Lost";
-                                                            const syncedProfile = plannerProfiles.find(p => p.quoteId === deal.id || p.id === deal.id);
-                                                            const displayValue = syncedProfile ? calculateCost(syncedProfile) : (deal.estValue || 0);
+                                                            const syncedProfile = findSyncedProfile(deal.id);
+                                                            const displayValue = getDealDisplayValue(deal);
 
                                                             return (
                                                                 <tr key={deal.id} className="hover:bg-brandNavy-900/20 transition-all group">
@@ -1270,12 +1276,13 @@
                                         <div>
                                             <label htmlFor="deal-estValue" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono flex items-center justify-between">
                                                 <span>Estimated Value (₱)</span>
-                                                {editingItem && plannerProfiles.find(p => p.quoteId === editingItem.id || p.id === editingItem.id) && (
+                                                {editingItem && findSyncedProfile(editingItem.id) && (
                                                     <span className="text-emerald-400">🔄 Synced</span>
                                                 )}
                                             </label>
                                             {(() => {
-                                                const isCurrentlySynced = editingItem && plannerProfiles.find(p => p.quoteId === editingItem.id || p.id === editingItem.id);
+                                                const isCurrentlySynced = editingItem && findSyncedProfile(editingItem.id);
+                                                const syncedDisplayValue = isCurrentlySynced ? getProfileSubtotal(isCurrentlySynced) : (editingItem?.estValue ?? "");
                                                 return (
                                                     <>
                                                         <input 
@@ -1283,7 +1290,7 @@
                                                             type="number" 
                                                             name="estValue" 
                                                             placeholder={isCurrentlySynced ? "Auto-synced from Planner" : "0.00"} 
-                                                            defaultValue={editingItem?.estValue !== undefined ? editingItem.estValue : ""} 
+                                                            defaultValue={syncedDisplayValue}
                                                             disabled={!!isCurrentlySynced}
                                                             className={`w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs font-mono focus:outline-none focus:border-brandTeal-500 ${isCurrentlySynced ? 'opacity-50 cursor-not-allowed' : 'text-white'}`} 
                                                         />

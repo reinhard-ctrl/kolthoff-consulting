@@ -7,10 +7,13 @@ import { initAppCheck } from './lib/firebase';
 
 initAppCheck();
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter basename="/admin">
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+const root = document.getElementById('root');
+if (root) {
+  ReactDOM.createRoot(root).render(
+    <React.StrictMode>
+      <BrowserRouter basename="/admin">
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}
