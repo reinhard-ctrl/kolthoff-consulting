@@ -36,12 +36,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci --include=dev && npm run build
-
-      - name: Verify Firebase CLI
-        run: test -x ./node_modules/.bin/firebase && ./node_modules/.bin/firebase --version
 
       - id: google-auth
         uses: google-github-actions/auth@v2
@@ -56,7 +53,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          ./node_modules/.bin/firebase hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
+          npx --yes firebase-tools@13.35.1 hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
             --expires 7d \
             --project kolthoff-portal \
             --non-interactive
@@ -73,13 +70,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci --include=dev && npm run build
       - run: npm ci --prefix functions --include=dev && npm run build --prefix functions
-
-      - name: Verify Firebase CLI
-        run: test -x ./node_modules/.bin/firebase && ./node_modules/.bin/firebase --version
 
       - id: google-auth
         uses: google-github-actions/auth@v2
@@ -94,7 +88,7 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          ./node_modules/.bin/firebase deploy \
+          npx --yes firebase-tools@13.35.1 deploy \
             --only hosting,firestore:rules,storage:rules,functions \
             --project kolthoff-portal \
             --non-interactive
