@@ -84,6 +84,17 @@ jobs:
           create_credentials_file: true
           export_environment_variables: true
 
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Remove orphaned validateWorkbookProfile (wrong trigger type)
+        continue-on-error: true
+        run: |
+          gcloud functions delete validateWorkbookProfile \
+            --region=asia-southeast1 \
+            --project=kolthoff-portal \
+            --gen2 \
+            --quiet
+
       - name: Deploy to Firebase
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}

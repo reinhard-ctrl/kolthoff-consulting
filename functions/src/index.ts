@@ -98,8 +98,8 @@ export const setUserClaims = onCall(async (request) => {
   return { success: true };
 });
 
-/** Validate workbook_profiles on write */
-export const validateWorkbookProfile = onDocumentWritten(
+/** Validate workbook_profiles on write (Firestore trigger) */
+export const onWorkbookProfileWritten = onDocumentWritten(
   'artifacts/{tenantId}/public/data/workbook_profiles/{profileId}',
   async (event) => {
     const after = event.data?.after?.data();
