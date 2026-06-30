@@ -144,14 +144,16 @@ export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    hasAdminSession().then((ok) => {
-      const returnUrl = getReturnUrl();
-      if (ok && returnUrl) {
-        window.location.href = returnUrl;
-        return;
-      }
-      setAuthed(ok);
-    });
+    hasAdminSession()
+      .then((ok) => {
+        const returnUrl = getReturnUrl();
+        if (ok && returnUrl) {
+          window.location.href = returnUrl;
+          return;
+        }
+        setAuthed(ok);
+      })
+      .catch(() => setAuthed(false));
   }, []);
 
   if (authed === null) {
