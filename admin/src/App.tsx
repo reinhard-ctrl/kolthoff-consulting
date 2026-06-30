@@ -44,25 +44,23 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
       }
       onAuth();
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Auth failed';
       if (err instanceof FirebaseError) {
         if (err.code === 'functions/internal' || err.code === 'functions/unavailable') {
-          setError('Cloud Function unreachable. Try again after deploy, or use /api/verify-passcode via Hosting.');
-        } else if (err.message.includes('Passcode check failed')) {
-          setError('Could not reach passcode service. Wait for deploy (~3 min) and hard-refresh.');
-        } else if (err.message.includes('referer') || err.message.includes('requests-from-referer')) {
+          setError('Cloud Function unreachable (internal). Run the IAM fix in Cloud Shell — see docs/admin-login.md — or wait for the latest deploy.');
+        } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
           setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers in Google Cloud Console.');
         } else {
-          setError(`${err.code}: ${err.message}`);
+          setError(`${err.code}: ${msg}`);
         }
+      } else if (msg.includes('Passcode check failed (404)')) {
+        setError('Passcode service not deployed yet. Wait ~3 min for CI deploy, then hard-refresh (Ctrl+Shift+R). See docs/admin-login.md.');
+      } else if (msg.includes('Passcode check failed')) {
+        setError('Passcode service unavailable. Wait for deploy or see docs/admin-login.md for Cloud Shell IAM steps.');
+      } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
+        setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers.');
       } else {
-        const msg = err instanceof Error ? err.message : 'Auth failed';
-        if (msg.includes('Passcode check failed')) {
-          setError('Passcode service not ready. Wait ~3 min for deploy, then hard-refresh (Ctrl+Shift+R).');
-        } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
-          setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers.');
-        } else {
-          setError(msg);
-        }
+        setError(msg);
       }
     } finally {
       setLoading(false);

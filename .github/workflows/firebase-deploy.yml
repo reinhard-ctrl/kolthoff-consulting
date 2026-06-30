@@ -105,7 +105,8 @@ jobs:
             --non-interactive \
             --force
 
-      - name: Allow public invoke on login Cloud Functions
+      - name: Allow public invoke on login Cloud Functions (skipped if org policy blocks allUsers)
+        continue-on-error: true
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal

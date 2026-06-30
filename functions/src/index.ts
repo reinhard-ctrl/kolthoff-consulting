@@ -1,3 +1,4 @@
+import * as admin from 'firebase-admin';
 import type { Request, Response } from 'express';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
