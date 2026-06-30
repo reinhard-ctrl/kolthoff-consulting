@@ -19,11 +19,12 @@ function isStandalonePolicyStudio() {
   return typeof window !== 'undefined' && typeof window.STANDALONE_POLICIES !== 'undefined';
 }
 
-/** Client-facing contract ledger link (?contract=...) */
+/** Client-facing contract signing link (?contract=...) */
 function isClientContractLedgerView() {
   if (typeof window === 'undefined') return false;
   return (
-    window.location.pathname.includes('contract_ledger') &&
+    (window.location.pathname.includes('contract_ledger') ||
+      window.location.pathname.includes('contract_sign')) &&
     new URLSearchParams(window.location.search).has('contract')
   );
 }
