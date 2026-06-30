@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { signOut, auth, logAudit, hasAdminStaffSession } from './lib/firebase';
+import { signOut, auth, logAudit, hasAdminStaffSession, getDocs, query, where, tenantCol } from './lib/firebase';
 import { useAuth } from './hooks/useAuth';
 import { useTenantFeatures } from './hooks/useTenant';
 import LoginPage from './components/LoginPage';
@@ -66,9 +66,10 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 }
 
 export default function App() {
-  const { loading } = useAuth();
+  const { user: authUser, loading } = useAuth();
   const [user, setUser] = useState<CoreUser | null>(null);
   const [checkingStaff, setCheckingStaff] = useState(true);
+  const [restoringSession, setRestoringSession] = useState(true);
 
   useEffect(() => {
     hasAdminStaffSession().then((ok) => {
@@ -84,13 +85,38 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    if (loading || checkingStaff || user) {
+      setRestoringSession(false);
+      return;
+    }
+
+    const restoreWorkspaceSession = async () => {
+      try {
+        const current = auth.currentUser;
+        if (!current || current.isAnonymous || !current.email) return;
+        const email = current.email.trim().toLowerCase();
+        const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
+        if (!snap.empty) {
+          setUser(snap.docs[0].data() as CoreUser);
+        }
+      } catch (err) {
+        console.warn('Workspace session restore failed:', err);
+      } finally {
+        setRestoringSession(false);
+      }
+    };
+
+    restoreWorkspaceSession();
+  }, [loading, checkingStaff, user, authUser]);
+
   const logout = async () => {
     await logAudit('workspace_logout', { email: user?.email });
     await signOut(auth);
     setUser(null);
   };
 
-  if (loading || checkingStaff) {
+  if (loading || checkingStaff || restoringSession) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="animate-pulse">Connecting to workspace...</div>

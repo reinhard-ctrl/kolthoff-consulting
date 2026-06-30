@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
+import { signInWithEmailAndPassword, signOut, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
 import { FirebaseError } from 'firebase/app';
 
 interface CoreUser {
@@ -35,6 +35,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       await signInWithEmailAndPassword(auth, normalized, password);
       const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', normalized)));
       if (snap.empty) {
+        await signOut(auth);
         setError('Email not found in organization. Contact your Kolthoff admin.');
         return;
       }
@@ -45,6 +46,8 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       const msg = err instanceof Error ? err.message : 'Login failed';
       if (err instanceof FirebaseError && err.code === 'auth/invalid-credential') {
         setError('Invalid email or password.');
+      } else if (err instanceof FirebaseError && err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Wait a few minutes or use "Forgot password" to reset.');
       } else if (msg.includes('referer')) {
         setError('Firebase Auth blocked this domain. Add this site to API key HTTP referrers.');
       } else {
@@ -72,9 +75,13 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       setInfo(message || 'If that email is registered, a reset link has been sent.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Request failed';
-      setError(msg.includes('internal')
-        ? 'Could not send reset email. Contact your Kolthoff admin.'
-        : msg);
+      if (err instanceof FirebaseError && err.code === 'functions/internal') {
+        setError('Could not send reset email. Contact your Kolthoff admin.');
+      } else if (msg.includes('internal')) {
+        setError('Could not send reset email. Contact your Kolthoff admin.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
