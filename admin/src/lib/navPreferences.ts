@@ -6,6 +6,8 @@ export type NavPreferences = {
   groupOrder: string[];
   /** groupId -> ordered item ids (supports moving items between groups) */
   assignments: Record<string, string[]>;
+  /** Default groups hidden from the sidebar */
+  hiddenGroups?: string[];
 };
 
 function dedupeIds(ids: string[]): string[] {
@@ -31,11 +33,18 @@ function defaultAssignments(): Record<string, string[]> {
 
 function resolveGroupOrder(groups: NavGroup[], prefs: NavPreferences | null): string[] {
   const known = new Set(groups.map((g) => g.id));
-  if (!prefs?.groupOrder?.length) return groups.map((g) => g.id);
-  return [
-    ...prefs.groupOrder.filter((id) => known.has(id)),
-    ...groups.map((g) => g.id).filter((id) => !prefs.groupOrder.includes(id)),
-  ];
+  const hidden = new Set(prefs?.hiddenGroups ?? []);
+
+  if (!prefs?.groupOrder?.length) {
+    return groups.map((g) => g.id).filter((id) => !hidden.has(id));
+  }
+
+  const ordered = dedupeIds(prefs.groupOrder.filter((id) => known.has(id) && !hidden.has(id)));
+  const append = groups
+    .map((g) => g.id)
+    .filter((id) => !hidden.has(id) && !ordered.includes(id));
+
+  return [...ordered, ...append];
 }
 
 /** Each nav item belongs to exactly one group; saved assignments override defaults. */
@@ -96,9 +105,12 @@ export function clearNavPreferences() {
 }
 
 export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
+  const visibleIds = new Set(groups.map((g) => g.id));
+  const hiddenGroups = DEFAULT_NAV_GROUPS.map((g) => g.id).filter((id) => !visibleIds.has(id));
   return {
     groupOrder: groups.map((g) => g.id),
     assignments: Object.fromEntries(groups.map((g) => [g.id, g.items.map((i) => i.id)])),
+    hiddenGroups: hiddenGroups.length ? hiddenGroups : undefined,
   };
 }
 
@@ -242,4 +254,35 @@ export function getNavItem(id: string): (NavItem & { group: string }) | undefine
     if (item) return { ...item, group: group.label };
   }
   return undefined;
+}
+
+export function getAvailableNavGroupsToAdd(groups: NavGroup[]): NavGroup[] {
+  const visible = new Set(groups.map((g) => g.id));
+  return DEFAULT_NAV_GROUPS.filter((g) => !visible.has(g.id));
+}
+
+/** Remove a group card; its links move into the nearest remaining group. */
+export function removeNavGroup(groups: NavGroup[], groupId: string): NavGroup[] {
+  if (groups.length <= 1) return groups;
+  const index = groups.findIndex((g) => g.id === groupId);
+  if (index < 0) return groups;
+
+  const removed = groups[index];
+  const targetIndex = index > 0 ? index - 1 : 1;
+  const targetId = groups[targetIndex]?.id;
+  if (!targetId) return groups;
+
+  return groups
+    .filter((g) => g.id !== groupId)
+    .map((g) =>
+      g.id === targetId ? { ...g, items: [...g.items, ...removed.items] } : g
+    );
+}
+
+/** Restore a hidden default group card (empty until links are dragged in). */
+export function addNavGroup(groups: NavGroup[], groupId: string): NavGroup[] {
+  if (groups.some((g) => g.id === groupId)) return groups;
+  const meta = DEFAULT_NAV_GROUPS.find((g) => g.id === groupId);
+  if (!meta) return groups;
+  return [...groups, { ...meta, items: [] }];
 }

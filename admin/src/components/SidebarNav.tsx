@@ -4,10 +4,13 @@ import { DEFAULT_NAV_GROUPS, getNavExternalUrl, getNavLink, canOpenInPanel, type
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import {
+  addNavGroup,
   buildPreferencesFromGroups,
   clearNavPreferences,
+  getAvailableNavGroupsToAdd,
   getEffectiveNavGroups,
   insertItemAt,
+  removeNavGroup,
   reorderGroups,
   saveNavPreferences,
   type NavGroup,
@@ -261,6 +264,8 @@ export default function SidebarNav() {
     return dropTarget.position;
   };
 
+  const hiddenGroupsToAdd = getAvailableNavGroupsToAdd(groups);
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div ref={shellRef} className="sidebar-nav-shell flex-1 min-h-0 px-2">
@@ -342,6 +347,21 @@ export default function SidebarNav() {
                     <h2 className="sidebar-nav-group-label flex-1 font-mono font-bold uppercase tracking-[0.14em] text-slate-500 truncate pointer-events-none">
                       {group.label}
                     </h2>
+                    {customizing && (
+                      <button
+                        type="button"
+                        title={`Remove ${group.label} group`}
+                        aria-label={`Remove ${group.label} group`}
+                        disabled={groups.length <= 1}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          persist(removeNavGroup(groups, group.id));
+                        }}
+                        className="shrink-0 w-5 h-5 rounded text-slate-600 hover:text-red-400 hover:bg-brandNavy-800 disabled:opacity-30 disabled:pointer-events-none text-sm leading-none"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                   <ul
                     className="space-y-1 min-h-[1.5rem]"
@@ -407,6 +427,30 @@ export default function SidebarNav() {
               </div>
             );
           })}
+          {customizing && hiddenGroupsToAdd.length > 0 && (
+            <div className="px-1 pt-1">
+              <label htmlFor="sidebar-add-group" className="sidebar-nav-hint text-slate-500 block mb-1">
+                Add group
+              </label>
+              <select
+                id="sidebar-add-group"
+                defaultValue=""
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  persist(addNavGroup(groups, e.target.value));
+                  e.target.value = '';
+                }}
+                className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded px-2 py-1 text-xs text-slate-300"
+              >
+                <option value="">Choose a group…</option>
+                {hiddenGroupsToAdd.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </nav>
       </div>
 
@@ -414,7 +458,7 @@ export default function SidebarNav() {
         {customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
-              Drag cards onto another card to reorder. Drop on a group header to move between groups.
+              Drag cards to reorder. Drop on a group header to move between groups. Use × to remove a group card or add one back below.
             </p>
             <div className="flex gap-2">
               <button
