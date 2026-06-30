@@ -9,6 +9,7 @@
 
     <!-- Firebase Initialization -->
         <script type="module" src="../../shared/firebase-init.js"></script>
+    <script type="module" src="../../shared/auth-gate.js"></script>
     <!-- React, ReactDOM, Babel, Tailwind, Marked.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
@@ -176,11 +177,7 @@
                 clearInterval(checkInterval);
                 const initAuth = async () => {
                   try {
-                    if (window.initialAuthToken) {
-                        await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
-                    } else {
-                        await window.signInAnonymously(window.firebaseAuth);
-                    }
+                    await window.kolthoffStaffReady
                     setIsAuthed(true);
                   } catch (e) {
                     console.error("Auth error:", e);

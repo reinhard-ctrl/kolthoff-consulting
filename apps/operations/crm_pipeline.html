@@ -10,6 +10,7 @@
     
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js"></script>
+    <script type="module" src="../../shared/auth-gate.js"></script>
     <!-- Tailwind CSS with Luxury Branding Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -168,11 +169,7 @@
                         clearInterval(checkInterval);
                         const initAuth = async () => {
                             try {
-                                if (window.initialAuthToken) {
-                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
-                                } else {
-                                    await window.signInAnonymously(window.firebaseAuth);
-                                }
+                                await window.kolthoffStaffReady
                                 setIsAuthed(true);
                                 setAuthErrorDetails(null);
                             } catch (e) {

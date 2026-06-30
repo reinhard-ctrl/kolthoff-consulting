@@ -15,6 +15,7 @@ const LEGACY_LINKS = [
 ];
 
 const SUITE_LINKS = [
+  { href: '/admin/legacy/index.html', label: 'Suite Launcher' },
   { href: '/apps/delivery/project_planner.html', label: 'Project Planner' },
   { href: '/apps/operations/crm_pipeline.html', label: 'CRM Pipeline' },
   { href: '/apps/operations/policy_studio.html', label: 'Policy Studio' },
@@ -22,6 +23,18 @@ const SUITE_LINKS = [
   { href: '/workspace/', label: 'Core Workspace' },
   { href: '/apps/public/portal.html', label: 'Client Portal' },
 ];
+
+function getReturnUrl(): string | null {
+  const raw = new URLSearchParams(window.location.search).get('return');
+  if (!raw) return null;
+  try {
+    const path = decodeURIComponent(raw);
+    if (path.startsWith('/') && !path.startsWith('//')) return path;
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 function LoginGate({ onAuth }: { onAuth: () => void }) {
   const [code, setCode] = useState('');
@@ -42,7 +55,12 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
         );
         return;
       }
-      onAuth();
+      const returnUrl = getReturnUrl();
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        onAuth();
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Auth failed';
       if (err instanceof FirebaseError) {
@@ -119,7 +137,14 @@ export default function App() {
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    hasAdminSession().then((ok) => setAuthed(ok));
+    hasAdminSession().then((ok) => {
+      const returnUrl = getReturnUrl();
+      if (ok && returnUrl) {
+        window.location.href = returnUrl;
+        return;
+      }
+      setAuthed(ok);
+    });
   }, []);
 
   if (authed === null) {

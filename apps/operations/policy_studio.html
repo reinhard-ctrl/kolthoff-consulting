@@ -8,51 +8,15 @@
     <!-- Custom SVG Logo Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' fill-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' fill-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
  
-    <!-- Firebase Module Initialization (Loaded only if not in Standalone Offline Mode) -->
+    <!-- Firebase + staff auth gate (skipped in standalone offline mode) -->
     <script type="module">
-        if (typeof window.STANDALONE_POLICIES === 'undefined') {
-            (async () => {
-                const [
-                    { initializeApp },
-                    { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged },
-                    { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection }
-                ] = await Promise.all([
-                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"),
-                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"),
-                    import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")
-                ]);
-
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                    apiKey: "AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI",
-                    authDomain: "kolthoff-portal.firebaseapp.com",
-                    databaseURL: "https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-                    projectId: "kolthoff-portal",
-                    storageBucket: "kolthoff-portal.firebasestorage.app",
-                    messagingSenderId: "413958125034",
-                    appId: "1:413958125034:web:7d9d6d5f0b11a2c73b2e93"
-                };
-                
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app'; 
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                const app = initializeApp(firebaseConfig);
-                window.firebaseAuth = getAuth(app);
-                window.firebaseDb = getFirestore(app);
-                
-                window.appId = appId;
-                window.initialAuthToken = initialAuthToken;
-                window.signInAnonymously = signInAnonymously;
-                window.signInWithCustomToken = signInWithCustomToken;
-                window.onAuthStateChanged = onAuthStateChanged;
-                window.doc = doc;
-                window.setDoc = setDoc;
-                window.deleteDoc = deleteDoc;
-                window.onSnapshot = onSnapshot;
-                window.collection = collection;
-            })();
-        }
+      if (typeof window.STANDALONE_POLICIES === 'undefined') {
+        import('../../shared/firebase-init.js');
+        import('../../shared/auth-gate.js');
+      } else {
+        window.kolthoffStaffReady = Promise.resolve({ user: null, role: 'standalone' });
+      }
     </script>
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -613,10 +577,10 @@
                                         await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
                                     } catch (tokenErr) {
                                         console.warn("Token auth failed, trying anonymous auth fallback:", tokenErr);
-                                        await window.signInAnonymously(window.firebaseAuth);
+                                        await window.kolthoffStaffReady
                                     }
                                 } else {
-                                    await window.signInAnonymously(window.firebaseAuth);
+                                    await window.kolthoffStaffReady
                                 }
                             } catch (e) {
                                 console.error("Firebase Auth Blocked:", e);

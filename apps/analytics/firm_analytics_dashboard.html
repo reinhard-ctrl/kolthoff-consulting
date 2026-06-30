@@ -13,6 +13,7 @@
 
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js"></script>
+    <script type="module" src="../../shared/auth-gate.js"></script>
     <!-- React, ReactDOM, Babel CDNs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
@@ -90,10 +91,10 @@
                                         await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
                                     } catch (tokenErr) {
                                         console.warn("Token auth failed, trying anonymous auth fallback:", tokenErr);
-                                        await window.signInAnonymously(window.firebaseAuth);
+                                        await window.kolthoffStaffReady
                                     }
                                 } else {
-                                    await window.signInAnonymously(window.firebaseAuth);
+                                    await window.kolthoffStaffReady
                                 }
                             } catch (e) {
                                 console.error("Firebase Auth Blocked:", e);
