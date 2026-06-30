@@ -50,6 +50,30 @@ async function coreUserExists(tenantId: string, email: string): Promise<boolean>
   return !snap.empty;
 }
 
+async function findCoreUserDoc(tenantId: string, email: string) {
+  const normalized = email.trim().toLowerCase();
+  const snap = await db
+    .collection(`artifacts/${tenantId}/public/data/core_users`)
+    .where('email', '==', normalized)
+    .limit(1)
+    .get();
+  return snap.empty ? null : snap.docs[0];
+}
+
+async function countCoreUserMemberships(email: string, excludeTenantId?: string): Promise<number> {
+  const normalized = email.trim().toLowerCase();
+  const snap = await db.collectionGroup('core_users').where('email', '==', normalized).get();
+  return snap.docs.filter((doc) => {
+    const parts = doc.ref.path.split('/');
+    const tenantId = parts[1];
+    return tenantId !== excludeTenantId;
+  }).length;
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 async function sendPasswordResetEmail(email: string, continueUrl: string): Promise<void> {
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${WEB_API_KEY}`,
@@ -174,11 +198,21 @@ export const inviteWorkspaceUser = onCall(async (request) => {
 
   if (!email || !tenantId) throw new HttpsError('invalid-argument', 'email and tenantId required');
 
+  const normalizedEmail = normalizeEmail(email);
+  const displayName = (name || normalizedEmail).trim();
+
   let userRecord;
   try {
-    userRecord = await admin.auth().getUserByEmail(email);
+    userRecord = await admin.auth().getUserByEmail(normalizedEmail);
+    if (displayName && userRecord.displayName !== displayName) {
+      userRecord = await admin.auth().updateUser(userRecord.uid, { displayName });
+    }
   } catch {
-    userRecord = await admin.auth().createUser({ email, displayName: name, emailVerified: false });
+    userRecord = await admin.auth().createUser({
+      email: normalizedEmail,
+      displayName,
+      emailVerified: false,
+    });
   }
 
   await admin.auth().setCustomUserClaims(userRecord.uid, {
@@ -186,11 +220,12 @@ export const inviteWorkspaceUser = onCall(async (request) => {
     role: role || 'user',
   });
 
-  const userId = `u_${userRecord.uid.slice(0, 8)}`;
+  const existingDoc = await findCoreUserDoc(tenantId, normalizedEmail);
+  const userId = existingDoc?.id ?? `u_${userRecord.uid.slice(0, 8)}`;
   await db.doc(`artifacts/${tenantId}/public/data/core_users/${userId}`).set({
     id: userId,
-    email,
-    name: name || email,
+    email: normalizedEmail,
+    name: displayName,
     role: role || 'user',
     departmentId: departmentId || null,
     firebaseUid: userRecord.uid,
@@ -199,13 +234,13 @@ export const inviteWorkspaceUser = onCall(async (request) => {
 
   let passwordEmailSent = false;
   try {
-    await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
+    await sendPasswordResetEmail(normalizedEmail, workspaceContinueUrl(tenantId));
     passwordEmailSent = true;
   } catch (err) {
     console.warn('inviteWorkspaceUser: password email failed', err);
   }
 
-  return { userId, firebaseUid: userRecord.uid, passwordEmailSent };
+  return { userId, firebaseUid: userRecord.uid, passwordEmailSent, email: normalizedEmail };
 });
 
 /** Request password reset — public; validates email against core_users server-side */
@@ -242,9 +277,14 @@ export const sendWorkspacePasswordReset = onCall(async (request) => {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
 
-  const email = (request.data?.email as string)?.trim()?.toLowerCase();
+  const email = normalizeEmail((request.data?.email as string) || '');
   const tenantId = (request.data?.tenantId as string)?.trim() || 'kolthoff-admin-app';
   if (!email) throw new HttpsError('invalid-argument', 'Email required');
+
+  const exists = await coreUserExists(tenantId, email);
+  if (!exists) {
+    throw new HttpsError('not-found', 'User not found in this workspace tenant.');
+  }
 
   try {
     await sendPasswordResetEmail(email, workspaceContinueUrl(tenantId));
@@ -254,6 +294,80 @@ export const sendWorkspacePasswordReset = onCall(async (request) => {
   }
 
   return { sent: true, message: `Password reset email sent to ${email}.` };
+});
+
+/** Remove a workspace member from a tenant */
+export const removeWorkspaceUser = onCall(async (request) => {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
+    throw new HttpsError('permission-denied', 'Admin privileges required');
+  }
+
+  const tenantId = (request.data?.tenantId as string)?.trim() || 'kolthoff-admin-app';
+  const userId = (request.data?.userId as string)?.trim();
+  const email = normalizeEmail((request.data?.email as string) || '');
+  const revokeAuth = request.data?.revokeAuth === true;
+
+  if (!userId && !email) {
+    throw new HttpsError('invalid-argument', 'userId or email required');
+  }
+
+  type MemberDoc = FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot;
+  let userDoc: MemberDoc | null = null;
+
+  if (userId) {
+    const snap = await db.doc(`artifacts/${tenantId}/public/data/core_users/${userId}`).get();
+    if (snap.exists) userDoc = snap;
+  }
+  if (!userDoc && email) {
+    userDoc = await findCoreUserDoc(tenantId, email);
+  }
+  if (!userDoc || !userDoc.exists) {
+    throw new HttpsError('not-found', 'Workspace member not found.');
+  }
+
+  const data = userDoc.data() as {
+    email?: string;
+    firebaseUid?: string;
+    name?: string;
+  };
+  const memberEmail = normalizeEmail(data.email || email);
+  const firebaseUid = data.firebaseUid;
+  const removedUserId = userDoc.id;
+
+  await userDoc.ref.delete();
+
+  let authRevoked = false;
+  if (firebaseUid) {
+    const remainingMemberships = await countCoreUserMemberships(memberEmail, tenantId);
+    if (remainingMemberships === 0) {
+      try {
+        const user = await admin.auth().getUser(firebaseUid);
+        const claims = { ...(user.customClaims || {}) };
+        if (claims.tenantId === tenantId) {
+          delete claims.tenantId;
+          delete claims.role;
+          await admin.auth().setCustomUserClaims(firebaseUid, claims);
+        }
+        if (revokeAuth) {
+          await admin.auth().revokeRefreshTokens(firebaseUid);
+          authRevoked = true;
+        }
+      } catch (err) {
+        console.warn('removeWorkspaceUser: auth cleanup failed', err);
+      }
+    }
+  }
+
+  return {
+    removed: true,
+    userId: removedUserId,
+    email: memberEmail,
+    authRevoked,
+    message: authRevoked
+      ? `${memberEmail} removed from workspace and signed out everywhere.`
+      : `${memberEmail} removed from this workspace.`,
+  };
 });
 
 /** Provision an isolated Core Workspace tenant for a client */

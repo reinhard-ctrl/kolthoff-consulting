@@ -9,6 +9,12 @@ interface TenantUser {
   role: string;
 }
 
+interface RemoveTarget {
+  id: string;
+  email: string;
+  name: string;
+}
+
 interface WorkspaceInstance {
   tenantId: string;
   clientName: string;
@@ -44,6 +50,9 @@ export default function Tenants() {
   const [inviteStatus, setInviteStatus] = useState('');
   const [inviting, setInviting] = useState(false);
   const [resettingEmail, setResettingEmail] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
+  const [revokeAuthOnRemove, setRevokeAuthOnRemove] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newTenantId, setNewTenantId] = useState('');
@@ -133,9 +142,37 @@ export default function Tenants() {
       const msg = err instanceof Error ? err.message : 'Reset failed';
       setInviteStatus(msg.includes('permission-denied')
         ? 'Admin session required. Re-login at /admin/ and try again.'
-        : msg);
+        : msg.includes('not-found')
+          ? 'User not found in this workspace tenant.'
+          : msg);
     } finally {
       setResettingEmail(null);
+    }
+  };
+
+  const removeMember = async () => {
+    if (!removeTarget) return;
+    setRemovingUserId(removeTarget.id);
+    setInviteStatus('');
+    try {
+      await bootstrapAuth();
+      const remove = httpsCallable(functions, 'removeWorkspaceUser');
+      const result = await remove({
+        userId: removeTarget.id,
+        email: removeTarget.email,
+        tenantId,
+        revokeAuth: revokeAuthOnRemove,
+      });
+      setInviteStatus((result.data as { message?: string })?.message || `${removeTarget.email} removed.`);
+      setRemoveTarget(null);
+      setRevokeAuthOnRemove(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Remove failed';
+      setInviteStatus(msg.includes('permission-denied')
+        ? 'Admin session required. Re-login at /admin/ and try again.'
+        : msg);
+    } finally {
+      setRemovingUserId(null);
     }
   };
 
@@ -279,16 +316,64 @@ export default function Tenants() {
               <button
                 type="button"
                 onClick={() => sendPasswordReset(u.email)}
-                disabled={resettingEmail === u.email}
+                disabled={resettingEmail === u.email || removingUserId === u.id}
                 className="px-2 py-1 text-xs rounded border border-brandNavy-700 text-slate-400 hover:text-white disabled:opacity-50"
               >
                 {resettingEmail === u.email ? 'Sending...' : 'Reset password'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRemoveTarget({ id: u.id, email: u.email, name: u.name })}
+                disabled={removingUserId === u.id}
+                className="px-2 py-1 text-xs rounded border border-rose-900/60 text-rose-400 hover:text-rose-300 disabled:opacity-50"
+              >
+                {removingUserId === u.id ? 'Removing...' : 'Remove'}
               </button>
               <span className="text-brandTeal-400 uppercase text-xs">{u.role}</span>
             </div>
           </div>
         ))}
       </div>
+
+      {removeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="glass-panel p-6 w-full max-w-lg">
+            <h2 className="text-lg font-bold mb-2">Remove workspace member?</h2>
+            <p className="text-sm text-slate-400 mb-4">
+              Remove <strong className="text-white">{removeTarget.name}</strong> ({removeTarget.email}) from this workspace tenant.
+              They will no longer be able to sign in here.
+            </p>
+            <label className="flex items-center gap-2 text-xs text-slate-400 mb-4">
+              <input
+                type="checkbox"
+                checked={revokeAuthOnRemove}
+                onChange={(e) => setRevokeAuthOnRemove(e.target.checked)}
+              />
+              Also sign them out everywhere (revoke active sessions)
+            </label>
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setRemoveTarget(null);
+                  setRevokeAuthOnRemove(false);
+                }}
+                className="px-4 py-2 rounded text-sm border border-brandNavy-700 text-slate-400"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={removeMember}
+                disabled={removingUserId === removeTarget.id}
+                className="px-4 py-2 bg-rose-600 text-white rounded font-bold text-sm disabled:opacity-50"
+              >
+                {removingUserId === removeTarget.id ? 'Removing...' : 'Remove member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
