@@ -76,7 +76,7 @@ Portal access code = Firestore document ID under `clients`.
 
 **Option A — Admin Console import**
 
-1. Open `/admin/legacy/admin_console.html` (after admin login)
+1. Open `/admin/portals` (after admin login)
 2. Use **Import Profile** dropdown to create a portal from an existing SOW
 
 **Option B — Seed JSON**
