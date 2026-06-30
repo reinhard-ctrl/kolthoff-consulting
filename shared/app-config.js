@@ -10,13 +10,15 @@ export const ROUTES = {
   portal: '/apps/public/portal.html',
   clientIntake: '/apps/public/client_intake.html',
   projectPlanner: '/apps/delivery/project_planner.html',
-  contractLedger: '/admin/legacy/contract_ledger.html',
+  contractLedger: '/admin/contracts',
+  clientContractSign: '/apps/public/contract_sign.html',
   workspace: '/workspace/',
   adminConsole: '/admin/',
-  masterAdmin: '/admin/legacy/core_master_admin.html',
+  masterAdmin: '/admin/master',
+  portalManager: '/admin/portals',
+  intakeCenter: '/admin/intake',
   crmPipeline: '/apps/operations/crm_pipeline.html',
   firmAnalytics: '/apps/analytics/firm_analytics_dashboard.html',
-  suiteLauncher: '/admin/legacy/index.html',
 };
 
 export function appUrl(path) {
