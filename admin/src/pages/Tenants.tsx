@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { onSnapshot, setDoc, doc, collection } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
 
 interface TenantUser {
   id: string;
@@ -15,6 +15,8 @@ export default function Tenants() {
   const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: false, crm: false });
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
+  const [inviteStatus, setInviteStatus] = useState('');
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
@@ -39,12 +41,28 @@ export default function Tenants() {
 
   const provisionUser = async () => {
     if (!inviteEmail) return;
-    const id = `u_${Date.now()}`;
-    await setDoc(doc(db, 'artifacts', tenantId, 'public', 'data', 'core_users', id), {
-      id, email: inviteEmail, name: inviteName || inviteEmail, role: 'admin', departmentId: null,
-    });
-    setInviteEmail('');
-    setInviteName('');
+    setInviting(true);
+    setInviteStatus('');
+    try {
+      await bootstrapAuth();
+      const invite = httpsCallable(functions, 'inviteWorkspaceUser');
+      await invite({
+        email: inviteEmail.trim(),
+        name: inviteName || inviteEmail.trim(),
+        tenantId,
+        role: 'user',
+      });
+      setInviteStatus(`Invited ${inviteEmail}. Enable Email/Password auth in Firebase if not already on.`);
+      setInviteEmail('');
+      setInviteName('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Invite failed';
+      setInviteStatus(msg.includes('permission-denied')
+        ? 'Admin session required. Re-login at /admin/ and try again.'
+        : msg);
+    } finally {
+      setInviting(false);
+    }
   };
 
   return (
@@ -70,12 +88,16 @@ export default function Tenants() {
       </div>
 
       <div className="glass-panel p-4 mb-6">
-        <h2 className="font-bold mb-3">Provision Admin User</h2>
+        <h2 className="font-bold mb-3">Invite Workspace User</h2>
+        <p className="text-xs text-slate-500 mb-3">Creates Firebase Auth user + core_users doc. Requires Email/Password sign-in enabled.</p>
         <div className="flex gap-2 flex-wrap">
           <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
           <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Email" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
-          <button onClick={provisionUser} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">Add User</button>
+          <button onClick={provisionUser} disabled={inviting} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50">
+            {inviting ? 'Inviting...' : 'Invite User'}
+          </button>
         </div>
+        {inviteStatus && <p className="text-xs mt-2 text-slate-400">{inviteStatus}</p>}
       </div>
 
       <div className="glass-panel p-4">

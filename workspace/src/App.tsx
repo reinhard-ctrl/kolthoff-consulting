@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { signOut, auth, logAudit } from './lib/firebase';
+import { signOut, auth, logAudit, hasAdminStaffSession } from './lib/firebase';
 import { useAuth } from './hooks/useAuth';
 import { useTenantFeatures } from './hooks/useTenant';
 import LoginPage from './components/LoginPage';
@@ -68,6 +68,21 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 export default function App() {
   const { loading } = useAuth();
   const [user, setUser] = useState<CoreUser | null>(null);
+  const [checkingStaff, setCheckingStaff] = useState(true);
+
+  useEffect(() => {
+    hasAdminStaffSession().then((ok) => {
+      if (ok && auth.currentUser) {
+        setUser({
+          id: auth.currentUser.uid,
+          email: 'staff@kolthoff-consulting.com',
+          name: 'Kolthoff Staff',
+          role: 'kolthoff_admin',
+        });
+      }
+      setCheckingStaff(false);
+    });
+  }, []);
 
   const logout = async () => {
     await logAudit('workspace_logout', { email: user?.email });
@@ -75,7 +90,7 @@ export default function App() {
     setUser(null);
   };
 
-  if (loading) {
+  if (loading || checkingStaff) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="animate-pulse">Connecting to workspace...</div>

@@ -50,6 +50,11 @@ async function run() {
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_deals/d1').get()
   );
 
+  // core_users directory is staff-only
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/core_users/u1').get()
+  );
+
   console.log('All rules tests passed.');
   await testEnv.cleanup();
 }

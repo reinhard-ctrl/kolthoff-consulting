@@ -18,7 +18,7 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `intake_forms` | Intake form definitions | fields, responses |
 | `intake_templates` | Reusable form templates | fields |
 | `contracts_ledger` | E-sign status | status, signatureName, signedAt, ip |
-| `admin_credentials` | Admin passcodes (CF only) | role |
+| `admin_credentials` | Admin passcodes (Firestore) | role |
 | `core_users` | Workspace users | email, role, departmentId, firebaseUid |
 | `core_departments` | Org structure | name, parentId |
 | `core_templates` | Approval form templates | fields, flowSteps |
@@ -26,7 +26,7 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `core_chats` / `core_messages` | Messenger | participants, text, timestamp |
 | `core_policies` | Policy vault | title, content (markdown) |
 | `core_it_requests` | IT helpdesk | status, description |
-| `core_crm_deals` | CRM pipeline | stage, value, company, contact |
+| `crm_deals` | CRM pipeline (HTML + workspace) | pipelineStatus, estValue, company |
 | `core_workflows` | Workflow blueprints | steps[] |
 | `core_audit_log` | Audit trail | action, userId, timestamp |
 | `tenant_settings` | Feature flags | config.features |

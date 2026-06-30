@@ -6,8 +6,16 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function isAnonymous() {
+      return isAuthenticated() &&
+        request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
     function isKolthoffAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'kolthoff_admin';
+      return isAuthenticated() && (
+        request.auth.token.role == 'kolthoff_admin' ||
+        firestore.exists(/databases/(default)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid))
+      );
     }
 
     function isTenantMember(tenantId) {
@@ -17,11 +25,17 @@ service firebase.storage {
       );
     }
 
+    function isStaffMember() {
+      return isKolthoffAdmin() || (isAuthenticated() && !isAnonymous());
+    }
+
     match /artifacts/{tenantId}/files/{clientId}/{filename} {
-      allow read: if isTenantMember(tenantId) || isAuthenticated();
-      allow write: if isTenantMember(tenantId) &&
-        request.resource.size < 25 * 1024 * 1024 &&
-        request.resource.contentType.matches('application/.*|image/.*|text/.*');
+      // Staff: full access. Portal clients (anonymous MVP): read/write own uploads.
+      allow read: if isStaffMember() || isAuthenticated();
+      allow write: if isStaffMember() ||
+        (isAuthenticated() &&
+          request.resource.size < 25 * 1024 * 1024 &&
+          request.resource.contentType.matches('application/.*|image/.*|text/.*'));
       allow delete: if isKolthoffAdmin();
     }
   }

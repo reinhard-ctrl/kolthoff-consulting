@@ -72,7 +72,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
       const msg = err instanceof Error ? err.message : 'Auth failed';
       if (err instanceof FirebaseError) {
         if (err.code === 'auth/requests-from-referer-blocked' || msg.includes('referer')) {
-          setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers in Google Cloud Console.');
+          setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app and kolthoff-consulting.com to API key HTTP referrers in Google Cloud Console.');
         } else if (err.code === 'permission-denied') {
           setError('Firestore denied passcode check. Ensure Anonymous auth is enabled and rules are deployed.');
         } else {
@@ -105,7 +105,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
 
   useEffect(() => {
-    const unsubs = ['clients', 'workbook_profiles', 'core_crm_deals'].map((col) =>
+    const unsubs = ['clients', 'workbook_profiles', 'crm_deals'].map((col) =>
       onSnapshot(adminCol(col), (snap) => {
         setMetrics((m) => ({ ...m, [col === 'clients' ? 'clients' : col === 'workbook_profiles' ? 'profiles' : 'deals']: snap.size }));
       })

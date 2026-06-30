@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, where, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -50,7 +50,21 @@ export async function logAudit(action: string, details: Record<string, unknown> 
   } catch (e) { console.warn('Audit log failed', e); }
 }
 
-export { signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, ref, uploadBytes, getDownloadURL, httpsCallable };
+export { signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setDoc, getDoc, onSnapshot, addDoc, query, orderBy, where, getDocs, ref, uploadBytes, getDownloadURL, httpsCallable };
+
+const ADMIN_APP = 'kolthoff-admin-app';
+
+export async function hasAdminStaffSession(): Promise<boolean> {
+  try {
+    await bootstrapAuth();
+  } catch {
+    return false;
+  }
+  if (!auth.currentUser) return false;
+  const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+  const snap = await getDoc(sessionRef);
+  return snap.exists();
+}
 
 export function initAppCheck() {
   const siteKey = (window as unknown as { __RECAPTCHA_SITE_KEY__?: string }).__RECAPTCHA_SITE_KEY__;

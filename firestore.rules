@@ -58,9 +58,9 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
-    // Workspace login directory — MVP: readable when signed in (Phase 2: staff only)
+    // Workspace login directory — staff only
     match /artifacts/kolthoff-admin-app/public/data/core_users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isStaffMember();
       allow write: if isKolthoffAdmin();
     }
 
