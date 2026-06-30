@@ -26,7 +26,13 @@ export function adminCol(name: string) {
 export async function bootstrapAuth() {
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
   if (token) await signInWithCustomToken(auth, token);
-  else if (!auth.currentUser) await signInAnonymously(auth);
+  else if (!auth.currentUser) {
+    try {
+      await signInAnonymously(auth);
+    } catch (err) {
+      console.warn('Anonymous auth unavailable:', err);
+    }
+  }
 }
 
 export async function verifyAdminPasscode(code: string) {

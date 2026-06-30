@@ -7,9 +7,13 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    bootstrapAuth().then(() => {
-      return onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
-    });
+    let unsub: (() => void) | undefined;
+    bootstrapAuth()
+      .catch((err) => console.warn('Auth bootstrap failed:', err))
+      .finally(() => {
+        unsub = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+      });
+    return () => unsub?.();
   }, []);
 
   return { user, loading, isAuthenticated: !!user };
