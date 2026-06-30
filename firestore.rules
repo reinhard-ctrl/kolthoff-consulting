@@ -8,7 +8,10 @@ service cloud.firestore {
     }
 
     function isKolthoffAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'kolthoff_admin';
+      return isAuthenticated() && (
+        request.auth.token.role == 'kolthoff_admin' ||
+        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid))
+      );
     }
 
     function isTenantMember(tenantId) {
@@ -25,9 +28,21 @@ service cloud.firestore {
       );
     }
 
-    // Admin credentials — server-side only via Cloud Functions
+    // Admin passcodes — single-doc get only (doc id is the secret); no listing
     match /artifacts/{tenantId}/public/data/admin_credentials/{code} {
-      allow read, write: if false;
+      allow get: if isAuthenticated();
+      allow list: if false;
+      allow write: if isKolthoffAdmin();
+    }
+
+    // Admin console session after passcode verify (no public Cloud Function required)
+    match /artifacts/kolthoff-admin-app/public/data/admin_sessions/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create, update: if isAuthenticated() && request.auth.uid == uid &&
+        request.resource.data.role == 'kolthoff_admin' &&
+        request.resource.data.passcodeVerified is string &&
+        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_credentials/$(request.resource.data.passcodeVerified));
+      allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
     // Tenant-scoped collections

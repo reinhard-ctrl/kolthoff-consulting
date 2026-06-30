@@ -36,9 +36,12 @@ async function run() {
     admin.firestore().doc('artifacts/kolthoff-admin-app/public/data/workbook_profiles/p1').get()
   );
 
-  // admin_credentials must be blocked
+  // admin_credentials: no list; authenticated get allowed (doc id is the secret)
   await assertFails(
-    admin.firestore().doc('artifacts/kolthoff-admin-app/public/data/admin_credentials/SECRET').get()
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/admin_credentials/SECRET').get()
+  );
+  await assertFails(
+    admin.firestore().collection('artifacts/kolthoff-admin-app/public/data/admin_credentials').get()
   );
 
   console.log('All rules tests passed.');

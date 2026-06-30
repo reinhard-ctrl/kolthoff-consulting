@@ -1,49 +1,64 @@
 # Admin login troubleshooting
 
-When using a rewrite to route traffic to a function, Firebase Hosting automatically grants the appropriate invoker role. The HTTP function is deployed with **private** invoker (not `allUsers`), so org policies that block public Cloud Run access still work.
+Admin passcode login uses **Firestore directly** (no public Cloud Function required). This works when your GCP organization policy blocks granting `allUsers` the Cloud Run invoker role.
 
 ## Normal flow
 
 1. Open https://kolthoff-portal.web.app/admin/ (or https://kolthoff-consulting.com/admin/ after DNS cutover).
-2. Enter the passcode stored in Firestore at  
-   `artifacts/kolthoff-admin-app/public/data/admin_credentials/{PASSCODE}` with field `role: kolthoff_admin`.
-3. After a valid passcode, the app signs in with a custom token.
+2. The app signs in anonymously, then checks your passcode against Firestore at  
+   `artifacts/kolthoff-admin-app/public/data/admin_credentials/{PASSCODE}`.
+3. On success it creates an `admin_sessions/{uid}` document so Firestore rules grant admin access.
 
-## If you see "Cloud Function unreachable" or passcode service errors
+## Prerequisites
 
-### 1. Wait for deploy, then hard-refresh
+### Firestore passcode document
 
-After a push to `main`, GitHub Actions deploys hosting and functions (~3–5 minutes). Hard-refresh the admin page (Ctrl+Shift+R / Cmd+Shift+R).
+Create in Firebase Console → Firestore:
 
-### 2. Verify the hosting rewrite
+- Path: `artifacts/kolthoff-admin-app/public/data/admin_credentials/{YOUR_PASSCODE}`
+- Document ID: your passcode (e.g. `KOLTHOFF2026`)
+- Field: `role` = `kolthoff_admin`
 
-```bash
-curl -sS -X POST "https://kolthoff-portal.web.app/api/verify-passcode" \
-  -H "Content-Type: application/json" \
-  -d '{"code":"YOUR_PASSCODE"}'
-```
+### Firebase Auth
 
-Expected: JSON like `{"valid":false}` or `{"valid":true,"token":"..."}`.  
-If you get **404 HTML**, hosting or the function did not deploy — check the latest [Firebase Deploy workflow](https://github.com/reinhard-ctrl/kolthoff-consulting/actions).
+Enable **Anonymous** sign-in in Firebase Console → Authentication → Sign-in method.
 
-### 3. IAM fix in Cloud Shell (optional — direct callable only)
+### API key HTTP referrers
 
-The legacy **callable** function `verifyAdminPasscode` requires public invoke. If org policy allows it, run in [Google Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
+In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials?project=kolthoff-portal), edit the **Browser key** and add:
+
+- `https://kolthoff-portal.web.app/*`
+- `https://kolthoff-consulting.com/*`
+- `https://www.kolthoff-consulting.com/*`
+
+Browser key prefix: `AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI`
+
+## Common errors
+
+| Symptom | Fix |
+|--------|-----|
+| `auth/requests-from-referer-blocked` | Add site URL to API key HTTP referrers (above) |
+| `Invalid passcode` | Create the Firestore credentials doc; passcode is case-insensitive |
+| `permission-denied` | Deploy latest Firestore rules; enable Anonymous auth |
+| Stuck on "Loading..." | Anonymous auth blocked — check referrers and Auth settings |
+
+## Optional: Cloud Function path (org policy must allow public invoke)
+
+Legacy callable `verifyAdminPasscode` and HTTP `verifyAdminPasscodeHttp` require **public** Cloud Run access. Firebase Hosting rewrites also require public invoke. If your org policy allows `allUsers`, run in [Google Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
 
 ```bash
 PROJECT=kolthoff-portal
 REGION=asia-southeast1
 
-# Callable + Cloud Run invoker (fails if org policy blocks allUsers)
-for FN in verifyAdminPasscode generatePortalToken; do
-  gcloud functions add-iam-policy-binding "$FN" \
+for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken; do
+  gcloud functions add-invoker-policy-binding "$FN" \
     --gen2 --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
     --role="roles/cloudfunctions.invoker" \
     --quiet || true
 done
 
-for SVC in verifyadminpasscode generateportaltoken; do
+for SVC in verifyadminpasscode verifyadminpasscodehttp generateportaltoken; do
   gcloud run services add-iam-policy-binding "$SVC" \
     --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
@@ -51,7 +66,6 @@ for SVC in verifyadminpasscode generateportaltoken; do
     --quiet || true
 done
 
-# Custom tokens from Cloud Functions default runtime SA
 gcloud iam service-accounts add-iam-policy-binding \
   413958125034-compute@developer.gserviceaccount.com \
   --project="$PROJECT" \
@@ -60,20 +74,6 @@ gcloud iam service-accounts add-iam-policy-binding \
   --quiet
 ```
 
-**Note:** If `allUsers` bindings fail with `FAILED_PRECONDITION` / organization policy, ignore them — the Hosting rewrite path does not need public invoke.
+If bindings fail with `FAILED_PRECONDITION` / organization policy, **ignore them** — the Firestore passcode flow above does not need public functions.
 
-### 4. Firebase Auth API key referrers
-
-After passcode validation, `signInWithCustomToken` uses the browser API key. In [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials?project=kolthoff-portal), edit the **Browser key** and add HTTP referrers:
-
-- `https://kolthoff-portal.web.app/*`
-- `https://kolthoff-consulting.com/*`
-- `https://www.kolthoff-consulting.com/*`
-
-## Create an admin passcode (Firestore)
-
-In Firebase Console → Firestore, create document:
-
-- Collection path: `artifacts/kolthoff-admin-app/public/data/admin_credentials`
-- Document ID: your passcode (e.g. `KOLTHOFF2026`)
-- Field: `role` = `kolthoff_admin`
+To temporarily allow public bindings, an org admin may need to relax **Domain restricted sharing** under IAM & Admin → Organization policies.

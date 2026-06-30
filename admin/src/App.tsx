@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
-import { verifyAdminPasscode, adminCol, auth } from './lib/firebase';
-import { signInWithCustomToken } from 'firebase/auth';
+import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
@@ -39,26 +38,17 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
         setError('Invalid passcode');
         return;
       }
-      if (result.token) {
-        await signInWithCustomToken(auth, result.token);
-      }
       onAuth();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Auth failed';
       if (err instanceof FirebaseError) {
-        if (err.code === 'functions/internal' || err.code === 'functions/unavailable') {
-          setError('Cloud Function unreachable (internal). Run the IAM fix in Cloud Shell — see docs/admin-login.md — or wait for the latest deploy.');
-        } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
+        if (err.code === 'auth/requests-from-referer-blocked' || msg.includes('referer')) {
           setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers in Google Cloud Console.');
+        } else if (err.code === 'permission-denied') {
+          setError('Firestore denied passcode check. Ensure Anonymous auth is enabled and rules are deployed.');
         } else {
           setError(`${err.code}: ${msg}`);
         }
-      } else if (msg.includes('Passcode check failed (404)')) {
-        setError('Passcode service not deployed yet. Wait ~3 min for CI deploy, then hard-refresh (Ctrl+Shift+R). See docs/admin-login.md.');
-      } else if (msg.includes('Passcode check failed')) {
-        setError('Passcode service unavailable. Wait for deploy or see docs/admin-login.md for Cloud Shell IAM steps.');
-      } else if (msg.includes('referer') || msg.includes('requests-from-referer')) {
-        setError('Firebase Auth blocked this domain. Add kolthoff-portal.web.app to API key HTTP referrers.');
       } else {
         setError(msg);
       }
@@ -122,7 +112,19 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    hasAdminSession().then((ok) => setAuthed(ok));
+  }, []);
+
+  if (authed === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-400">
+        Loading...
+      </div>
+    );
+  }
 
   if (!authed) return <LoginGate onAuth={() => setAuthed(true)} />;
 

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore, collection, doc, onSnapshot, getDocs } from 'firebase/firestore';
+import { getAuth, signInAnonymously, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 const firebaseConfig = {
@@ -23,26 +23,49 @@ export function adminCol(name: string) {
 
 export async function bootstrapAuth() {
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
-  if (token) await signInWithCustomToken(auth, token);
-  else if (!auth.currentUser) {
+  if (token) {
+    const { signInWithCustomToken } = await import('firebase/auth');
+    await signInWithCustomToken(auth, token);
+  } else if (!auth.currentUser) {
     try {
       await signInAnonymously(auth);
     } catch (err) {
       console.warn('Anonymous auth unavailable:', err);
+      throw err;
     }
   }
 }
 
+/** Verify passcode via Firestore — works when org policy blocks public Cloud Functions */
 export async function verifyAdminPasscode(code: string) {
-  const res = await fetch('/api/verify-passcode', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code }),
+  await bootstrapAuth();
+  const clean = code.trim().toUpperCase();
+  if (!clean) return { valid: false as const };
+
+  const credRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_credentials', clean);
+  const snap = await getDoc(credRef);
+  if (!snap.exists()) return { valid: false as const };
+
+  const uid = auth.currentUser!.uid;
+  await setDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', uid), {
+    passcodeVerified: clean,
+    role: 'kolthoff_admin',
+    verifiedAt: Date.now(),
   });
-  if (!res.ok) {
-    throw new Error(`Passcode check failed (${res.status})`);
+
+  return { valid: true as const, role: (snap.data()?.role as string) || 'kolthoff_admin' };
+}
+
+export async function hasAdminSession(): Promise<boolean> {
+  try {
+    await bootstrapAuth();
+  } catch {
+    return false;
   }
-  return res.json() as Promise<{ valid: boolean; token?: string; role?: string }>;
+  if (!auth.currentUser) return false;
+  const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+  const snap = await getDoc(sessionRef);
+  return snap.exists();
 }
 
 export function initAppCheck() {
