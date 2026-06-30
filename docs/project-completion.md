@@ -58,12 +58,16 @@ After steps 1–3, hard-refresh and test:
 After Phase 1 auth works, seed Firestore in [Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
 
 ```bash
-# All-in-one: passcode + CRM data + feature flags
+# One command — auto-clones repo if needed:
+curl -sL https://raw.githubusercontent.com/reinhard-ctrl/kolthoff-consulting/main/scripts/go-live-cloudshell.sh | bash
+
+# Or from a clone:
+git clone https://github.com/reinhard-ctrl/kolthoff-consulting.git
+cd kolthoff-consulting
 bash scripts/go-live-cloudshell.sh
 
-# Or step by step:
-bash scripts/seed-production-data.sh --dry-run
-bash scripts/seed-production-data.sh
+# Verify after seed:
+bash scripts/verify-go-live.sh
 ```
 
 This loads CRM deals/contacts/partners, feature flags, and org departments. Then:
