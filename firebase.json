@@ -25,6 +25,7 @@
       { "source": "/portal.html", "destination": "/apps/public/portal.html", "type": 301 },
       { "source": "/client_intake.html", "destination": "/apps/public/client_intake.html", "type": 301 },
       { "source": "/core_workspace_app.html", "destination": "/workspace/", "type": 301 },
+      { "source": "/admin/legacy/core_workspace_app.html", "destination": "/workspace/", "type": 301 },
       { "source": "/admin_console.html", "destination": "/admin/", "type": 301 }
     ]
   },
