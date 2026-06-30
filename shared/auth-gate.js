@@ -3,7 +3,7 @@
  * Redirects to /admin/ when no valid staff session exists.
  * Public apps (marketing, portal, intake) must NOT import this module.
  */
-import { auth, db, initialAuthToken } from './firebase-init.js';
+import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { signInWithCustomToken, onAuthStateChanged, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 
@@ -49,6 +49,47 @@ export async function hasStaffAccess(user) {
   return session.exists();
 }
 
+/** Embedded in admin console iframe — never redirect to /admin/ (it blocks framing). */
+function isEmbeddedView() {
+  if (typeof window === 'undefined') return false;
+  if (new URLSearchParams(window.location.search).has('embed')) return true;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+async function waitForStaffAccess(maxMs = 10000) {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    try {
+      await bootstrapAuth();
+    } catch {
+      /* anonymous auth may be blocked briefly */
+    }
+    const user = auth.currentUser;
+    if (user && (await hasStaffAccess(user))) return user;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return null;
+}
+
+function showEmbedAuthRequired() {
+  document.documentElement.classList.remove('kolthoff-auth-pending');
+  const url = new URL(window.location.href);
+  url.searchParams.delete('embed');
+  const openUrl = url.pathname + url.search + url.hash;
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:#02050e;color:#94a3b8;font-family:Montserrat,sans-serif;text-align:center;">
+      <div style="max-width:22rem;">
+        <p style="margin:0 0 1rem;font-size:0.875rem;line-height:1.5;">Staff session required. Ensure you are logged into the admin console, then reload this panel.</p>
+        <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:0.625rem 1rem;background:#14B8A6;color:#02050e;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open in new tab</a>
+      </div>
+    </div>
+  `;
+}
+
 export async function requireStaffAuth() {
   if (isStandalonePolicyStudio()) {
     return { user: null, role: 'standalone' };
@@ -65,6 +106,17 @@ export async function requireStaffAuth() {
 
   if (initialAuthToken) {
     await signInWithCustomToken(auth, initialAuthToken);
+  }
+
+  if (isEmbeddedView()) {
+    const user = await waitForStaffAccess();
+    if (user) {
+      document.documentElement.classList.remove('kolthoff-auth-pending');
+      window.__KOLTHOFF_STAFF__ = true;
+      return { user, role: 'staff' };
+    }
+    showEmbedAuthRequired();
+    return new Promise(() => {});
   }
 
   const user = await new Promise((resolve) => {
