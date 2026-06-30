@@ -66,6 +66,8 @@
         box-shadow: none !important; 
         width: 100% !important; 
         max-width: 100% !important; 
+        height: auto !important;
+        overflow: visible !important;
       }
       .luxury-gradient { background: none !important; }
       .no-print { display: none !important; }
@@ -91,6 +93,13 @@
       .print-divider { border-color: #cbd5e1 !important; }
       .print-section-hidden { display: none !important; }
       @page { size: portrait; margin: 18mm 15mm; }
+      .planner-split-layout,
+      .planner-split-panel {
+        height: auto !important;
+        max-height: none !important;
+        min-height: auto !important;
+        overflow: visible !important;
+      }
     }
 
     .sr-only {
@@ -103,6 +112,20 @@
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;
       border: 0;
+    }
+
+    @media (min-width: 1280px) {
+      .planner-split-layout {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .planner-split-panel {
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
     }
   </style>
 </head>
@@ -1749,7 +1772,7 @@
         ];
 
         return (
-          <aside aria-label="Settings" className="xl:col-span-4 bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left">
+          <aside aria-label="Settings" className="xl:col-span-4 planner-split-panel bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left">
             <h3 className="text-sm font-bold tracking-wider text-brandTeal-400 uppercase font-mono flex items-center gap-2 text-left font-sans font-bold">
               {isRoadmap && !isPackage ? <IconCalendar /> : <IconEdit />}
               {isNda ? "Customize NDA Fields" : isPackage ? "Package Settings" : isInvoice ? "Customize Invoice Fields" : ""}
@@ -2438,7 +2461,7 @@
 
         if (isPackage) {
           return (
-            <div className="xl:col-span-8 space-y-8 print:space-y-0 print:block text-left" id="package-print-area">
+            <div className="xl:col-span-8 planner-split-panel space-y-8 print:space-y-0 print:block text-left" id="package-print-area">
               {printSow && (
                 <section aria-label="Scope and project proposal" className="bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card font-sans font-medium print-force-break mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                   {renderPrintHeader("SCOPE & PROJECT PROPOSAL (SOW)", false, false, false)}
@@ -2477,7 +2500,7 @@
         else if (isNda) headerTitle = "CONFIDENTIAL NDA AGREEMENT";
 
         return (
-          <div className="xl:col-span-8 bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card font-sans font-medium text-left font-sans font-semibold font-sans font-medium" id={`${view}-print-area`}>
+          <div className="xl:col-span-8 planner-split-panel bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card font-sans font-medium text-left font-sans font-semibold font-sans font-medium" id={`${view}-print-area`}>
             {isInvoice && renderEOPTAlertBlock(isInvoice)}
             {renderPrintHeader(headerTitle, isNda, isInvoice, false)}
             {!isNda && renderCustomerBlock(isInvoice, false)}
@@ -2581,7 +2604,7 @@
       );
 
       return (
-        <div className="font-sans min-h-screen text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans">
+        <div className="font-sans h-screen overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans">
           <header className="border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print">
             <div className="max-w-[1600px] mx-auto px-6 sm:px-8 h-20 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -2725,11 +2748,11 @@
             </div>
           )}
 
-          <main id="app-main" className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full flex-1 font-sans">
+          <main id="app-main" className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans">
             {view === 'sandbox' ? (
-              <div className="no-print space-y-8 animate-fade-in font-sans font-semibold text-left">
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start text-left font-sans font-medium">
-                  <aside className="xl:col-span-3 space-y-6 text-left font-sans xl:sticky xl:top-24 xl:self-start">
+              <div className="no-print h-full min-h-0 animate-fade-in font-sans font-semibold text-left">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start h-full min-h-0 planner-split-layout text-left font-sans font-medium">
+                  <aside className="xl:col-span-3 planner-split-panel space-y-6 text-left font-sans">
                     <div className="bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl relative font-sans text-left font-sans font-semibold">
                       <h3 className="text-xs font-bold tracking-wider text-brandTeal-400 uppercase font-mono mb-4 flex items-center gap-2 text-left"><IconCalculator /> Live Project Metrics</h3>
                       
@@ -2782,7 +2805,7 @@
                     </div>
                   </aside>
 
-                  <section className="xl:col-span-9 space-y-6 text-left">
+                  <section className="xl:col-span-9 planner-split-panel space-y-6 text-left">
 
                     <div className="bg-brandNavy-900/30 border border-brandNavy-700/80 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm text-left">
                       <div className="p-5 bg-brandNavy-950/80 border-b border-brandNavy-700/80 flex flex-col gap-4 text-left">
@@ -2921,7 +2944,7 @@
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start animate-fade-in font-sans text-left">
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start h-full min-h-0 planner-split-layout animate-fade-in font-sans text-left">
                 {renderSettingsSidebar()}
                 {renderDocumentPrintCanvas()}
               </div>
