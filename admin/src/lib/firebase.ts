@@ -38,7 +38,7 @@ export async function bootstrapAuth() {
 export async function verifyAdminPasscode(code: string) {
   const fn = httpsCallable(functions, 'verifyAdminPasscode');
   const result = await fn({ code });
-  return result.data as { valid: boolean };
+  return result.data as { valid: boolean; token?: string; role?: string };
 }
 
 export function initAppCheck() {

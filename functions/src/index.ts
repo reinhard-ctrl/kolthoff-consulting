@@ -9,7 +9,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 /** Verify admin passcode — replaces client-side ADMIN fallback */
-export const verifyAdminPasscode = onCall(async (request) => {
+export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request) => {
   const code = (request.data?.code as string)?.trim()?.toUpperCase();
   if (!code) throw new HttpsError('invalid-argument', 'Passcode required');
 
@@ -21,11 +21,18 @@ export const verifyAdminPasscode = onCall(async (request) => {
     return { valid: false };
   }
 
-  return { valid: true, role: snap.data()?.role || 'admin' };
+  const role = (snap.data()?.role as string) || 'admin';
+  const uid = `admin_${code.toLowerCase()}`;
+  const token = await admin.auth().createCustomToken(uid, {
+    role: role === 'admin' ? 'kolthoff_admin' : role,
+    tenantId: 'kolthoff-admin-app',
+  });
+
+  return { valid: true, role, token };
 });
 
 /** Generate portal access token from client access code */
-export const generatePortalToken = onCall(async (request) => {
+export const generatePortalToken = onCall({ invoker: 'public' }, async (request) => {
   const accessCode = (request.data?.accessCode as string)?.trim()?.toUpperCase();
   if (!accessCode) throw new HttpsError('invalid-argument', 'Access code required');
 
