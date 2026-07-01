@@ -65,9 +65,17 @@
 
         .page-break { page-break-before: always; }
         .page-break-inside-avoid { page-break-inside: avoid; }
+
+        html, body, #root { height: 100%; }
+        html.workflow-embed body { overflow: hidden; }
     </style>
+    <script>
+        if (new URLSearchParams(window.location.search).has('embed')) {
+            document.documentElement.classList.add('workflow-embed');
+        }
+    </script>
 </head>
-<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white h-full overflow-hidden">
 
     <div id="root"></div>
 
@@ -76,6 +84,7 @@
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
+        const IS_EMBED = document.documentElement.classList.contains('workflow-embed');
 
         const Icons = {
             Layout: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
@@ -1219,9 +1228,10 @@
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
             return (
-                <div className="flex h-screen overflow-hidden bg-brandNavy-955 font-sans">
+                <div className="flex h-full min-h-0 overflow-hidden bg-brandNavy-955 font-sans">
                     {toastMessage && (<div role="alert" className="fixed bottom-6 right-6 z-[100] bg-brandTeal-600 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce"><span>✓</span>{toastMessage}</div>)}
 
+                    {!IS_EMBED && (
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
                         <div className="p-6 border-b border-brandNavy-800 flex justify-between items-center group">
                             <div><h1 className="text-sm font-extrabold tracking-widest text-brandTeal-500 uppercase leading-none mb-1">Kolthoff Consulting</h1><span className="text-[10px] text-white font-bold uppercase tracking-widest">Mod2: Workflow Builder</span></div>
@@ -1252,8 +1262,16 @@
                             </button>
                         </div>
                     </aside>
+                    )}
 
                     <main className="flex-1 overflow-hidden relative z-10 flex flex-col min-w-0">
+                        {IS_EMBED && (
+                            <div className="shrink-0 bg-brandNavy-900/95 border-b border-brandNavy-800 px-4 py-2 flex justify-end items-center gap-2 no-print">
+                                <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider ${authError ? 'bg-brandNavy-850 text-slate-500' : 'bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955'}`}>
+                                    {isSaving ? 'Syncing…' : 'Sync Diagram'}
+                                </button>
+                            </div>
+                        )}
                         {activeNav !== 'flowcharts' && (
                             <header className="shrink-0 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center no-print">
                                 <h2 className="text-sm font-bold text-brandTeal-400 font-mono tracking-widest uppercase">
