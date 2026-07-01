@@ -17,7 +17,6 @@
         import * as Financials from '../../shared/financials.js';
         window.Financials = Financials;
     </script>
-    <script src="../../shared/engagement-config.js?v=20250701-content-v3"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
@@ -430,7 +429,6 @@
                 const frictionBuffer = profileObj.frictionBuffer || 0;
                 const quoteBaseAmount = financials.finalProjectCostBase + financials.retainerCostTotalBase;
                 const quoteVatAmount = financials.includeTax ? Math.round(quoteBaseAmount * 0.12) : 0;
-                const chaosTax = window.EngagementConfig?.resolveChaosTax?.(profileObj) || { value: 0, source: 'planner' };
 
                 return (
                 <>
@@ -447,16 +445,6 @@
                             <span>{financials.includeTax ? 'VAT Sales Invoice Basis' : 'Non-VAT / Exempt Basis'}</span>
                         </div>
                     </div>
-
-                    {chaosTax.value > 0 && (
-                        <div className="bg-rose-50 border border-rose-200 rounded-lg p-4 mb-6 print-force-break">
-                            <p className="text-[10px] font-bold text-rose-800 uppercase tracking-widest mb-1">Identified Operational Leakage (Chaos Tax)</p>
-                            <p className="text-rose-900 font-mono font-bold text-lg">{formatCurrency(chaosTax.value)} <span className="text-sm font-sans font-normal text-rose-700">/ year</span></p>
-                            <p className="text-[10px] text-rose-700 mt-1 leading-relaxed">
-                                Based on {chaosTax.source} assessment. Module deliverables in this SOW address structural recovery — not a separate line item.
-                            </p>
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
