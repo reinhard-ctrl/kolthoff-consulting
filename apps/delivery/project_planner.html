@@ -614,7 +614,7 @@
         const dealsRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'crm_deals');
         const unsubDeals = window.onSnapshot(dealsRef, (snap) => {
           const fetchedDeals = [];
-          snap.forEach(doc => fetchedDeals.push(doc.data()));
+          snap.forEach((snapDoc) => fetchedDeals.push(snapDoc.data()));
           setCrmDeals(fetchedDeals);
         }, console.error);
 
@@ -623,11 +623,11 @@
           if (snap.empty && !profilesSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
             profilesSeeded = true;
             DEFAULT_CLIENTS.forEach(p => {
-              window.setDoc(window.doc(profilesRef, p.id), p);
+              window.firestoreSetDoc(window.firestoreDoc(profilesRef, p.id), p);
             });
           } else {
             const fetchedProfiles = [];
-            snap.forEach(doc => fetchedProfiles.push(doc.data()));
+            snap.forEach((snapDoc) => fetchedProfiles.push(snapDoc.data()));
             if (fetchedProfiles.length > 0) {
               setProfiles(fetchedProfiles);
               setActiveProfileId(currId => {
@@ -866,8 +866,8 @@
         try {
           const currentProfilePayload = buildCurrentPayload();
           currentProfilePayload.updatedAt = Date.now();
-          const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await window.setDoc(docRef, currentProfilePayload);
+          const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          await window.firestoreSetDoc(docRef, currentProfilePayload);
           setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           isDirtyRef.current = false;
@@ -988,7 +988,7 @@
             const newId = imported.id ? `${imported.id}-import-${Date.now()}` : `client-import-${Date.now()}`;
             const payload = { ...imported, id: newId, workspaceName: imported.workspaceName || `${imported.clientCompany || 'Imported'} Workspace`, updatedAt: Date.now() };
             if (isAuthed) {
-              await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
+              await window.firestoreSetDoc(window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
               setActiveProfileId(newId);
             }
           } catch (err) {
@@ -1019,7 +1019,7 @@
           updatedAt: Date.now()
         };
         if (isAuthed) {
-          await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
+          await window.firestoreSetDoc(window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
           setActiveProfileId(newId);
         }
       };
@@ -1040,8 +1040,8 @@
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: t.id.startsWith('diag-') })),
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
-        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        window.setDoc(docRef, newClientObj).then(() => setActiveProfileId(newId));
+        const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
+        window.firestoreSetDoc(docRef, newClientObj).then(() => setActiveProfileId(newId));
       };
 
       const handleCloneCurrentWorkspace = () => {
@@ -1053,15 +1053,15 @@
           quoteId: `${activeProfile.quoteId}-CLONE`,
           updatedAt: Date.now()
         };
-        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        window.setDoc(docRef, cloneObj).then(() => setActiveProfileId(newId));
+        const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
+        window.firestoreSetDoc(docRef, cloneObj).then(() => setActiveProfileId(newId));
       };
 
       const executeDeleteWorkspace = async () => {
         if (profiles.length <= 1) { setShowDeleteConfirm(false); return; }
         const nextProfiles = profiles.filter(p => p.id !== activeProfileId);
-        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-        await window.deleteDoc(docRef);
+        const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+        await window.firestoreDeleteDoc(docRef);
         setActiveProfileId(nextProfiles[0].id);
         setShowDeleteConfirm(false);
       };
@@ -1077,8 +1077,8 @@
         setIsSaving(true);
         try {
           const currentProfilePayload = { ...buildCurrentPayload(), workspaceName: trimmedName };
-          const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await window.setDoc(docRef, currentProfilePayload);
+          const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          await window.firestoreSetDoc(docRef, currentProfilePayload);
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, workspaceName: trimmedName, updatedAt: currentProfilePayload.updatedAt } : p));
           setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');

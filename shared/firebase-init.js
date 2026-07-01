@@ -154,9 +154,13 @@ if (typeof window !== 'undefined') {
   window.signInWithPopup = signInWithPopup;
   window.doc = doc;
   window.setDoc = setDoc;
+  /** Aliases — inline Babel scripts must not use names like `doc`/`setDoc` (var hoisting clobbers window.doc). */
+  window.firestoreDoc = doc;
+  window.firestoreSetDoc = setDoc;
   window.getDoc = getDoc;
   window.getDocs = getDocs;
   window.deleteDoc = deleteDoc;
+  window.firestoreDeleteDoc = deleteDoc;
   window.onSnapshot = onSnapshot;
   window.collection = collection;
   window.addDoc = addDoc;
