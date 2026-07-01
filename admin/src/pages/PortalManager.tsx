@@ -6,7 +6,7 @@ import {
   MODULES,
   resolveChaosTax,
 } from '../lib/engagement-config';
-import { buildPortalPatchFromProfile, type PortalClientRecord } from '../lib/portal-sync';
+import { buildPortalPatchFromProfile, writePortalLinkToProfile, type PortalClientRecord } from '../lib/portal-sync';
 import { deleteDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 
@@ -180,6 +180,7 @@ export default function PortalManager() {
       contracts: [],
     };
     await setDoc(adminDoc('clients', newCode), newClient);
+    await writePortalLinkToProfile(profileId, newCode, profile);
     setActiveCode(newCode);
     setDraft(newClient);
     showToast('Client portal generated from SOW.');
@@ -244,6 +245,9 @@ export default function PortalManager() {
       const updated = { ...draft, sowReference: cleanCode };
       await setDoc(adminDoc('clients', cleanCode), updated);
       await deleteDoc(adminDoc('clients', activeCode!));
+      if (linkedProfile) {
+        await writePortalLinkToProfile(linkedProfile.id, cleanCode, linkedProfile);
+      }
       setActiveCode(cleanCode);
       setDraft(updated);
       setEditingCode(false);
@@ -331,7 +335,7 @@ export default function PortalManager() {
           >
             <option value="">+ Import SOW from Planner</option>
             {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.clientCompany} ({p.quoteId})</option>
+              <option key={p.id} value={p.id}>{getClientDisplayName(p)} ({p.quoteId || 'no SOW'})</option>
             ))}
           </select>
 

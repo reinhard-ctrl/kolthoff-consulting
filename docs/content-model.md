@@ -124,8 +124,16 @@ When a linked client portal exists (`clients/{quoteId}`), Intake Center **auto-s
 ## Phase 2 — portal bridge & single workflow editor
 
 - **Diagnosis Reports** embeds Workflow Builder for diagram editing; report still reads merged tabs via `WorkflowTabs.getReportTabs()`.
-- **Contract Sign** displays operational leakage using `EngagementConfig.resolveChaosTax()`.
 - **Intake → Portal** pushes merged intake data to `clients` when access code matches profile `quoteId`.
+
+## Phase 3 — save → portal sync & bidirectional links
+
+- **`shared/portal-sync.js`** mirrors `admin/src/lib/portal-sync.ts` for HTML apps (`window.PortalSync`).
+- **Auto-sync on save:** Project Planner, Diagnosis Reports, and Policy Studio call `PortalSync.syncProfileToPortalIfExists()` after writing `workbook_profiles`.
+- **Bidirectional links:** Portal Manager writes `links.portalClientId` back to the profile on import and access-code rename via `writePortalLinkToProfile()`.
+- **Intake roles:** roster intake merges into profile `roles[]` and syncs to portal `actionItems` when a linked portal exists.
+- **Cloud Function:** `onWorkbookProfileWritten` merges `_meta` (preserves client `updatedAt`) and validates `chaosTax` / `links`.
+- **Display names:** CRM, Contract Sign, analytics HTML, and Policy Studio use `EngagementConfig.getClientDisplayName()` for profile labels.
 
 ## MOD 1–4 canonical names
 
@@ -148,7 +156,7 @@ Legacy category strings (pre-2026 rename) remain mapped via `CATEGORY_TO_PRESET`
 | CRM Pipeline | Profiles for deal value sync | Creates profile from deal (`quoteId = deal.id`) |
 | Contract Ledger | Profiles | Read-only |
 | Contract Sign | Profile by ID | Signature status → `contracts_ledger` |
-| Portal Manager | Profiles | Creates `clients` from profile; sync-from-SOW |
+| Portal Manager | Profiles | Creates `clients` from profile; sync-from-SOW; writes `links.portalClientId` |
 | Intake Center | Profiles | Mapped intake fields |
 | Cloud Function `onWorkbookProfileWritten` | Validates + caches `_meta.totalHours` | Merge `_meta` |
 

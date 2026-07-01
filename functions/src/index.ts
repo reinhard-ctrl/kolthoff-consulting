@@ -730,6 +730,7 @@ export const setUserClaims = onCall(async (request) => {
 export const onWorkbookProfileWritten = onDocumentWritten(
   'artifacts/{tenantId}/public/data/workbook_profiles/{profileId}',
   async (event) => {
+    const before = event.data?.before?.data();
     const after = event.data?.after?.data();
     if (!after) return;
 
@@ -738,15 +739,36 @@ export const onWorkbookProfileWritten = onDocumentWritten(
       console.warn('Invalid workbook profile:', event.params.profileId);
     }
 
+    if (after.chaosTax != null) {
+      const ct = after.chaosTax as { value?: unknown; source?: unknown };
+      if (typeof ct.value !== 'number' || Number.isNaN(ct.value)) {
+        console.warn('Invalid chaosTax.value on profile:', event.params.profileId);
+      }
+    }
+
+    if (after.links != null && typeof after.links !== 'object') {
+      console.warn('Invalid links object on profile:', event.params.profileId);
+    }
+
     // Optionally compute and cache financials server-side
     const tasks = (after.tasks || []).filter((t: { selected?: boolean }) => t.selected);
     const totalHours = tasks.reduce((acc: number, t: { estHours?: number }) => acc + (t.estHours || 0), 0);
 
     if (totalHours > 0 && clientLabel) {
+      const existingMeta = (before?._meta as Record<string, unknown>) || {};
+      const incomingMeta = (after._meta as Record<string, unknown>) || {};
       await event.data!.after!.ref.set(
-        { _meta: { schemaVersion: 2, totalHours, validatedAt: Date.now() } },
-        { merge: true }
+        {
+          _meta: {
+            ...existingMeta,
+            ...incomingMeta,
+            schemaVersion: 2,
+            totalHours,
+            validatedAt: Date.now(),
+          },
+        },
+        { merge: true },
       );
     }
-  }
+  },
 );

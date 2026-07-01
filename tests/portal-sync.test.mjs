@@ -18,46 +18,42 @@ function loadEngagementConfig() {
   return sandbox.window.EngagementConfig;
 }
 
+function loadPortalSync() {
+  const ecCode = readFileSync(join(root, 'shared/engagement-config.js'), 'utf8');
+  const psCode = readFileSync(join(root, 'shared/portal-sync.js'), 'utf8');
+  const sandbox = { window: {} };
+  vm.runInNewContext(ecCode, sandbox);
+  vm.runInNewContext(psCode, sandbox);
+  return sandbox.window.PortalSync;
+}
+
+const PS = loadPortalSync();
 const EC = loadEngagementConfig();
 
-function resolvePortalAccessCode(profile) {
-  return profile.quoteId || profile.links?.portalClientId || null;
-}
-
-function computeSaasAnnualWaste(subSaaS) {
-  if (!subSaaS?.length) return 0;
-  return Math.round(subSaaS.reduce((acc, row) => acc + (Number(row.billing) || 0) * (Number(row.users) || 1), 0) * 12);
-}
-
-function buildPortalPatchFromProfile(profile, existing, options) {
-  const saasWaste = computeSaasAnnualWaste(profile.subSaaS);
-  return {
-    companyName: EC.getClientDisplayName(profile),
-    metrics: {
-      annualLeakageIdentified: EC.getChaosTaxValue(profile),
-      chaosTaxEliminated: existing?.metrics?.chaosTaxEliminated ?? 0,
-      saasSavingsIdentified: saasWaste || existing?.metrics?.saasSavingsIdentified || 0,
-    },
-    ...(options?.syncIntakeAssets && profile.subSaaS?.length
-      ? { assets: profile.subSaaS.map((row, i) => ({ id: i, title: row.tool })) }
-      : {}),
-  };
-}
-
-assert.equal(resolvePortalAccessCode({ quoteId: 'KC-123' }), 'KC-123');
-assert.equal(computeSaasAnnualWaste([{ billing: 100, users: 2 }]), 2400);
+assert.equal(PS.resolvePortalAccessCode({ quoteId: 'KC-123' }), 'KC-123');
+assert.equal(PS.resolvePortalAccessCode({ links: { portalClientId: 'KC-LINK' } }), 'KC-LINK');
+assert.equal(PS.computeSaasAnnualWaste([{ billing: 100, users: 2 }]), 2400);
 
 const profile = {
   clientCompany: 'Acme',
   quoteId: 'KC-ACME',
   chaosTax: { source: 'diagnosis', value: 500000 },
   subSaaS: [{ tool: 'Zoom', billing: 50, users: 10 }],
+  roles: [{ owner: 'Jane', role: 'CEO' }],
 };
-const patch = buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true });
+const patch = PS.buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true, syncRoles: true });
 assert.equal(patch.companyName, 'Acme');
 assert.equal(patch.metrics.annualLeakageIdentified, 500000);
 assert.equal(patch.metrics.saasSavingsIdentified, 6000);
 assert.equal(patch.assets.length, 1);
+assert.equal(patch.actionItems.length, 1);
+assert.equal(patch.actionItems[0].title, 'Jane');
+
+const mergedAssets = PS.mergePortalAssets(
+  [{ title: 'Zoom', id: 1 }],
+  [{ title: 'zoom', id: 2 }, { title: 'Slack', id: 3 }],
+);
+assert.equal(mergedAssets.length, 2);
 
 // workflow-tabs getReportTabs
 const wtCode = readFileSync(join(root, 'shared/workflow-tabs.js'), 'utf8');
@@ -68,5 +64,7 @@ const merged = win.WorkflowTabs.getReportTabs({
   workflowBuilder: { tabs: [{ id: 'b', name: 'B', present: {} }] },
 });
 assert.equal(merged.length, 2);
+
+assert.equal(EC.getClientDisplayName({ clientName: 'Legacy Co' }), 'Legacy Co');
 
 console.log('portal-sync.test.mjs: all assertions passed');

@@ -178,6 +178,9 @@
 
     <div id="root"></div>
 
+    <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
+    <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
+
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
 
@@ -731,6 +734,18 @@
                         policySignatoryTitle: activeClient.policySignatoryTitle,
                         branding: activeClient.branding
                     }, { merge: true });
+
+                    if (window.PortalSync?.syncProfileToPortalIfExists) {
+                        try {
+                            const profileSnap = await window.getDoc(profileRef);
+                            const profileData = profileSnap.exists()
+                                ? { id: activeProfileId, ...profileSnap.data() }
+                                : { id: activeProfileId, clientCompany: activeClient.clientCompany, clientRep: activeClient.clientRep };
+                            await window.PortalSync.syncProfileToPortalIfExists(profileData);
+                        } catch (portalErr) {
+                            console.warn('Portal sync skipped:', portalErr);
+                        }
+                    }
 
                     triggerToast("💾 Synced to Cloud!");
                 } catch (e) {
@@ -1423,7 +1438,10 @@
                                                 disabled={!!authError}
                                             >
                                                 {workbookProfiles.length === 0 && <option value="">{authError ? "Local Session Default" : "Loading..."}</option>}
-                                                {workbookProfiles.map(p => <option key={p.id} value={p.id}>{p.clientCompany || 'Untitled Company'} ({p.quoteId})</option>)}
+                                                {workbookProfiles.map(p => {
+                                                    const label = window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
+                                                    return <option key={p.id} value={p.id}>{label} ({p.quoteId})</option>;
+                                                })}
                                             </select>
                                         </div>
                                         <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">Workspaces are managed in the SOW Planner. Select an active client above to generate policies.</p>

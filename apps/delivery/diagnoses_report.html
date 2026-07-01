@@ -92,6 +92,7 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250701-content-v2"></script>
+    <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1602,6 +1603,15 @@
                         chaosTax,
                         synthesis
                     }, { merge: true });
+                    if (window.PortalSync?.syncProfileToPortalIfExists) {
+                        try {
+                            const profileSnap = await window.getDoc(profileRef);
+                            const profileData = profileSnap.exists() ? { id: activeProfileId, ...profileSnap.data() } : { id: activeProfileId, subSaaS, chaosTax, annualOperationalLeakage: totalAnnualChaosTax };
+                            await window.PortalSync.syncProfileToPortalIfExists(profileData, { syncIntakeAssets: true });
+                        } catch (portalErr) {
+                            console.warn('Portal sync skipped:', portalErr);
+                        }
+                    }
                     triggerToast("💾 Saved to Cloud!");
                 } catch (e) { triggerToast("❌ Error saving."); }
                 setIsSaving(false);

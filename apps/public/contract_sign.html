@@ -17,6 +17,7 @@
         import * as Financials from '../../shared/financials.js';
         window.Financials = Financials;
     </script>
+    <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
@@ -210,12 +211,15 @@
                 return () => { unsubProfiles(); unsubContracts(); };
             }, [isAuthed, isAdminAuthed, isClientMode]);
 
+            const profileDisplayName = (profile) =>
+                window.EngagementConfig?.getClientDisplayName?.(profile) || profile?.clientCompany || 'Unknown Client';
+
             const ledgerData = useMemo(() => {
                 return profiles.map(profile => {
                     const contract = contracts.find(c => c.profileId === profile.id);
                     return {
                         profileId: profile.id,
-                        clientCompany: profile.clientCompany || 'Unknown Client',
+                        clientCompany: profileDisplayName(profile),
                         quoteId: profile.quoteId || 'N/A',
                         contractStatus: contract ? contract.status : 'draft',
                         signedAt: contract?.signedAt || null,
