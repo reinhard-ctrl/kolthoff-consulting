@@ -100,9 +100,11 @@
         const getBillingSchedule = (profile) => window.Financials?.getBillingSchedule(profile) || { milestones: [], milestoneSplit: 'auto', retainerMonthly: 0, retainerMonths: 6, retainerTotal: 0, includeTax: false, finalProjectCostPart: 0 };
         const getModuleInvestmentSummaries = (profile) => window.Financials?.computeModuleInvestmentSummaries(profile) || [];
         const getModDisplayName = (modNum) => window.Financials?.getModDisplayName(modNum) || `MOD ${modNum}`;
+        const contractProfile = (profile) => profile ? { ...profile, applyCreditBack: false } : profile;
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
+            const [isStaffUser, setIsStaffUser] = useState(false);
             const [activeView, setActiveView] = useState('ledger'); 
             
             // Admin Protocol States
@@ -125,6 +127,8 @@
 
             const isClientMode = new URLSearchParams(window.location.search).has('contract');
 
+            const isStaffPreview = new URLSearchParams(window.location.search).get('staff') === '1';
+
             if (!isClientMode) {
                 window.location.replace('/admin/contracts');
                 return null;
@@ -135,8 +139,14 @@
                         clearInterval(checkInterval);
                         const initAuth = async () => {
                             try {
-                                await window.kolthoffStaffReady
+                                const result = await window.kolthoffStaffReady;
                                 setIsAuthed(true);
+                                const user = result?.user ?? window.firebaseAuth?.currentUser;
+                                if (user && window.hasStaffAccess && await window.hasStaffAccess(user)) {
+                                    setIsStaffUser(true);
+                                } else if (isStaffPreview) {
+                                    setIsStaffUser(true);
+                                }
                             } catch (e) {
                                 console.error("Firebase Auth Error:", e);
                             }
@@ -238,9 +248,10 @@
                 setTimeout(() => setToast(null), 3000);
             };
 
+            const canPullFromCloud = isAuthed && (isStaffUser || (!isClientMode && isAdminAuthed));
+
             const handlePullFromCloud = async () => {
-                if (!isAuthed) return;
-                if (!isClientMode && !isAdminAuthed) return;
+                if (!canPullFromCloud) return;
 
                 setIsPulling(true);
                 try {
@@ -288,7 +299,7 @@
             const PullCloudButton = ({ className = '' }) => (
                 <button
                     onClick={handlePullFromCloud}
-                    disabled={isPulling || !isAuthed || (!isClientMode && !isAdminAuthed)}
+                    disabled={isPulling || !canPullFromCloud}
                     title="Reload latest SOW profiles and contract records from Firebase"
                     className={`inline-flex items-center px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/40 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 no-print ${className}`}
                 >
@@ -411,11 +422,10 @@
 
             // Unified Contract Body Component used across client sign and audit trail views
             const renderContractDetails = (profileObj, financials, selectedTasks, activePMO, activeGov) => {
-                const schedule = getBillingSchedule(profileObj);
-                const moduleSummaries = getModuleInvestmentSummaries(profileObj);
+                const profileWithoutCreditBack = contractProfile(profileObj);
+                const schedule = getBillingSchedule(profileWithoutCreditBack);
+                const moduleSummaries = getModuleInvestmentSummaries(profileWithoutCreditBack);
                 const milestoneSplit = profileObj.milestoneSplit || 'auto';
-                const applyCreditBack = profileObj.applyCreditBack || false;
-                const creditBackDays = profileObj.creditBackDays || 14;
                 const frictionBuffer = profileObj.frictionBuffer || 0;
                 const quoteBaseAmount = financials.finalProjectCostBase + financials.retainerCostTotalBase;
                 const quoteVatAmount = financials.includeTax ? Math.round(quoteBaseAmount * 0.12) : 0;
@@ -435,22 +445,6 @@
                             <span>{financials.includeTax ? 'VAT Sales Invoice Basis' : 'Non-VAT / Exempt Basis'}</span>
                         </div>
                     </div>
-
-                    {financials.isCreditBackEligible && (
-                        <div className="mb-6 text-xs leading-relaxed">
-                            {applyCreditBack ? (
-                                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800">
-                                    <div className="font-bold text-emerald-800 uppercase mb-1">Module 1 Credit-Back Program Active</div>
-                                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700">{formatCurrency(financials.creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700">{creditBackDays} days</strong> of receipt.
-                                </div>
-                            ) : (
-                                <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800">
-                                    <div className="font-bold text-amber-800 uppercase mb-1">Module 1 Credit-Back Available</div>
-                                    This proposal includes Module 1 plus implementation modules. Approve within <strong className="text-amber-800">{creditBackDays} days</strong> to receive a <strong className="text-amber-800">{formatCurrency(financials.creditBackAmount)}</strong> credit against implementation fees.
-                                </div>
-                            )}
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
@@ -497,7 +491,6 @@
                                             <th className="py-2.5 px-3 text-center">Items</th>
                                             <th className="py-2.5 px-3 text-right">Base</th>
                                             <th className="py-2.5 px-3 text-right">After discount</th>
-                                            {applyCreditBack && financials.isCreditBackEligible && <th className="py-2.5 px-3 text-right">After credit-back</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -507,9 +500,6 @@
                                                 <td className="py-2.5 px-3 text-center font-mono">{row.count}</td>
                                                 <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.baseUndiscounted)}{row.isMonthly ? '/mo' : ''}</td>
                                                 <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.afterDiscount)}{row.isMonthly ? '/mo' : ''}</td>
-                                                {applyCreditBack && financials.isCreditBackEligible && (
-                                                    <td className="py-2.5 px-3 text-right font-mono text-emerald-700">{row.afterCredit !== undefined ? formatCurrency(row.afterCredit) + (row.isMonthly ? '/mo' : '') : '—'}</td>
-                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -565,12 +555,6 @@
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-600">SOW Net Subtotal:</span>
                                     <span className="font-mono font-bold text-slate-800">{formatCurrency(financials.subtotal)}</span>
-                                </div>
-                            )}
-                            {financials.appliedCredit > 0 && (
-                                <div className="flex justify-between items-center text-sm text-emerald-600 font-medium">
-                                    <span>Module 1 Credit-Back Applied:</span>
-                                    <span className="font-mono">- {formatCurrency(financials.appliedCredit)}</span>
                                 </div>
                             )}
                             {financials.includeTax && (
@@ -642,12 +626,6 @@
                             <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific module addendum.</p>
                             <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
                         </div>
-
-                        {applyCreditBack && financials.isCreditBackEligible && (
-                            <div className="text-[10px] text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200 mt-2 print:border-slate-300">
-                                * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {creditBackDays} calendar days of proposal receipt.
-                            </div>
-                        )}
                     </div>
 
                     {(activePMO || activeGov) && (
@@ -667,7 +645,7 @@
 
             // --- 1. Client Views ---
             if (activeView === 'client_sign' && activeProfileObj) {
-                const financials = getFinancials(activeProfileObj);
+                const financials = getFinancials(contractProfile(activeProfileObj));
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
                 const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
                 const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
@@ -686,7 +664,7 @@
                                         <p className="text-xs text-slate-400 font-mono mt-0.5 print:text-slate-600">Date: {new Date().toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex items-center gap-3 no-print">
-                                        {!isClientMode && (
+                                        {isStaffUser && (
                                             <PullCloudButton className="bg-white/10 hover:bg-white/20 border-white/20 text-white" />
                                         )}
                                         {!isClientMode && (
@@ -760,7 +738,7 @@
 
             if (activeView === 'audit_trail' && activeLedgerItem && activeLedgerItem.contractData) {
                 const contract = activeLedgerItem.contractData;
-                const financials = getFinancials(activeProfileObj);
+                const financials = getFinancials(contractProfile(activeProfileObj));
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
                 const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
                 const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
@@ -798,7 +776,7 @@
                                         <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
                                             <Icons.CheckCircle /> Immutable & Locked
                                         </div>
-                                        {!isClientMode && <PullCloudButton />}
+                                        {isStaffUser && <PullCloudButton />}
                                         <button onClick={() => window.print()} className="no-print px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2 transition-colors">
                                             <Icons.Printer /> Print Full Contract PDF
                                         </button>
@@ -980,7 +958,7 @@
                                             else if (item.contractStatus === 'signed') statusBadge = <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-[9px] font-bold flex items-center justify-center gap-1 w-max mx-auto"><Icons.CheckCircle /> Executed</span>;
 
                                             const profileData = profiles.find(p => p.id === item.profileId);
-                                            const estValue = getFinancials(profileData).total;
+                                            const estValue = getFinancials(contractProfile(profileData)).total;
 
                                             return (
                                                 <tr key={item.profileId} className="hover:bg-brandNavy-800/30 transition-colors">

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { deleteDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { deleteDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 import {
   formatCurrency,
@@ -154,6 +154,7 @@ export default function ContractLedger() {
   const [processing, setProcessing] = useState(false);
   const [resetTarget, setResetTarget] = useState<LedgerRow | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isPulling, setIsPulling] = useState(false);
 
   useEffect(() => {
     const unsubs = [
@@ -202,11 +203,16 @@ export default function ContractLedger() {
     });
   }, [profiles, contracts]);
 
-  const clientSignUrl = (profileId: string) =>
-    `${window.location.origin}${CLIENT_SIGN_BASE}?contract=${profileId}`;
+  const clientSignUrl = (profileId: string, options?: { view?: string; staffPreview?: boolean }) => {
+    const params = new URLSearchParams({ contract: profileId });
+    if (options?.view) params.set('view', options.view);
+    if (options?.staffPreview !== false) params.set('staff', '1');
+    return `${window.location.origin}${CLIENT_SIGN_BASE}?${params.toString()}`;
+  };
 
   const copyLink = (profileId: string) => {
-    navigator.clipboard.writeText(clientSignUrl(profileId));
+    const params = new URLSearchParams({ contract: profileId });
+    navigator.clipboard.writeText(`${window.location.origin}${CLIENT_SIGN_BASE}?${params.toString()}`);
     showToast('Client signing link copied!');
   };
 
@@ -235,6 +241,27 @@ export default function ContractLedger() {
     } finally {
       setResetTarget(null);
       setProcessing(false);
+    }
+  };
+
+  const pullFromCloud = async () => {
+    setIsPulling(true);
+    try {
+      const [profilesSnap, contractsSnap] = await Promise.all([
+        getDocs(adminCol('workbook_profiles')),
+        getDocs(adminCol('contracts_ledger')),
+      ]);
+      const profileList: WorkbookProfile[] = [];
+      profilesSnap.forEach((d) => profileList.push({ id: d.id, ...d.data() } as WorkbookProfile));
+      const contractList: ContractRecord[] = [];
+      contractsSnap.forEach((d) => contractList.push({ id: d.id, ...d.data() } as ContractRecord));
+      setProfiles(profileList);
+      setContracts(contractList);
+      showToast(`Pulled ${profileList.length} SOW profile(s) from cloud.`);
+    } catch {
+      showToast('Pull failed — check connection.');
+    } finally {
+      setIsPulling(false);
     }
   };
 
@@ -270,13 +297,32 @@ export default function ContractLedger() {
         </div>
       )}
 
-      <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
-      <p className="text-sm text-slate-400 mb-6">
-        E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
-        Client links open at {CLIENT_SIGN_BASE}.
-      </p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
+        <p className="text-sm text-slate-400">
+          E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
+          Client links open at {CLIENT_SIGN_BASE}.
+        </p>
+      </div>
 
       <div className="glass-panel overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-brandNavy-950 border-b border-brandNavy-800">
+          <span className="text-[10px] font-mono uppercase text-slate-500 tracking-wider">
+            {ledgerData.length} SOW profile{ledgerData.length === 1 ? '' : 's'} · Firestore sync
+          </span>
+          <button
+            type="button"
+            onClick={pullFromCloud}
+            disabled={isPulling}
+            title="Reload latest SOW profiles and contract records from Firebase"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-brandNavy-955 border border-brandTeal-500 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M8 17l4 4 4-4" /><path d="M12 12v9" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /><path d="M16 16l-4-4-4 4" />
+            </svg>
+            {isPulling ? 'Pulling…' : 'Pull from Cloud'}
+          </button>
+        </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
             <tr>
@@ -361,7 +407,7 @@ export default function ContractLedger() {
                       )}
                       {item.contractStatus === 'signed' && (
                         <>
-                          <a href={`${clientSignUrl(item.profileId)}&view=audit`} target="_blank" rel="noreferrer" className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs">
+                          <a href={clientSignUrl(item.profileId, { view: 'audit' })} target="_blank" rel="noreferrer" className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs">
                             Audit Trail
                           </a>
                           <button onClick={() => setResetTarget(item)} className="px-2 py-1 text-red-400 text-xs">Reset</button>
