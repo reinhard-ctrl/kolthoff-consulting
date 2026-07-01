@@ -2,7 +2,7 @@ import { DEFAULT_NAV_GROUPS, type NavGroup, type NavItem } from '../config/navig
 
 const STORAGE_KEY = 'kolthoff-admin-nav-preferences';
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-const NAV_PREFS_VERSION = 2;
+const NAV_PREFS_VERSION = 4;
 
 export type NavPreferences = {
   version?: number;
