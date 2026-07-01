@@ -1,4 +1,11 @@
 import { useEffect, useState } from 'react';
+import {
+  buildDefaultPortalRoadmap,
+  getChaosTaxValue,
+  getClientDisplayName,
+  MODULES,
+  resolveChaosTax,
+} from '../lib/engagement-config';
 import { deleteDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 
@@ -29,9 +36,12 @@ interface ClientPortal {
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
+  clientName?: string;
   clientRep?: string;
   quoteId?: string;
   annualOperationalLeakage?: number;
+  chaosTax?: { source?: string; value?: number };
+  links?: { crmDealId?: string; portalClientId?: string };
 }
 
 function emptyClient(code: string): ClientPortal {
@@ -106,19 +116,20 @@ export default function PortalManager() {
       selectClient(newCode);
       return;
     }
+    const leakage = getChaosTaxValue(profile);
     const newClient: ClientPortal = {
-      companyName: profile.clientCompany || 'New Client',
+      companyName: getClientDisplayName(profile),
       repName: profile.clientRep || 'Representative',
       sowReference: profile.quoteId || newCode,
-      currentPhase: 'MOD 1: Business Leak Scan',
+      currentPhase: MODULES[0].portalPhase,
       progressPercentage: 0,
       metrics: {
-        annualLeakageIdentified: profile.annualOperationalLeakage || 0,
+        annualLeakageIdentified: leakage,
         chaosTaxEliminated: 0,
         saasSavingsIdentified: 0,
       },
       actionItems: [],
-      roadmap: [],
+      roadmap: buildDefaultPortalRoadmap(),
       assets: [],
       contracts: [],
     };
@@ -126,6 +137,32 @@ export default function PortalManager() {
     setActiveCode(newCode);
     setDraft(newClient);
     showToast('Client portal generated from SOW.');
+  };
+
+  const linkedProfile = activeCode
+    ? profiles.find((p) => p.quoteId === activeCode || p.links?.portalClientId === activeCode || p.links?.crmDealId === activeCode)
+    : undefined;
+
+  const syncFromSow = () => {
+    if (!linkedProfile || !draft) {
+      showToast('No linked SOW profile for this portal access code.');
+      return;
+    }
+    const leakage = getChaosTaxValue(linkedProfile);
+    const chaos = resolveChaosTax(linkedProfile);
+    setDraft({
+      ...draft,
+      companyName: getClientDisplayName(linkedProfile),
+      repName: linkedProfile.clientRep || draft.repName,
+      sowReference: linkedProfile.quoteId || draft.sowReference,
+      currentPhase: draft.currentPhase || MODULES[0].portalPhase,
+      metrics: {
+        ...draft.metrics,
+        annualLeakageIdentified: leakage,
+      },
+      roadmap: draft.roadmap?.length ? draft.roadmap : buildDefaultPortalRoadmap(),
+    });
+    showToast(`Synced from SOW (${chaos.source} chaos tax: ${leakage.toLocaleString()}).`);
   };
 
   const addClient = async () => {
@@ -302,6 +339,11 @@ export default function PortalManager() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {linkedProfile && (
+                    <button onClick={syncFromSow} className="px-3 py-2 text-brandTeal-400 text-xs border border-brandTeal-500/30 rounded">
+                      Sync from SOW
+                    </button>
+                  )}
                   <button onClick={() => setDeleteConfirm(activeCode)} className="px-3 py-2 text-rose-400 text-xs">Delete</button>
                   <button onClick={saveDraft} disabled={saving} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">
                     {saving ? 'Saving...' : 'Save to Cloud'}
