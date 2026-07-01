@@ -119,6 +119,14 @@ Intake Center merges responses into profile fields by `mappedTarget`:
 
 See `INTAKE_MAPPED_TARGETS` in engagement config and `admin/src/lib/intake-merge.ts`.
 
+When a linked client portal exists (`clients/{quoteId}`), Intake Center **auto-syncs** SaaS metrics and vault assets via `admin/src/lib/portal-sync.ts`.
+
+## Phase 2 — portal bridge & single workflow editor
+
+- **Diagnosis Reports** embeds Workflow Builder for diagram editing; report still reads merged tabs via `WorkflowTabs.getReportTabs()`.
+- **Contract Sign** displays operational leakage using `EngagementConfig.resolveChaosTax()`.
+- **Intake → Portal** pushes merged intake data to `clients` when access code matches profile `quoteId`.
+
 ## MOD 1–4 canonical names
 
 | ID | Category (task.category) | Portal phase |
@@ -135,8 +143,8 @@ Legacy category strings (pre-2026 rename) remain mapped via `CATEGORY_TO_PRESET`
 | App | Reads | Writes |
 |-----|-------|--------|
 | Project Planner | Full profile | Full profile + `_meta`, `chaosTax`, `links` |
-| Diagnosis Reports | Profile list, tabs | `tabs`, `chaosTax`, `annualOperationalLeakage`, `synthesis`, `subSaaS`, `raciAssignments` |
-| Workflow Builder | Profile list, tabs | `tabs` |
+| Diagnosis Reports | Profile list, tabs | `chaosTax`, `synthesis`, `subSaaS`, `raciAssignments` (tabs edited in Workflow Builder) |
+| Workflow Builder | Profile list, tabs | `workflowBuilder` slice + merged `tabs` |
 | CRM Pipeline | Profiles for deal value sync | Creates profile from deal (`quoteId = deal.id`) |
 | Contract Ledger | Profiles | Read-only |
 | Contract Sign | Profile by ID | Signature status → `contracts_ledger` |

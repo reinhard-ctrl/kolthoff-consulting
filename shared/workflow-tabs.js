@@ -75,6 +75,19 @@
     };
   }
 
+  /**
+   * Merged tabs for read-only consumers (Diagnosis report, exports).
+   */
+  function getReportTabs(profile) {
+    if (!profile) return [];
+    const wf = resolveWorkflowTabs(profile, 'workflow');
+    const dx = resolveWorkflowTabs(profile, 'diagnosis');
+    if (wf?.tabs?.length && dx?.tabs?.length) {
+      return mergeTabsById(dx.tabs, wf.tabs);
+    }
+    return wf?.tabs || dx?.tabs || profile.tabs || [];
+  }
+
   const bundle = {
     SLICE_KEYS,
     stripTabsForSave,
@@ -82,6 +95,7 @@
     mergeTabsById,
     resolveWorkflowTabs,
     buildWorkflowTabsPayload,
+    getReportTabs,
   };
 
   global.WorkflowTabs = bundle;

@@ -3,6 +3,7 @@ import { deleteDoc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 import { getClientDisplayName, INTAKE_MAPPED_TARGETS } from '../lib/engagement-config';
 import { intakeTargetLabel, isValidIntakeTarget, mergeIntakeResponses } from '../lib/intake-merge';
+import { buildPortalPatchFromProfile, resolvePortalAccessCode, type PortalClientRecord } from '../lib/portal-sync';
 
 interface IntakeField {
   name: string;
@@ -24,6 +25,9 @@ interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
+  clientRep?: string;
+  quoteId?: string;
+  links?: { portalClientId?: string };
   subSaaS?: Record<string, unknown>[];
   roles?: Record<string, unknown>[];
   customAssets?: Record<string, unknown>[];
@@ -212,10 +216,28 @@ export default function IntakeCenter() {
 
       const existingRows = (profileData[target as keyof WorkbookProfile] as Record<string, unknown>[] | undefined) || [];
       const merged = mergeIntakeResponses(existingRows, formattedResponses, target);
+      const updatedProfile = { ...profileData, [target]: merged };
 
       await setDoc(profileRef, { [target]: merged }, { merge: true });
+
+      const portalCode = resolvePortalAccessCode(updatedProfile);
+      if (portalCode) {
+        const portalRef = adminDoc('clients', portalCode);
+        const portalSnap = await getDoc(portalRef);
+        if (portalSnap.exists()) {
+          const portalPatch = buildPortalPatchFromProfile(updatedProfile, portalSnap.data() as PortalClientRecord, {
+            syncIntakeAssets: target === 'subSaaS' || target === 'customAssets',
+          });
+          await setDoc(portalRef, portalPatch, { merge: true });
+        }
+      }
+
       await setDoc(adminDoc('intake_forms', activeForm.id), { status: 'synced' }, { merge: true });
-      showToast(`Synced ${formattedResponses.length} row(s) into ${intakeTargetLabel(target)}.`);
+      showToast(
+        portalCode
+          ? `Synced into ${intakeTargetLabel(target)} and updated client portal (${portalCode}).`
+          : `Synced ${formattedResponses.length} row(s) into ${intakeTargetLabel(target)}.`,
+      );
       setView('dashboard');
     } finally {
       setSyncing(false);

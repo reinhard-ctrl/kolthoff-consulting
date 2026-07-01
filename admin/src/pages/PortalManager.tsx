@@ -6,6 +6,7 @@ import {
   MODULES,
   resolveChaosTax,
 } from '../lib/engagement-config';
+import { buildPortalPatchFromProfile, type PortalClientRecord } from '../lib/portal-sync';
 import { deleteDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 
@@ -20,18 +21,7 @@ interface ArrayItem {
   [key: string]: string | number | undefined;
 }
 
-interface ClientPortal {
-  companyName: string;
-  repName: string;
-  sowReference: string;
-  currentPhase: string;
-  progressPercentage: number;
-  metrics: ClientMetrics;
-  actionItems: ArrayItem[];
-  roadmap: ArrayItem[];
-  assets: ArrayItem[];
-  contracts: ArrayItem[];
-}
+interface ClientPortal extends PortalClientRecord {}
 
 interface WorkbookProfile {
   id: string;
@@ -42,6 +32,8 @@ interface WorkbookProfile {
   annualOperationalLeakage?: number;
   chaosTax?: { source?: string; value?: number };
   links?: { crmDealId?: string; portalClientId?: string };
+  subSaaS?: Array<{ tool?: string; billing?: number; users?: number; reason?: string }>;
+  customAssets?: Array<{ title?: string; category?: string; link?: string }>;
 }
 
 interface FieldDef {
@@ -170,20 +162,21 @@ export default function PortalManager() {
       return;
     }
     const leakage = getChaosTaxValue(profile);
+    const patch = buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true });
     const newClient: ClientPortal = {
-      companyName: getClientDisplayName(profile),
-      repName: profile.clientRep || 'Representative',
-      sowReference: profile.quoteId || newCode,
-      currentPhase: MODULES[0].portalPhase,
+      companyName: patch.companyName || getClientDisplayName(profile),
+      repName: patch.repName || profile.clientRep || 'Representative',
+      sowReference: patch.sowReference || newCode,
+      currentPhase: patch.currentPhase || MODULES[0].portalPhase,
       progressPercentage: 0,
-      metrics: {
+      metrics: patch.metrics || {
         annualLeakageIdentified: leakage,
         chaosTaxEliminated: 0,
         saasSavingsIdentified: 0,
       },
       actionItems: [],
-      roadmap: buildDefaultPortalRoadmap(),
-      assets: [],
+      roadmap: patch.roadmap || buildDefaultPortalRoadmap(),
+      assets: patch.assets || [],
       contracts: [],
     };
     await setDoc(adminDoc('clients', newCode), newClient);
@@ -201,21 +194,19 @@ export default function PortalManager() {
       showToast('No linked SOW profile for this portal access code.');
       return;
     }
-    const leakage = getChaosTaxValue(linkedProfile);
     const chaos = resolveChaosTax(linkedProfile);
+    const patch = buildPortalPatchFromProfile(linkedProfile, draft, { syncIntakeAssets: true });
     setDraft({
       ...draft,
-      companyName: getClientDisplayName(linkedProfile),
-      repName: linkedProfile.clientRep || draft.repName,
-      sowReference: linkedProfile.quoteId || draft.sowReference,
-      currentPhase: draft.currentPhase || MODULES[0].portalPhase,
+      ...patch,
       metrics: {
         ...draft.metrics,
-        annualLeakageIdentified: leakage,
+        ...patch.metrics,
       },
-      roadmap: draft.roadmap?.length ? draft.roadmap : buildDefaultPortalRoadmap(),
+      roadmap: draft.roadmap?.length ? draft.roadmap : (patch.roadmap || buildDefaultPortalRoadmap()),
+      assets: patch.assets?.length ? patch.assets : draft.assets,
     });
-    showToast(`Synced from SOW (${chaos.source} chaos tax: ${leakage.toLocaleString()}).`);
+    showToast(`Synced from SOW (${chaos.source} chaos tax: ${(patch.metrics?.annualLeakageIdentified ?? 0).toLocaleString()}).`);
   };
 
   const addClient = async () => {
