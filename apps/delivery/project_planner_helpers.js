@@ -457,7 +457,7 @@
     }
 
     if (view === 'package') {
-      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || (ctx.printSla && (ctx.activePMO || ctx.activeGov));
+      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || ctx.printSla;
       if (!hasSection) issues.push('No package print sections are selected.');
       if (ctx.tasks.filter((t) => t.selected).length === 0) issues.push('No modules/tasks are selected for the SOW.');
       if (!ctx.clientAddress?.trim()) warnings.push('Client registered address is empty.');
