@@ -151,10 +151,6 @@
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
-    const doc = (...args) => window.doc(...args);
-    const setDoc = (...args) => window.setDoc(...args);
-    const deleteDoc = (...args) => window.deleteDoc(...args);
-
     class ErrorBoundary extends Component {
       constructor(props) {
         super(props);
@@ -841,8 +837,8 @@
         try {
           const currentProfilePayload = buildCurrentPayload();
           currentProfilePayload.updatedAt = Date.now();
-          const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await setDoc(docRef, currentProfilePayload);
+          const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          await window.setDoc(docRef, currentProfilePayload);
           setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           isDirtyRef.current = false;
@@ -963,7 +959,7 @@
             const newId = imported.id ? `${imported.id}-import-${Date.now()}` : `client-import-${Date.now()}`;
             const payload = { ...imported, id: newId, workspaceName: imported.workspaceName || `${imported.clientCompany || 'Imported'} Workspace`, updatedAt: Date.now() };
             if (isAuthed) {
-              await setDoc(doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
+              await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
               setActiveProfileId(newId);
             }
           } catch (err) {
@@ -994,7 +990,7 @@
           updatedAt: Date.now()
         };
         if (isAuthed) {
-          await setDoc(doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
+          await window.setDoc(window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
           setActiveProfileId(newId);
         }
       };
@@ -1015,8 +1011,8 @@
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: t.id.startsWith('diag-') })),
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
-        const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        setDoc(docRef, newClientObj).then(() => setActiveProfileId(newId));
+        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
+        window.setDoc(docRef, newClientObj).then(() => setActiveProfileId(newId));
       };
 
       const handleCloneCurrentWorkspace = () => {
@@ -1028,15 +1024,15 @@
           quoteId: `${activeProfile.quoteId}-CLONE`,
           updatedAt: Date.now()
         };
-        const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        setDoc(docRef, cloneObj).then(() => setActiveProfileId(newId));
+        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
+        window.setDoc(docRef, cloneObj).then(() => setActiveProfileId(newId));
       };
 
       const executeDeleteWorkspace = async () => {
         if (profiles.length <= 1) { setShowDeleteConfirm(false); return; }
         const nextProfiles = profiles.filter(p => p.id !== activeProfileId);
-        const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-        await deleteDoc(docRef);
+        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+        await window.deleteDoc(docRef);
         setActiveProfileId(nextProfiles[0].id);
         setShowDeleteConfirm(false);
       };
@@ -1052,10 +1048,10 @@
         setIsSaving(true);
         try {
           const currentProfilePayload = { ...buildCurrentPayload(), workspaceName: trimmedName };
-          const docRef = doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await setDoc(docRef, currentProfilePayload);
+          const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+          await window.setDoc(docRef, currentProfilePayload);
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, workspaceName: trimmedName, updatedAt: currentProfilePayload.updatedAt } : p));
-          setLastSavedJson(JSON.stringify(currentProfilePayload));
+          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           H.clearLocalDraft(activeProfileId);
         } catch (e) {
