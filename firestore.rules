@@ -41,6 +41,11 @@ service cloud.firestore {
       );
     }
 
+    function crmShareLinkEnabled(token) {
+      return exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)) &&
+        get(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)).data.enabled == true;
+    }
+
     // Admin passcodes — single-doc get only (doc id is the secret); no listing
     match /artifacts/{tenantId}/public/data/admin_credentials/{code} {
       allow get: if isAuthenticated();
@@ -65,6 +70,17 @@ service cloud.firestore {
     }
 
     // Firm internal data — staff only (blocks anonymous CRM/planner scraping)
+    match /artifacts/kolthoff-admin-app/public/data/crm_share_links/{token} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create, update, delete: if isStaffMember();
+    }
+
+    match /artifacts/kolthoff-admin-app/public/data/crm_public_view/{token} {
+      allow read: if request.auth != null && crmShareLinkEnabled(token);
+      allow write: if isStaffMember();
+    }
+
     match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
       allow read, write: if isStaffMember();
     }

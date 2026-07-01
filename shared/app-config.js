@@ -18,6 +18,7 @@ export const ROUTES = {
   portalManager: '/admin/portals',
   intakeCenter: '/admin/intake',
   crmPipeline: '/apps/operations/crm_pipeline.html',
+  crmPipelineShare: '/apps/public/crm_pipeline_view.html',
   firmAnalytics: '/apps/analytics/firm_analytics_dashboard.html',
 };
 

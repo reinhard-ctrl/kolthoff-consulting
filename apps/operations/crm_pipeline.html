@@ -15,6 +15,10 @@
         import * as Financials from '../../shared/financials.js';
         window.Financials = Financials;
     </script>
+    <script type="module">
+        import * as CrmShare from '../../shared/crm-share.js';
+        window.CrmShare = CrmShare;
+    </script>
     <!-- Tailwind CSS with Luxury Branding Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -164,7 +168,13 @@
             const [deleteConfirm, setDeleteConfirm] = useState(null); 
             const [showCelebration, setShowCelebration] = useState(false);
             const [celebrationDetails, setCelebrationDetails] = useState({ name: "", value: "" });
+            const [shareModalOpen, setShareModalOpen] = useState(false);
+            const [shareToken, setShareToken] = useState(() => localStorage.getItem('kolthoff_crm_share_token') || '');
+            const [shareEnabled, setShareEnabled] = useState(false);
+            const [shareBusy, setShareBusy] = useState(false);
+            const [shareCopyHint, setShareCopyHint] = useState('');
             const isDraggingDeal = useRef(false);
+            const shareStorageKey = 'kolthoff_crm_share_token';
 
             // 1. INITIALIZE FIREBASE AUTHENTICATION
             useEffect(() => {
@@ -369,6 +379,105 @@
 
                 return { totalValue, activeCount, winRate, avgSize, overdueCount };
             }, [deals, plannerProfiles]);
+
+            const getShareUrl = () => {
+                if (!shareToken || !window.CrmShare) return '';
+                return window.CrmShare.buildShareUrl(shareToken);
+            };
+
+            const loadShareSettings = async (tokenOverride) => {
+                if (!window.firebaseDb || !window.CrmShare) return;
+                const token = tokenOverride || shareToken || localStorage.getItem(shareStorageKey);
+                if (!token) return;
+
+                const link = await window.CrmShare.ensureShareLink(window.firebaseDb, window.appId, token);
+                setShareToken(token);
+                setShareEnabled(!!link.enabled);
+                localStorage.setItem(shareStorageKey, token);
+            };
+
+            useEffect(() => {
+                if (!isAuthed || !window.CrmShare) return;
+                loadShareSettings().catch(console.error);
+            }, [isAuthed]);
+
+            useEffect(() => {
+                if (!isAuthed || !shareEnabled || !shareToken || !window.CrmShare) return;
+                window.CrmShare.syncPublicPipelineView(window.firebaseDb, window.appId, shareToken, deals, stats)
+                    .catch(console.error);
+            }, [isAuthed, shareEnabled, shareToken, deals, stats]);
+
+            const openShareModal = async () => {
+                if (!window.firebaseDb || !window.CrmShare) return;
+                setShareBusy(true);
+                setShareCopyHint('');
+                try {
+                    let token = shareToken || localStorage.getItem(shareStorageKey);
+                    if (!token) {
+                        token = window.CrmShare.generateShareToken();
+                        await window.CrmShare.ensureShareLink(window.firebaseDb, window.appId, token);
+                    }
+                    await loadShareSettings(token);
+                    setShareModalOpen(true);
+                } catch (err) {
+                    console.error(err);
+                    setShareCopyHint('Unable to prepare share link.');
+                } finally {
+                    setShareBusy(false);
+                }
+            };
+
+            const toggleShareEnabled = async () => {
+                if (!shareToken || !window.CrmShare) return;
+                setShareBusy(true);
+                try {
+                    const nextEnabled = !shareEnabled;
+                    await window.CrmShare.setShareLinkEnabled(window.firebaseDb, window.appId, shareToken, nextEnabled);
+                    setShareEnabled(nextEnabled);
+                    if (nextEnabled) {
+                        await window.CrmShare.syncPublicPipelineView(window.firebaseDb, window.appId, shareToken, deals, stats);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    setShareCopyHint('Unable to update sharing status.');
+                } finally {
+                    setShareBusy(false);
+                }
+            };
+
+            const copyShareLink = async () => {
+                const url = getShareUrl();
+                if (!url) return;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    setShareCopyHint('Link copied to clipboard.');
+                } catch {
+                    window.prompt('Copy this link:', url);
+                    setShareCopyHint('Copy the link from the dialog.');
+                }
+            };
+
+            const regenerateShareLink = async () => {
+                if (!window.firebaseDb || !window.CrmShare) return;
+                if (!window.confirm('Generate a new share link? The previous link will stop working immediately.')) return;
+                setShareBusy(true);
+                setShareCopyHint('');
+                try {
+                    if (shareEnabled && shareToken) {
+                        await window.CrmShare.setShareLinkEnabled(window.firebaseDb, window.appId, shareToken, false);
+                    }
+                    const token = window.CrmShare.generateShareToken();
+                    await window.CrmShare.ensureShareLink(window.firebaseDb, window.appId, token);
+                    setShareToken(token);
+                    setShareEnabled(false);
+                    localStorage.setItem(shareStorageKey, token);
+                } catch (err) {
+                    console.error(err);
+                    setShareCopyHint('Unable to regenerate link.');
+                } finally {
+                    setShareBusy(false);
+                }
+            };
 
             // --- FIRESTORE WRITE ACTIONS ---
 
@@ -700,8 +809,82 @@
                                 </div>
                             </nav>
 
+                            <button
+                                type="button"
+                                onClick={openShareModal}
+                                disabled={shareBusy}
+                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"
+                                title="Copy a read-only link for external viewers"
+                            >
+                                <span aria-hidden="true">🔗</span> Share Pipeline
+                            </button>
+
                         </div>
                     </header>
+
+                    {shareModalOpen && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+                            <div className="bg-gradient-to-br from-[#0C1626] to-[#020613] rounded-2xl border border-brandTeal-500/30 max-w-lg w-full p-6 shadow-2xl">
+                                <div className="flex items-start justify-between gap-3 mb-4">
+                                    <div>
+                                        <h3 id="share-modal-title" className="font-extrabold text-white text-base">Share pipeline externally</h3>
+                                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">Send this read-only link to partners or advisors. Personal contact details and internal notes are not included.</p>
+                                    </div>
+                                    <button type="button" onClick={() => { setShareModalOpen(false); setShareCopyHint(''); }} className="text-slate-400 hover:text-white font-bold" aria-label="Close share dialog">✕</button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between gap-3 glass-panel rounded-xl p-3">
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Public access</p>
+                                            <p className="text-sm text-white font-semibold mt-0.5">{shareEnabled ? 'Enabled' : 'Disabled'}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={toggleShareEnabled}
+                                            disabled={shareBusy || !shareToken}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${shareEnabled ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955'} disabled:opacity-50`}
+                                        >
+                                            {shareEnabled ? 'Disable' : 'Enable'}
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="share-link" className="block text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Share link</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                id="share-link"
+                                                readOnly
+                                                value={getShareUrl()}
+                                                className="flex-1 bg-[#020613] border border-brandNavy-700/60 rounded-lg px-3 py-2 text-[11px] text-slate-200 font-mono"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={copyShareLink}
+                                                disabled={!shareToken || shareBusy}
+                                                className="px-3 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded-lg disabled:opacity-50"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        {shareCopyHint && <p className="text-[10px] text-brandTeal-400 mt-2 font-semibold">{shareCopyHint}</p>}
+                                    </div>
+
+                                    <div className="flex items-center justify-between gap-3 border-t border-brandNavy-700/50 pt-4">
+                                        <p className="text-[10px] text-slate-500 leading-relaxed">Disable sharing anytime to revoke access. Regenerate the link if it was forwarded too widely.</p>
+                                        <button
+                                            type="button"
+                                            onClick={regenerateShareLink}
+                                            disabled={shareBusy}
+                                            className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-brandNavy-900 border border-brandNavy-700/60 text-slate-300 hover:text-white disabled:opacity-50 shrink-0"
+                                        >
+                                            New link
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {authErrorDetails && (
                         <div className="bg-rose-500/10 border-b border-rose-500/30 px-4 md:px-8 xl:px-12 py-3">

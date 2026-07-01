@@ -6,6 +6,7 @@
 - `/apps/public/portal.html` — client portal (access code inside app)
 - `/apps/public/client_intake.html` — intake form
 - `/apps/public/contract_sign.html?contract=...` — client e-signature (no staff login)
+- `/apps/public/crm_pipeline_view.html?token=...` — read-only CRM pipeline share (no staff login)
 
 ## Staff hub
 
