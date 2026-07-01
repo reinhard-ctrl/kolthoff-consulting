@@ -46,6 +46,24 @@ service cloud.firestore {
         get(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)).data.enabled == true;
     }
 
+    /** E-sign client link — ledger doc must exist and be sent or already signed */
+    function contractLedgerPath(profileId) {
+      return /databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-$(profileId);
+    }
+
+    function isActiveClientContract(profileId) {
+      return exists(contractLedgerPath(profileId)) &&
+        get(contractLedgerPath(profileId)).data.status in ['sent', 'signed'];
+    }
+
+    function isClientContractSigningUpdate() {
+      return resource.data.status == 'sent' &&
+        request.resource.data.status == 'signed' &&
+        request.resource.data.signedAt is string &&
+        request.resource.data.signedBy is string &&
+        request.resource.data.auditTrail is list;
+    }
+
     // Admin passcodes — single-doc get only (doc id is the secret); no listing
     match /artifacts/{tenantId}/public/data/admin_credentials/{code} {
       allow get: if isAuthenticated();
@@ -79,6 +97,20 @@ service cloud.firestore {
     match /artifacts/kolthoff-admin-app/public/data/crm_public_view/{token} {
       allow read: if request.auth != null && crmShareLinkEnabled(token);
       allow write: if isStaffMember();
+    }
+
+    // Client e-sign — scoped read for sent/signed contracts (incognito uses anonymous auth)
+    match /artifacts/kolthoff-admin-app/public/data/workbook_profiles/{profileId} {
+      allow read: if isStaffMember() || (isAuthenticated() && isActiveClientContract(profileId));
+      allow write: if isStaffMember();
+    }
+
+    match /artifacts/kolthoff-admin-app/public/data/contracts_ledger/{contractId} {
+      allow read: if isStaffMember() || (
+        isAuthenticated() && resource.data.status in ['sent', 'signed']
+      );
+      allow create, delete: if isStaffMember();
+      allow update: if isStaffMember() || (isAuthenticated() && isClientContractSigningUpdate());
     }
 
     match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
