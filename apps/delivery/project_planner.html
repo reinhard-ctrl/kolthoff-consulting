@@ -216,108 +216,137 @@
 
     function getShortDeliverableName(name) {
       const mappings = {
+        // Legacy saved workspace names → plain-English card labels
         'Staff Feedback Link: Safe Anonymous Suggestion Box': 'Anonymous Suggestion Box',
-        'Targeted Process Mapping Audit': 'Process Mapping Audit',
-        'Subscription Audit: App Consolidation Strategy': 'App Consolidation Strategy',
-        'Visual Chaos Tax Map & ROI Solution Plan': 'Chaos Tax Map & ROI Plan',
-        'Standardized Customer Order & Buying Flowcharts': 'Sales & Buying Flowcharts',
-        'Clear Who-Does-What Matrix & System Org-Chart': 'Org-Chart & Role Matrix',
-        'Pre-Loaded Employee Policies (DOLE-Shielded)': 'Pre-Loaded DOLE Policies',
-        'Core Workspace Deployment & Org-Mapping': 'Core Workspace Deployment',
-        'Digital Approval Workflows & Form Conversion': 'Digital Approval Workflows',
-        'System Onboarding & Staff Training': 'System Onboarding & Training',
-        'Weekly Operations & Adoption Huddles': 'Weekly Operations Huddles',
-        'Managed App Hosting & IT Administration': 'Managed App Hosting & IT'
+        'Targeted Process Mapping Audit': 'Work Shadowing Review',
+        'Subscription Audit: App Consolidation Strategy': 'Software Bill Savings Audit',
+        'Visual Chaos Tax Map & ROI Solution Plan': 'Chaos Tax Money-Leak Map',
+        'Standardized Customer Order & Buying Flowcharts': 'Sales & Buying Blueprints',
+        'Clear Who-Does-What Matrix & System Org-Chart': 'Role Accountability Matrix',
+        'Pre-Loaded Employee Policies (DOLE-Shielded)': 'Employee Policy Handbook',
+        'Core Workspace Deployment & Org-Mapping': 'Secure Shared Drive',
+        'Digital Approval Workflows & Form Conversion': 'Task Status & Tracker Boards',
+        'System Onboarding & Staff Training': 'Practical Staff Training',
+        'Weekly Operations & Adoption Huddles': 'Weekly Strategy Syncs',
+        'Managed App Hosting & IT Administration': 'Ongoing Digital Support Care'
       };
       if (mappings[name]) return mappings[name];
-      return name.length > 25 ? name.substring(0, 25) + '...' : name;
+      return name.length > 28 ? name.substring(0, 28) + '...' : name;
     }
 
     // --- DATA CONSTANTS ---
     const INITIAL_TASKS = [
-      { 
-        id: 'diag-2', category: 'MOD 1 - Workflow Diagnosis', 
-        deliverable: 'Staff Feedback Link: Safe Anonymous Suggestion Box', 
-        description: 'We set up an anonymous online feedback form to discover which internal processes frustrate your team the most, giving us a baseline for automation.', 
-        estHours: 3, tier: 'associate', selected: true, 
-        scopeDetails: { activities: "Launch secure online suggestion box.", expectations: "Ask employees to share honest feedback.", output: "A prioritized list of bottlenecks to automate." }
+      {
+        id: 'diag-1', category: 'MOD 1 - Workflow Diagnosis',
+        deliverable: 'Simple Privacy & Directory',
+        description: 'We set up a basic staff contact list and simple privacy rules so customer and employee information is handled safely.',
+        estHours: 4, tier: 'associate', selected: true,
+        scopeDetails: { activities: 'Build your team directory and privacy guidelines.', expectations: 'Share current staff names, roles, and how you store customer info.', output: 'A ready-to-use staff directory with clear privacy rules.' }
       },
-      { 
-        id: 'diag-3', category: 'MOD 1 - Workflow Diagnosis', 
-        deliverable: 'Targeted Process Mapping Audit', 
-        description: 'We asynchronously map your top 3 most broken internal processes (e.g., approvals, expense tracking) to isolate bottlenecks and prepare them for transformation, eliminating live workshop scheduling fatigue.', 
-        estHours: 9, tier: 'senior', selected: true, 
-        scopeDetails: { activities: "Asynchronous review of current manual workflow outlines.", expectations: "Provide high-level task descriptions and copy templates.", output: "A standalone high-level Bottleneck Matrix." }
+      {
+        id: 'diag-2', category: 'MOD 1 - Workflow Diagnosis',
+        deliverable: 'Anonymous Suggestion Box',
+        description: 'We set up a private online form where staff can flag problems without naming names — so you hear honest feedback.',
+        estHours: 3, tier: 'associate', selected: true,
+        scopeDetails: { activities: 'Launch a secure online suggestion box.', expectations: 'Ask employees to share honest feedback.', output: 'A prioritized list of problems worth fixing first.' }
       },
-      { 
-        id: 'diag-4', category: 'MOD 1 - Workflow Diagnosis', 
-        deliverable: 'Subscription Audit: App Consolidation Strategy', 
-        description: 'We review your software expenses (Slack, Asana, Trello, etc.) to show you exactly how much money you will save by moving everything into the unified Core Workspace.', 
-        estHours: 4, tier: 'associate', selected: true, 
-        scopeDetails: { activities: "Analyze software bills and map overlapping features.", expectations: "Provide list of current software tools.", output: "A Software Consolidation Savings Report." }
+      {
+        id: 'diag-3', category: 'MOD 1 - Workflow Diagnosis',
+        deliverable: 'Work Shadowing Review',
+        description: 'We review how your everyday tasks actually get done (approvals, orders, expenses) and pinpoint what slows people down.',
+        estHours: 9, tier: 'senior', selected: true,
+        scopeDetails: { activities: 'Review your current manual workflows without long workshops.', expectations: 'Provide sample forms, chat threads, or step lists your team uses today.', output: 'A simple chart of your biggest time-wasters.' }
       },
-      { 
-        id: 'diag-5', category: 'MOD 1 - Workflow Diagnosis', 
-        deliverable: 'Visual Chaos Tax Map & ROI Solution Plan', 
-        description: 'We calculate your daily process delays into actual monthly money losses (the "Chaos Tax") and provide a clear timeline for your digital transformation.', 
-        estHours: 5, tier: 'senior', selected: true, 
-        scopeDetails: { activities: "Outline straightforward payback metrics and record a custom video walkthrough.", expectations: "Review the financial waste metrics.", output: "A custom video link and an immediate deployment plan." }
+      {
+        id: 'diag-4', category: 'MOD 1 - Workflow Diagnosis',
+        deliverable: 'Software Bill Savings Audit',
+        description: 'We review what you pay for apps (chat, tasks, spreadsheets) and show how much you could save by consolidating tools.',
+        estHours: 4, tier: 'associate', selected: true,
+        scopeDetails: { activities: 'Compare your software bills and overlapping features.', expectations: 'Provide a list of apps and monthly costs.', output: 'A savings report showing duplicate tools you can cut.' }
       },
-      { 
-        id: 'sop-vsm', category: 'MOD 2 - Organizing How You Work', 
-        deliverable: 'Standardized Customer Order & Buying Flowcharts', 
-        description: 'Create a clear master flowchart of how customer orders are received and invoiced, serving as the logic blueprint for your new workspace.', 
-        estHours: 12, tier: 'senior', selected: false, 
-        scopeDetails: { activities: "Host an asynchronous audit to map Sales-to-Cash and Buying steps.", expectations: "Provide current customer order slips.", output: "Visual flowcharts detailing exact operational routing." }
+      {
+        id: 'diag-5', category: 'MOD 1 - Workflow Diagnosis',
+        deliverable: 'Chaos Tax Money-Leak Map',
+        description: 'We turn daily delays and rework into peso amounts — the money lost to chaos — and lay out a plain fix plan.',
+        estHours: 5, tier: 'senior', selected: true,
+        scopeDetails: { activities: 'Calculate wasted time in money terms and record a short walkthrough video.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and a step-by-step improvement plan.' }
       },
-      { 
-        id: 'sop-1', category: 'MOD 2 - Organizing How You Work', 
-        deliverable: 'Clear Who-Does-What Matrix & System Org-Chart', 
-        description: 'We define where duties start and end, assigning clear direct managers so your automated approval workflows route to the correct decision-makers.', 
-        estHours: 8, tier: 'senior', selected: false, 
-        scopeDetails: { activities: "Document clear task ownership and draw up the workspace Org Chart.", expectations: "Confirm reporting hierarchies.", output: "A finalized Who-Does-What accountability chart." }
+      {
+        id: 'sop-vsm', category: 'MOD 2 - Organizing How You Work',
+        deliverable: 'Sales & Buying Blueprints',
+        description: 'We draw clear step-by-step charts for how orders come in, get approved, and get paid — so everyone follows the same path.',
+        estHours: 12, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Map your sales-to-cash and buying steps on paper first.', expectations: 'Provide sample order slips, invoices, or purchase records.', output: 'Easy-to-read flowcharts your team can follow.' }
       },
-      { 
-        id: 'sop-3', category: 'MOD 2 - Organizing How You Work', 
-        deliverable: 'Pre-Loaded Employee Policies (DOLE-Shielded)', 
-        description: 'We deploy our standard, DOLE-compliant employee guidelines directly into your Workspace Knowledge Base, protecting your business from local labor disputes.', 
-        estHours: 12, tier: 'associate', selected: false, 
-        scopeDetails: { activities: "Adapt standard Handbook templates to your company details and upload to the digital vault.", expectations: "Review the draft policy booklet.", output: "A complete, digital local Employee Handbook." }
+      {
+        id: 'sop-1', category: 'MOD 2 - Organizing How You Work',
+        deliverable: 'Role Accountability Matrix',
+        description: 'We spell out who owns each task and who signs off — so nothing falls through the cracks and approvals go to the right person.',
+        estHours: 8, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Document task ownership and draw a simple org chart.', expectations: 'Confirm who reports to whom.', output: 'A who-does-what chart everyone can reference.' }
       },
-      { 
-        id: 'pmo-core-deploy', category: 'MOD 3 - Workspace Automation', 
-        deliverable: 'Core Workspace Deployment & Org-Mapping', 
-        description: 'We provision a dedicated, encrypted cloud database for your company and map your exact organizational chart into the system, establishing secure login credentials for all staff.', 
-        estHours: 16, tier: 'senior', selected: false, 
-        scopeDetails: { activities: "Provision Firebase tenant; map departmental tree and manager hierarchies.", expectations: "Provide final roster of employees.", output: "A live, branded Core Workspace portal." }
+      {
+        id: 'sop-2', category: 'MOD 2 - Organizing How You Work',
+        deliverable: 'SOP Video & Document Vault',
+        description: 'We record short how-to videos and store your step-by-step guides in one place your staff can find anytime.',
+        estHours: 10, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Record plain-language walkthroughs and upload guides to a shared folder.', expectations: 'Nominate team members to demo key tasks on camera.', output: 'A video and document library for daily reference.' }
       },
-      { 
-        id: 'pmo-workflows', category: 'MOD 3 - Workspace Automation', 
-        deliverable: 'Digital Approval Workflows & Form Conversion', 
-        description: 'We digitize your top 5 internal processes (e.g., Leaves, Cash Advances) into automated routing workflows. Capped at a maximum of 2 branches and 2 approval tiers per form to maximize build speed.', 
-        estHours: 30, tier: 'associate', selected: false, 
-        scopeDetails: { activities: "Configure form templates with up to 2 routing branches and 2 approval levels.", expectations: "Provide copies of your current standard paper forms.", output: "5 streamlined digital operational workflows." }
+      {
+        id: 'sop-3', category: 'MOD 2 - Organizing How You Work',
+        deliverable: 'Employee Policy Handbook',
+        description: 'We prepare standard, Philippines-ready employee rules and load them into your shared workspace so policies are easy to find.',
+        estHours: 12, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Adapt handbook templates to your company and upload them digitally.', expectations: 'Review and approve the draft handbook.', output: 'A complete digital employee policy handbook.' }
       },
-      { 
-        id: 'pmo-change', category: 'MOD 3 - Workspace Automation', 
-        deliverable: 'System Onboarding & Staff Training', 
-        description: 'We make sure your team actually uses the new system. We host an interactive training session and create quick, simple cheatsheets for using the Messenger and Approvals apps.', 
-        estHours: 10, tier: 'senior', selected: false, 
-        scopeDetails: { activities: "Run practical group training calls; design handy quick-start guides.", expectations: "Ensure employees attend the scheduled training.", output: "Fully trained staff and an active help library." }
+      {
+        id: 'pmo-core-deploy', category: 'MOD 3 - Workspace Automation',
+        deliverable: 'Secure Shared Drive',
+        description: 'We set up a private online workspace for your company, create staff logins, and organize folders by department.',
+        estHours: 16, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Set up your company workspace and map departments and managers.', expectations: 'Provide your final staff list.', output: 'A live, branded workspace your team can log into.' }
       },
-      { 
-        id: 'coo-1', category: 'MOD 4 - Ongoing Support', 
-        deliverable: 'Weekly Operations & Adoption Huddles', 
-        description: 'Our operations manager meets with your team weekly to ensure they are using the software correctly, review pending approvals, and resolve process bottlenecks.', 
-        estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: true, 
-        scopeDetails: { activities: "Audit system usage; review pending approval dashboards; guide staff.", expectations: "Participation from key managers on weekly calls.", output: "Weekly action-item checklists and high system adoption." }
+      {
+        id: 'pmo-workflows', category: 'MOD 3 - Workspace Automation',
+        deliverable: 'Task Status & Tracker Boards',
+        description: 'We turn your top internal requests (leave, cash advances, purchases) into digital forms that route to the right approver automatically.',
+        estHours: 30, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Build up to five digital forms with simple approval steps.', expectations: 'Provide copies of your current paper forms.', output: 'Tracker boards that show what is pending, approved, or overdue.' }
       },
-      { 
-        id: 'sp-core-admin', category: 'MOD 4 - Ongoing Support', 
-        deliverable: 'Managed App Hosting & IT Administration', 
-        description: 'We act as your tenant administrator for the Workspace. Covers cloud server costs, login provisioning, and routine view adjustments. Excludes brand-new workflow designs or template expansions.', 
-        estHours: 5, tier: 'partner', selected: false, isMonthlyRetainer: true, 
-        scopeDetails: { activities: "Cover cloud hosting allocations; manage user credentials; optimize current layout parameters.", expectations: "Submit operational admin requests via the portal.", output: "99.9% environment uptime; net template expansions are scoped separately." }
+      {
+        id: 'pmo-sales', category: 'MOD 3 - Workspace Automation',
+        deliverable: 'Tax-Smart Sales App',
+        description: 'We set up a simple sales tracker so orders are logged cleanly and your records are ready when tax time comes.',
+        estHours: 20, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Configure a sales log tied to your order and invoice flow.', expectations: 'Share how you record sales today.', output: 'A sales tracker your team can update daily.' }
+      },
+      {
+        id: 'pmo-change', category: 'MOD 3 - Workspace Automation',
+        deliverable: 'Practical Staff Training',
+        description: 'We train your team hands-on and leave quick cheat sheets so people actually use the new tools after launch day.',
+        estHours: 10, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Run live training sessions and publish short how-to guides.', expectations: 'Make sure key staff attend training.', output: 'Trained staff and a help folder they can revisit.' }
+      },
+      {
+        id: 'coo-1', category: 'MOD 4 - Ongoing Support',
+        deliverable: 'Weekly Strategy Syncs',
+        description: 'We meet with your managers each week to review pending items, unblock stuck tasks, and keep adoption on track.',
+        estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: true,
+        scopeDetails: { activities: 'Review dashboards, pending approvals, and team questions.', expectations: 'Key managers join the weekly call.', output: 'A short action list and steady day-to-day usage.' }
+      },
+      {
+        id: 'coo-audit', category: 'MOD 4 - Ongoing Support',
+        deliverable: '6-Month Workspace Audits',
+        description: 'Twice a year we check how your team uses the system, fix gaps, and refresh anything that stopped working.',
+        estHours: 8, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Audit usage, permissions, and outdated forms.', expectations: 'Provide access for a half-day review session.', output: 'An audit report with fixes applied or scheduled.' }
+      },
+      {
+        id: 'sp-core-admin', category: 'MOD 4 - Ongoing Support',
+        deliverable: 'Ongoing Digital Support Care',
+        description: 'We handle hosting, logins, and small layout tweaks so your workspace stays online — new builds are quoted separately.',
+        estHours: 5, tier: 'partner', selected: false, isMonthlyRetainer: true,
+        scopeDetails: { activities: 'Maintain hosting, user accounts, and routine admin requests.', expectations: 'Submit admin requests through your support channel.', output: 'Reliable uptime and responsive admin help.' }
       }
     ];
 
@@ -2148,10 +2177,10 @@
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans" role="list" aria-label="Optional project expansion modules">
               {[
-                { id: 'MOD 1', title: 'Workflow Diagnosis', isActive: activeDiag, desc: 'Quick, low-touch software audit & process mapping.' },
-                { id: 'MOD 2', title: 'Organizing How You Work', isActive: activeSOP, desc: 'Step-by-step visual blueprints and role charts.' },
-                { id: 'MOD 3', title: 'Workspace Automation', isActive: activePMO, desc: 'Integrated cross-department tracking boards.' },
-                { id: 'MOD 4', title: 'Ongoing Support', isActive: activeGov, desc: 'Weekly fractional COO check-ins.' }
+                { id: 'MOD 1', title: 'Workflow Diagnosis', isActive: activeDiag, desc: 'A quick look at your apps, daily work, and where time and money leak.' },
+                { id: 'MOD 2', title: 'Organizing How You Work', isActive: activeSOP, desc: 'Step-by-step guides and clear charts showing who handles what.' },
+                { id: 'MOD 3', title: 'Workspace Automation', isActive: activePMO, desc: 'Shared trackers so every department sees the same up-to-date picture.' },
+                { id: 'MOD 4', title: 'Ongoing Support', isActive: activeGov, desc: 'Regular check-ins and hands-on help after go-live.' }
               ].map(mod => (
                 <article key={mod.id} role="listitem" className={`border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans ${mod.isActive ? 'border-brandTeal-500 bg-brandTeal-50/20 font-bold' : 'border-dashed bg-slate-50 opacity-50'}`}>
                   <div className="space-y-3 text-left font-sans">
