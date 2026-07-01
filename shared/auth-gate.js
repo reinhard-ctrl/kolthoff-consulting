@@ -33,6 +33,15 @@ function isClientContractLedgerView() {
   );
 }
 
+/** External read-only CRM pipeline share link (?token=...) */
+function isCrmPipelineShareView() {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.pathname.includes('crm_pipeline_view') &&
+    new URLSearchParams(window.location.search).has('token')
+  );
+}
+
 /** Embedded in admin console iframe — never redirect to /admin/ (it blocks framing). */
 function isEmbeddedView() {
   if (typeof window === 'undefined') return false;
@@ -112,6 +121,12 @@ export async function requireStaffAuth() {
     return { user: auth.currentUser, role: 'client' };
   }
 
+  if (isCrmPipelineShareView()) {
+    await resolveAuthUser();
+    revealPage();
+    return { user: auth.currentUser, role: 'guest' };
+  }
+
   try {
     if (isEmbeddedView()) {
       const user = await waitForStaffAccess();
@@ -144,7 +159,7 @@ export async function requireStaffAuth() {
   }
 }
 
-if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientContractLedgerView()) {
+if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientContractLedgerView() && !isCrmPipelineShareView()) {
   document.documentElement.classList.add('kolthoff-auth-pending');
   if (!document.getElementById('kolthoff-auth-gate-style')) {
     const style = document.createElement('style');

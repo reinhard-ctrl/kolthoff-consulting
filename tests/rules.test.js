@@ -50,6 +50,25 @@ async function run() {
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_deals/d1').get()
   );
 
+  // Anonymous users can read enabled CRM public share snapshots
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_share_links/share-token-1').set({
+      enabled: true,
+      token: 'share-token-1',
+    });
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_public_view/share-token-1').set({
+      syncedAt: Date.now(),
+      deals: [],
+      stats: { activeCount: 0, totalValue: 0 },
+    });
+  });
+  await assertSucceeds(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_public_view/share-token-1').get()
+  );
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_public_view/disabled-token').get()
+  );
+
   // core_users directory is staff-only
   await assertFails(
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/core_users/u1').get()

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Pipeline | Shared View</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
+    <script type="module" src="../../shared/firebase-init.js"></script>
+    <script type="module" src="../../shared/auth-gate.js"></script>
+    <script type="module">
+        import * as CrmShare from '../../shared/crm-share.js';
+        window.CrmShare = CrmShare;
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brandNavy: { 700: '#1B2C46', 800: '#0F1A2C', 900: '#09111F', 955: '#02050e' },
+                        brandTeal: { 400: '#2DD4BF', 500: '#14B8A6', 600: '#0D9488' }
+                    },
+                    fontFamily: { sans: ['"Montserrat"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%);
+        }
+        .glass-panel {
+            background: rgba(9, 17, 31, 0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(46, 69, 103, 0.2);
+        }
+        .deal-card-frame { border-left-width: 3px; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const pipelineStages = ["Lead / Prospect", "Meeting", "Proposal", "Negotiation", "Closed Won/Lost"];
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const shareToken = new URLSearchParams(window.location.search).get('token');
+
+        function getDealHealth(deal) {
+            if (deal.status === "Won") {
+                return { text: "Closed Won", frame: "deal-card-frame border border-emerald-500/55 border-l-emerald-400 bg-emerald-950/25" };
+            }
+            if (deal.status === "Lost") {
+                return { text: "Closed Lost", frame: "deal-card-frame border border-slate-600/45 border-l-slate-500 bg-rose-950/15 opacity-75" };
+            }
+            if (deal.nextAction && deal.nextAction.toLowerCase().includes("on hold")) {
+                return { text: "On Hold", frame: "deal-card-frame border border-amber-500/50 border-l-amber-400 bg-amber-950/20" };
+            }
+            if (!deal.followUpDate) {
+                return { text: "No Action Scheduled", frame: "deal-card-frame border border-slate-600/40 border-l-slate-500 bg-slate-900/35" };
+            }
+            const dateVal = new Date(deal.followUpDate);
+            const todayVal = new Date(todayStr);
+            if (dateVal < todayVal) {
+                return { text: "Overdue", frame: "deal-card-frame border border-rose-500/60 border-l-rose-500 bg-rose-950/25" };
+            }
+            if (deal.followUpDate === todayStr) {
+                return { text: "Due Today", frame: "deal-card-frame border border-amber-500/55 border-l-amber-400 bg-amber-950/20" };
+            }
+            return { text: "Scheduled", frame: "deal-card-frame border border-emerald-500/45 border-l-emerald-500 bg-emerald-950/15" };
+        }
+
+        function App() {
+            const [ready, setReady] = useState(false);
+            const [error, setError] = useState(null);
+            const [deals, setDeals] = useState([]);
+            const [stats, setStats] = useState(null);
+            const [syncedAt, setSyncedAt] = useState(null);
+
+            useEffect(() => {
+                if (!shareToken) {
+                    setError('This shared link is missing its access token.');
+                    setReady(true);
+                    return;
+                }
+
+                let unsub = null;
+                let interval = setInterval(async () => {
+                    if (!window.firebaseDb || !window.CrmShare) return;
+                    clearInterval(interval);
+
+                    try {
+                        await window.kolthoffStaffReady;
+                        const db = window.firebaseDb;
+                        const appId = window.appId;
+                        const linkRef = window.CrmShare.shareLinkDocRef(db, appId, shareToken);
+                        const linkSnap = await window.getDoc(linkRef);
+                        if (!linkSnap.exists() || !linkSnap.data()?.enabled) {
+                            setError('This shared pipeline link is invalid or has been disabled.');
+                            setReady(true);
+                            return;
+                        }
+
+                        const viewRef = window.CrmShare.publicViewDocRef(db, appId, shareToken);
+                        unsub = window.onSnapshot(viewRef, (snap) => {
+                            if (!snap.exists()) {
+                                setDeals([]);
+                                setStats(null);
+                                setSyncedAt(null);
+                                setReady(true);
+                                return;
+                            }
+                            const data = snap.data();
+                            setDeals(Array.isArray(data.deals) ? data.deals : []);
+                            setStats(data.stats || null);
+                            setSyncedAt(data.syncedAt || null);
+                            setReady(true);
+                        }, (err) => {
+                            console.error(err);
+                            setError('Unable to load the shared pipeline right now.');
+                            setReady(true);
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        setError('Unable to connect to the shared pipeline.');
+                        setReady(true);
+                    }
+                }, 50);
+
+                return () => {
+                    clearInterval(interval);
+                    if (unsub) unsub();
+                };
+            }, []);
+
+            const filteredDeals = useMemo(() => deals.filter((d) => d.status === 'Active' || !d.status), [deals]);
+            const displayStats = useMemo(() => {
+                if (stats) return stats;
+                const active = filteredDeals;
+                const totalValue = active.reduce((sum, d) => sum + (d.estValue || 0), 0);
+                return {
+                    activeCount: active.length,
+                    totalValue,
+                    avgSize: active.length ? Math.round(totalValue / active.length) : 0,
+                    winRate: 0,
+                    overdueCount: active.filter((d) => getDealHealth(d).text === 'Overdue').length,
+                };
+            }, [stats, filteredDeals]);
+
+            if (!ready) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center text-slate-400">
+                        <div className="flex items-center gap-3 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-brandTeal-500 animate-pulse" />
+                            Loading shared pipeline…
+                        </div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-6">
+                        <div className="glass-panel rounded-2xl max-w-md w-full p-8 text-center">
+                            <div className="text-4xl mb-4" aria-hidden="true">🔗</div>
+                            <h1 className="text-lg font-bold text-white mb-2">Shared link unavailable</h1>
+                            <p className="text-sm text-slate-400 leading-relaxed">{error}</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen flex flex-col pb-12">
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 py-4">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-brandTeal-400 font-bold">Shared view</p>
+                                <h1 className="text-lg font-serif font-bold text-white">Kolthoff Consulting Pipeline</h1>
+                                <p className="text-xs text-slate-400 mt-1">Read-only snapshot for external review. Contact details and internal notes are hidden.</p>
+                            </div>
+                            {syncedAt && (
+                                <p className="text-[10px] text-slate-500 font-mono">
+                                    Updated {new Date(syncedAt).toLocaleString()}
+                                </p>
+                            )}
+                        </div>
+                    </header>
+
+                    <section className="max-w-7xl mx-auto w-full px-4 md:px-8 pt-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                            <div className="glass-panel rounded-lg py-2 px-3 flex items-center justify-between">
+                                <span className="text-[9px] uppercase font-bold text-slate-400">Active Deals</span>
+                                <span className="text-sm font-extrabold text-white">{displayStats.activeCount}</span>
+                            </div>
+                            <div className="glass-panel rounded-lg py-2 px-3 flex items-center justify-between">
+                                <span className="text-[9px] uppercase font-bold text-slate-400">Pipeline Value</span>
+                                <span className="text-sm font-extrabold text-brandTeal-400 font-mono">
+                                    {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayStats.totalValue || 0)}
+                                </span>
+                            </div>
+                            <div className="glass-panel rounded-lg py-2 px-3 flex items-center justify-between">
+                                <span className="text-[9px] uppercase font-bold text-slate-400">Avg Size</span>
+                                <span className="text-sm font-extrabold text-slate-100 font-mono">
+                                    {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayStats.avgSize || 0)}
+                                </span>
+                            </div>
+                            <div className="glass-panel rounded-lg py-2 px-3 flex items-center justify-between">
+                                <span className="text-[9px] uppercase font-bold text-slate-400">Attention</span>
+                                <span className="text-sm font-extrabold text-rose-400">{displayStats.overdueCount || 0} overdue</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <main className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-4 flex-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+                            {pipelineStages.map((stage) => {
+                                const stageDeals = filteredDeals.filter((d) => d.pipelineStatus === stage);
+                                const stageValue = stageDeals.reduce((sum, d) => sum + (d.estValue || 0), 0);
+                                return (
+                                    <div key={stage} className="bg-[#02050e]/30 rounded-xl border border-brandNavy-700/30 flex flex-col min-h-[520px]">
+                                        <div className="p-3 border-b border-brandNavy-700/40 bg-[#09111F]/30 rounded-t-xl">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <h2 className="font-extrabold text-[10px] text-white tracking-wide uppercase">{stage}</h2>
+                                                <span className="text-[9px] px-1.5 py-0.5 bg-brandNavy-900 border border-brandNavy-700/40 rounded-full font-bold text-brandTeal-300">{stageDeals.length}</span>
+                                            </div>
+                                            <p className="text-brandTeal-500 font-mono text-[10px] font-bold mt-1">
+                                                {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stageValue)}
+                                            </p>
+                                        </div>
+                                        <div className="flex-1 p-2 space-y-2">
+                                            {stageDeals.length === 0 ? (
+                                                <div className="h-full flex items-center justify-center text-[9px] uppercase font-bold text-slate-600 tracking-widest text-center px-4">No active deals</div>
+                                            ) : stageDeals.map((deal) => {
+                                                const health = getDealHealth(deal);
+                                                return (
+                                                    <div key={deal.id} className={`p-3 rounded-lg ${health.frame}`}>
+                                                        <div className="font-bold text-white text-xs">{deal.leadName}</div>
+                                                        <div className="text-[10px] text-slate-300 mt-0.5">{deal.company}</div>
+                                                        {deal.titleRole && <div className="text-[9px] text-slate-500 mt-0.5">{deal.titleRole}</div>}
+                                                        <div className="flex items-center justify-between mt-2 gap-2">
+                                                            <span className="text-brandTeal-400 font-mono text-[10px] font-bold">
+                                                                {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(deal.estValue || 0)}
+                                                            </span>
+                                                            <span className="text-[8px] uppercase font-bold text-slate-400">{health.text}</span>
+                                                        </div>
+                                                        {deal.nextAction && (
+                                                            <div className="text-[9px] text-slate-400 mt-2 border-t border-white/5 pt-2">{deal.nextAction}</div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
