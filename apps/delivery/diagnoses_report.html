@@ -622,10 +622,10 @@
             const ScoreBarUI = ({ label, valKey, val }) => (
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-300"></label>
+                        <label className="text-xs font-bold text-slate-300">{label}</label>
                         <span className="text-xs font-mono text-brandTeal-400">{val}/5</span>
                     </div>
-                    <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" />
+                    <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" aria-label={label} />
                 </div>
             );
 
