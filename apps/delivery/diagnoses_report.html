@@ -72,6 +72,9 @@
         .page-break { page-break-before: always; }
         .page-break-inside-avoid { page-break-inside: avoid; }
 
+        html, body, #root { height: 100%; }
+        body { overflow: hidden; }
+
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body, #root, .flex.h-screen, .overflow-y-auto { height: auto !important; overflow: visible !important; display: block !important; background: white !important; color: #0f172a !important; font-family: "Montserrat", sans-serif !important; margin: 0 !important; padding: 0 !important; }
@@ -85,8 +88,13 @@
             @page { size: portrait; margin: 20mm 15mm; }
         }
     </style>
+    <script>
+        if (new URLSearchParams(window.location.search).has('embed')) {
+            document.documentElement.classList.add('diagnosis-embed');
+        }
+    </script>
 </head>
-<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white min-h-screen">
+<body class="luxury-gradient text-slate-100 antialiased selection:bg-brandTeal-600 selection:text-white h-full overflow-hidden">
 
     <div id="root"></div>
 
@@ -350,9 +358,9 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId }) => {
-            const builderUrl = activeProfileId
-                ? `/apps/operations/workflow_builder.html?profile=${encodeURIComponent(activeProfileId)}`
-                : '/apps/operations/workflow_builder.html';
+            const builderParams = new URLSearchParams({ embed: '1', v: '20250701-diagnosis-v1' });
+            if (activeProfileId) builderParams.set('profile', activeProfileId);
+            const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             return (
                 <div className="flex flex-col h-full min-h-[600px]">
                     <div className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-6 py-4 flex flex-wrap justify-between items-center gap-4 no-print">
@@ -614,10 +622,10 @@
             const ScoreBarUI = ({ label, valKey, val }) => (
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-300"></label>
+                        <label className="text-xs font-bold text-slate-300">{label}</label>
                         <span className="text-xs font-mono text-brandTeal-400">{val}/5</span>
                     </div>
-                    <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" />
+                    <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" aria-label={label} />
                 </div>
             );
 
@@ -1495,7 +1503,7 @@
                 const profilesRef = window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles');
                 const unsubscribe = window.onSnapshot(profilesRef, (snapshot) => {
                     const fetchedProfiles = [];
-                    snapshot.forEach(doc => { fetchedProfiles.push({ id: doc.id, ...doc.data() }); });
+                    snapshot.forEach((snapDoc) => { fetchedProfiles.push({ id: snapDoc.id, ...snapDoc.data() }); });
                     setWorkbookProfiles(fetchedProfiles);
                     setActiveProfileId(current => {
                         if (!fetchedProfiles.find(p => p.id === current) && fetchedProfiles.length > 0) return fetchedProfiles[0].id;
@@ -1592,11 +1600,11 @@
                 setIsSaving(true);
                 try {
                     const EC = window.EngagementConfig || {};
-                    const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                    const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
                     const chaosTax = EC.buildChaosTaxPayload
                         ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
                         : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
-                    await window.setDoc(profileRef, {
+                    await window.firestoreSetDoc(profileRef, {
                         subSaaS,
                         raciAssignments,
                         annualOperationalLeakage: totalAnnualChaosTax,
@@ -1622,7 +1630,7 @@
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0] || { id: 'empty', name: 'No workflow', present: { nodes: [], edges: [], lanes: INITIAL_LANES, phases: INITIAL_PHASES } };
 
             return (
-                <div className="flex h-screen overflow-hidden bg-brandNavy-955 font-sans">
+                <div className="flex h-full min-h-0 overflow-hidden bg-brandNavy-955 font-sans">
                     {toastMessage && (<div role="alert" className="fixed bottom-6 right-6 z-[100] bg-brandTeal-600 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce"><span>✓</span>{toastMessage}</div>)}
 
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
