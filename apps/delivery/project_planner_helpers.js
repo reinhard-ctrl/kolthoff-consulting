@@ -31,11 +31,6 @@
     return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
   }
 
-  /** M1-06 optional briefing is excluded from Module 1 credit-back base. */
-  function isCreditBackMod1Task(task) {
-    return task.selected && isModCategory(task.category, 1) && task.id !== 'm1-06';
-  }
-
   const MOD_DISPLAY_NAMES = {
     1: 'Business Leak Scan',
     2: 'How Your Business Runs',
@@ -52,9 +47,6 @@
       tasks,
       frictionBuffer,
       discountPercent,
-      applyCreditBack,
-      isCreditBackEligible,
-      mod1CostBase,
       rates
     } = ctx;
     const bufferMultiplier = 1 + frictionBuffer / 100;
@@ -111,23 +103,6 @@
       });
     }
 
-    if (applyCreditBack && isCreditBackEligible && mod1CostBase > 0) {
-      let remainingCredit = Math.round(mod1CostBase * discFactor);
-      const m1 = summaries.find((s) => s.modNum === 1);
-      if (m1) m1.afterCredit = 0;
-      const m2 = summaries.find((s) => s.modNum === 2);
-      if (m2 && remainingCredit > 0) {
-        const applied = Math.min(remainingCredit, m2.afterDiscount);
-        m2.afterCredit = m2.afterDiscount - applied;
-        remainingCredit -= applied;
-      }
-      const m3 = summaries.find((s) => s.modNum === 3);
-      if (m3 && remainingCredit > 0) {
-        const applied = Math.min(remainingCredit, m3.afterDiscount);
-        m3.afterCredit = m3.afterDiscount - applied;
-      }
-    }
-
     return summaries;
   }
 
@@ -169,7 +144,6 @@
       discountPercent,
       includeTax,
       subscriptionMonths,
-      applyCreditBack,
       milestoneSplit,
       customSplit1,
       customSplit2,
@@ -193,7 +167,6 @@
     const activeDiag = tasks.some((t) => isModCategory(t.category, 1) && t.selected);
     const activeSOP = tasks.some((t) => isModCategory(t.category, 2) && t.selected);
     const activePMO = tasks.some((t) => isModCategory(t.category, 3) && t.selected);
-    const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
 
     const projectCostBaseUndiscounted = Math.round(
       tasks.filter((t) => t.selected && !t.isMonthlyRetainer).reduce(
@@ -207,19 +180,8 @@
       )
     );
 
-    const mod1CostBase = Math.round(
-      tasks.filter(isCreditBackMod1Task).reduce(
-        (acc, curr) => acc + (curr.estHours * getRate(curr.tier)), 0
-      ) * bufferMultiplier
-    );
-
-    const creditBackAmount = isCreditBackEligible
-      ? Math.round(mod1CostBase * (1 - discountPercent / 100))
-      : 0;
-    const appliedCreditBackAmount = (applyCreditBack && isCreditBackEligible) ? creditBackAmount : 0;
-
     const projectCostBase = Math.round(projectCostBaseUndiscounted * (1 - discountPercent / 100));
-    const finalProjectCostBase = Math.max(0, projectCostBase - appliedCreditBackAmount);
+    const finalProjectCostBase = projectCostBase;
     const retainerCostBase = Math.round(retainerCostBaseUndiscounted * (1 - discountPercent / 100));
 
     const finalProjectCostPart = Math.round(finalProjectCostBase * taxMultiplier);
@@ -293,8 +255,6 @@
       customSplit1,
       customSplit2,
       customSplit3,
-      applyCreditBack,
-      isCreditBackEligible,
       getModNet,
       formatCurrency
     });
@@ -303,9 +263,6 @@
       tasks,
       frictionBuffer,
       discountPercent,
-      applyCreditBack,
-      isCreditBackEligible,
-      mod1CostBase,
       rates
     });
 
@@ -313,12 +270,8 @@
       activeDiag,
       activeSOP,
       activePMO,
-      isCreditBackEligible,
-      creditBackAmount,
-      appliedCreditBackAmount,
       projectCostBaseUndiscounted,
       retainerCostBaseUndiscounted,
-      mod1CostBase,
       projectCostBase,
       finalProjectCostBase,
       retainerCostBase,
@@ -341,8 +294,6 @@
       customSplit1,
       customSplit2,
       customSplit3,
-      applyCreditBack,
-      isCreditBackEligible,
       getModNet,
       includeTax,
       formatCurrency
@@ -365,32 +316,16 @@
         });
       }
       if (m2Net > 0) {
-        let m2Billed = m2Net;
-        let creditNotice = '';
-        if (applyCreditBack && isCreditBackEligible && m1Net > 0) {
-          m2Billed = Math.max(0, m2Net - m1Net);
-          creditNotice = ` (Pre-applied Module 1 Credit-Back savings: -${formatCurrency(Math.round(m1Net * taxMultiplier))})`;
-        }
         arr.push({
-          label: `Gate 2: Module 2 Commitment — How Your Business Runs${creditNotice}`,
-          amount: Math.round(m2Billed * taxMultiplier),
+          label: 'Gate 2: Module 2 Commitment — How Your Business Runs',
+          amount: Math.round(m2Net * taxMultiplier),
           desc: 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.'
         });
       }
       if (m3Net > 0) {
-        let m3Billed = m3Net;
-        let creditNotice = '';
-        if (applyCreditBack && isCreditBackEligible && m1Net > 0 && m2Net === 0) {
-          m3Billed = Math.max(0, m3Net - m1Net);
-          creditNotice = ` (Pre-applied Module 1 Credit-Back savings: -${formatCurrency(Math.round(m1Net * taxMultiplier))})`;
-        } else if (applyCreditBack && isCreditBackEligible && m1Net > m2Net && m2Net > 0) {
-          const leftoverCredit = m1Net - m2Net;
-          m3Billed = Math.max(0, m3Net - leftoverCredit);
-          creditNotice = ` (Pre-applied remaining Module 1 Credit balance: -${formatCurrency(Math.round(leftoverCredit * taxMultiplier))})`;
-        }
         arr.push({
-          label: `Gate 3: Module 3 Commitment — Your Team Workspace${creditNotice}`,
-          amount: Math.round(m3Billed * taxMultiplier),
+          label: 'Gate 3: Module 3 Commitment — Your Team Workspace',
+          amount: Math.round(m3Net * taxMultiplier),
           desc: 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.'
         });
       }
@@ -459,8 +394,6 @@
       clientReviewWeeks: state.clientReviewWeeks,
       tasks: state.tasks,
       discountPercent: state.discountPercent,
-      applyCreditBack: state.applyCreditBack,
-      creditBackDays: state.creditBackDays,
       dpaRetentionDays: state.dpaRetentionDays,
       slaCureDays: state.slaCureDays,
       slaRecurrenceMonths: state.slaRecurrenceMonths,
@@ -616,7 +549,6 @@
     MOD_DISPLAY_NAMES,
     CATEGORY_TO_PRESET,
     isModCategory,
-    isCreditBackMod1Task,
     getModDisplayName,
     computeModuleInvestmentSummaries,
     presetForCategory,
