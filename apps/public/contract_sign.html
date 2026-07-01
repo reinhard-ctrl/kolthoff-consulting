@@ -100,6 +100,7 @@
         const getBillingSchedule = (profile) => window.Financials?.getBillingSchedule(profile) || { milestones: [], milestoneSplit: 'auto', retainerMonthly: 0, retainerMonths: 6, retainerTotal: 0, includeTax: false, finalProjectCostPart: 0 };
         const getModuleInvestmentSummaries = (profile) => window.Financials?.computeModuleInvestmentSummaries(profile) || [];
         const getModDisplayName = (modNum) => window.Financials?.getModDisplayName(modNum) || `MOD ${modNum}`;
+        const contractProfile = (profile) => profile ? { ...profile, applyCreditBack: false } : profile;
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
@@ -411,11 +412,10 @@
 
             // Unified Contract Body Component used across client sign and audit trail views
             const renderContractDetails = (profileObj, financials, selectedTasks, activePMO, activeGov) => {
-                const schedule = getBillingSchedule(profileObj);
-                const moduleSummaries = getModuleInvestmentSummaries(profileObj);
+                const profileWithoutCreditBack = contractProfile(profileObj);
+                const schedule = getBillingSchedule(profileWithoutCreditBack);
+                const moduleSummaries = getModuleInvestmentSummaries(profileWithoutCreditBack);
                 const milestoneSplit = profileObj.milestoneSplit || 'auto';
-                const applyCreditBack = profileObj.applyCreditBack || false;
-                const creditBackDays = profileObj.creditBackDays || 14;
                 const frictionBuffer = profileObj.frictionBuffer || 0;
                 const quoteBaseAmount = financials.finalProjectCostBase + financials.retainerCostTotalBase;
                 const quoteVatAmount = financials.includeTax ? Math.round(quoteBaseAmount * 0.12) : 0;
@@ -435,15 +435,6 @@
                             <span>{financials.includeTax ? 'VAT Sales Invoice Basis' : 'Non-VAT / Exempt Basis'}</span>
                         </div>
                     </div>
-
-                    {applyCreditBack && financials.isCreditBackEligible && (
-                        <div className="mb-6 text-xs leading-relaxed">
-                            <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800">
-                                <div className="font-bold text-emerald-800 uppercase mb-1">Module 1 Credit-Back Program Active</div>
-                                As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700">{formatCurrency(financials.creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700">{creditBackDays} days</strong> of receipt.
-                            </div>
-                        </div>
-                    )}
 
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
@@ -490,7 +481,6 @@
                                             <th className="py-2.5 px-3 text-center">Items</th>
                                             <th className="py-2.5 px-3 text-right">Base</th>
                                             <th className="py-2.5 px-3 text-right">After discount</th>
-                                            {applyCreditBack && financials.isCreditBackEligible && <th className="py-2.5 px-3 text-right">After credit-back</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -500,9 +490,6 @@
                                                 <td className="py-2.5 px-3 text-center font-mono">{row.count}</td>
                                                 <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.baseUndiscounted)}{row.isMonthly ? '/mo' : ''}</td>
                                                 <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.afterDiscount)}{row.isMonthly ? '/mo' : ''}</td>
-                                                {applyCreditBack && financials.isCreditBackEligible && (
-                                                    <td className="py-2.5 px-3 text-right font-mono text-emerald-700">{row.afterCredit !== undefined ? formatCurrency(row.afterCredit) + (row.isMonthly ? '/mo' : '') : '—'}</td>
-                                                )}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -558,12 +545,6 @@
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="font-bold text-slate-600">SOW Net Subtotal:</span>
                                     <span className="font-mono font-bold text-slate-800">{formatCurrency(financials.subtotal)}</span>
-                                </div>
-                            )}
-                            {financials.appliedCredit > 0 && (
-                                <div className="flex justify-between items-center text-sm text-emerald-600 font-medium">
-                                    <span>Module 1 Credit-Back Applied:</span>
-                                    <span className="font-mono">- {formatCurrency(financials.appliedCredit)}</span>
                                 </div>
                             )}
                             {financials.includeTax && (
@@ -635,12 +616,6 @@
                             <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific module addendum.</p>
                             <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
                         </div>
-
-                        {applyCreditBack && financials.isCreditBackEligible && (
-                            <div className="text-[10px] text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200 mt-2 print:border-slate-300">
-                                * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {creditBackDays} calendar days of proposal receipt.
-                            </div>
-                        )}
                     </div>
 
                     {(activePMO || activeGov) && (
@@ -660,7 +635,7 @@
 
             // --- 1. Client Views ---
             if (activeView === 'client_sign' && activeProfileObj) {
-                const financials = getFinancials(activeProfileObj);
+                const financials = getFinancials(contractProfile(activeProfileObj));
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
                 const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
                 const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
@@ -753,7 +728,7 @@
 
             if (activeView === 'audit_trail' && activeLedgerItem && activeLedgerItem.contractData) {
                 const contract = activeLedgerItem.contractData;
-                const financials = getFinancials(activeProfileObj);
+                const financials = getFinancials(contractProfile(activeProfileObj));
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
                 const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
                 const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
