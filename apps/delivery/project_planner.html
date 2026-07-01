@@ -299,7 +299,7 @@
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v8"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v9"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -768,9 +768,15 @@
       const autoSaveTimerRef = useRef(null);
       const isHydratingRef = useRef(true);
       const isDirtyRef = useRef(false);
+      const lastSavedFingerprintRef = useRef('');
       const dismissedDraftsRef = useRef({});
       const importFileRef = useRef(null);
       const lastHydratedProfileIdRef = useRef(null);
+
+      const syncSavedFingerprint = (fp) => {
+        lastSavedFingerprintRef.current = fp;
+        setLastSavedFingerprint(fp);
+      };
 
       // --- CLIENT PROFILES LIST STATE ---
       const [profiles, setProfiles] = useState(DEFAULT_CLIENTS);
@@ -882,7 +888,6 @@
       const [printSla, setPrintSla] = useState(activeProfile.printSla !== undefined ? activeProfile.printSla : true);
       const [printQuote, setPrintQuote] = useState(activeProfile.printQuote !== undefined ? activeProfile.printQuote : true);
       const [printCover, setPrintCover] = useState(activeProfile.printCover !== undefined ? activeProfile.printCover : false);
-      const [printRoadmapGantt, setPrintRoadmapGantt] = useState(activeProfile.printRoadmapGantt !== undefined ? activeProfile.printRoadmapGantt : true);
 
       // --- CHAOS TAX DYNAMIC STATES ---
       const [staffCount, setStaffCount] = useState(activeProfile.staffCount || 15);
@@ -890,7 +895,7 @@
       const [wastedHours, setWastedHours] = useState(activeProfile.wastedHours || 2.0);
 
       const annualOperationalLeakage = useMemo(() => {
-        return staffCount * monthlySalary * 12 * (wastedHours / 8);
+        return H.computeAnnualOperationalLeakage(staffCount, monthlySalary, wastedHours);
       }, [staffCount, monthlySalary, wastedHours]);
 
       const recoveryPotential = useMemo(() => {
@@ -944,62 +949,11 @@
         if (!p) return;
         const profileSwitch = lastHydratedProfileIdRef.current !== activeProfileId;
         if (!profileSwitch && isDirtyRef.current) return;
-        lastHydratedProfileIdRef.current = activeProfileId;
-        setClientCompany(p.clientCompany);
-        setClientRep(p.clientRep);
-        setClientAddress(p.clientAddress);
-        setClientTin(p.clientTin);
-        setQuoteId(p.quoteId);
-        setQuoteDate(p.quoteDate);
-        setQuoteValidity(p.quoteValidity);
-        setStaffCount(p.staffCount !== undefined ? p.staffCount : 15);
-        setMonthlySalary(p.monthlySalary !== undefined ? p.monthlySalary : 25000);
-        setWastedHours(p.wastedHours !== undefined ? p.wastedHours : 2.0);
-        setIncludeTax(p.includeTax);
-        setPreparerTitle(p.preparerTitle || 'Chief Operations Strategist');
-        setTargetStartDate(p.targetStartDate);
-        setProposalObjectives(p.proposalObjectives);
-        setProposalSponsor(p.proposalSponsor);
-        setPreDiagnosticList(p.preDiagnosticList);
-        setFrictionBuffer(p.frictionBuffer);
-        setPrincipalToSeniorDelegate(p.principalToSeniorDelegate);
-        setSeniorToAssociateDelegate(p.seniorToAssociateDelegate);
-        setOverrideTimeline(p.overrideTimeline || '');
-        setWeeklyHours(p.weeklyHours || 16);
-        setClientReviewWeeks(p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1);
-        setTasks(p.tasks || INITIAL_TASKS);
-        setDiscountPercent(p.discountPercent || 0);
-        setApplyCreditBack(p.applyCreditBack !== undefined ? p.applyCreditBack : false);
-        setCreditBackDays(p.creditBackDays !== undefined ? p.creditBackDays : 14);
-        setDpaRetentionDays(p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14);
-        setSlaCureDays(p.slaCureDays !== undefined ? p.slaCureDays : 30);
-        setSlaRecurrenceMonths(p.slaRecurrenceMonths !== undefined ? p.slaRecurrenceMonths : 3);
-        setSubscriptionMonths(p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6);
-        setPrintSow(p.printSow !== undefined ? p.printSow : true);
-        setPrintTimeline(p.printTimeline !== undefined ? p.printTimeline : true);
-        setPrintSla(p.printSla !== undefined ? p.printSla : true);
-        setPrintQuote(p.printQuote !== undefined ? p.printQuote : true);
-        setPrintCover(p.printCover !== undefined ? p.printCover : false);
-        setPrintRoadmapGantt(p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true);
-        setMilestoneSplit(p.milestoneSplit || 'auto');
-        setCustomSplit1(p.customSplit1 !== undefined ? p.customSplit1 : 40);
-        setCustomSplit2(p.customSplit2 !== undefined ? p.customSplit2 : 40);
-        setCustomSplit3(p.customSplit3 !== undefined ? p.customSplit3 : 20);
-        setNdaEffectiveDate(p.ndaEffectiveDate || '');
-        setNdaPurpose(p.ndaPurpose || '');
-        setNdaTerm(p.ndaTerm || '5 (Five) Years');
-        setNdaJurisdiction(p.ndaJurisdiction || 'Taytay, Rizal, Philippines');
-        setInvoiceMilestone(p.invoiceMilestone || 'full');
-        setCustomInvoiceAmount(p.customInvoiceAmount || 120000);
-        setInvoiceNumberSuffix(p.invoiceNumberSuffix || '01');
-        setInvoiceDueDate(p.invoiceDueDate || '');
-        setPrincipalRate(p.principalRate ?? H.DEFAULT_RATES.principalRate);
-        setSeniorRate(p.seniorRate ?? H.DEFAULT_RATES.seniorRate);
-        setAssociateRate(p.associateRate ?? H.DEFAULT_RATES.associateRate);
-        setPartnerRate(p.partnerRate ?? H.DEFAULT_RATES.partnerRate);
-        setActivePresets(H.deriveActivePresetsFromTasks(p.tasks || INITIAL_TASKS));
-        isHydratingRef.current = true;
-        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', {
+        const profileStaffCount = p.staffCount !== undefined ? p.staffCount : 15;
+        const profileMonthlySalary = p.monthlySalary !== undefined ? p.monthlySalary : 25000;
+        const profileWastedHours = p.wastedHours !== undefined ? p.wastedHours : 2.0;
+        const profileLeakage = H.computeAnnualOperationalLeakage(profileStaffCount, profileMonthlySalary, profileWastedHours);
+        const profileState = {
           clientCompany: p.clientCompany, clientRep: p.clientRep, clientAddress: p.clientAddress, clientTin: p.clientTin,
           quoteId: p.quoteId, quoteDate: p.quoteDate, quoteValidity: p.quoteValidity, includeTax: p.includeTax,
           preparerTitle: p.preparerTitle || 'Chief Operations Strategist', targetStartDate: p.targetStartDate,
@@ -1014,19 +968,77 @@
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
           printSla: p.printSla !== undefined ? p.printSla : true, printQuote: p.printQuote !== undefined ? p.printQuote : true,
           printCover: p.printCover !== undefined ? p.printCover : false,
-          printRoadmapGantt: p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true,
           milestoneSplit: p.milestoneSplit || 'auto', customSplit1: p.customSplit1 !== undefined ? p.customSplit1 : 40,
           customSplit2: p.customSplit2 !== undefined ? p.customSplit2 : 40, customSplit3: p.customSplit3 !== undefined ? p.customSplit3 : 20,
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
           ndaJurisdiction: p.ndaJurisdiction || 'Taytay, Rizal, Philippines', invoiceMilestone: p.invoiceMilestone || 'full',
           customInvoiceAmount: p.customInvoiceAmount || 120000, invoiceNumberSuffix: p.invoiceNumberSuffix || '01', invoiceDueDate: p.invoiceDueDate || '',
-          staffCount: p.staffCount !== undefined ? p.staffCount : 15, monthlySalary: p.monthlySalary !== undefined ? p.monthlySalary : 25000,
-          wastedHours: p.wastedHours !== undefined ? p.wastedHours : 2.0,
+          staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate
-        }, p.annualOperationalLeakage ?? 0);
+        };
+        if (!profileSwitch && !isDirtyRef.current) {
+          const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
+          if (p.updatedAt) incomingPayload.updatedAt = p.updatedAt;
+          if (H.payloadFingerprint(incomingPayload) === lastSavedFingerprintRef.current) return;
+        }
+        lastHydratedProfileIdRef.current = activeProfileId;
+        setClientCompany(profileState.clientCompany);
+        setClientRep(profileState.clientRep);
+        setClientAddress(profileState.clientAddress);
+        setClientTin(profileState.clientTin);
+        setQuoteId(profileState.quoteId);
+        setQuoteDate(profileState.quoteDate);
+        setQuoteValidity(profileState.quoteValidity);
+        setStaffCount(profileState.staffCount);
+        setMonthlySalary(profileState.monthlySalary);
+        setWastedHours(profileState.wastedHours);
+        setIncludeTax(profileState.includeTax);
+        setPreparerTitle(profileState.preparerTitle);
+        setTargetStartDate(profileState.targetStartDate);
+        setProposalObjectives(profileState.proposalObjectives);
+        setProposalSponsor(profileState.proposalSponsor);
+        setPreDiagnosticList(profileState.preDiagnosticList);
+        setFrictionBuffer(profileState.frictionBuffer);
+        setPrincipalToSeniorDelegate(profileState.principalToSeniorDelegate);
+        setSeniorToAssociateDelegate(profileState.seniorToAssociateDelegate);
+        setOverrideTimeline(profileState.overrideTimeline);
+        setWeeklyHours(profileState.weeklyHours);
+        setClientReviewWeeks(profileState.clientReviewWeeks);
+        setTasks(profileState.tasks);
+        setDiscountPercent(profileState.discountPercent);
+        setApplyCreditBack(profileState.applyCreditBack);
+        setCreditBackDays(profileState.creditBackDays);
+        setDpaRetentionDays(profileState.dpaRetentionDays);
+        setSlaCureDays(profileState.slaCureDays);
+        setSlaRecurrenceMonths(profileState.slaRecurrenceMonths);
+        setSubscriptionMonths(profileState.subscriptionMonths);
+        setPrintSow(profileState.printSow);
+        setPrintTimeline(profileState.printTimeline);
+        setPrintSla(profileState.printSla);
+        setPrintQuote(profileState.printQuote);
+        setPrintCover(profileState.printCover);
+        setMilestoneSplit(profileState.milestoneSplit);
+        setCustomSplit1(profileState.customSplit1);
+        setCustomSplit2(profileState.customSplit2);
+        setCustomSplit3(profileState.customSplit3);
+        setNdaEffectiveDate(profileState.ndaEffectiveDate);
+        setNdaPurpose(profileState.ndaPurpose);
+        setNdaTerm(profileState.ndaTerm);
+        setNdaJurisdiction(profileState.ndaJurisdiction);
+        setInvoiceMilestone(profileState.invoiceMilestone);
+        setCustomInvoiceAmount(profileState.customInvoiceAmount);
+        setInvoiceNumberSuffix(profileState.invoiceNumberSuffix);
+        setInvoiceDueDate(profileState.invoiceDueDate);
+        setPrincipalRate(profileState.principalRate);
+        setSeniorRate(profileState.seniorRate);
+        setAssociateRate(profileState.associateRate);
+        setPartnerRate(profileState.partnerRate);
+        setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
+        isHydratingRef.current = true;
+        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
         if (p.updatedAt) hydratedPayload.updatedAt = p.updatedAt;
-        setLastSavedFingerprint(H.payloadFingerprint(hydratedPayload));
+        syncSavedFingerprint(H.payloadFingerprint(hydratedPayload));
         setSaveStatus('saved');
         setSaveError(null);
         isDirtyRef.current = false;
@@ -1055,11 +1067,10 @@
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
         clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
-        printRoadmapGantt,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, printRoadmapGantt, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1075,7 +1086,7 @@
           currentProfilePayload.updatedAt = Date.now();
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
           await window.firestoreSetDoc(docRef, currentProfilePayload);
-          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
+          syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           isDirtyRef.current = false;
           H.clearLocalDraft(activeProfileId);
@@ -1098,9 +1109,9 @@
         if (isHydratingRef.current) return;
         const payload = buildCurrentPayload();
         const fp = H.payloadFingerprint(payload);
-        if (fp === lastSavedFingerprint) {
+        if (fp === lastSavedFingerprintRef.current) {
           isDirtyRef.current = false;
-          if (isAuthed) setSaveStatus('saved');
+          if (isAuthed) setSaveStatus((prev) => (prev === 'saving' ? prev : 'saved'));
           return;
         }
         isDirtyRef.current = true;
@@ -1110,7 +1121,7 @@
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = setTimeout(() => { handleSaveToCloud(true); }, 2500);
         return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-      }, [buildCurrentPayload, lastSavedFingerprint, isAuthed, activeProfileId]);
+      }, [buildCurrentPayload, isAuthed, activeProfileId]);
 
       useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -1126,7 +1137,7 @@
       const requestProfileSwitch = (newId) => {
         if (newId === activeProfileId) return;
         const fp = H.payloadFingerprint(buildCurrentPayload());
-        if (fp !== lastSavedFingerprint) {
+        if (fp !== lastSavedFingerprintRef.current) {
           setPendingProfileId(newId);
           setShowUnsavedSwitchConfirm(true);
         } else {
@@ -1159,7 +1170,6 @@
         setCreditBackDays(d.creditBackDays ?? 14); setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
         setSlaRecurrenceMonths(d.slaRecurrenceMonths ?? 3); setSubscriptionMonths(d.subscriptionMonths ?? 6);
         setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintSla(d.printSla ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
-        setPrintRoadmapGantt(d.printRoadmapGantt ?? true);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
@@ -1243,7 +1253,6 @@
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
           discountPercent: 0, applyCreditBack: false, creditBackDays: 14, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
-          printRoadmapGantt: true,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
@@ -1289,7 +1298,7 @@
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
           await window.firestoreSetDoc(docRef, currentProfilePayload);
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, workspaceName: trimmedName, updatedAt: currentProfilePayload.updatedAt } : p));
-          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
+          syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           H.clearLocalDraft(activeProfileId);
         } catch (e) {
@@ -2252,23 +2261,6 @@
                 </fieldset>
               )}
 
-              {isPackage && printTimeline && (
-                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
-                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans font-bold">Roadmap PDF options</legend>
-                  <div className="space-y-2.5" role="group" aria-label="Roadmap PDF options">
-                    {[
-                      { id: 'print-roadmap-gantt', label: 'Include Gantt chart', checked: printRoadmapGantt, onChange: setPrintRoadmapGantt }
-                    ].map((option) => (
-                      <label key={option.id} htmlFor={option.id} className="flex items-center gap-2 text-[11px] text-slate-300 w-full hover:text-white transition-colors cursor-pointer">
-                        <input id={option.id} type="checkbox" className="sr-only" checked={option.checked} onChange={(e) => option.onChange(e.target.checked)} />
-                        <ShieldIndicator active={option.checked} />
-                        <span className="font-sans font-semibold">{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-
               {(isProposal || isPackage) && (
                 <div className="space-y-2 text-left">
                   <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold">Operational Delays Calculator</span>
@@ -2630,27 +2622,6 @@
               ))}
             </div>
             <div className="mb-8 text-left font-sans"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans font-bold">3. What we need from you</h4><div className="text-xs bg-slate-50 p-5 rounded border border-slate-200 whitespace-pre-wrap font-semibold text-slate-800 text-left font-sans">{preDiagnosticList}</div></div>
-            <div className="mb-8 text-left font-sans print-avoid-break">
-              <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4 text-left font-sans font-bold">4. What you receive (summary)</h4>
-              <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[9px] uppercase font-mono text-slate-500">
-                      <th className="py-2 px-3 text-left">Deliverable</th>
-                      <th className="py-2 px-3 text-left">Module</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {tasks.filter(t => t.selected).map(task => (
-                      <tr key={task.id}>
-                        <td className="py-2 px-3 font-semibold text-slate-900">{task.deliverable}</td>
-                        <td className="py-2 px-3 text-slate-600">{H.getModDisplayName(Number(task.category.match(/^MOD (\d)/)?.[1]) || 1)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
             <div className="mb-8 text-left font-sans print-avoid-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
               <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4 text-left font-sans font-bold">Appendix A — Deliverable specifications</h4>
               <div className="space-y-4 font-medium text-left font-sans">
@@ -2681,7 +2652,7 @@
               </div>
             ) : (
               <div className="space-y-6 text-left font-sans font-medium">
-                <div className={`roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans ${!printRoadmapGantt ? 'print-section-hidden' : ''}`}>
+                <div className="roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans">
                   <h4 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left font-sans font-bold font-sans">Implementation Timeline Map (Gantt view)</h4>
                   <div className="roadmap-gantt-grid overflow-x-auto space-y-4 text-left font-sans font-medium">
                     <div className="grid grid-cols-12 gap-2 text-center text-[10px] font-mono font-bold text-slate-500 uppercase pb-2 border-b border-slate-200 text-left font-sans font-bold font-sans">

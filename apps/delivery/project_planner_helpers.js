@@ -422,7 +422,12 @@
     return arr;
   }
 
+  function computeAnnualOperationalLeakage(staffCount, monthlySalary, wastedHours) {
+    return (staffCount ?? 15) * (monthlySalary ?? 25000) * 12 * ((wastedHours ?? 2) / 8);
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
+    const leakage = annualOperationalLeakage ?? computeAnnualOperationalLeakage(state.staffCount, state.monthlySalary, state.wastedHours);
     return {
       id: activeProfileId,
       workspaceName: workspaceName || '',
@@ -458,7 +463,6 @@
       printSla: state.printSla,
       printQuote: state.printQuote,
       printCover: state.printCover,
-      printRoadmapGantt: state.printRoadmapGantt !== false,
       milestoneSplit: state.milestoneSplit,
       customSplit1: state.customSplit1,
       customSplit2: state.customSplit2,
@@ -474,12 +478,11 @@
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
-      annualOperationalLeakage,
+      annualOperationalLeakage: leakage,
       principalRate: state.principalRate,
       seniorRate: state.seniorRate,
       associateRate: state.associateRate,
-      partnerRate: state.partnerRate,
-      updatedAt: Date.now()
+      partnerRate: state.partnerRate
     };
   }
 
@@ -515,6 +518,7 @@
     if (!payload) return '';
     const copy = { ...payload };
     delete copy.updatedAt;
+    copy.annualOperationalLeakage = computeAnnualOperationalLeakage(copy.staffCount, copy.monthlySalary, copy.wastedHours);
     return JSON.stringify(copy);
   }
 
@@ -582,6 +586,7 @@
     getRateForTier,
     computeProjectEconomics,
     computeBillingMilestones,
+    computeAnnualOperationalLeakage,
     buildProfilePayload,
     payloadFingerprint,
     validatePrintReadiness,
