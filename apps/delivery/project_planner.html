@@ -274,6 +274,10 @@
 
   <div id="root"></div>
 
+  <script type="module">
+    import * as Financials from '../../shared/financials.js';
+    window.SharedFinancials = Financials;
+  </script>
   <script src="project_planner_helpers.js?v=20250701-planner-v6"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
@@ -1492,6 +1496,25 @@
         recoveryPotential, staffCount, monthlySalary, wastedHours, formatCurrency
       }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, applyCreditBack, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
 
+      const sharedProfileForBilling = useMemo(() => ({
+        tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths,
+        milestoneSplit, customSplit1, customSplit2, customSplit3,
+        principalRate: hourlyRates.principalRate,
+        seniorRate: hourlyRates.seniorRate,
+        associateRate: hourlyRates.associateRate,
+        partnerRate: hourlyRates.partnerRate,
+      }), [tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates]);
+
+      const sharedBillingSchedule = useMemo(() => {
+        const SF = window.SharedFinancials;
+        return SF?.getBillingSchedule ? SF.getBillingSchedule(sharedProfileForBilling) : null;
+      }, [sharedProfileForBilling]);
+
+      const sharedModuleSummaries = useMemo(() => {
+        const SF = window.SharedFinancials;
+        return SF?.computeModuleInvestmentSummaries ? SF.computeModuleInvestmentSummaries(sharedProfileForBilling) : null;
+      }, [sharedProfileForBilling]);
+
       const {
         isCreditBackEligible,
         creditBackAmount,
@@ -1503,14 +1526,19 @@
         finalProjectCostBase,
         retainerCostBase,
         finalProjectCostPart,
-        retainerCostPart,
+        retainerCostPart: plannerRetainerCostPart,
         retainerCostTotalBaseUndiscounted,
         retainerCostTotalBase,
-        retainerCostTotalPart,
+        retainerCostTotalPart: plannerRetainerCostTotalPart,
         updatedSummary,
-        billingMilestones,
-        moduleInvestmentSummaries
+        billingMilestones: plannerBillingMilestones,
+        moduleInvestmentSummaries: plannerModuleSummaries
       } = pricing;
+
+      const billingMilestones = sharedBillingSchedule?.milestones?.length ? sharedBillingSchedule.milestones : plannerBillingMilestones;
+      const moduleInvestmentSummaries = sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries;
+      const retainerCostPart = sharedBillingSchedule?.retainerMonthly || plannerRetainerCostPart;
+      const retainerCostTotalPart = sharedBillingSchedule?.retainerTotal || plannerRetainerCostTotalPart;
 
       const packageSectionCount = useMemo(() => {
         let count = 0;
