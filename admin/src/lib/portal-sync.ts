@@ -1,9 +1,12 @@
+import { getDoc, setDoc } from 'firebase/firestore';
 import {
   buildDefaultPortalRoadmap,
+  buildProfileLinks,
   getChaosTaxValue,
   getClientDisplayName,
   MODULES,
 } from './engagement-config';
+import { adminDoc } from './firebase';
 
 export interface PortalMetrics {
   annualLeakageIdentified: number;
@@ -42,6 +45,7 @@ export interface WorkbookProfileForPortal {
   quoteId?: string;
   links?: { portalClientId?: string; crmDealId?: string };
   subSaaS?: Array<{ tool?: string; billing?: number; users?: number; reason?: string }>;
+  roles?: Array<{ owner?: string; name?: string; role?: string; title?: string }>;
   customAssets?: Array<{ title?: string; category?: string; link?: string }>;
   chaosTax?: { value?: number };
   annualOperationalLeakage?: number;
@@ -88,6 +92,31 @@ export function mapCustomAssetsToPortalAssets(
   }));
 }
 
+export function mapRolesToActionItems(
+  roles?: WorkbookProfileForPortal['roles'],
+): PortalAsset[] {
+  return (roles || []).map((row, i) => ({
+    id: Date.now() + i + 2000,
+    title: String(row.owner || row.name || 'Team member'),
+    desc: String(row.role || row.title || 'Role pending'),
+    type: 'roster',
+    status: 'pending',
+  }));
+}
+
+export function mergeActionItems(existing: PortalAsset[], incoming: PortalAsset[]): PortalAsset[] {
+  const byTitle = new Map<string, PortalAsset>();
+  existing.forEach((a) => {
+    const key = String(a.title || '').trim().toLowerCase();
+    if (key) byTitle.set(key, a);
+  });
+  incoming.forEach((a) => {
+    const key = String(a.title || '').trim().toLowerCase();
+    if (key) byTitle.set(key, a);
+  });
+  return Array.from(byTitle.values());
+}
+
 export function mergePortalAssets(existing: PortalAsset[], incoming: PortalAsset[]): PortalAsset[] {
   const byTitle = new Map<string, PortalAsset>();
   existing.forEach((a) => {
@@ -104,7 +133,7 @@ export function mergePortalAssets(existing: PortalAsset[], incoming: PortalAsset
 export function buildPortalPatchFromProfile(
   profile: WorkbookProfileForPortal,
   existing?: PortalClientRecord | null,
-  options?: { syncIntakeAssets?: boolean },
+  options?: { syncIntakeAssets?: boolean; syncRoles?: boolean },
 ): Partial<PortalClientRecord> {
   const saasWaste = computeSaasAnnualWaste(profile.subSaaS);
   const patch: Partial<PortalClientRecord> = {
@@ -132,5 +161,39 @@ export function buildPortalPatchFromProfile(
     patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
   }
 
+  if (options?.syncRoles && profile.roles?.length) {
+    const fromRoles = mapRolesToActionItems(profile.roles);
+    patch.actionItems = mergeActionItems(existing?.actionItems || [], fromRoles);
+  }
+
   return patch;
+}
+
+export async function syncProfileToPortalIfExists(
+  profile: WorkbookProfileForPortal,
+  options?: { syncIntakeAssets?: boolean; syncRoles?: boolean },
+): Promise<string | null> {
+  const code = resolvePortalAccessCode(profile);
+  if (!code) return null;
+
+  const portalRef = adminDoc('clients', code);
+  const snap = await getDoc(portalRef);
+  if (!snap.exists()) return null;
+
+  const patch = buildPortalPatchFromProfile(profile, snap.data() as PortalClientRecord, options);
+  await setDoc(portalRef, patch, { merge: true });
+  return code;
+}
+
+export async function writePortalLinkToProfile(
+  profileId: string,
+  portalClientId: string,
+  profile?: WorkbookProfileForPortal,
+): Promise<void> {
+  const links = buildProfileLinks({
+    id: profileId,
+    quoteId: profile?.quoteId,
+    links: { ...(profile?.links || {}), portalClientId },
+  });
+  await setDoc(adminDoc('workbook_profiles', profileId), { links }, { merge: true });
 }

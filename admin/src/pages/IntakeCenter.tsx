@@ -227,6 +227,7 @@ export default function IntakeCenter() {
         if (portalSnap.exists()) {
           const portalPatch = buildPortalPatchFromProfile(updatedProfile, portalSnap.data() as PortalClientRecord, {
             syncIntakeAssets: target === 'subSaaS' || target === 'customAssets',
+            syncRoles: target === 'roles',
           });
           await setDoc(portalRef, portalPatch, { merge: true });
         }
