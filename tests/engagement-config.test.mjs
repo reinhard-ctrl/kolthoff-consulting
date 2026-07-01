@@ -80,8 +80,6 @@ const payload = H.buildProfilePayload('test-id', 'Workspace', {
   clientReviewWeeks: 1,
   tasks: [],
   discountPercent: 0,
-  applyCreditBack: false,
-  creditBackDays: 14,
   dpaRetentionDays: 14,
   slaCureDays: 30,
   slaRecurrenceMonths: 3,

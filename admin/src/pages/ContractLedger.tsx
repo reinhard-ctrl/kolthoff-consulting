@@ -21,7 +21,6 @@ interface WorkbookProfile {
   frictionBuffer?: number;
   discountPercent?: number;
   includeTax?: boolean;
-  applyCreditBack?: boolean;
   subscriptionMonths?: number;
   milestoneSplit?: string;
   customSplit1?: number;

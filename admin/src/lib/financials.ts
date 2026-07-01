@@ -41,7 +41,6 @@ interface Profile {
   frictionBuffer?: number;
   discountPercent?: number;
   includeTax?: boolean;
-  applyCreditBack?: boolean;
   subscriptionMonths?: number;
   principalRate?: number;
   seniorRate?: number;
@@ -71,9 +70,9 @@ export interface BillingSchedule {
 
 export function getFinancials(profile: Profile | null | undefined) {
   const empty = {
-    total: 0, subtotal: 0, appliedCredit: 0, tax: 0, discountPercent: 0,
+    total: 0, subtotal: 0, tax: 0, discountPercent: 0,
     includeTax: false, subscriptionMonths: 6, standardSubtotal: 0, discountAmount: 0,
-    creditBackAmount: 0, isCreditBackEligible: false, finalProjectCostBase: 0, retainerCostTotalBase: 0,
+    finalProjectCostBase: 0, retainerCostTotalBase: 0,
   };
   if (!profile?.tasks) return empty;
 
@@ -81,7 +80,6 @@ export function getFinancials(profile: Profile | null | undefined) {
   const frictionBuffer = profile.frictionBuffer || 0;
   const discountPercent = profile.discountPercent || 0;
   const includeTax = profile.includeTax || false;
-  const applyCreditBack = profile.applyCreditBack || false;
   const subscriptionMonths = profile.subscriptionMonths ?? 6;
   const bufferMultiplier = 1 + frictionBuffer / 100;
 
@@ -92,20 +90,9 @@ export function getFinancials(profile: Profile | null | undefined) {
   const retainerCostBaseUndiscounted = Math.round(
     tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0)
   );
-  const mod1CostBase = Math.round(
-    tasks.filter((t) => t.selected && t.category?.startsWith('MOD 1') && t.id !== 'm1-06').reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
-  );
-
-  const activeDiag = tasks.some((t) => t.selected && t.category?.startsWith('MOD 1'));
-  const activeSOP = tasks.some((t) => t.selected && t.category?.startsWith('MOD 2'));
-  const activePMO = tasks.some((t) => t.selected && t.category?.startsWith('MOD 3'));
-  const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
-
-  const creditBackAmount = isCreditBackEligible ? Math.round(mod1CostBase * (1 - discountPercent / 100)) : 0;
-  const appliedCreditBackAmount = applyCreditBack && isCreditBackEligible ? creditBackAmount : 0;
 
   const projectCostBase = Math.round(projectCostBaseUndiscounted * (1 - discountPercent / 100));
-  const finalProjectCostBase = Math.max(0, projectCostBase - appliedCreditBackAmount);
+  const finalProjectCostBase = projectCostBase;
   const retainerCostBase = Math.round(retainerCostBaseUndiscounted * (1 - discountPercent / 100));
   const retainerCostTotalBaseUndiscounted = Math.round(retainerCostBaseUndiscounted * subscriptionMonths);
   const retainerCostTotalBase = Math.round(retainerCostBase * subscriptionMonths);
@@ -117,9 +104,6 @@ export function getFinancials(profile: Profile | null | undefined) {
     total: subtotal + tax,
     subtotal,
     tax,
-    appliedCredit: appliedCreditBackAmount,
-    creditBackAmount,
-    isCreditBackEligible,
     discountPercent,
     includeTax,
     subscriptionMonths,
@@ -138,8 +122,6 @@ export function computeBillingMilestones(ctx: {
   customSplit1?: number;
   customSplit2?: number;
   customSplit3?: number;
-  applyCreditBack?: boolean;
-  isCreditBackEligible?: boolean;
   getModNet: (modNum: number) => number;
   includeTax?: boolean;
 }): BillingMilestone[] {
@@ -149,8 +131,6 @@ export function computeBillingMilestones(ctx: {
     customSplit1 = 0,
     customSplit2 = 0,
     customSplit3 = 0,
-    applyCreditBack = false,
-    isCreditBackEligible = false,
     getModNet,
     includeTax = false,
   } = ctx;
@@ -172,32 +152,16 @@ export function computeBillingMilestones(ctx: {
       });
     }
     if (m2Net > 0) {
-      let m2Billed = m2Net;
-      let creditNotice = '';
-      if (applyCreditBack && isCreditBackEligible && m1Net > 0) {
-        m2Billed = Math.max(0, m2Net - m1Net);
-        creditNotice = ` (Pre-applied Module 1 Credit-Back savings: -${formatCurrency(Math.round(m1Net * taxMultiplier))})`;
-      }
       arr.push({
-        label: `Gate 2: Module 2 Commitment — How Your Business Runs${creditNotice}`,
-        amount: Math.round(m2Billed * taxMultiplier),
+        label: 'Gate 2: Module 2 Commitment — How Your Business Runs',
+        amount: Math.round(m2Net * taxMultiplier),
         desc: 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.',
       });
     }
     if (m3Net > 0) {
-      let m3Billed = m3Net;
-      let creditNotice = '';
-      if (applyCreditBack && isCreditBackEligible && m1Net > 0 && m2Net === 0) {
-        m3Billed = Math.max(0, m3Net - m1Net);
-        creditNotice = ` (Pre-applied Module 1 Credit-Back savings: -${formatCurrency(Math.round(m1Net * taxMultiplier))})`;
-      } else if (applyCreditBack && isCreditBackEligible && m1Net > m2Net && m2Net > 0) {
-        const leftoverCredit = m1Net - m2Net;
-        m3Billed = Math.max(0, m3Net - leftoverCredit);
-        creditNotice = ` (Pre-applied remaining Module 1 Credit balance: -${formatCurrency(Math.round(leftoverCredit * taxMultiplier))})`;
-      }
       arr.push({
-        label: `Gate 3: Module 3 Commitment — Your Team Workspace${creditNotice}`,
-        amount: Math.round(m3Billed * taxMultiplier),
+        label: 'Gate 3: Module 3 Commitment — Your Team Workspace',
+        amount: Math.round(m3Net * taxMultiplier),
         desc: 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.',
       });
     }
@@ -268,8 +232,6 @@ export function getBillingSchedule(profile: Profile | null | undefined): Billing
       customSplit1: profile.customSplit1,
       customSplit2: profile.customSplit2,
       customSplit3: profile.customSplit3,
-      applyCreditBack: profile.applyCreditBack,
-      isCreditBackEligible: fin.isCreditBackEligible,
       getModNet,
       includeTax,
     }),

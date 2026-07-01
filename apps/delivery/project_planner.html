@@ -300,7 +300,7 @@
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v10"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v11"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -580,8 +580,6 @@
         weeklyHours: 16,
         clientReviewWeeks: 1, 
         discountPercent: 5,
-        applyCreditBack: true,
-        creditBackDays: 14,
         dpaRetentionDays: 14,
         slaCureDays: 30,
         slaRecurrenceMonths: 3,
@@ -630,8 +628,6 @@
         weeklyHours: 20,
         clientReviewWeeks: 2,
         discountPercent: 10,
-        applyCreditBack: false,
-        creditBackDays: 14,
         dpaRetentionDays: 14,
         slaCureDays: 30,
         slaRecurrenceMonths: 3,
@@ -911,9 +907,6 @@
       const [customSplit2, setCustomSplit2] = useState(activeProfile.customSplit2 || 40);
       const [customSplit3, setCustomSplit3] = useState(activeProfile.customSplit3 || 20);
 
-      const [applyCreditBack, setApplyCreditBack] = useState(activeProfile.applyCreditBack || false);
-      const [creditBackDays, setCreditBackDays] = useState(activeProfile.creditBackDays || 14);
-
       const [ndaEffectiveDate, setNdaEffectiveDate] = useState(activeProfile.ndaEffectiveDate || '');
       const [ndaPurpose, setNdaPurpose] = useState(activeProfile.ndaPurpose || '');
       const [ndaTerm, setNdaTerm] = useState(activeProfile.ndaTerm || '5 (Five) Years');
@@ -963,7 +956,6 @@
           seniorToAssociateDelegate: p.seniorToAssociateDelegate, overrideTimeline: p.overrideTimeline || '',
           weeklyHours: p.weeklyHours || 16, clientReviewWeeks: p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1,
           tasks: p.tasks || INITIAL_TASKS, discountPercent: p.discountPercent || 0,
-          applyCreditBack: p.applyCreditBack !== undefined ? p.applyCreditBack : false, creditBackDays: p.creditBackDays !== undefined ? p.creditBackDays : 14,
           dpaRetentionDays: p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14, slaCureDays: p.slaCureDays !== undefined ? p.slaCureDays : 30,
           slaRecurrenceMonths: p.slaRecurrenceMonths !== undefined ? p.slaRecurrenceMonths : 3, subscriptionMonths: p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6,
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
@@ -1008,8 +1000,6 @@
         setClientReviewWeeks(profileState.clientReviewWeeks);
         setTasks(profileState.tasks);
         setDiscountPercent(profileState.discountPercent);
-        setApplyCreditBack(profileState.applyCreditBack);
-        setCreditBackDays(profileState.creditBackDays);
         setDpaRetentionDays(profileState.dpaRetentionDays);
         setSlaCureDays(profileState.slaCureDays);
         setSlaRecurrenceMonths(profileState.slaRecurrenceMonths);
@@ -1066,12 +1056,12 @@
         clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity,
         includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList,
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
-        clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays,
+        clientReviewWeeks, tasks, discountPercent, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1167,8 +1157,8 @@
         setProposalSponsor(d.proposalSponsor); setPreDiagnosticList(d.preDiagnosticList); setFrictionBuffer(d.frictionBuffer);
         setPrincipalToSeniorDelegate(d.principalToSeniorDelegate); setSeniorToAssociateDelegate(d.seniorToAssociateDelegate);
         setOverrideTimeline(d.overrideTimeline || ''); setWeeklyHours(d.weeklyHours || 16); setClientReviewWeeks(d.clientReviewWeeks ?? 1);
-        setTasks(d.tasks || INITIAL_TASKS); setDiscountPercent(d.discountPercent || 0); setApplyCreditBack(d.applyCreditBack ?? false);
-        setCreditBackDays(d.creditBackDays ?? 14); setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
+        setTasks(d.tasks || INITIAL_TASKS); setDiscountPercent(d.discountPercent || 0);
+        setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
         setSlaRecurrenceMonths(d.slaRecurrenceMonths ?? 3); setSubscriptionMonths(d.subscriptionMonths ?? 6);
         setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintSla(d.printSla ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
@@ -1257,7 +1247,7 @@
           targetStartDate: 'TBD', proposalObjectives: 'Deploy the Core Workspace application, digitize approval workflows, and establish managed IT infrastructure for your business.',
           proposalSponsor: 'Representative (Director)', preDiagnosticList: "• Standard active staff directory\n• Samples of current invoices and transaction flows",
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
-          discountPercent: 0, applyCreditBack: false, creditBackDays: 14, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
+          discountPercent: 0, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
@@ -1533,19 +1523,19 @@
 
       const pricing = useMemo(() => H.computeProjectEconomics({
         tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
-        applyCreditBack, milestoneSplit, customSplit1, customSplit2, customSplit3,
+        milestoneSplit, customSplit1, customSplit2, customSplit3,
         rates: hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate,
         recoveryPotential, staffCount, monthlySalary, wastedHours, formatCurrency
-      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, applyCreditBack, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
+      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
 
       const sharedProfileForBilling = useMemo(() => ({
-        tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths,
+        tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
         milestoneSplit, customSplit1, customSplit2, customSplit3,
         principalRate: hourlyRates.principalRate,
         seniorRate: hourlyRates.seniorRate,
         associateRate: hourlyRates.associateRate,
         partnerRate: hourlyRates.partnerRate,
-      }), [tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates]);
+      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates]);
 
       const sharedBillingSchedule = useMemo(() => {
         const SF = window.SharedFinancials;
@@ -1558,12 +1548,8 @@
       }, [sharedProfileForBilling]);
 
       const {
-        isCreditBackEligible,
-        creditBackAmount,
-        appliedCreditBackAmount,
         projectCostBaseUndiscounted,
         retainerCostBaseUndiscounted,
-        mod1CostBase,
         projectCostBase,
         finalProjectCostBase,
         retainerCostBase,
@@ -1691,9 +1677,6 @@
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">Target timeline</span>
               <span className="text-sm font-bold text-slate-900">{displayTimeline}</span>
-              {isCreditBackEligible && (
-                <span className="text-[10px] text-emerald-700 block mt-2">Module 1 credit-back of {formatCurrency(creditBackAmount)} available when implementation modules are approved within {creditBackDays} days.</span>
-              )}
             </div>
           </div>
         </div>
@@ -1736,7 +1719,6 @@
                     <th className="py-2.5 px-3 text-center">Items</th>
                     <th className="py-2.5 px-3 text-right">Base</th>
                     <th className="py-2.5 px-3 text-right">After discount</th>
-                    {applyCreditBack && isCreditBackEligible && <th className="py-2.5 px-3 text-right">After credit-back</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1746,9 +1728,6 @@
                       <td className="py-2.5 px-3 text-center font-mono">{row.count}</td>
                       <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.baseUndiscounted)}{row.isMonthly ? '/mo' : ''}</td>
                       <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.afterDiscount)}{row.isMonthly ? '/mo' : ''}</td>
-                      {applyCreditBack && isCreditBackEligible && (
-                        <td className="py-2.5 px-3 text-right font-mono text-emerald-700">{row.afterCredit !== undefined ? formatCurrency(row.afterCredit) + (row.isMonthly ? '/mo' : '') : '—'}</td>
-                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -1777,7 +1756,7 @@
       const invoiceLineItemDescription = useMemo(() => {
         const taxMultiplier = includeTax ? 1.12 : 1.0;
         if (invoiceMilestone === 'full') {
-          return `100% Full Payment of Professional Fees under Scope of Work SOW-${quoteId}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''}${appliedCreditBackAmount > 0 ? ` (with ${formatCurrency(appliedCreditBackAmount)} Module 1 Credit-Back pre-applied)` : ''} (Total Value: ${formatCurrency(Math.round((finalProjectCostBase + retainerCostTotalBase) * taxMultiplier))})`;
+          return `100% Full Payment of Professional Fees under Scope of Work SOW-${quoteId}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} (Total Value: ${formatCurrency(Math.round((finalProjectCostBase + retainerCostTotalBase) * taxMultiplier))})`;
         }
         if (invoiceMilestone.startsWith('milestone_')) {
           const idx = parseInt(invoiceMilestone.split('_')[1], 10);
@@ -1787,7 +1766,7 @@
           return `MOD 4 Care Plan for ${subscriptionMonths} Months${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total subscription commitment)`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, appliedCreditBackAmount, subscriptionMonths]);
+      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
@@ -1996,18 +1975,6 @@
                 <span>{isInvoice ? "Subtotal Ex-Tax:" : "SOW Net Subtotal:"}</span>
                 <span className="font-bold text-slate-900 font-mono font-semibold">
                   {formatCurrency(isInvoice ? computedInvoiceCost.baseAmount : (finalProjectCostBase + retainerCostTotalBase))}
-                </span>
-              </div>
-            )}
-
-            {appliedCreditBackAmount > 0 && !isInvoice && (
-              <div className="flex justify-between items-center text-xs text-emerald-600 font-mono font-bold bg-emerald-50/50 p-1.5 rounded border border-emerald-200/50">
-                <span className="flex items-center gap-1 font-sans font-bold">
-                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Module 1 Credit-Back:
-                </span>
-                <span className="font-bold font-mono font-sans">
-                  - {formatCurrency(appliedCreditBackAmount)}
                 </span>
               </div>
             )}
@@ -2367,32 +2334,6 @@
                     <span className="text-[9px] text-slate-500 block mt-1 text-left font-sans">Preview: {quoteId.replace('KC', 'INV')}{invoiceNumberSuffix || '01'}</span>
                   </div>
                 </fieldset>
-              )}
-
-              {(isQuoteOrInvoice || isPackage) && isCreditBackEligible && (
-                <div className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left font-sans font-medium">
-                  <div className="flex items-center justify-between text-left">
-                    <div>
-                      <span className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold block text-left">Optional Credit-Back</span>
-                      <span className="text-[9px] text-slate-400 block text-left font-sans">Apply Module 1 leak scan reimbursement</span>
-                    </div>
-                    <button aria-pressed={applyCreditBack} onClick={() => setApplyCreditBack(!applyCreditBack)} className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all duration-300 ${applyCreditBack ? 'bg-brandTeal-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}>
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ${applyCreditBack ? 'translate-x-4' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                  {applyCreditBack && (
-                    <div className="space-y-2 pt-2 border-t border-brandNavy-800 animate-fade-in text-[11px] text-left font-sans">
-                      <div className="flex justify-between text-xs font-mono text-left font-sans font-bold">
-                        <span className="text-slate-400 text-left">Total Deducted:</span>
-                        <span className="text-brandTeal-300 font-bold">{formatCurrency(creditBackAmount)}</span>
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold font-sans">Incentive Window (Days)</label>
-                        <input type="number" value={creditBackDays} onChange={(e) => setCreditBackDays(Number(e.target.value))} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 font-mono focus:outline-none" min="1" max="90" />
-                      </div>
-                    </div>
-                  )}
-                </div>
               )}
 
               {/* Dynamic Compliance & SLA Configuration Controls */}
@@ -2850,29 +2791,6 @@
 
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
-            {isCreditBackEligible && !isInv && (
-              <div className="mb-6 rounded-xl font-sans text-xs leading-relaxed transition-all text-left font-sans font-semibold">
-                {applyCreditBack ? (
-                  <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800 text-left font-sans">
-                    <div className="flex items-center gap-2 font-bold text-emerald-800 uppercase mb-1 text-left font-sans font-sans">
-                      <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      <span>Module 1 Credit-Back Program Active</span>
-                    </div>
-                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
-                  </div>
-                ) : (
-                  <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800 text-left font-sans font-semibold print-avoid-break">
-                    <div className="flex items-center gap-2 font-bold text-amber-800 uppercase mb-1 text-left font-sans">
-                      <svg className="w-5 h-5 text-amber-600 shrink-0 no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                      <span>Module 1 Credit-Back Available</span>
-                    </div>
-                    This proposal includes Module 1 (Business Leak Scan) plus implementation modules. Approve within <strong className="text-amber-800 font-bold font-sans">{creditBackDays} days</strong> to receive a <strong className="text-amber-800 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong> credit against implementation fees — making your leak scan risk-free when you proceed.
-                    <span className="no-print block mt-2 text-[10px] text-amber-700">Enable credit-back in Package settings before printing the final quote.</span>
-                  </div>
-                )}
-              </div>
-            )}
-
             {renderModuleInvestmentSummary()}
             {renderDeliverablesTable(isInv)}
             {renderTaxBreakoutTable(isInv)}
@@ -2907,12 +2825,6 @@
                   6. <strong>Dispute Resolution & Jurisdiction:</strong> This agreement is governed by and construed in accordance with the laws of the Republic of the Philippines. Any litigation, dispute, or enforcement arising under this contract shall fall exclusively under the courts of Taytay, Rizal, or Metro Manila.
                 </p>
               </div>
-              
-              {applyCreditBack && isCreditBackEligible && (
-                <p className="text-[9px] text-emerald-600 bg-emerald-50/50 p-2.5 rounded border border-emerald-200/50 mt-2 text-left font-sans">
-                  * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {creditBackDays} calendar days of proposal receipt.
-                </p>
-              )}
             </div>
 
             {renderSignaturesBlock(isInv ? "Received & Authorized by:" : null, isInv ? "Prepared & Submitted by:" : "Prepared & Submitted by:")}
@@ -3247,12 +3159,6 @@
                       </div>
                       <div className="py-4 border-b border-brandNavy-700 space-y-1.5 text-xs font-sans font-semibold text-left font-sans font-semibold">
                         <div className="flex justify-between text-left"><span>SOW Subtotal:</span><span className="font-mono text-white text-right">{formatCurrency(projectCostBase + retainerCostTotalBase)}</span></div>
-                        {applyCreditBack && isCreditBackEligible && (
-                          <div className="flex justify-between text-emerald-400 text-left">
-                            <span>Module 1 Credit-Back:</span>
-                            <span className="font-mono text-right">- {formatCurrency(appliedCreditBackAmount)}</span>
-                          </div>
-                        )}
                         {includeTax && <div className="flex justify-between text-slate-400 text-left font-sans font-semibold"><span>PH VAT (12%):</span><span className="font-mono text-right font-sans">{formatCurrency(updatedSummary.taxValue)}</span></div>}
                         <div className="flex justify-between font-bold text-slate-100 pt-1.5 text-left font-sans font-bold"><span>Project Total Quote:</span><span className="text-brandTeal-300 font-mono font-bold text-right font-sans">{formatCurrency(updatedSummary.totalCost)}</span></div>
                       </div>
