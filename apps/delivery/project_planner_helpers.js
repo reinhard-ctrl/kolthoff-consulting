@@ -31,6 +31,106 @@
     return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
   }
 
+  /** M1-06 optional briefing is excluded from Module 1 credit-back base. */
+  function isCreditBackMod1Task(task) {
+    return task.selected && isModCategory(task.category, 1) && task.id !== 'm1-06';
+  }
+
+  const MOD_DISPLAY_NAMES = {
+    1: 'Business Leak Scan',
+    2: 'How Your Business Runs',
+    3: 'Your Team Workspace',
+    4: 'Care Plan'
+  };
+
+  function getModDisplayName(modNum) {
+    return MOD_DISPLAY_NAMES[modNum] || `Module ${modNum}`;
+  }
+
+  function computeModuleInvestmentSummaries(ctx) {
+    const {
+      tasks,
+      frictionBuffer,
+      discountPercent,
+      applyCreditBack,
+      isCreditBackEligible,
+      mod1CostBase,
+      rates
+    } = ctx;
+    const bufferMultiplier = 1 + frictionBuffer / 100;
+    const discFactor = 1 - discountPercent / 100;
+    const getRate = (tier) => getRateForTier(tier, rates);
+
+    const summaries = [];
+    [1, 2, 3].forEach((modNum) => {
+      const modTasks = tasks.filter(
+        (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, modNum)
+      );
+      if (modTasks.length === 0) return;
+      const baseUndiscounted = Math.round(
+        modTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * bufferMultiplier
+      );
+      const afterDiscount = Math.round(baseUndiscounted * discFactor);
+      summaries.push({
+        modNum,
+        label: getModDisplayName(modNum),
+        count: modTasks.length,
+        baseUndiscounted,
+        afterDiscount
+      });
+    });
+
+    const mod4RetainerTasks = tasks.filter((t) => t.selected && t.isMonthlyRetainer && isModCategory(t.category, 4));
+    const mod4AuditTasks = tasks.filter(
+      (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, 4)
+    );
+    if (mod4RetainerTasks.length > 0) {
+      const monthlyBase = Math.round(
+        mod4RetainerTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * discFactor
+      );
+      summaries.push({
+        modNum: 4,
+        label: getModDisplayName(4),
+        count: mod4RetainerTasks.length,
+        baseUndiscounted: monthlyBase,
+        afterDiscount: monthlyBase,
+        isMonthly: true
+      });
+    }
+    if (mod4AuditTasks.length > 0) {
+      const auditBase = Math.round(
+        mod4AuditTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * bufferMultiplier * discFactor
+      );
+      summaries.push({
+        modNum: '4a',
+        label: `${getModDisplayName(4)} — System Health Check (annual)`,
+        count: mod4AuditTasks.length,
+        baseUndiscounted: auditBase,
+        afterDiscount: auditBase,
+        isAnnual: true
+      });
+    }
+
+    if (applyCreditBack && isCreditBackEligible && mod1CostBase > 0) {
+      let remainingCredit = Math.round(mod1CostBase * discFactor);
+      const m1 = summaries.find((s) => s.modNum === 1);
+      if (m1) m1.afterCredit = 0;
+      const m2 = summaries.find((s) => s.modNum === 2);
+      if (m2 && remainingCredit > 0) {
+        const applied = Math.min(remainingCredit, m2.afterDiscount);
+        m2.afterCredit = m2.afterDiscount - applied;
+        remainingCredit -= applied;
+      }
+      const m3 = summaries.find((s) => s.modNum === 3);
+      if (m3 && remainingCredit > 0) {
+        const applied = Math.min(remainingCredit, m3.afterDiscount);
+        m3.afterCredit = m3.afterDiscount - applied;
+      }
+    }
+
+    return summaries;
+  }
+
   function presetForCategory(category) {
     if (CATEGORY_TO_PRESET[category]) return CATEGORY_TO_PRESET[category];
     const match = typeof category === 'string' && category.match(/^MOD (\d)/);
@@ -108,7 +208,7 @@
     );
 
     const mod1CostBase = Math.round(
-      tasks.filter((t) => t.selected && t.category.startsWith('MOD 1')).reduce(
+      tasks.filter(isCreditBackMod1Task).reduce(
         (acc, curr) => acc + (curr.estHours * getRate(curr.tier)), 0
       ) * bufferMultiplier
     );
@@ -199,6 +299,16 @@
       formatCurrency
     });
 
+    const moduleInvestmentSummaries = computeModuleInvestmentSummaries({
+      tasks,
+      frictionBuffer,
+      discountPercent,
+      applyCreditBack,
+      isCreditBackEligible,
+      mod1CostBase,
+      rates
+    });
+
     return {
       activeDiag,
       activeSOP,
@@ -219,7 +329,8 @@
       retainerCostTotalPart,
       annualOperationalLeakage,
       updatedSummary,
-      billingMilestones
+      billingMilestones,
+      moduleInvestmentSummaries
     };
   }
 
@@ -346,6 +457,7 @@
       printTimeline: state.printTimeline,
       printSla: state.printSla,
       printQuote: state.printQuote,
+      printCover: state.printCover,
       milestoneSplit: state.milestoneSplit,
       customSplit1: state.customSplit1,
       customSplit2: state.customSplit2,
@@ -385,9 +497,10 @@
     }
 
     if (view === 'package') {
-      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || (ctx.printSla && (ctx.activePMO || ctx.activeGov));
+      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || (ctx.printSla && (ctx.activePMO || ctx.activeGov));
       if (!hasSection) issues.push('No package print sections are selected.');
       if (ctx.tasks.filter((t) => t.selected).length === 0) issues.push('No modules/tasks are selected for the SOW.');
+      if (!ctx.clientAddress?.trim()) warnings.push('Client registered address is empty.');
     }
 
     if (view === 'nda') {
@@ -456,8 +569,12 @@
   global.PlannerHelpers = {
     DEFAULT_RATES,
     MOD_CATEGORIES,
+    MOD_DISPLAY_NAMES,
     CATEGORY_TO_PRESET,
     isModCategory,
+    isCreditBackMod1Task,
+    getModDisplayName,
+    computeModuleInvestmentSummaries,
     presetForCategory,
     getWorkspaceLabel,
     deriveActivePresetsFromTasks,

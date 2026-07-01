@@ -50,7 +50,7 @@ export function getFinancials(profile) {
     tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0)
   );
   const mod1CostBase = Math.round(
-    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
+    tasks.filter((t) => t.selected && t.category?.startsWith('MOD 1') && t.id !== 'm1-06').reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
   );
 
   const activeDiag = tasks.some((t) => t.selected && t.category?.startsWith('MOD 1'));
@@ -92,6 +92,6 @@ export function getFinancials(profile) {
 export const DEFAULT_TASK_CATALOG = [
   { id: 't1', category: 'MOD 1 - Business Leak Scan', name: 'Daily Work Friction Study', estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: false },
   { id: 't2', category: 'MOD 2 - How Your Business Runs', name: 'Customer Order Playbook', estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: false },
-  { id: 't3', category: 'MOD 3 - Your Team Workspace', name: 'Company Workspace Go-Live', estHours: 10, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't3', category: 'MOD 3 - Your Team Workspace', name: 'Workspace Setup & Branding', estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: false },
   { id: 't4', category: 'MOD 4 - Care Plan', name: 'Platform Hosting & User Care', estHours: 4, tier: 'partner', selected: false, isMonthlyRetainer: true },
 ];

@@ -866,10 +866,10 @@
 
             const generatePitch = (modId) => {
                 const pitches = {
-                    'MOD 1': `To identify the root causes of the ${formatCurrency(totalAnnualWaste)} annual leakage, we recommend beginning with Module 1: Workflow Diagnosis. This will allow us to audit your software subscriptions and pinpoint exact bottlenecks before scaling.`,
-                    'MOD 2': `To systematically recover the ${formatCurrency(totalAnnualWaste)} lost annually to manual delays and license waste, we recommend immediate progression to Module 2: Process Architecture. This transition resolves structural root causes by standardizing accountability (RACI) and shielding handovers with SOP Vaults. Advanced progression can be initialized on our portal at www.kolthoff-consulting.com.`,
-                    'MOD 3': `With core processes defined, the next step to prevent your projected growth losses is Module 3: Workspace Automation. We will build integrated tracking boards to eliminate manual follow-ups, automate your quoting engine, and capture absolute workflow transparency. See full blueprints at www.kolthoff-consulting.com.`,
-                    'MOD 4': `To maintain operational integrity and prevent process decay, we recommend Module 4: Ongoing Support. We will provide fractional COO oversight and weekly strategy huddles to keep the team aligned. Activate security audits via www.kolthoff-consulting.com.`
+                    'MOD 1': `To identify the root causes of the ${formatCurrency(totalAnnualWaste)} annual leakage, we recommend beginning with Module 1: Business Leak Scan. This will audit your software subscriptions and pinpoint exact bottlenecks before you invest in tools or training.`,
+                    'MOD 2': `To recover the ${formatCurrency(totalAnnualWaste)} lost annually to manual delays, we recommend Module 2: How Your Business Runs — clear order playbooks, roles charts, and an employee handbook your team can follow.`,
+                    'MOD 3': `With core processes defined, the next step is Module 3: Your Team Workspace. We launch your workspace, digitize approval forms, and train your team for daily use. See full blueprints at www.kolthoff-consulting.com.`,
+                    'MOD 4': `To maintain operational integrity after go-live, we recommend Module 4: Care Plan — hosting, bi-weekly check-ins, and semi-annual health checks. Learn more at www.kolthoff-consulting.com.`
                 };
                 setSynthesis(prev => ({ ...prev, nextModuleId: modId, customPitch: pitches[modId] || '' }));
             };
@@ -1652,7 +1652,7 @@
                                     <div className="grid grid-cols-3 gap-4 text-xs font-sans mt-3">
                                         <div className="p-3 border border-slate-200 bg-white rounded-lg flex flex-col justify-between">
                                             <div>
-                                                <strong className="text-slate-900 block font-bold mb-1 uppercase tracking-wider text-[10px]">Module 2: Process Architecture</strong>
+                                                <strong className="text-slate-900 block font-bold mb-1 uppercase tracking-wider text-[10px]">Module 2: How Your Business Runs</strong>
                                                 <p className="text-slate-600 text-[10px] leading-relaxed">Map fixed RACI boundaries and deploy secure SOP Vaults around high-risk handovers.</p>
                                             </div>
                                         </div>
