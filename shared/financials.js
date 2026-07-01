@@ -1,5 +1,20 @@
 /** Shared SOW financial pipeline — used by project_planner and contract_ledger */
 
+export const MOD_DISPLAY_NAMES = {
+  1: 'Business Leak Scan',
+  2: 'How Your Business Runs',
+  3: 'Your Team Workspace',
+  4: 'Care Plan',
+};
+
+export function getModDisplayName(modNum) {
+  return MOD_DISPLAY_NAMES[modNum] || `Module ${modNum}`;
+}
+
+export function isModCategory(category, modNum) {
+  return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
+}
+
 export const RATE_TIERS = {
   principal: 3500,
   senior: 2500,
@@ -227,6 +242,74 @@ export function getBillingSchedule(profile) {
     retainerTotal: Math.round(fin.retainerCostTotalBase * taxMultiplier),
     includeTax,
   };
+}
+
+export function computeModuleInvestmentSummaries(profile) {
+  if (!profile?.tasks) return [];
+
+  const fin = getFinancials(profile);
+  const tasks = profile.tasks;
+  const frictionBuffer = profile.frictionBuffer || 0;
+  const discountPercent = profile.discountPercent || 0;
+  const applyCreditBack = profile.applyCreditBack || false;
+  const bufferMultiplier = 1 + frictionBuffer / 100;
+  const discFactor = 1 - discountPercent / 100;
+  const rateFor = (tier) => getProfileRate(profile, tier || 'associate');
+
+  const mod1CostBase = Math.round(
+    tasks.filter((t) => t.selected && isModCategory(t.category, 1) && t.id !== 'm1-06')
+      .reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
+  );
+
+  const summaries = [];
+  [1, 2, 3].forEach((modNum) => {
+    const modTasks = tasks.filter((t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, modNum));
+    if (modTasks.length === 0) return;
+    const baseUndiscounted = Math.round(
+      modTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
+    );
+    summaries.push({
+      modNum,
+      label: getModDisplayName(modNum),
+      count: modTasks.length,
+      baseUndiscounted,
+      afterDiscount: Math.round(baseUndiscounted * discFactor),
+    });
+  });
+
+  const mod4RetainerTasks = tasks.filter((t) => t.selected && t.isMonthlyRetainer && isModCategory(t.category, 4));
+  const mod4AuditTasks = tasks.filter((t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, 4));
+  if (mod4RetainerTasks.length > 0) {
+    const monthlyBase = Math.round(
+      mod4RetainerTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * discFactor
+    );
+    summaries.push({ modNum: 4, label: getModDisplayName(4), count: mod4RetainerTasks.length, baseUndiscounted: monthlyBase, afterDiscount: monthlyBase, isMonthly: true });
+  }
+  if (mod4AuditTasks.length > 0) {
+    const auditBase = Math.round(
+      mod4AuditTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier * discFactor
+    );
+    summaries.push({ modNum: '4a', label: `${getModDisplayName(4)} — System Health Check (annual)`, count: mod4AuditTasks.length, baseUndiscounted: auditBase, afterDiscount: auditBase, isAnnual: true });
+  }
+
+  if (applyCreditBack && fin.isCreditBackEligible && mod1CostBase > 0) {
+    let remainingCredit = Math.round(mod1CostBase * discFactor);
+    const m1 = summaries.find((s) => s.modNum === 1);
+    if (m1) m1.afterCredit = 0;
+    const m2 = summaries.find((s) => s.modNum === 2);
+    if (m2 && remainingCredit > 0) {
+      const applied = Math.min(remainingCredit, m2.afterDiscount);
+      m2.afterCredit = m2.afterDiscount - applied;
+      remainingCredit -= applied;
+    }
+    const m3 = summaries.find((s) => s.modNum === 3);
+    if (m3 && remainingCredit > 0) {
+      const applied = Math.min(remainingCredit, m3.afterDiscount);
+      m3.afterCredit = m3.afterDiscount - applied;
+    }
+  }
+
+  return summaries;
 }
 
 export const DEFAULT_TASK_CATALOG = [

@@ -97,6 +97,9 @@
 
         const formatCurrency = (val) => window.Financials?.formatCurrency(val) || val;
         const getFinancials = (profile) => window.Financials?.getFinancials(profile) || { total: 0, subtotal: 0 };
+        const getBillingSchedule = (profile) => window.Financials?.getBillingSchedule(profile) || { milestones: [], milestoneSplit: 'auto', retainerMonthly: 0, retainerMonths: 6, retainerTotal: 0, includeTax: false, finalProjectCostPart: 0 };
+        const getModuleInvestmentSummaries = (profile) => window.Financials?.computeModuleInvestmentSummaries(profile) || [];
+        const getModDisplayName = (modNum) => window.Financials?.getModDisplayName(modNum) || `MOD ${modNum}`;
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
@@ -407,28 +410,141 @@
             };
 
             // Unified Contract Body Component used across client sign and audit trail views
-            const renderContractDetails = (profileObj, financials, selectedTasks, activePMO, activeGov) => (
+            const renderContractDetails = (profileObj, financials, selectedTasks, activePMO, activeGov) => {
+                const schedule = getBillingSchedule(profileObj);
+                const moduleSummaries = getModuleInvestmentSummaries(profileObj);
+                const milestoneSplit = profileObj.milestoneSplit || 'auto';
+                const applyCreditBack = profileObj.applyCreditBack || false;
+                const creditBackDays = profileObj.creditBackDays || 14;
+                const frictionBuffer = profileObj.frictionBuffer || 0;
+                const quoteBaseAmount = financials.finalProjectCostBase + financials.retainerCostTotalBase;
+                const quoteVatAmount = financials.includeTax ? Math.round(quoteBaseAmount * 0.12) : 0;
+
+                return (
                 <>
                     <div className="border-b-2 border-brandTeal-500 pb-6 mb-8 print:border-slate-300">
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For</p>
                         <h2 className="text-2xl font-bold text-slate-900">{profileObj.clientCompany}</h2>
                         <p className="text-sm text-slate-600 mt-1">Attention: {profileObj.clientRep}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
-                        <div className="space-y-3">
-                            {selectedTasks.map(task => (
-                                <div key={task.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200 print:bg-white print:border-slate-300">
-                                    <div className="font-bold text-slate-900 text-sm">{task.deliverable}</div>
-                                    <p className="text-xs text-slate-600 mt-1">{task.description}</p>
-                                </div>
-                            ))}
+                        {profileObj.clientAddress && (
+                            <p className="text-xs text-slate-500 mt-1">{profileObj.clientAddress}</p>
+                        )}
+                        <div className="flex flex-wrap gap-4 mt-3 text-[10px] font-mono text-slate-500 uppercase">
+                            {profileObj.quoteValidity && <span>Valid Until: {profileObj.quoteValidity}</span>}
+                            {profileObj.targetStartDate && <span>Target Kickoff: {profileObj.targetStartDate}</span>}
+                            <span>{financials.includeTax ? 'VAT Sales Invoice Basis' : 'Non-VAT / Exempt Basis'}</span>
                         </div>
                     </div>
 
+                    {financials.isCreditBackEligible && (
+                        <div className="mb-6 text-xs leading-relaxed">
+                            {applyCreditBack ? (
+                                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800">
+                                    <div className="font-bold text-emerald-800 uppercase mb-1">Module 1 Credit-Back Program Active</div>
+                                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700">{formatCurrency(financials.creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700">{creditBackDays} days</strong> of receipt.
+                                </div>
+                            ) : (
+                                <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800">
+                                    <div className="font-bold text-amber-800 uppercase mb-1">Module 1 Credit-Back Available</div>
+                                    This proposal includes Module 1 plus implementation modules. Approve within <strong className="text-amber-800">{creditBackDays} days</strong> to receive a <strong className="text-amber-800">{formatCurrency(financials.creditBackAmount)}</strong> credit against implementation fees.
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">1. Included Deliverables</h3>
+                        <p className="text-xs text-slate-600 italic leading-relaxed">
+                            We are pleased to submit our formal flat-rate pricing proposal to fix operational leaks, document how your business runs, and launch your team workspace:
+                        </p>
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-mono text-[9px] tracking-wider">
+                                        <th className="py-3 px-4 w-[30%]">Included Service Module</th>
+                                        <th className="py-3 px-4 w-[70%]">Milestone Deliverable Objectives</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {selectedTasks.map((task) => {
+                                        const modMatch = task.category?.match(/^MOD (\d)/);
+                                        const modNum = modMatch ? Number(modMatch[1]) : 1;
+                                        return (
+                                            <tr key={task.id}>
+                                                <td className="py-3 px-4 align-top font-bold text-slate-700 text-[10px] uppercase">
+                                                    MOD {modNum} · {getModDisplayName(modNum)}
+                                                </td>
+                                                <td className="py-3 px-4 align-top text-slate-800">
+                                                    <div className="font-bold text-slate-900 text-xs">{task.deliverable}</div>
+                                                    <div className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{task.description}</div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {moduleSummaries.length > 0 && (
+                        <div className="space-y-3 mt-8 print:mt-6">
+                            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Module Investment Summary</h4>
+                            <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-200 text-[9px] uppercase font-mono text-slate-500">
+                                            <th className="py-2.5 px-3 text-left">Module</th>
+                                            <th className="py-2.5 px-3 text-center">Items</th>
+                                            <th className="py-2.5 px-3 text-right">Base</th>
+                                            <th className="py-2.5 px-3 text-right">After discount</th>
+                                            {applyCreditBack && financials.isCreditBackEligible && <th className="py-2.5 px-3 text-right">After credit-back</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {moduleSummaries.map((row) => (
+                                            <tr key={String(row.modNum)}>
+                                                <td className="py-2.5 px-3 font-semibold text-slate-800">{row.label}{row.isMonthly ? ' (monthly)' : row.isAnnual ? ' (annual)' : ''}</td>
+                                                <td className="py-2.5 px-3 text-center font-mono">{row.count}</td>
+                                                <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.baseUndiscounted)}{row.isMonthly ? '/mo' : ''}</td>
+                                                <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.afterDiscount)}{row.isMonthly ? '/mo' : ''}</td>
+                                                {applyCreditBack && financials.isCreditBackEligible && (
+                                                    <td className="py-2.5 px-3 text-right font-mono text-emerald-700">{row.afterCredit !== undefined ? formatCurrency(row.afterCredit) + (row.isMonthly ? '/mo' : '') : '—'}</td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {frictionBuffer > 0 && (
+                                <p className="text-[9px] text-slate-500">* Base amounts include a {frictionBuffer}% project buffer on implementation modules.</p>
+                            )}
+                        </div>
+                    )}
+
                     <div className="space-y-4 mt-8 print:mt-6">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">2. Commercial Terms</h3>
+
+                        <div className="mb-4">
+                            <h4 className="text-[9px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">Philippine Tax Breakout Table (EOPT Compliant)</h4>
+                            <div className="border border-slate-200 rounded-lg overflow-hidden text-center text-[10px] uppercase font-mono tracking-wider text-slate-600 font-bold">
+                                <div className="grid grid-cols-4 bg-slate-50 divide-x divide-slate-200 border-b border-slate-200">
+                                    <div className="py-2.5 px-1">Standard Taxable Sales</div>
+                                    <div className="py-2.5 px-1">Tax-Exempt Sales</div>
+                                    <div className="py-2.5 px-1">Zero-Rated Sales</div>
+                                    <div className="py-2.5 px-1">{financials.includeTax ? '12% VAT Amount' : 'Non-VAT / Exempt'}</div>
+                                </div>
+                                <div className="grid grid-cols-4 divide-x divide-slate-200 bg-white text-slate-900 py-3">
+                                    <div className="font-mono">{financials.includeTax ? formatCurrency(quoteBaseAmount) : '₱0'}</div>
+                                    <div className="font-mono">{financials.includeTax ? '₱0' : formatCurrency(quoteBaseAmount)}</div>
+                                    <div className="font-mono">₱0</div>
+                                    <div className="font-mono">{financials.includeTax ? formatCurrency(quoteVatAmount) : '₱0'}</div>
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
+                                Tax note: {financials.includeTax ? 'This agreement is subject to 12% Philippine VAT on taxable sales.' : 'Non-VAT agreement — seller is not VAT-registered for this engagement.'} Legal taxpayer: Reinhard Ludwig A. Kolthoff · Trade style: Kolthoff Consulting.
+                            </p>
+                        </div>
+
                         <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 space-y-3 print:bg-white print:border-slate-300">
                             {financials.discountPercent > 0 ? (
                                 <>
@@ -467,28 +583,76 @@
                                 <span className="font-bold text-slate-900">Total Contract Value:</span>
                                 <span className="text-xl font-bold font-mono text-brandTeal-700">{formatCurrency(financials.total)}</span>
                             </div>
+                            {frictionBuffer > 0 && (
+                                <p className="text-[10px] text-slate-500 pt-2 border-t border-slate-200">
+                                    * Your total project quote includes a built-in <strong>+{frictionBuffer}% Project Buffer Hours</strong>, giving our team sufficient hours to perform complete, unhurried observation audits without surprise billing adjustments.
+                                </p>
+                            )}
                         </div>
+
+                        <p className="text-[10px] text-slate-600 leading-relaxed">
+                            Payment via BDO Unibank · Account: Reinhard Ludwig A. Kolthoff · 0039 5019 0761 · Due within 7 business days of each billing gate invoice.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4 mt-8 print:mt-6 print-force-break">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 border-b border-slate-200 pb-2">
+                            3. {milestoneSplit === 'auto' ? 'Stage-Gated Phased Commitment Structure' : 'Project Milestones & Billing Schedule'}
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Invoices are issued per billing gate below. Each gate amount matches the corresponding milestone selection in your SOW billing workflow.
+                        </p>
+
+                        {schedule.finalProjectCostPart > 0 && schedule.milestones.length > 0 && (
+                            <div
+                                className="grid grid-cols-1 gap-4 text-xs"
+                                style={{ gridTemplateColumns: `repeat(${Math.min(schedule.milestones.length, 3)}, minmax(0, 1fr))` }}
+                            >
+                                {schedule.milestones.map((milestone, idx) => (
+                                    <article key={idx} className="p-3 bg-slate-50 rounded border border-slate-200">
+                                        <div className="font-bold text-slate-800 leading-snug">{milestone.label}</div>
+                                        <span className="font-mono text-brandTeal-700 font-bold mt-1.5 block">{formatCurrency(milestone.amount)}</span>
+                                        <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{milestone.desc}</p>
+                                        <p className="text-[9px] font-mono text-slate-400 mt-2 uppercase">Billing Gate {idx + 1}</p>
+                                    </article>
+                                ))}
+                            </div>
+                        )}
+
+                        {schedule.retainerMonthly > 0 && (
+                            <article className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <div className="flex justify-between items-center font-bold text-slate-800 text-sm">
+                                    <span>MOD 4 Care Plan ({schedule.retainerMonths} months)</span>
+                                    <span className="text-brandTeal-700 font-mono">{formatCurrency(schedule.retainerMonthly)} / Month{schedule.includeTax ? ' (inc. VAT)' : ''}</span>
+                                </div>
+                                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                                    Covers platform hosting, user care, and bi-weekly operations check-in calls. Payments are due at the beginning of each calendar month ({schedule.retainerMonths} × {formatCurrency(schedule.retainerMonthly)} = <strong>{formatCurrency(schedule.retainerTotal)}</strong>{schedule.includeTax ? ' inc. VAT' : ''} total commitment). Semi-annual system health checks are billed separately when selected.
+                                </p>
+                            </article>
+                        )}
                     </div>
 
                     <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6 mt-8 print:mt-6">
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">3. Master Consulting Service Agreement (Terms of Service)</h3>
-                        <p>1. <strong>Scope & Performance:</strong> Services are rendered on a fixed, flat-rate SOW model as selected. Reinhard builds all digital workflows and documents asynchronously, guaranteeing zero scheduling delays or billing variations. Additions outside this agreement require a mutual, written amendment.</p>
-                        <p>2. <strong>Client Onboarding & On-time Cooperation:</strong> Project timelines, launch milestones, and response SLAs remain dependent on prompt access. All timelines pause automatically if client credentials, business rosters, policies, or stage-gated reviews are delayed beyond five (5) working days.</p>
-                        <p>3. <strong>Intellectual Property (IP) Assignment:</strong> Upon 100% full, non-refundable payment of all professional fees under this SOW, the Client receives a permanent, irrevocable, royalty-free local license to use, adapt, and copy all custom-designed databases, flowcharts, manuals, and handbooks created during this engagement.</p>
-                        <p>4. <strong>Late-Payment Delinquency:</strong> SOW billing milestones must be settled within seven (7) business days of invoice date. Balances remaining unpaid past this window shall accumulate a late-payment delinquency penalty of 1.5% per month, compounded monthly, until fully cleared.</p>
-                        <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific SOW.</p>
-                        <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
-                        
-                        {financials.appliedCredit > 0 && (
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">4. Master Consulting Service Agreement (Terms of Service)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                            <p>1. <strong>Stage-Gated Performance & Exit Ramps:</strong> Professional services are structured under a Phased Commitment Model. The Client retains absolute discretion to authorize or decline the commencement of subsequent modules upon completion and formal handover of each preceding gate asset. Each authorized module constitutes an independent execution phase.</p>
+                            <p>2. <strong>Client Onboarding & On-time Cooperation:</strong> Project timelines, launch milestones, and response SLAs remain dependent on prompt access. All timelines pause automatically if client credentials, business rosters, policies, or stage-gated reviews are delayed beyond five (5) working days. If client delays exceed fourteen (14) calendar days, a Project Restart Fee equal to 10% of the total module value shall be billed before resumption of services.</p>
+                            <p>3. <strong>Intellectual Property (IP) Assignment:</strong> Upon 100% full, non-refundable payment of professional fees under an authorized module phase, the Client receives a permanent, irrevocable, royalty-free local license to use, adapt, and copy all custom-designed databases, flowcharts, manuals, and handbooks created during that specific engagement phase.</p>
+                            <p>4. <strong>Late-Payment Delinquency:</strong> SOW billing milestones must be settled within seven (7) business days of invoice date. Balances remaining unpaid past this window shall accumulate a late-payment delinquency penalty of 1.5% per month, compounded monthly, until fully cleared.</p>
+                            <p>5. <strong>Consulting Warranties & Liability Limits:</strong> Service Provider provides a ninety (90) day operational support warranty covering any structural database or logic bugs within built templates. Total cumulative liability for any security breaches, data loss, or system outages is strictly capped at the actual cumulative amount paid under this specific module addendum.</p>
+                            <p>6. <strong>Dispute Resolution & E-Signature Validity:</strong> This agreement is governed by the laws of the Republic of the Philippines (Jurisdiction: Taytay, Rizal/Metro Manila). The electronic signature applied below holds equivalent legal validity to a physical signature under the Philippine Electronic Commerce Act (RA 8792).</p>
+                        </div>
+
+                        {applyCreditBack && financials.isCreditBackEligible && (
                             <div className="text-[10px] text-emerald-700 bg-emerald-50 p-3 rounded border border-emerald-200 mt-2 print:border-slate-300">
-                                * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {profileObj.creditBackDays || 14} calendar days of proposal receipt.
+                                * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(financials.creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {creditBackDays} calendar days of proposal receipt.
                             </div>
                         )}
                     </div>
 
                     {(activePMO || activeGov) && (
                         <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6 mt-8 print:mt-6">
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">4. Service Level Agreement (SLA) & Data Privacy</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">5. Service Level Agreement (SLA) & Data Privacy</h3>
                             <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-3 print:bg-white print:border-slate-300">
                                 <p><strong>System Availability:</strong> Target 99.9% uptime during business hours. 48-hour notice provided for planned downtime.</p>
                                 <p><strong>Response & Resolution Matrix:</strong> Severity 1 (Critical) within 2 hours response, 8 hours resolution. Severity 2 (High) within 4 hours response, 24 hours resolution. Severity 3 (Normal) within 24 hours response, 2-5 business days resolution.</p>
@@ -498,7 +662,8 @@
                         </div>
                     )}
                 </>
-            );
+                );
+            };
 
             // --- 1. Client Views ---
             if (activeView === 'client_sign' && activeProfileObj) {
