@@ -39,7 +39,7 @@ function emptyClient(code: string): ClientPortal {
     companyName: 'New Client Corp',
     repName: 'Representative Name',
     sowReference: code,
-    currentPhase: 'MOD 1: Workflow Diagnosis',
+    currentPhase: 'MOD 1: Business Leak Scan',
     progressPercentage: 0,
     metrics: { annualLeakageIdentified: 0, chaosTaxEliminated: 0, saasSavingsIdentified: 0 },
     actionItems: [],
@@ -110,7 +110,7 @@ export default function PortalManager() {
       companyName: profile.clientCompany || 'New Client',
       repName: profile.clientRep || 'Representative',
       sowReference: profile.quoteId || newCode,
-      currentPhase: 'MOD 1: Workflow Diagnosis',
+      currentPhase: 'MOD 1: Business Leak Scan',
       progressPercentage: 0,
       metrics: {
         annualLeakageIdentified: profile.annualOperationalLeakage || 0,

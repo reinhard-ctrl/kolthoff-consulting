@@ -9,10 +9,10 @@
     "contactInfo": "facebook",
     "leadSource": "Warm Referral",
     "pipelineStatus": "Proposal",
-    "estValue": 40000,
+    "estValue": 91350,
     "nextAction": "on Hold",
     "followUpDate": "",
-    "notes": "Lark Approval App Setup & Training Session",
+    "notes": "MOD 3 focus — Lark approval forms & team training",
     "status": "Active"
   },
   {
@@ -25,10 +25,10 @@
     "contactInfo": "whatsapp",
     "leadSource": "Warm Referral",
     "pipelineStatus": "Proposal",
-    "estValue": 35750,
+    "estValue": 68971,
     "nextAction": "on Hold",
     "followUpDate": "",
-    "notes": "Busy with merger, wait for right timing to present optimized structure",
+    "notes": "MOD 1+2 with credit-back after merger timing clears",
     "status": "Active"
   },
   {
@@ -73,10 +73,10 @@
     "contactInfo": "linkedin",
     "leadSource": "Linkedin Content",
     "pipelineStatus": "Meeting",
-    "estValue": 35750,
+    "estValue": 40375,
     "nextAction": "Meeting on Monday",
     "followUpDate": "2026-06-22",
-    "notes": "Meeting to define SOW business process (Workflow Diagnosis)",
+    "notes": "Business Leak Scan scoping call",
     "status": "Active"
   },
   {
@@ -89,10 +89,10 @@
     "contactInfo": "whatsapp",
     "leadSource": "Warm Referral",
     "pipelineStatus": "Meeting",
-    "estValue": 35750,
+    "estValue": 40375,
     "nextAction": "Reminder on Monday",
     "followUpDate": "2026-06-22",
-    "notes": "Schedule exploratory meeting and demo system architectures",
+    "notes": "Exploratory leak scan + workspace demo",
     "status": "Active"
   },
   {
@@ -121,10 +121,10 @@
     "contactInfo": "whatsapp",
     "leadSource": "Warm Referral",
     "pipelineStatus": "Closed Won/Lost",
-    "estValue": 45000,
+    "estValue": 40375,
     "nextAction": "Lost to competitor pricing",
     "followUpDate": "",
-    "notes": "Decided to build internal workflow manager instead of subscribing to outer studio.",
+    "notes": "Lost at MOD 1 price point — built internal workflow tool instead",
     "status": "Lost"
   }
 ]

@@ -72,7 +72,7 @@ export function getFinancials(profile: Profile | null | undefined) {
     tasks.filter((t) => t.isMonthlyRetainer).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0)
   );
   const mod1CostBase = Math.round(
-    tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
+    tasks.filter((t) => t.selected && t.category?.startsWith('MOD 1') && t.id !== 'm1-06').reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
   );
 
   const activeDiag = tasks.some((t) => t.selected && t.category?.startsWith('MOD 1'));
