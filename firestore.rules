@@ -48,7 +48,8 @@ service cloud.firestore {
 
     /** E-sign client link — ledger doc must exist and be sent or already signed */
     function contractLedgerPath(profileId) {
-      return /databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-$(profileId);
+      let contractId = 'contract-' + profileId;
+      return /databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/contracts_ledger/$(contractId);
     }
 
     function isActiveClientContract(profileId) {
