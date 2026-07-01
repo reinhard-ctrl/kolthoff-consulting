@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { deleteDoc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
+import { getClientDisplayName, INTAKE_MAPPED_TARGETS } from '../lib/engagement-config';
+import { intakeTargetLabel, isValidIntakeTarget, mergeIntakeResponses } from '../lib/intake-merge';
 
 interface IntakeField {
   name: string;
@@ -21,6 +23,10 @@ interface IntakeTemplate {
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
+  clientName?: string;
+  subSaaS?: Record<string, unknown>[];
+  roles?: Record<string, unknown>[];
+  customAssets?: Record<string, unknown>[];
 }
 
 interface IntakeForm {
@@ -150,6 +156,10 @@ export default function IntakeCenter() {
 
   const saveCustomTemplate = async () => {
     if (!builderTitle.trim() || builderFields.length === 0) return;
+    if (!isValidIntakeTarget(builderTarget)) {
+      showToast('Invalid mapping target.');
+      return;
+    }
     setSyncing(true);
     try {
       const cleanFields = builderFields.map((f, i) => ({
@@ -179,11 +189,18 @@ export default function IntakeCenter() {
 
   const syncToDeliverySuite = async () => {
     if (!activeForm || !activeProfile) return;
+    if (!isValidIntakeTarget(activeForm.mappedTarget)) {
+      showToast('Invalid mapping target — cannot sync.');
+      return;
+    }
     setSyncing(true);
     try {
       const profileRef = adminDoc('workbook_profiles', activeProfile.id);
       const profileSnap = await getDoc(profileRef);
       if (!profileSnap.exists()) return;
+
+      const profileData = profileSnap.data() as WorkbookProfile;
+      const target = activeForm.mappedTarget;
 
       const formattedResponses = activeForm.responses.map((r) => {
         const formatted = { ...r };
@@ -193,9 +210,12 @@ export default function IntakeCenter() {
         return formatted;
       });
 
-      await setDoc(profileRef, { [activeForm.mappedTarget]: formattedResponses }, { merge: true });
+      const existingRows = (profileData[target as keyof WorkbookProfile] as Record<string, unknown>[] | undefined) || [];
+      const merged = mergeIntakeResponses(existingRows, formattedResponses, target);
+
+      await setDoc(profileRef, { [target]: merged }, { merge: true });
       await setDoc(adminDoc('intake_forms', activeForm.id), { status: 'synced' }, { merge: true });
-      showToast('Synced data into Delivery Suite.');
+      showToast(`Synced ${formattedResponses.length} row(s) into ${intakeTargetLabel(target)}.`);
       setView('dashboard');
     } finally {
       setSyncing(false);
@@ -246,7 +266,7 @@ export default function IntakeCenter() {
               className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm min-w-[200px]"
             >
               {profiles.map((p) => (
-                <option key={p.id} value={p.id}>{p.clientCompany || p.id}</option>
+                <option key={p.id} value={p.id}>{getClientDisplayName(p)}</option>
               ))}
             </select>
           </div>
@@ -259,7 +279,7 @@ export default function IntakeCenter() {
                 className="px-3 py-2 bg-brandNavy-800 border border-brandNavy-700 hover:border-brandTeal-500/50 rounded text-xs text-left"
               >
                 <div className="font-bold">{tmpl.title}</div>
-                <div className="text-slate-500 font-mono text-[10px]">Maps: {tmpl.mappedTarget}</div>
+                <div className="text-slate-500 font-mono text-[10px]">Maps: {intakeTargetLabel(tmpl.mappedTarget)}</div>
               </button>
             ))}
           </div>
@@ -282,10 +302,10 @@ export default function IntakeCenter() {
                 const client = profiles.find((p) => p.id === form.profileId);
                 return (
                   <tr key={form.id} className="hover:bg-brandNavy-800/30">
-                    <td className="p-4 font-bold">{client?.clientCompany || 'Unknown'}</td>
+                    <td className="p-4 font-bold">{client ? getClientDisplayName(client) : 'Unknown'}</td>
                     <td className="p-4">
                       <div className="font-bold">{form.title}</div>
-                      <div className="text-xs text-slate-500 font-mono">Maps: {form.mappedTarget}</div>
+                      <div className="text-xs text-slate-500 font-mono">Maps: {intakeTargetLabel(form.mappedTarget)}</div>
                     </td>
                     <td className="p-4">{statusBadge(form.status)}</td>
                     <td className="p-4 text-right space-x-2">
@@ -335,9 +355,9 @@ export default function IntakeCenter() {
             onChange={(e) => setBuilderTarget(e.target.value)}
             className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-3 text-sm"
           >
-            <option value="customAssets">customAssets (Generic Array)</option>
-            <option value="subSaaS">subSaaS (Software Audit Array)</option>
-            <option value="roles">roles (RACI Team Roster Array)</option>
+            {INTAKE_MAPPED_TARGETS.map((target) => (
+              <option key={target} value={target}>{intakeTargetLabel(target)}</option>
+            ))}
           </select>
           <div>
             <div className="flex justify-between items-center mb-3">
@@ -391,7 +411,7 @@ export default function IntakeCenter() {
             <div>
               <h2 className="text-lg font-bold">{activeForm.title}</h2>
               <p className="text-sm text-slate-400 mt-1">
-                Submitted by <strong className="text-white">{activeProfile?.clientCompany}</strong>
+                Submitted by <strong className="text-white">{activeProfile ? getClientDisplayName(activeProfile) : 'Unknown'}</strong>
               </p>
             </div>
             {activeForm.status === 'completed' && (
