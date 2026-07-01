@@ -1854,7 +1854,15 @@
                 try {
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
                     const cleanTabs = tabs.map(t => ({ id: t.id, name: t.name, present: t.present })); // Strip past/future to save space
-                    await window.setDoc(profileRef, { tabs: cleanTabs, activeTabId, subSaaS, raciAssignments, annualOperationalLeakage: totalAnnualChaosTax, synthesis }, { merge: true });
+                    await window.setDoc(profileRef, {
+                        tabs: cleanTabs,
+                        activeTabId,
+                        subSaaS,
+                        raciAssignments,
+                        annualOperationalLeakage: totalAnnualChaosTax,
+                        chaosTax: { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} },
+                        synthesis
+                    }, { merge: true });
                     triggerToast("💾 Saved to Cloud!");
                 } catch (e) { triggerToast("❌ Error saving."); }
                 setIsSaving(false);

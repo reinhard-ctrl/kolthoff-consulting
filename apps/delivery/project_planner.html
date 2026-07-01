@@ -295,11 +295,12 @@
 
   <div id="root"></div>
 
+  <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
   <script type="module">
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v9"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v10"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -1224,7 +1225,7 @@
       };
 
       const createWorkspaceFromCrmDeal = async (deal) => {
-        const newId = `client-crm-${Date.now()}`;
+        const newId = `client-crm-${deal.id || Date.now()}`;
         const base = buildCurrentPayload();
         const payload = {
           ...base,
@@ -1233,7 +1234,12 @@
           clientCompany: deal.company || 'Individual',
           clientRep: deal.leadName,
           proposalSponsor: deal.titleRole ? `${deal.leadName} (${deal.titleRole})` : deal.leadName,
-          quoteId: `KC-${new Date().getFullYear()}-${(deal.company || 'CRM').substring(0, 6).toUpperCase().replace(/\s/g, '')}`,
+          quoteId: deal.id,
+          links: {
+            crmDealId: deal.id,
+            portalClientId: deal.id,
+            contractId: `contract-${newId}`,
+          },
           updatedAt: Date.now()
         };
         if (isAuthed) {

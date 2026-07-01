@@ -423,12 +423,19 @@
   }
 
   function computeAnnualOperationalLeakage(staffCount, monthlySalary, wastedHours) {
+    const EC = global.EngagementConfig || {};
+    if (EC.computePlannerChaosTax) {
+      return EC.computePlannerChaosTax(staffCount, monthlySalary, wastedHours);
+    }
     return (staffCount ?? 15) * (monthlySalary ?? 25000) * 12 * ((wastedHours ?? 2) / 8);
   }
 
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
-    const leakage = annualOperationalLeakage ?? computeAnnualOperationalLeakage(state.staffCount, state.monthlySalary, state.wastedHours);
-    return {
+    const EC = global.EngagementConfig || {};
+    const chaosValue = typeof annualOperationalLeakage === 'number'
+      ? annualOperationalLeakage
+      : computeAnnualOperationalLeakage(state.staffCount, state.monthlySalary, state.wastedHours);
+    const base = {
       id: activeProfileId,
       workspaceName: workspaceName || '',
       clientCompany: state.clientCompany,
@@ -478,12 +485,28 @@
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
-      annualOperationalLeakage: leakage,
+      annualOperationalLeakage: chaosValue,
+      chaosTax: EC.buildChaosTaxPayload
+        ? EC.buildChaosTaxPayload('planner', chaosValue, {
+          staffCount: state.staffCount,
+          monthlySalary: state.monthlySalary,
+          wastedHours: state.wastedHours
+        })
+        : { source: 'planner', value: chaosValue, inputs: { staffCount: state.staffCount, monthlySalary: state.monthlySalary, wastedHours: state.wastedHours } },
       principalRate: state.principalRate,
       seniorRate: state.seniorRate,
       associateRate: state.associateRate,
       partnerRate: state.partnerRate
     };
+    base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
+    base.links = EC.buildProfileLinks
+      ? EC.buildProfileLinks({ id: activeProfileId, quoteId: state.quoteId, links: state.links })
+      : {
+        crmDealId: state.links?.crmDealId || state.quoteId || null,
+        portalClientId: state.links?.portalClientId || state.quoteId || null,
+        contractId: state.links?.contractId || (state.quoteId ? `contract-${activeProfileId}` : null)
+      };
+    return base;
   }
 
   function validatePrintReadiness(view, ctx) {
@@ -518,7 +541,23 @@
     if (!payload) return '';
     const copy = { ...payload };
     delete copy.updatedAt;
-    copy.annualOperationalLeakage = computeAnnualOperationalLeakage(copy.staffCount, copy.monthlySalary, copy.wastedHours);
+    if (copy._meta) {
+      copy._meta = { ...copy._meta };
+      delete copy._meta.updatedAt;
+    }
+    const chaosValue = computeAnnualOperationalLeakage(copy.staffCount, copy.monthlySalary, copy.wastedHours);
+    copy.annualOperationalLeakage = chaosValue;
+    if (copy.chaosTax) {
+      copy.chaosTax = {
+        ...copy.chaosTax,
+        value: chaosValue,
+        inputs: {
+          staffCount: copy.staffCount,
+          monthlySalary: copy.monthlySalary,
+          wastedHours: copy.wastedHours
+        }
+      };
+    }
     return JSON.stringify(copy);
   }
 

@@ -52,6 +52,7 @@ artifacts/{tenantId}/files/{clientId}/{filename}
 | `tenantId` | Tenant namespace ID |
 | `accessCode` | Portal client access code |
 
-## Seeding
+## Related docs
 
-See `docs/data-seeding.md` and `scripts/seed-firestore/` for production data load.
+- Engagement content schema: `docs/content-model.md`
+- Intake seeding: `docs/data-seeding.md`
