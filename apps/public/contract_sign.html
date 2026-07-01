@@ -104,6 +104,7 @@
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
+            const [isStaffUser, setIsStaffUser] = useState(false);
             const [activeView, setActiveView] = useState('ledger'); 
             
             // Admin Protocol States
@@ -126,6 +127,8 @@
 
             const isClientMode = new URLSearchParams(window.location.search).has('contract');
 
+            const isStaffPreview = new URLSearchParams(window.location.search).get('staff') === '1';
+
             if (!isClientMode) {
                 window.location.replace('/admin/contracts');
                 return null;
@@ -136,8 +139,14 @@
                         clearInterval(checkInterval);
                         const initAuth = async () => {
                             try {
-                                await window.kolthoffStaffReady
+                                const result = await window.kolthoffStaffReady;
                                 setIsAuthed(true);
+                                const user = result?.user ?? window.firebaseAuth?.currentUser;
+                                if (user && window.hasStaffAccess && await window.hasStaffAccess(user)) {
+                                    setIsStaffUser(true);
+                                } else if (isStaffPreview) {
+                                    setIsStaffUser(true);
+                                }
                             } catch (e) {
                                 console.error("Firebase Auth Error:", e);
                             }
@@ -239,9 +248,10 @@
                 setTimeout(() => setToast(null), 3000);
             };
 
+            const canPullFromCloud = isAuthed && (isStaffUser || (!isClientMode && isAdminAuthed));
+
             const handlePullFromCloud = async () => {
-                if (!isAuthed) return;
-                if (!isClientMode && !isAdminAuthed) return;
+                if (!canPullFromCloud) return;
 
                 setIsPulling(true);
                 try {
@@ -289,7 +299,7 @@
             const PullCloudButton = ({ className = '' }) => (
                 <button
                     onClick={handlePullFromCloud}
-                    disabled={isPulling || !isAuthed || (!isClientMode && !isAdminAuthed)}
+                    disabled={isPulling || !canPullFromCloud}
                     title="Reload latest SOW profiles and contract records from Firebase"
                     className={`inline-flex items-center px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/40 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 no-print ${className}`}
                 >
@@ -654,7 +664,7 @@
                                         <p className="text-xs text-slate-400 font-mono mt-0.5 print:text-slate-600">Date: {new Date().toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex items-center gap-3 no-print">
-                                        {!isClientMode && (
+                                        {isStaffUser && (
                                             <PullCloudButton className="bg-white/10 hover:bg-white/20 border-white/20 text-white" />
                                         )}
                                         {!isClientMode && (
@@ -766,7 +776,7 @@
                                         <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2">
                                             <Icons.CheckCircle /> Immutable & Locked
                                         </div>
-                                        {!isClientMode && <PullCloudButton />}
+                                        {isStaffUser && <PullCloudButton />}
                                         <button onClick={() => window.print()} className="no-print px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-xs uppercase tracking-wider flex items-center gap-2 transition-colors">
                                             <Icons.Printer /> Print Full Contract PDF
                                         </button>
@@ -948,7 +958,7 @@
                                             else if (item.contractStatus === 'signed') statusBadge = <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded text-[9px] font-bold flex items-center justify-center gap-1 w-max mx-auto"><Icons.CheckCircle /> Executed</span>;
 
                                             const profileData = profiles.find(p => p.id === item.profileId);
-                                            const estValue = getFinancials(profileData).total;
+                                            const estValue = getFinancials(contractProfile(profileData)).total;
 
                                             return (
                                                 <tr key={item.profileId} className="hover:bg-brandNavy-800/30 transition-colors">
