@@ -92,7 +92,6 @@
       .print-accent { color: #0f766e !important; fill: #0f766e !important; }
       .print-divider { border-color: #cbd5e1 !important; }
       .print-section-hidden { display: none !important; }
-      .screen-only-gantt { display: none !important; }
       .print-only-table { display: block !important; }
       .print-module-card { min-height: auto !important; }
       .print-chaos-metric { background: #fff !important; border-left: 3px solid #0f766e !important; }
@@ -248,6 +247,29 @@
         min-width: 0 !important;
         text-align: left !important;
       }
+
+      .roadmap-gantt-chart {
+        display: block !important;
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
+      .roadmap-gantt-chart .roadmap-gantt-grid {
+        min-width: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+      }
+
+      .roadmap-gantt-chart .roadmap-gantt-bar,
+      .roadmap-gantt-chart .roadmap-gantt-label {
+        font-size: 7px !important;
+        line-height: 1.2 !important;
+      }
+
+      .roadmap-scale-note {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
     }
   </style>
   <script>
@@ -278,7 +300,7 @@
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v6"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v7"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -861,6 +883,9 @@
       const [printSla, setPrintSla] = useState(activeProfile.printSla !== undefined ? activeProfile.printSla : true);
       const [printQuote, setPrintQuote] = useState(activeProfile.printQuote !== undefined ? activeProfile.printQuote : true);
       const [printCover, setPrintCover] = useState(activeProfile.printCover !== undefined ? activeProfile.printCover : false);
+      const [printRoadmapGantt, setPrintRoadmapGantt] = useState(activeProfile.printRoadmapGantt !== undefined ? activeProfile.printRoadmapGantt : true);
+      const [printRoadmapTable, setPrintRoadmapTable] = useState(activeProfile.printRoadmapTable !== undefined ? activeProfile.printRoadmapTable : true);
+      const [printRoadmapScale, setPrintRoadmapScale] = useState(activeProfile.printRoadmapScale !== undefined ? activeProfile.printRoadmapScale : true);
 
       // --- CHAOS TAX DYNAMIC STATES ---
       const [staffCount, setStaffCount] = useState(activeProfile.staffCount || 15);
@@ -958,6 +983,9 @@
         setPrintSla(p.printSla !== undefined ? p.printSla : true);
         setPrintQuote(p.printQuote !== undefined ? p.printQuote : true);
         setPrintCover(p.printCover !== undefined ? p.printCover : false);
+        setPrintRoadmapGantt(p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true);
+        setPrintRoadmapTable(p.printRoadmapTable !== undefined ? p.printRoadmapTable : true);
+        setPrintRoadmapScale(p.printRoadmapScale !== undefined ? p.printRoadmapScale : true);
         setMilestoneSplit(p.milestoneSplit || 'auto');
         setCustomSplit1(p.customSplit1 !== undefined ? p.customSplit1 : 40);
         setCustomSplit2(p.customSplit2 !== undefined ? p.customSplit2 : 40);
@@ -991,6 +1019,9 @@
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
           printSla: p.printSla !== undefined ? p.printSla : true, printQuote: p.printQuote !== undefined ? p.printQuote : true,
           printCover: p.printCover !== undefined ? p.printCover : false,
+          printRoadmapGantt: p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true,
+          printRoadmapTable: p.printRoadmapTable !== undefined ? p.printRoadmapTable : true,
+          printRoadmapScale: p.printRoadmapScale !== undefined ? p.printRoadmapScale : true,
           milestoneSplit: p.milestoneSplit || 'auto', customSplit1: p.customSplit1 !== undefined ? p.customSplit1 : 40,
           customSplit2: p.customSplit2 !== undefined ? p.customSplit2 : 40, customSplit3: p.customSplit3 !== undefined ? p.customSplit3 : 20,
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
@@ -1031,10 +1062,11 @@
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
         clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
+        printRoadmapGantt, printRoadmapTable, printRoadmapScale,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, printRoadmapGantt, printRoadmapTable, printRoadmapScale, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1134,6 +1166,7 @@
         setCreditBackDays(d.creditBackDays ?? 14); setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
         setSlaRecurrenceMonths(d.slaRecurrenceMonths ?? 3); setSubscriptionMonths(d.subscriptionMonths ?? 6);
         setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintSla(d.printSla ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
+        setPrintRoadmapGantt(d.printRoadmapGantt ?? true); setPrintRoadmapTable(d.printRoadmapTable ?? true); setPrintRoadmapScale(d.printRoadmapScale ?? true);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
@@ -1217,6 +1250,7 @@
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
           discountPercent: 0, applyCreditBack: false, creditBackDays: 14, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
+          printRoadmapGantt: true, printRoadmapTable: true, printRoadmapScale: true,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
@@ -1590,6 +1624,9 @@
         setPrintQuote(true);
         setPrintTimeline(tasks.some(t => H.isModCategory(t.category, 2) && t.selected) || tasks.some(t => H.isModCategory(t.category, 3) && t.selected));
         setPrintSla(activePMO || activeGov);
+        setPrintRoadmapGantt(true);
+        setPrintRoadmapTable(true);
+        setPrintRoadmapScale(true);
       };
 
       const applyFullPdfPreset = () => {
@@ -1598,6 +1635,9 @@
         setPrintTimeline(true);
         setPrintQuote(true);
         setPrintSla(activePMO || activeGov);
+        setPrintRoadmapGantt(true);
+        setPrintRoadmapTable(true);
+        setPrintRoadmapScale(true);
       };
 
       const renderPrintFooter = (sectionLabel, sectionIndex, totalSections) => (
@@ -1720,7 +1760,7 @@
       );
 
       const renderRoadmapPrintTable = () => {
-        if (scheduledTasks.length === 0) return null;
+        if (!printRoadmapTable || scheduledTasks.length === 0) return null;
         const phaseLabels = { 'MOD 1': 'Business Leak Scan', 'MOD 2': 'How Your Business Runs', 'MOD 3': 'Your Team Workspace', 'MOD 4': 'Care Plan' };
         return (
           <div className="print-only-table mb-6">
@@ -1751,6 +1791,36 @@
               </tbody>
             </table>
             <p className="text-[9px] text-slate-500 mt-2">Estimated completion: {displayTimeline} · Kickoff target: {targetStartDate || 'Upon signup'}</p>
+          </div>
+        );
+      };
+
+      const renderRoadmapScaleNote = () => {
+        if (!printRoadmapScale) return null;
+        return (
+          <div className="roadmap-scale-note mb-6 p-4 border border-slate-200 rounded-lg bg-slate-50 text-[10px] text-slate-600 print-pill">
+            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Timeline scale assumptions</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Execution pace</span>
+                <strong className="text-slate-900 font-mono">{weeklyHours} hrs/week</strong>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Review buffer</span>
+                <strong className="text-slate-900 font-mono">+{clientReviewWeeks} week(s)</strong>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Contingency reserve</span>
+                <strong className="text-slate-900 font-mono">+{frictionBuffer}% hours</strong>
+              </div>
+              <div>
+                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Estimated duration</span>
+                <strong className="text-slate-900">{displayTimeline}</strong>
+              </div>
+            </div>
+            <p className="mt-3 text-[9px] text-slate-500 leading-relaxed">
+              Kickoff target: {targetStartDate || 'Upon signup'} · Week columns below are scaled to fit the page in PDF; adjust execution pace in Package settings before printing.
+            </p>
           </div>
         );
       };
@@ -2255,6 +2325,25 @@
                 </fieldset>
               )}
 
+              {isPackage && printTimeline && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans font-bold">Roadmap PDF options</legend>
+                  <div className="space-y-2.5" role="group" aria-label="Roadmap PDF options">
+                    {[
+                      { id: 'print-roadmap-gantt', label: 'Include Gantt chart', checked: printRoadmapGantt, onChange: setPrintRoadmapGantt },
+                      { id: 'print-roadmap-table', label: 'Include schedule summary table', checked: printRoadmapTable, onChange: setPrintRoadmapTable },
+                      { id: 'print-roadmap-scale', label: 'Include timeline scale note', checked: printRoadmapScale, onChange: setPrintRoadmapScale }
+                    ].map((option) => (
+                      <label key={option.id} htmlFor={option.id} className="flex items-center gap-2 text-[11px] text-slate-300 w-full hover:text-white transition-colors cursor-pointer">
+                        <input id={option.id} type="checkbox" className="sr-only" checked={option.checked} onChange={(e) => option.onChange(e.target.checked)} />
+                        <ShieldIndicator active={option.checked} />
+                        <span className="font-sans font-semibold">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
               {(isProposal || isPackage) && (
                 <div className="space-y-2 text-left">
                   <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold">Operational Delays Calculator</span>
@@ -2667,13 +2756,14 @@
               </div>
             ) : (
               <div className="space-y-6 text-left font-sans font-medium">
+                {renderRoadmapScaleNote()}
                 {renderRoadmapPrintTable()}
-                <div className="screen-only-gantt border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans">
-                  <h4 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left font-sans font-bold font-sans">Implementation Timeline Map (detailed view)</h4>
-                  <div className="overflow-x-auto min-w-[700px] space-y-4 text-left font-sans font-medium">
+                <div className={`roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans ${!printRoadmapGantt ? 'print-section-hidden' : ''}`}>
+                  <h4 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left font-sans font-bold font-sans">Implementation Timeline Map (Gantt view)</h4>
+                  <div className="roadmap-gantt-grid overflow-x-auto space-y-4 text-left font-sans font-medium">
                     <div className="grid grid-cols-12 gap-2 text-center text-[10px] font-mono font-bold text-slate-500 uppercase pb-2 border-b border-slate-200 text-left font-sans font-bold font-sans">
                       <div className="col-span-4 text-left font-sans font-bold">SOW Deliverable Track</div>
-                      <div className="col-span-8 grid text-center font-sans font-bold" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                      <div className="col-span-8 grid text-center font-sans font-bold roadmap-gantt-week-header" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
                         {Array.from({ length: maxWeek }, (_, i) => i + 1).map(wk => <div key={wk} className="border-l border-slate-200 pl-1 text-center font-sans font-bold font-sans">Wk {wk}</div>)}
                       </div>
                     </div>
@@ -2701,8 +2791,8 @@
                               <div className="col-span-4 pr-2 font-medium text-left font-sans">
                                 <div className="font-bold text-slate-400 italic text-left font-sans">Your review period</div>
                               </div>
-                              <div className="col-span-8 grid h-6 items-center" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
-                                <div className="h-5 rounded bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold font-mono text-[8px] uppercase relative shadow-sm opacity-80" style={{ gridColumnStart: reviewStartWk, gridColumnEnd: reviewEndWk + 1 }}>
+                              <div className="col-span-8 grid h-6 items-center roadmap-gantt-row-grid" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                                <div className="h-5 rounded bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold font-mono text-[8px] uppercase relative shadow-sm opacity-80 roadmap-gantt-bar" style={{ gridColumnStart: reviewStartWk, gridColumnEnd: reviewEndWk + 1 }}>
                                   ⏳ Review Buffer
                                 </div>
                               </div>
@@ -2715,11 +2805,11 @@
                                 <div className="font-bold text-slate-900 line-clamp-1 text-left font-sans font-bold">{task.deliverable}</div>
                                 <div className="flex items-center gap-1.5 mt-0.5 text-left font-sans font-semibold font-semibold">{renderConsultantBadge(task.tier)}<span className="text-[9px] font-mono text-slate-500 font-sans">({task.bufferedHours} hrs)</span></div>
                               </div>
-                              <div className="col-span-8 grid h-8 items-center text-center font-sans font-bold font-sans" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                              <div className="col-span-8 grid h-8 items-center text-center font-sans font-bold font-sans roadmap-gantt-row-grid" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
                                 {task.isRetainer ? (
-                                  <div className="h-6 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold font-mono text-[9px] uppercase tracking-wider relative shadow-sm pl-2 text-center" style={{ gridColumn: `${task.startWeek} / span ${maxWeek - task.startWeek + 1}` }}>🔄 Continuous Retainer SLA Care Protection</div>
+                                  <div className="h-6 rounded bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold font-mono text-[9px] uppercase tracking-wider relative shadow-sm pl-2 text-center roadmap-gantt-bar" style={{ gridColumn: `${task.startWeek} / span ${maxWeek - task.startWeek + 1}` }}>🔄 Continuous Retainer SLA Care Protection</div>
                                 ) : (
-                                  <div className="h-6 rounded bg-brandTeal-50 border border-brandTeal-200 text-brandTeal-800 flex items-center justify-between px-3 font-bold font-mono text-[9px] uppercase relative shadow-sm text-center" style={{ gridColumnStart: task.startWeek, gridColumnEnd: task.endWeek + 1 }}><span>Wk {task.startWeek} - {task.endWeek}</span></div>
+                                  <div className="h-6 rounded bg-brandTeal-50 border border-brandTeal-200 text-brandTeal-800 flex items-center justify-between px-3 font-bold font-mono text-[9px] uppercase relative shadow-sm text-center roadmap-gantt-bar" style={{ gridColumnStart: task.startWeek, gridColumnEnd: task.endWeek + 1 }}><span>Wk {task.startWeek} - {task.endWeek}</span></div>
                                 )}
                               </div>
                             </div>
