@@ -1162,7 +1162,7 @@
                 return () => clearInterval(checkInterval);
             }, []);
 
-            // 2) Data Fetching
+            // 2) Data Fetching + deep-link profile from ?profile=
             useEffect(() => {
                 if (!user) return;
                 const profilesRef = window.collection(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles');
@@ -1171,6 +1171,9 @@
                     snapshot.forEach(doc => { fetchedProfiles.push({ id: doc.id, ...doc.data() }); });
                     setWorkbookProfiles(fetchedProfiles);
                     setActiveProfileId(current => {
+                        const params = new URLSearchParams(window.location.search);
+                        const linked = params.get('profile');
+                        if (linked && fetchedProfiles.find(p => p.id === linked)) return linked;
                         if (!fetchedProfiles.find(p => p.id === current) && fetchedProfiles.length > 0) return fetchedProfiles[0].id;
                         return current;
                     });

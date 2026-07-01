@@ -1,0 +1,136 @@
+import {
+  buildDefaultPortalRoadmap,
+  getChaosTaxValue,
+  getClientDisplayName,
+  MODULES,
+} from './engagement-config';
+
+export interface PortalMetrics {
+  annualLeakageIdentified: number;
+  chaosTaxEliminated: number;
+  saasSavingsIdentified: number;
+}
+
+export interface PortalAsset {
+  id?: number;
+  title?: string;
+  category?: string;
+  date?: string;
+  type?: string;
+  gDriveLink?: string;
+  [key: string]: string | number | undefined;
+}
+
+export interface PortalClientRecord {
+  companyName: string;
+  repName: string;
+  sowReference: string;
+  currentPhase: string;
+  progressPercentage: number;
+  metrics: PortalMetrics;
+  actionItems: PortalAsset[];
+  roadmap: PortalAsset[];
+  assets: PortalAsset[];
+  contracts: PortalAsset[];
+}
+
+export interface WorkbookProfileForPortal {
+  id?: string;
+  clientCompany?: string;
+  clientName?: string;
+  clientRep?: string;
+  quoteId?: string;
+  links?: { portalClientId?: string; crmDealId?: string };
+  subSaaS?: Array<{ tool?: string; billing?: number; users?: number; reason?: string }>;
+  customAssets?: Array<{ title?: string; category?: string; link?: string }>;
+  chaosTax?: { value?: number };
+  annualOperationalLeakage?: number;
+}
+
+export function resolvePortalAccessCode(profile: WorkbookProfileForPortal): string | null {
+  return profile.quoteId || profile.links?.portalClientId || null;
+}
+
+export function computeSaasAnnualWaste(
+  subSaaS?: Array<{ billing?: number; users?: number }>,
+): number {
+  if (!subSaaS?.length) return 0;
+  const monthly = subSaaS.reduce(
+    (acc, row) => acc + (Number(row.billing) || 0) * (Number(row.users) || 1),
+    0,
+  );
+  return Math.round(monthly * 12);
+}
+
+export function mapSubSaaSToPortalAssets(
+  subSaaS?: WorkbookProfileForPortal['subSaaS'],
+): PortalAsset[] {
+  return (subSaaS || []).map((row, i) => ({
+    id: Date.now() + i,
+    title: String(row.tool || 'Software tool'),
+    category: 'MOD 1',
+    date: new Date().toISOString().slice(0, 10),
+    type: 'link',
+    gDriveLink: String(row.reason || 'Synced from SOW / intake'),
+  }));
+}
+
+export function mapCustomAssetsToPortalAssets(
+  customAssets?: WorkbookProfileForPortal['customAssets'],
+): PortalAsset[] {
+  return (customAssets || []).map((row, i) => ({
+    id: Date.now() + i + 1000,
+    title: String(row.title || 'Custom asset'),
+    category: String(row.category || 'MOD 1'),
+    date: new Date().toISOString().slice(0, 10),
+    type: 'link',
+    gDriveLink: String(row.link || ''),
+  }));
+}
+
+export function mergePortalAssets(existing: PortalAsset[], incoming: PortalAsset[]): PortalAsset[] {
+  const byTitle = new Map<string, PortalAsset>();
+  existing.forEach((a) => {
+    const key = String(a.title || '').trim().toLowerCase();
+    if (key) byTitle.set(key, a);
+  });
+  incoming.forEach((a) => {
+    const key = String(a.title || '').trim().toLowerCase();
+    if (key) byTitle.set(key, a);
+  });
+  return Array.from(byTitle.values());
+}
+
+export function buildPortalPatchFromProfile(
+  profile: WorkbookProfileForPortal,
+  existing?: PortalClientRecord | null,
+  options?: { syncIntakeAssets?: boolean },
+): Partial<PortalClientRecord> {
+  const saasWaste = computeSaasAnnualWaste(profile.subSaaS);
+  const patch: Partial<PortalClientRecord> = {
+    companyName: getClientDisplayName(profile),
+    repName: profile.clientRep || existing?.repName || 'Representative',
+    sowReference: profile.quoteId || existing?.sowReference || '',
+    metrics: {
+      annualLeakageIdentified: getChaosTaxValue(profile),
+      chaosTaxEliminated: existing?.metrics?.chaosTaxEliminated ?? 0,
+      saasSavingsIdentified: saasWaste || existing?.metrics?.saasSavingsIdentified || 0,
+    },
+  };
+
+  if (!existing?.roadmap?.length) {
+    patch.roadmap = buildDefaultPortalRoadmap();
+  }
+
+  if (!existing?.currentPhase) {
+    patch.currentPhase = MODULES[0].portalPhase;
+  }
+
+  if (options?.syncIntakeAssets) {
+    const fromSaas = mapSubSaaSToPortalAssets(profile.subSaaS);
+    const fromCustom = mapCustomAssetsToPortalAssets(profile.customAssets);
+    patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
+  }
+
+  return patch;
+}

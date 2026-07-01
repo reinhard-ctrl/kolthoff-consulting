@@ -348,296 +348,24 @@
             );
         };
 
-        const WorkflowCanvasBuilder = ({ tabs, activeTabId, setActiveTabId, undo, redo, pushToPast, updatePresentOnly, commitUpdate, addNewTab, closeTab, renameTab, exportData, importData }) => {
-            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
-            const { nodes, edges, lanes, phases } = activeTab.present;
-
-            const [selectedElement, setSelectedElement] = useState(null); 
-            const [editingElement, setEditingElement] = useState(null); 
-            const [interactionMode, setInteractionMode] = useState('select');
-            const [connectionSourceId, setConnectionSourceId] = useState(null);
-            
-            const [zoom, setZoom] = useState(1);
-            const [pan, setPan] = useState({ x: 50, y: 50 });
-            const [isPanning, setIsPanning] = useState(false);
-            const [snapToGrid, setSnapToGrid] = useState(true);
-            
-            const [draggingNodeId, setDraggingNodeId] = useState(null);
-            const [isDraggingNode, setIsDraggingNode] = useState(false);
-            const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-            const [editingTabId, setEditingTabId] = useState(null);
-            
-            const svgRef = useRef(null);
-            const gRef = useRef(null);
-            const fileInputRef = useRef(null);
-
-            const stateRef = useRef({ zoom, pan });
-            useEffect(() => { stateRef.current = { zoom, pan }; }, [zoom, pan]);
-
-            useEffect(() => {
-                const svg = svgRef.current;
-                if (!svg) return;
-                const handleWheel = (e) => {
-                    e.preventDefault(); 
-                    const { zoom: currentZoom, pan: currentPan } = stateRef.current;
-                    const zoomFactor = 1 - e.deltaY * 0.001;
-                    const newZoom = Math.min(Math.max(0.15, currentZoom * zoomFactor), 3);
-                    const rect = svg.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
-                    const svgX = (mouseX - currentPan.x) / currentZoom; const svgY = (mouseY - currentPan.y) / currentZoom;
-                    setZoom(newZoom); setPan({ x: mouseX - svgX * newZoom, y: mouseY - svgY * newZoom });
-                };
-                svg.addEventListener('wheel', handleWheel, { passive: false });
-                return () => svg.removeEventListener('wheel', handleWheel);
-            }, []);
-
-            const adjustZoom = (delta) => {
-                const newZoom = Math.min(Math.max(0.15, zoom + delta), 3);
-                const rect = svgRef.current.getBoundingClientRect();
-                const centerX = rect.width / 2; const centerY = rect.height / 2;
-                const svgX = (centerX - pan.x) / zoom; const svgY = (centerY - pan.y) / zoom;
-                setZoom(newZoom); setPan({ x: centerX - svgX * newZoom, y: centerY - svgY * newZoom });
-            };
-
-            const getSvgPoint = (clientX, clientY) => {
-                if (!svgRef.current || !gRef.current) return { x: 0, y: 0 };
-                const pt = svgRef.current.createSVGPoint();
-                pt.x = clientX; pt.y = clientY;
-                const ctm = gRef.current.getScreenCTM();
-                return ctm ? pt.matrixTransform(ctm.inverse()) : { x: clientX, y: clientY };
-            };
-
-            const handleSvgPointerDown = (e) => {
-                if (e.target.tagName === 'svg' || e.target.tagName === 'g' || e.target.tagName === 'path') {
-                    setSelectedElement(null);
-                    if (interactionMode === 'connect') setConnectionSourceId(null);
-                    else { setIsPanning(true); e.target.setPointerCapture(e.pointerId); }
-                }
-            };
-
-            const handlePointerMove = (e) => {
-                if (isPanning) {
-                    setPan(prev => ({ x: prev.x + e.movementX, y: prev.y + e.movementY }));
-                } else if (draggingNodeId) {
-                    let pt = getSvgPoint(e.clientX, e.clientY);
-                    if (snapToGrid) { pt.x = Math.round(pt.x / 20) * 20; pt.y = Math.round(pt.y / 20) * 20; }
-                    setMousePos(pt);
-                    if (!isDraggingNode) { pushToPast(); setIsDraggingNode(true); }
-                    updatePresentOnly({ ...activeTab.present, nodes: nodes.map(n => n.id === draggingNodeId ? { ...n, x: pt.x, y: pt.y } : n) });
-                } else if (interactionMode === 'connect' && connectionSourceId) {
-                    let pt = getSvgPoint(e.clientX, e.clientY);
-                    if (snapToGrid) { pt.x = Math.round(pt.x / 20) * 20; pt.y = Math.round(pt.y / 20) * 20; }
-                    setMousePos(pt);
-                }
-            };
-
-            const handlePointerUp = () => { setIsPanning(false); setDraggingNodeId(null); setIsDraggingNode(false); };
-
-            const handleNodeAction = (e, id, isDouble) => {
-                e.stopPropagation();
-                if (interactionMode === 'connect' && !isDouble) {
-                    if (!connectionSourceId) setConnectionSourceId(id);
-                    else {
-                        if (connectionSourceId !== id && !edges.find(ed => ed.source === connectionSourceId && ed.target === id)) {
-                            commitUpdate({ ...activeTab.present, edges: [...edges, { id: 'e' + Date.now(), source: connectionSourceId, target: id }] });
-                        }
-                        setConnectionSourceId(null);
-                    }
-                } else {
-                    setSelectedElement({ type: 'node', id });
-                    if (isDouble) setEditingElement({ type: 'node', id });
-                    else { setDraggingNodeId(id); setIsDraggingNode(false); }
-                }
-            };
-
-            const addNode = (type) => {
-                const spawnX = (-pan.x + window.innerWidth / 2) / zoom;
-                const spawnY = (-pan.y + window.innerHeight / 2) / zoom;
-                const newNode = { id: 'n' + Date.now(), type, label: type === 'approval' ? 'Approval Req' : type === 'milestone' ? 'Milestone' : type === 'text' ? 'Label' : 'New Process', x: spawnX, y: spawnY, ...DEFAULT_PROPS };
-                commitUpdate({ ...activeTab.present, nodes: [...nodes, newNode] });
-                setSelectedElement({ type: 'node', id: newNode.id }); setEditingElement({ type: 'node', id: newNode.id }); setInteractionMode('select');
-            };
-
-            const addLane = () => {
-                const maxY = lanes.reduce((max, l) => Math.max(max, l.y), 0);
-                const newLane = { id: 'l' + Date.now(), label: 'New Department', y: maxY + 120 };
-                commitUpdate({ ...activeTab.present, lanes: [...lanes, newLane] });
-                setEditingElement({ type: 'lane', id: newLane.id }); setSelectedElement({ type: 'lane', id: newLane.id });
-            };
-
-            const addPhase = () => {
-                const EC = window.EngagementConfig || {};
-                const modIndex = Math.min(phases.length, (EC.MODULES?.length || 4) - 1);
-                const mod = EC.MODULES?.[modIndex];
-                const defaultLabel = mod?.shortTitle || mod?.title || 'New Phase';
-                const lastPhase = phases.reduce((last, p) => p.x > last.x ? p : last, phases[0]);
-                const newPhase = { id: 'p' + Date.now(), label: defaultLabel, x: lastPhase ? lastPhase.x + lastPhase.w : 200, w: 350, type: 'mid', color: '#f5f5f5', text: '#333333' };
-                commitUpdate({ ...activeTab.present, phases: [...phases, newPhase] });
-                setEditingElement({ type: 'phase', id: newPhase.id }); setSelectedElement({ type: 'phase', id: newPhase.id });
-            };
-
-            const getElementData = (info) => {
-                if (info.type === 'node') return nodes.find(n => n.id === info.id);
-                if (info.type === 'lane') return lanes.find(l => l.id === info.id);
-                if (info.type === 'phase') return phases.find(p => p.id === info.id);
-                if (info.type === 'edge') return edges.find(e => e.id === info.id);
-                return null;
-            };
-
-            const handleElementUpdatePresentOnly = (updates) => {
-                if (editingElement.type === 'node') updatePresentOnly({ ...activeTab.present, nodes: nodes.map(n => n.id === editingElement.id ? { ...n, ...updates } : n) });
-                if (editingElement.type === 'lane') updatePresentOnly({ ...activeTab.present, lanes: lanes.map(l => l.id === editingElement.id ? { ...l, ...updates } : l) });
-                if (editingElement.type === 'phase') updatePresentOnly({ ...activeTab.present, phases: phases.map(p => p.id === editingElement.id ? { ...p, ...updates } : p) });
-                if (editingElement.type === 'edge') updatePresentOnly({ ...activeTab.present, edges: edges.map(e => e.id === editingElement.id ? { ...e, ...updates } : e) });
-            };
-
-            const handleElementDelete = () => {
-                let newPresent = { ...activeTab.present };
-                if (editingElement.type === 'node') {
-                    newPresent.nodes = newPresent.nodes.filter(n => n.id !== editingElement.id);
-                    newPresent.edges = newPresent.edges.filter(e => e.source !== editingElement.id && e.target !== editingElement.id);
-                } else if (editingElement.type === 'lane') newPresent.lanes = newPresent.lanes.filter(l => l.id !== editingElement.id);
-                else if (editingElement.type === 'phase') newPresent.phases = newPresent.phases.filter(p => p.id !== editingElement.id);
-                else if (editingElement.type === 'edge') newPresent.edges = newPresent.edges.filter(e => e.id !== editingElement.id);
-                updatePresentOnly(newPresent);
-                setEditingElement(null); setSelectedElement(null);
-            };
-
-            const getOrthogonalPath = (source, target) => {
-                if (!source || !target) return '';
-                const sx = source.x; const sy = source.y; const tx = target.x; const ty = target.y;
-                const targetRadius = target.type && DIM[target.type] ? DIM[target.type].r + 3 : 0;
-                const dx = tx - sx; const dy = ty - sy;
-                let endX = tx; let endY = ty;
-                if (Math.abs(dx) < 5) { endY = dy > 0 ? ty - targetRadius : ty + targetRadius; return `M ${sx} ${sy} L ${tx} ${endY}`; }
-                if (Math.abs(dy) < 5) { endX = dx > 0 ? tx - targetRadius : tx + targetRadius; return `M ${sx} ${sy} L ${endX} ${ty}`; }
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    endX = dx > 0 ? tx - targetRadius : tx + targetRadius; const midX = sx + dx / 2;
-                    return `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${ty} L ${endX} ${ty}`;
-                } else {
-                    endY = dy > 0 ? ty - targetRadius : ty + targetRadius; const midY = sy + dy / 2;
-                    return `M ${sx} ${sy} L ${sx} ${midY} L ${tx} ${midY} L ${tx} ${endY}`;
-                }
-            };
-
+        const WorkflowBuilderEmbedPanel = ({ activeProfileId }) => {
+            const builderUrl = activeProfileId
+                ? `/apps/operations/workflow_builder.html?profile=${encodeURIComponent(activeProfileId)}`
+                : '/apps/operations/workflow_builder.html';
             return (
-                <div className="flex h-full w-full relative">
-                    <div className="absolute top-0 left-0 right-0 bg-brandNavy-955 border-b border-brandNavy-800 flex items-center justify-between shadow-md z-10 shrink-0 h-12">
-                        <div className="flex flex-1 overflow-x-auto no-scrollbar h-full items-end">
-                            {tabs.map(tab => (
-                                <div key={tab.id} onClick={() => { setActiveTabId(tab.id); setPan({x:50, y:50}); setZoom(1); }} className={`flex items-center gap-3 px-4 py-2 border-b-2 cursor-pointer transition-colors max-w-[200px] h-full ${activeTabId === tab.id ? 'border-brandTeal-500 bg-brandNavy-900 text-white' : 'border-transparent text-slate-400 hover:bg-brandNavy-900 hover:text-slate-200'}`}>
-                                    {editingTabId === tab.id ? (
-                                        <input autoFocus onBlur={() => setEditingTabId(null)} onKeyDown={(e) => { if (e.key === 'Enter') setEditingTabId(null); }} value={tab.name} onChange={(e) => renameTab(tab.id, e.target.value)} className="bg-brandNavy-955 border border-brandNavy-700 px-1 text-xs text-white outline-none w-full" />
-                                    ) : (
-                                        <span className="text-xs font-bold truncate select-none" onDoubleClick={(e) => { e.stopPropagation(); setEditingTabId(tab.id); }}>{tab.name}</span>
-                                    )}
-                                    {tabs.length > 1 && (
-                                        <button onClick={(e) => closeTab(e, tab.id)} className="text-slate-500 hover:text-rose-400 ml-auto shrink-0"><Icons.Close /></button>
-                                    )}
-                                </div>
-                            ))}
-                            <button onClick={addNewTab} className="h-full px-4 text-slate-400 hover:text-white hover:bg-brandNavy-900 border-b-2 border-transparent transition-colors flex items-center justify-center"><Icons.Plus /></button>
+                <div className="flex flex-col h-full min-h-[600px]">
+                    <div className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-6 py-4 flex flex-wrap justify-between items-center gap-4 no-print">
+                        <div>
+                            <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">Workflow Diagrammer</h2>
+                            <p className="text-xs text-slate-400 mt-1 max-w-xl">Flowcharts are edited in Workflow Builder (Mod 2). Saves write to this workspace profile — Diagnosis reads them for the final report.</p>
                         </div>
-                        <div className="flex items-center gap-2 px-4 border-l border-brandNavy-800 h-full">
-                            <button onClick={undo} disabled={activeTab.past.length === 0} className={`p-1.5 rounded transition-colors ${activeTab.past.length > 0 ? 'text-slate-300 hover:bg-brandNavy-800' : 'text-slate-600 cursor-not-allowed'}`} title="Undo"><Icons.Undo /></button>
-                            <button onClick={redo} disabled={activeTab.future.length === 0} className={`p-1.5 rounded transition-colors ${activeTab.future.length > 0 ? 'text-slate-300 hover:bg-brandNavy-800' : 'text-slate-600 cursor-not-allowed'}`} title="Redo"><Icons.Redo /></button>
-                            <div className="w-px h-6 bg-brandNavy-700 mx-1"></div>
-                            <button onClick={exportData} className="p-1.5 rounded text-emerald-400 hover:bg-brandNavy-800 transition-colors flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider" title="Export JSON Workspace"><Icons.Download /> Save</button>
-                            <button onClick={() => fileInputRef.current.click()} className="p-1.5 rounded text-brandTeal-400 hover:bg-brandNavy-800 transition-colors flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider" title="Import JSON Workspace"><Icons.Upload /> Load</button>
-                            <input type="file" ref={fileInputRef} onChange={importData} accept=".json" className="hidden" />
-                        </div>
+                        <a href={builderUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-xs font-bold uppercase">Open Full Screen</a>
                     </div>
-
-                    <div className="absolute top-16 left-4 bg-white/90 backdrop-blur rounded-lg shadow-lg border border-slate-200 z-10 flex flex-col p-2 space-y-2">
-                        <button onClick={() => addNode('process')} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Process"><Icons.Process /></button>
-                        <button onClick={() => addNode('approval')} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Approval"><Icons.Approval /></button>
-                        <button onClick={() => addNode('milestone')} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Milestone"><Icons.Milestone /></button>
-                        <button onClick={() => addNode('text')} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Text"><Icons.TextShape /></button>
-                        <div className="h-px bg-slate-200 w-full"></div>
-                        <button onClick={addLane} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Org Unit Lane"><Icons.Lane /></button>
-                        <button onClick={addPhase} className="p-2 hover:bg-slate-100 rounded text-slate-700" title="Add Phase Header"><Icons.Phase /></button>
-                        <div className="h-px bg-slate-200 w-full"></div>
-                        <button onClick={() => { setInteractionMode('select'); setConnectionSourceId(null); }} className={`p-2 rounded ${interactionMode === 'select' ? 'bg-blue-100 text-blue-600' : 'hover:bg-slate-100 text-slate-700'}`} title="Select/Move"><Icons.Move /></button>
-                        <button onClick={() => { setInteractionMode('connect'); setSelectedElement(null); }} className={`p-2 rounded ${interactionMode === 'connect' ? 'bg-blue-100 text-blue-600' : 'hover:bg-slate-100 text-slate-700'}`} title="Connect Nodes"><Icons.Link /></button>
-                    </div>
-
-                    <div className="absolute bottom-6 right-6 flex items-center bg-white/90 backdrop-blur rounded-lg shadow-xl border border-slate-200 z-10 p-1">
-                        <button onClick={() => setSnapToGrid(!snapToGrid)} className={`p-2 rounded transition-colors ${snapToGrid ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:bg-slate-100'}`} title="Toggle Snap to Grid"><Icons.Grid /></button>
-                        <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                        <button onClick={() => adjustZoom(-0.25)} className="p-2 hover:bg-slate-100 rounded text-slate-600"><Icons.ZoomOut /></button>
-                        <div className="w-16 text-center text-xs font-mono font-bold text-slate-600 select-none">{Math.round(zoom * 100)}%</div>
-                        <button onClick={() => adjustZoom(0.25)} className="p-2 hover:bg-slate-100 rounded text-slate-600"><Icons.ZoomIn /></button>
-                        <div className="w-px h-4 bg-slate-200 mx-1"></div>
-                        <button onClick={() => { setZoom(1); setPan({x:50, y:50}); }} className="p-2 hover:bg-slate-100 rounded text-slate-600"><Icons.Target /></button>
-                    </div>
-
-                    <div className="flex-1 relative overflow-hidden bg-[#fafafa] mt-12">
-                        {interactionMode === 'connect' && (
-                            <div className="absolute top-4 left-20 bg-blue-100 border border-blue-400 text-blue-800 px-4 py-2 rounded-lg shadow-md z-10 font-medium text-sm flex items-center gap-2 pointer-events-none">
-                                <span className="animate-pulse w-2 h-2 bg-blue-600 rounded-full"></span>
-                                {connectionSourceId ? 'Click target block to link' : 'Click a source block to start connection'}
-                            </div>
-                        )}
-                        <svg ref={svgRef} className={`w-full h-full ${interactionMode === 'connect' ? 'cursor-crosshair' : (isPanning ? 'cursor-grabbing' : 'cursor-grab')}`} onPointerDown={handleSvgPointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
-                            <defs>
-                                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#333333" /></marker>
-                                <marker id="arrowhead-sel" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3b82f6" /></marker>
-                                <pattern id="dotGrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#cbd5e1" /></pattern>
-                            </defs>
-                            <g ref={gRef} transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-                                {snapToGrid && <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#dotGrid)" className="pointer-events-none" />}
-                                <g className="pointer-events-auto">
-                                    {lanes.map((lane) => (
-                                        <g key={lane.id} className={`lane ${selectedElement?.id === lane.id && selectedElement?.type === 'lane' ? 'selected-lane' : ''}`} onPointerDown={(e) => { e.stopPropagation(); setSelectedElement({ type: 'lane', id: lane.id }); }} onDoubleClick={(e) => { e.stopPropagation(); setEditingElement({ type: 'lane', id: lane.id }); }}>
-                                            <line x1="180" y1={lane.y - 60} x2="3000" y2={lane.y - 60} stroke="#e2e8f0" strokeWidth="1" />
-                                            <line x1="165" y1={lane.y} x2="3000" y2={lane.y} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="5,5" className="pointer-events-none" />
-                                            <ellipse cx="90" cy={lane.y} rx="75" ry="25" fill="#fff2cc" stroke="#d6b656" strokeWidth="2" />
-                                            <foreignObject x="20" y={lane.y - 20} width="140" height="40" className="pointer-events-none">
-                                                <div className="w-full h-full flex items-center justify-center text-center font-bold text-[#333333] text-[10px] leading-tight px-2" style={{ whiteSpace: 'pre-wrap' }}>{lane.label}</div>
-                                            </foreignObject>
-                                        </g>
-                                    ))}
-                                    <g transform="translate(0, 10)">
-                                        {phases.map(phase => {
-                                            const { x, w, type } = phase; const h = 40, offset = 20; let path = '';
-                                            if (type === 'start') path = `M ${x},0 L ${x+w-offset},0 L ${x+w},${h/2} L ${x+w-offset},${h} L ${x},${h} Z`;
-                                            else if (type === 'mid') path = `M ${x-offset},0 L ${x+w-offset},0 L ${x+w},${h/2} L ${x+w-offset},${h} L ${x-offset},${h} L ${x},${h/2} Z`;
-                                            else if (type === 'end') path = `M ${x-offset},0 L ${x+w},0 L ${x+w},${h} L ${x-offset},${h} L ${x},${h/2} Z`;
-                                            return (
-                                                <g key={phase.id} className={`phase ${selectedElement?.id === phase.id && selectedElement?.type === 'phase' ? 'selected-phase' : ''}`} onPointerDown={(e) => { e.stopPropagation(); setSelectedElement({ type: 'phase', id: phase.id }); }} onDoubleClick={(e) => { e.stopPropagation(); setEditingElement({ type: 'phase', id: phase.id }); }}>
-                                                    <path d={path} fill={phase.color} stroke="#cbd5e1" strokeWidth="1" />
-                                                    <text x={phase.x + phase.w/2} y="20" textAnchor="middle" dominantBaseline="middle" fontSize="14" fontWeight="bold" fill={phase.text} letterSpacing="1" className="pointer-events-none">{phase.label}</text>
-                                                    {phase.type !== 'end' && <line x1={phase.x + phase.w - 10} y1="40" x2={phase.x + phase.w - 10} y2="2000" stroke="#e2e8f0" strokeWidth="2" className="pointer-events-none" />}
-                                                </g>
-                                            );
-                                        })}
-                                    </g>
-                                </g>
-                                {edges.map(edge => {
-                                    const sourceNode = nodes.find(n => n.id === edge.source); const targetNode = nodes.find(n => n.id === edge.target);
-                                    if (!sourceNode || !targetNode) return null;
-                                    const pathData = getOrthogonalPath(sourceNode, targetNode); const midX = (sourceNode.x + targetNode.x) / 2; const midY = (sourceNode.y + targetNode.y) / 2;
-                                    const isSelected = selectedElement?.id === edge.id && selectedElement?.type === 'edge';
-                                    const edgeStroke = edge.stroke || "#333333"; const edgeWidth = edge.strokeWidth || 1.5;
-                                    return (
-                                        <g key={edge.id} className={`edge-group ${isSelected ? 'selected-edge' : ''}`} onPointerDown={(e) => { e.stopPropagation(); setSelectedElement({ type: 'edge', id: edge.id }); }} onDoubleClick={(e) => { e.stopPropagation(); setEditingElement({ type: 'edge', id: edge.id }); }}>
-                                            <path d={pathData} fill="none" stroke="transparent" strokeWidth="15" />
-                                            <path d={pathData} fill="none" className="edge-path transition-colors group-hover:stroke-red-500" stroke={isSelected ? "#3b82f6" : edgeStroke} strokeWidth={isSelected ? edgeWidth + 1 : edgeWidth} strokeDasharray={edge.dashed ? "4,4" : "none"} markerEnd={isSelected ? "url(#arrowhead-sel)" : "url(#arrowhead)"} strokeLinejoin="round" />
-                                            {edge.label && (<g className="pointer-events-none"><rect x={midX - 30} y={midY - 10} width="60" height="20" fill="#ffffff" rx="4" opacity="0.9" /><text x={midX} y={midY} dominantBaseline="middle" textAnchor="middle" fontSize="10" fill="#3b82f6" fontWeight="bold">{edge.label}</text></g>)}
-                                        </g>
-                                    );
-                                })}
-                                {interactionMode === 'connect' && connectionSourceId && (<path d={getOrthogonalPath(nodes.find(n => n.id === connectionSourceId) || {x:0, y:0}, {x: mousePos.x, y: mousePos.y})} fill="none" stroke="#3b82f6" strokeWidth="2" strokeDasharray="5,5" strokeLinejoin="round" />)}
-                                {nodes.map(node => (<NodeShape key={node.id} node={node} isSelected={selectedElement?.id === node.id && selectedElement?.type === 'node'} onPointerDown={(e, id) => handleNodeAction(e, id, false)} onDoubleClick={(e, id) => handleNodeAction(e, id, true)} />))}
-                            </g>
-                        </svg>
-                    </div>
-
-                    <ElementSettingsFloatingPanel editingElement={editingElement} getElementData={getElementData} lanes={lanes} onClose={() => setEditingElement(null)} onUpdatePresentOnly={handleElementUpdatePresentOnly} onPushToPast={pushToPast} onDelete={() => { pushToPast(); handleElementDelete(); }} />
+                    <iframe src={builderUrl} className="flex-1 w-full min-h-[500px] border-0 bg-brandNavy-950" title="Workflow Builder embed" />
                 </div>
             );
         };
+
 
         // --- SUITE SUB-COMPONENTS ---
         const RaciBuilder = ({ activeTab, raciAssignments, setRaciAssignments }) => {
@@ -1783,10 +1511,10 @@
                 if (profile) {
                     setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
-                    const resolved = WT?.resolveWorkflowTabs(profile, 'diagnosis');
-                    if (resolved) {
-                        setTabs(WT.hydrateTabs(resolved.tabs));
-                        setActiveTabId(resolved.activeTabId);
+                    const reportTabs = WT?.getReportTabs?.(profile) || [];
+                    if (reportTabs.length) {
+                        setTabs(WT.hydrateTabs(reportTabs));
+                        setActiveTabId(profile.activeTabId || reportTabs[0].id);
                     } else if (profile.workflows) { // Migration fallback
                         setTabs([{ id: 'tab-m', name: 'Migrated Data', past: [], future: [], present: { nodes: INITIAL_NODES, edges: INITIAL_EDGES, lanes: INITIAL_LANES, phases: INITIAL_PHASES } }]);
                         setActiveTabId('tab-m');
@@ -1864,14 +1592,10 @@
                 try {
                     const EC = window.EngagementConfig || {};
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-                    const profileSnap = await window.getDoc(profileRef);
-                    const existing = profileSnap.exists() ? profileSnap.data() : {};
-                    const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload('diagnosis', tabs, activeTabId, existing);
                     const chaosTax = EC.buildChaosTaxPayload
                         ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
                         : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
                     await window.setDoc(profileRef, {
-                        ...tabsPayload,
                         subSaaS,
                         raciAssignments,
                         annualOperationalLeakage: totalAnnualChaosTax,
@@ -1885,7 +1609,7 @@
 
             const profileLabel = (p) => window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
 
-            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0] || { id: 'empty', name: 'No workflow', present: { nodes: [], edges: [], lanes: INITIAL_LANES, phases: INITIAL_PHASES } };
 
             return (
                 <div className="flex h-screen overflow-hidden bg-brandNavy-955 font-sans">
@@ -1936,19 +1660,7 @@
 
                         <div className={`flex-1 overflow-y-auto ${activeNav === 'flowcharts' ? '' : activeNav === 'report' ? 'w-full' : 'p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
-                                <WorkflowCanvasBuilder 
-                                    tabs={tabs} setTabs={setTabs} activeTabId={activeTabId} setActiveTabId={setActiveTabId}
-                                    undo={() => setTabs(prev => prev.map(t => { if (t.id !== activeTabId || t.past.length === 0) return t; const p = t.past[t.past.length-1]; return { ...t, past: t.past.slice(0, -1), present: p, future: [t.present, ...t.future] }; }))}
-                                    redo={() => setTabs(prev => prev.map(t => { if (t.id !== activeTabId || t.future.length === 0) return t; const n = t.future[0]; return { ...t, past: [...t.past, t.present], present: n, future: t.future.slice(1) }; }))}
-                                    pushToPast={() => setTabs(prev => prev.map(t => { if (t.id === activeTabId) return { ...t, past: [...t.past, t.present], future: [] }; return t; }))}
-                                    updatePresentOnly={(n) => setTabs(prev => prev.map(t => { if (t.id === activeTabId) return { ...t, present: n }; return t; }))}
-                                    commitUpdate={(n) => setTabs(prev => prev.map(t => { if (t.id === activeTabId) return { ...t, past: [...t.past, t.present], present: n, future: [] }; return t; }))}
-                                    addNewTab={() => { const id = 'tab-'+Date.now(); setTabs([...tabs, createEmptyTab(id, 'New Diagram')]); setActiveTabId(id); }}
-                                    closeTab={(e, id) => { e.stopPropagation(); if (tabs.length === 1) return; const newT = tabs.filter(t => t.id !== id); setTabs(newT); if (activeTabId === id) setActiveTabId(newT[0].id); }}
-                                    renameTab={(id, name) => setTabs(tabs.map(t => t.id === id ? { ...t, name } : t))}
-                                    exportData={() => { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tabs)); a.download = "workflow_workspace.json"; a.click(); }}
-                                    importData={(e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { const p = JSON.parse(ev.target.result); if(Array.isArray(p)){ setTabs(p); setActiveTabId(p[0].id); } } catch(err){ alert("Invalid File."); } }; r.readAsText(f); e.target.value = null; }}
-                                />
+                                <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
                             )}
                             {activeNav === 'raci' && <RaciBuilder activeTab={activeTab} raciAssignments={raciAssignments} setRaciAssignments={setRaciAssignments} />}
                             {activeNav === 'saas' && <SaaSAuditBuilder subSaaS={subSaaS} setSubSaaS={setSubSaaS} />}
