@@ -230,7 +230,14 @@
       }
 
       [aria-label="Stage-gated payment gates"] {
-        grid-template-columns: 1fr !important;
+        display: grid !important;
+        width: 100% !important;
+      }
+
+      [aria-label="Stage-gated payment gates"] > article {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        min-width: 0;
       }
 
       .print-card table {
