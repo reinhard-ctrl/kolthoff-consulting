@@ -120,6 +120,7 @@
 
     .print-only-table { display: none; }
     .print-only { display: none; }
+    .sr-only {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -164,14 +165,14 @@
 
   <div id="root"></div>
 
-  <script src="project_planner_helpers.js"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v4"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
-    const MOD_1 = H.MOD_CATEGORIES.mod1;
-    const MOD_2 = H.MOD_CATEGORIES.mod2;
-    const MOD_3 = H.MOD_CATEGORIES.mod3;
-    const MOD_4 = H.MOD_CATEGORIES.mod4;
+    const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
+    const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
+    const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
+    const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     class ErrorBoundary extends Component {
       constructor(props) {

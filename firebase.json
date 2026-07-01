@@ -48,6 +48,12 @@
       {
         "source": "**/*.@(js|css|html)",
         "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }]
+      },
+      {
+        "source": "/apps/delivery/project_planner_helpers.js",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
       }
     ],
     "redirects": [
