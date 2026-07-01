@@ -465,8 +465,6 @@
       printQuote: state.printQuote,
       printCover: state.printCover,
       printRoadmapGantt: state.printRoadmapGantt !== false,
-      printRoadmapTable: state.printRoadmapTable !== false,
-      printRoadmapScale: state.printRoadmapScale !== false,
       milestoneSplit: state.milestoneSplit,
       customSplit1: state.customSplit1,
       customSplit2: state.customSplit2,

@@ -92,7 +92,6 @@
       .print-accent { color: #0f766e !important; fill: #0f766e !important; }
       .print-divider { border-color: #cbd5e1 !important; }
       .print-section-hidden { display: none !important; }
-      .print-only-table { display: block !important; }
       .print-module-card { min-height: auto !important; }
       .print-chaos-metric { background: #fff !important; border-left: 3px solid #0f766e !important; }
       .print-chaos-leak { border-left-color: #e11d48 !important; }
@@ -107,10 +106,9 @@
         justify-content: space-between !important;
       }
       .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
-      @page { size: A4 portrait; margin: 14mm 12mm; }
+      @page { size: auto; margin: 14mm 12mm; }
     }
 
-    .print-only-table { display: none; }
     .print-only { display: none; }
     .sr-only {
       position: absolute;
@@ -163,6 +161,12 @@
 
     /* Print overrides must come after screen layout rules so they win at print time. */
     @media print {
+      @page { size: auto; margin: 14mm 12mm; }
+
+      html {
+        overflow: visible !important;
+      }
+
       html, body, #root, #root > div, #app-main,
       .planner-split-layout, .planner-split-panel,
       #package-print-area, [id$="-print-area"] {
@@ -265,11 +269,6 @@
         font-size: 7px !important;
         line-height: 1.2 !important;
       }
-
-      .roadmap-scale-note {
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
     }
   </style>
   <script>
@@ -301,7 +300,7 @@
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v7"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v8"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -885,8 +884,6 @@
       const [printQuote, setPrintQuote] = useState(activeProfile.printQuote !== undefined ? activeProfile.printQuote : true);
       const [printCover, setPrintCover] = useState(activeProfile.printCover !== undefined ? activeProfile.printCover : false);
       const [printRoadmapGantt, setPrintRoadmapGantt] = useState(activeProfile.printRoadmapGantt !== undefined ? activeProfile.printRoadmapGantt : true);
-      const [printRoadmapTable, setPrintRoadmapTable] = useState(activeProfile.printRoadmapTable !== undefined ? activeProfile.printRoadmapTable : true);
-      const [printRoadmapScale, setPrintRoadmapScale] = useState(activeProfile.printRoadmapScale !== undefined ? activeProfile.printRoadmapScale : true);
 
       // --- CHAOS TAX DYNAMIC STATES ---
       const [staffCount, setStaffCount] = useState(activeProfile.staffCount || 15);
@@ -985,8 +982,6 @@
         setPrintQuote(p.printQuote !== undefined ? p.printQuote : true);
         setPrintCover(p.printCover !== undefined ? p.printCover : false);
         setPrintRoadmapGantt(p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true);
-        setPrintRoadmapTable(p.printRoadmapTable !== undefined ? p.printRoadmapTable : true);
-        setPrintRoadmapScale(p.printRoadmapScale !== undefined ? p.printRoadmapScale : true);
         setMilestoneSplit(p.milestoneSplit || 'auto');
         setCustomSplit1(p.customSplit1 !== undefined ? p.customSplit1 : 40);
         setCustomSplit2(p.customSplit2 !== undefined ? p.customSplit2 : 40);
@@ -1021,8 +1016,6 @@
           printSla: p.printSla !== undefined ? p.printSla : true, printQuote: p.printQuote !== undefined ? p.printQuote : true,
           printCover: p.printCover !== undefined ? p.printCover : false,
           printRoadmapGantt: p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true,
-          printRoadmapTable: p.printRoadmapTable !== undefined ? p.printRoadmapTable : true,
-          printRoadmapScale: p.printRoadmapScale !== undefined ? p.printRoadmapScale : true,
           milestoneSplit: p.milestoneSplit || 'auto', customSplit1: p.customSplit1 !== undefined ? p.customSplit1 : 40,
           customSplit2: p.customSplit2 !== undefined ? p.customSplit2 : 40, customSplit3: p.customSplit3 !== undefined ? p.customSplit3 : 20,
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
@@ -1063,11 +1056,11 @@
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
         clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
-        printRoadmapGantt, printRoadmapTable, printRoadmapScale,
+        printRoadmapGantt,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, printRoadmapGantt, printRoadmapTable, printRoadmapScale, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, printRoadmapGantt, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1167,7 +1160,7 @@
         setCreditBackDays(d.creditBackDays ?? 14); setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
         setSlaRecurrenceMonths(d.slaRecurrenceMonths ?? 3); setSubscriptionMonths(d.subscriptionMonths ?? 6);
         setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintSla(d.printSla ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
-        setPrintRoadmapGantt(d.printRoadmapGantt ?? true); setPrintRoadmapTable(d.printRoadmapTable ?? true); setPrintRoadmapScale(d.printRoadmapScale ?? true);
+        setPrintRoadmapGantt(d.printRoadmapGantt ?? true);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
@@ -1256,7 +1249,7 @@
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
           discountPercent: 0, applyCreditBack: false, creditBackDays: 14, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
-          printRoadmapGantt: true, printRoadmapTable: true, printRoadmapScale: true,
+          printRoadmapGantt: true,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
@@ -1765,72 +1758,6 @@
         </p>
       );
 
-      const renderRoadmapPrintTable = () => {
-        if (!printRoadmapTable || scheduledTasks.length === 0) return null;
-        const phaseLabels = { 'MOD 1': 'Business Leak Scan', 'MOD 2': 'How Your Business Runs', 'MOD 3': 'Your Team Workspace', 'MOD 4': 'Care Plan' };
-        return (
-          <div className="print-only-table mb-6">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Implementation schedule (summary)</h4>
-            <table className="w-full border border-slate-200 rounded-lg overflow-hidden text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-[9px] uppercase font-mono text-slate-500 border-b border-slate-200">
-                  <th className="py-2 px-3 text-left">Phase</th>
-                  <th className="py-2 px-3 text-left">Deliverable</th>
-                  <th className="py-2 px-3 text-center">Start</th>
-                  <th className="py-2 px-3 text-center">End</th>
-                  <th className="py-2 px-3 text-right">Hours</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {scheduledTasks.map(task => {
-                  const modPrefix = ['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].find(p => task.category.startsWith(p)) || 'MOD';
-                  return (
-                    <tr key={task.id}>
-                      <td className="py-2 px-3 text-slate-600">{phaseLabels[modPrefix] || modPrefix}</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{task.deliverable}</td>
-                      <td className="py-2 px-3 text-center font-mono">{task.isRetainer ? `Wk ${task.startWeek}+` : `Wk ${task.startWeek}`}</td>
-                      <td className="py-2 px-3 text-center font-mono">{task.isRetainer ? 'Ongoing' : (task.endWeek != null ? `Wk ${task.endWeek}` : '—')}</td>
-                      <td className="py-2 px-3 text-right font-mono">{task.bufferedHours || task.estHours}h</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <p className="text-[9px] text-slate-500 mt-2">Estimated completion: {displayTimeline} · Kickoff target: {targetStartDate || 'Upon signup'}</p>
-          </div>
-        );
-      };
-
-      const renderRoadmapScaleNote = () => {
-        if (!printRoadmapScale) return null;
-        return (
-          <div className="roadmap-scale-note mb-6 p-4 border border-slate-200 rounded-lg bg-slate-50 text-[10px] text-slate-600 print-pill">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Timeline scale assumptions</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Execution pace</span>
-                <strong className="text-slate-900 font-mono">{weeklyHours} hrs/week</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Review buffer</span>
-                <strong className="text-slate-900 font-mono">+{clientReviewWeeks} week(s)</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Contingency reserve</span>
-                <strong className="text-slate-900 font-mono">+{frictionBuffer}% hours</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Estimated duration</span>
-                <strong className="text-slate-900">{displayTimeline}</strong>
-              </div>
-            </div>
-            <p className="mt-3 text-[9px] text-slate-500 leading-relaxed">
-              Kickoff target: {targetStartDate || 'Upon signup'} · Week columns below are scaled to fit the page in PDF; adjust execution pace in Package settings before printing.
-            </p>
-          </div>
-        );
-      };
-
       const getModuleCardsHeading = () => {
         const selectedMods = [activeDiag, activeSOP, activePMO, activeGov].filter(Boolean).length;
         if (selectedMods === 4) return 'Modules included in this proposal';
@@ -2336,9 +2263,7 @@
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans font-bold">Roadmap PDF options</legend>
                   <div className="space-y-2.5" role="group" aria-label="Roadmap PDF options">
                     {[
-                      { id: 'print-roadmap-gantt', label: 'Include Gantt chart', checked: printRoadmapGantt, onChange: setPrintRoadmapGantt },
-                      { id: 'print-roadmap-table', label: 'Include schedule summary table', checked: printRoadmapTable, onChange: setPrintRoadmapTable },
-                      { id: 'print-roadmap-scale', label: 'Include timeline scale note', checked: printRoadmapScale, onChange: setPrintRoadmapScale }
+                      { id: 'print-roadmap-gantt', label: 'Include Gantt chart', checked: printRoadmapGantt, onChange: setPrintRoadmapGantt }
                     ].map((option) => (
                       <label key={option.id} htmlFor={option.id} className="flex items-center gap-2 text-[11px] text-slate-300 w-full hover:text-white transition-colors cursor-pointer">
                         <input id={option.id} type="checkbox" className="sr-only" checked={option.checked} onChange={(e) => option.onChange(e.target.checked)} />
@@ -2762,8 +2687,6 @@
               </div>
             ) : (
               <div className="space-y-6 text-left font-sans font-medium">
-                {renderRoadmapScaleNote()}
-                {renderRoadmapPrintTable()}
                 <div className={`roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans ${!printRoadmapGantt ? 'print-section-hidden' : ''}`}>
                   <h4 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left font-sans font-bold font-sans">Implementation Timeline Map (Gantt view)</h4>
                   <div className="roadmap-gantt-grid overflow-x-auto space-y-4 text-left font-sans font-medium">
