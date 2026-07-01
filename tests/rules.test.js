@@ -50,6 +50,47 @@ async function run() {
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_deals/d1').get()
   );
 
+  // Anonymous users cannot read arbitrary workbook profiles
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/workbook_profiles/p1').get()
+  );
+
+  // Anonymous users can read sent contract signing documents
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-client-abc').set({
+      id: 'contract-client-abc',
+      profileId: 'client-abc',
+      status: 'sent',
+      generatedAt: new Date().toISOString(),
+      auditTrail: [],
+    });
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/workbook_profiles/client-abc').set({
+      clientCompany: 'Test Co',
+      quoteId: 'Q-1',
+      tasks: [],
+    });
+  });
+  await assertSucceeds(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-client-abc').get()
+  );
+  await assertSucceeds(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/workbook_profiles/client-abc').get()
+  );
+  await assertSucceeds(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-client-abc').update({
+      status: 'signed',
+      signedAt: new Date().toISOString(),
+      signedBy: 'Jane Doe',
+      ipAddress: '127.0.0.1',
+      auditTrail: [{ action: 'E-Signed', timestamp: new Date().toISOString() }],
+    })
+  );
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/contracts_ledger/contract-client-abc').update({
+      status: 'draft',
+    })
+  );
+
   // Anonymous users can read enabled CRM public share snapshots
   await testEnv.withSecurityRulesDisabled(async (context) => {
     await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/crm_share_links/share-token-1').set({
