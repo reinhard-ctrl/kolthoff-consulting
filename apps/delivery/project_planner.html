@@ -92,7 +92,6 @@
       .print-accent { color: #0f766e !important; fill: #0f766e !important; }
       .print-divider { border-color: #cbd5e1 !important; }
       .print-section-hidden { display: none !important; }
-      .print-only-table { display: block !important; }
       .print-module-card { min-height: auto !important; }
       .print-chaos-metric { background: #fff !important; border-left: 3px solid #0f766e !important; }
       .print-chaos-leak { border-left-color: #e11d48 !important; }
@@ -107,10 +106,9 @@
         justify-content: space-between !important;
       }
       .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
-      @page { size: A4 portrait; margin: 14mm 12mm; }
+      @page { size: auto; margin: 14mm 12mm; }
     }
 
-    .print-only-table { display: none; }
     .print-only { display: none; }
     .sr-only {
       position: absolute;
@@ -163,6 +161,12 @@
 
     /* Print overrides must come after screen layout rules so they win at print time. */
     @media print {
+      @page { size: auto; margin: 14mm 12mm; }
+
+      html {
+        overflow: visible !important;
+      }
+
       html, body, #root, #root > div, #app-main,
       .planner-split-layout, .planner-split-panel,
       #package-print-area, [id$="-print-area"] {
@@ -226,7 +230,14 @@
       }
 
       [aria-label="Stage-gated payment gates"] {
-        grid-template-columns: 1fr !important;
+        display: grid !important;
+        width: 100% !important;
+      }
+
+      [aria-label="Stage-gated payment gates"] > article {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        min-width: 0;
       }
 
       .print-card table {
@@ -265,11 +276,6 @@
         font-size: 7px !important;
         line-height: 1.2 !important;
       }
-
-      .roadmap-scale-note {
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
     }
   </style>
   <script>
@@ -296,11 +302,12 @@
 
   <div id="root"></div>
 
+  <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
   <script type="module">
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v7"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v11"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -580,8 +587,6 @@
         weeklyHours: 16,
         clientReviewWeeks: 1, 
         discountPercent: 5,
-        applyCreditBack: true,
-        creditBackDays: 14,
         dpaRetentionDays: 14,
         slaCureDays: 30,
         slaRecurrenceMonths: 3,
@@ -630,8 +635,6 @@
         weeklyHours: 20,
         clientReviewWeeks: 2,
         discountPercent: 10,
-        applyCreditBack: false,
-        creditBackDays: 14,
         dpaRetentionDays: 14,
         slaCureDays: 30,
         slaRecurrenceMonths: 3,
@@ -769,9 +772,15 @@
       const autoSaveTimerRef = useRef(null);
       const isHydratingRef = useRef(true);
       const isDirtyRef = useRef(false);
+      const lastSavedFingerprintRef = useRef('');
       const dismissedDraftsRef = useRef({});
       const importFileRef = useRef(null);
       const lastHydratedProfileIdRef = useRef(null);
+
+      const syncSavedFingerprint = (fp) => {
+        lastSavedFingerprintRef.current = fp;
+        setLastSavedFingerprint(fp);
+      };
 
       // --- CLIENT PROFILES LIST STATE ---
       const [profiles, setProfiles] = useState(DEFAULT_CLIENTS);
@@ -883,9 +892,6 @@
       const [printSla, setPrintSla] = useState(activeProfile.printSla !== undefined ? activeProfile.printSla : true);
       const [printQuote, setPrintQuote] = useState(activeProfile.printQuote !== undefined ? activeProfile.printQuote : true);
       const [printCover, setPrintCover] = useState(activeProfile.printCover !== undefined ? activeProfile.printCover : false);
-      const [printRoadmapGantt, setPrintRoadmapGantt] = useState(activeProfile.printRoadmapGantt !== undefined ? activeProfile.printRoadmapGantt : true);
-      const [printRoadmapTable, setPrintRoadmapTable] = useState(activeProfile.printRoadmapTable !== undefined ? activeProfile.printRoadmapTable : true);
-      const [printRoadmapScale, setPrintRoadmapScale] = useState(activeProfile.printRoadmapScale !== undefined ? activeProfile.printRoadmapScale : true);
 
       // --- CHAOS TAX DYNAMIC STATES ---
       const [staffCount, setStaffCount] = useState(activeProfile.staffCount || 15);
@@ -893,7 +899,7 @@
       const [wastedHours, setWastedHours] = useState(activeProfile.wastedHours || 2.0);
 
       const annualOperationalLeakage = useMemo(() => {
-        return staffCount * monthlySalary * 12 * (wastedHours / 8);
+        return H.computeAnnualOperationalLeakage(staffCount, monthlySalary, wastedHours);
       }, [staffCount, monthlySalary, wastedHours]);
 
       const recoveryPotential = useMemo(() => {
@@ -907,9 +913,6 @@
       const [customSplit1, setCustomSplit1] = useState(activeProfile.customSplit1 || 40);
       const [customSplit2, setCustomSplit2] = useState(activeProfile.customSplit2 || 40);
       const [customSplit3, setCustomSplit3] = useState(activeProfile.customSplit3 || 20);
-
-      const [applyCreditBack, setApplyCreditBack] = useState(activeProfile.applyCreditBack || false);
-      const [creditBackDays, setCreditBackDays] = useState(activeProfile.creditBackDays || 14);
 
       const [ndaEffectiveDate, setNdaEffectiveDate] = useState(activeProfile.ndaEffectiveDate || '');
       const [ndaPurpose, setNdaPurpose] = useState(activeProfile.ndaPurpose || '');
@@ -947,64 +950,11 @@
         if (!p) return;
         const profileSwitch = lastHydratedProfileIdRef.current !== activeProfileId;
         if (!profileSwitch && isDirtyRef.current) return;
-        lastHydratedProfileIdRef.current = activeProfileId;
-        setClientCompany(p.clientCompany);
-        setClientRep(p.clientRep);
-        setClientAddress(p.clientAddress);
-        setClientTin(p.clientTin);
-        setQuoteId(p.quoteId);
-        setQuoteDate(p.quoteDate);
-        setQuoteValidity(p.quoteValidity);
-        setStaffCount(p.staffCount !== undefined ? p.staffCount : 15);
-        setMonthlySalary(p.monthlySalary !== undefined ? p.monthlySalary : 25000);
-        setWastedHours(p.wastedHours !== undefined ? p.wastedHours : 2.0);
-        setIncludeTax(p.includeTax);
-        setPreparerTitle(p.preparerTitle || 'Chief Operations Strategist');
-        setTargetStartDate(p.targetStartDate);
-        setProposalObjectives(p.proposalObjectives);
-        setProposalSponsor(p.proposalSponsor);
-        setPreDiagnosticList(p.preDiagnosticList);
-        setFrictionBuffer(p.frictionBuffer);
-        setPrincipalToSeniorDelegate(p.principalToSeniorDelegate);
-        setSeniorToAssociateDelegate(p.seniorToAssociateDelegate);
-        setOverrideTimeline(p.overrideTimeline || '');
-        setWeeklyHours(p.weeklyHours || 16);
-        setClientReviewWeeks(p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1);
-        setTasks(p.tasks || INITIAL_TASKS);
-        setDiscountPercent(p.discountPercent || 0);
-        setApplyCreditBack(p.applyCreditBack !== undefined ? p.applyCreditBack : false);
-        setCreditBackDays(p.creditBackDays !== undefined ? p.creditBackDays : 14);
-        setDpaRetentionDays(p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14);
-        setSlaCureDays(p.slaCureDays !== undefined ? p.slaCureDays : 30);
-        setSlaRecurrenceMonths(p.slaRecurrenceMonths !== undefined ? p.slaRecurrenceMonths : 3);
-        setSubscriptionMonths(p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6);
-        setPrintSow(p.printSow !== undefined ? p.printSow : true);
-        setPrintTimeline(p.printTimeline !== undefined ? p.printTimeline : true);
-        setPrintSla(p.printSla !== undefined ? p.printSla : true);
-        setPrintQuote(p.printQuote !== undefined ? p.printQuote : true);
-        setPrintCover(p.printCover !== undefined ? p.printCover : false);
-        setPrintRoadmapGantt(p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true);
-        setPrintRoadmapTable(p.printRoadmapTable !== undefined ? p.printRoadmapTable : true);
-        setPrintRoadmapScale(p.printRoadmapScale !== undefined ? p.printRoadmapScale : true);
-        setMilestoneSplit(p.milestoneSplit || 'auto');
-        setCustomSplit1(p.customSplit1 !== undefined ? p.customSplit1 : 40);
-        setCustomSplit2(p.customSplit2 !== undefined ? p.customSplit2 : 40);
-        setCustomSplit3(p.customSplit3 !== undefined ? p.customSplit3 : 20);
-        setNdaEffectiveDate(p.ndaEffectiveDate || '');
-        setNdaPurpose(p.ndaPurpose || '');
-        setNdaTerm(p.ndaTerm || '5 (Five) Years');
-        setNdaJurisdiction(p.ndaJurisdiction || 'Taytay, Rizal, Philippines');
-        setInvoiceMilestone(p.invoiceMilestone || 'full');
-        setCustomInvoiceAmount(p.customInvoiceAmount || 120000);
-        setInvoiceNumberSuffix(p.invoiceNumberSuffix || '01');
-        setInvoiceDueDate(p.invoiceDueDate || '');
-        setPrincipalRate(p.principalRate ?? H.DEFAULT_RATES.principalRate);
-        setSeniorRate(p.seniorRate ?? H.DEFAULT_RATES.seniorRate);
-        setAssociateRate(p.associateRate ?? H.DEFAULT_RATES.associateRate);
-        setPartnerRate(p.partnerRate ?? H.DEFAULT_RATES.partnerRate);
-        setActivePresets(H.deriveActivePresetsFromTasks(p.tasks || INITIAL_TASKS));
-        isHydratingRef.current = true;
-        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', {
+        const profileStaffCount = p.staffCount !== undefined ? p.staffCount : 15;
+        const profileMonthlySalary = p.monthlySalary !== undefined ? p.monthlySalary : 25000;
+        const profileWastedHours = p.wastedHours !== undefined ? p.wastedHours : 2.0;
+        const profileLeakage = H.computeAnnualOperationalLeakage(profileStaffCount, profileMonthlySalary, profileWastedHours);
+        const profileState = {
           clientCompany: p.clientCompany, clientRep: p.clientRep, clientAddress: p.clientAddress, clientTin: p.clientTin,
           quoteId: p.quoteId, quoteDate: p.quoteDate, quoteValidity: p.quoteValidity, includeTax: p.includeTax,
           preparerTitle: p.preparerTitle || 'Chief Operations Strategist', targetStartDate: p.targetStartDate,
@@ -1013,27 +963,80 @@
           seniorToAssociateDelegate: p.seniorToAssociateDelegate, overrideTimeline: p.overrideTimeline || '',
           weeklyHours: p.weeklyHours || 16, clientReviewWeeks: p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1,
           tasks: p.tasks || INITIAL_TASKS, discountPercent: p.discountPercent || 0,
-          applyCreditBack: p.applyCreditBack !== undefined ? p.applyCreditBack : false, creditBackDays: p.creditBackDays !== undefined ? p.creditBackDays : 14,
           dpaRetentionDays: p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14, slaCureDays: p.slaCureDays !== undefined ? p.slaCureDays : 30,
           slaRecurrenceMonths: p.slaRecurrenceMonths !== undefined ? p.slaRecurrenceMonths : 3, subscriptionMonths: p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6,
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
           printSla: p.printSla !== undefined ? p.printSla : true, printQuote: p.printQuote !== undefined ? p.printQuote : true,
           printCover: p.printCover !== undefined ? p.printCover : false,
-          printRoadmapGantt: p.printRoadmapGantt !== undefined ? p.printRoadmapGantt : true,
-          printRoadmapTable: p.printRoadmapTable !== undefined ? p.printRoadmapTable : true,
-          printRoadmapScale: p.printRoadmapScale !== undefined ? p.printRoadmapScale : true,
           milestoneSplit: p.milestoneSplit || 'auto', customSplit1: p.customSplit1 !== undefined ? p.customSplit1 : 40,
           customSplit2: p.customSplit2 !== undefined ? p.customSplit2 : 40, customSplit3: p.customSplit3 !== undefined ? p.customSplit3 : 20,
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
           ndaJurisdiction: p.ndaJurisdiction || 'Taytay, Rizal, Philippines', invoiceMilestone: p.invoiceMilestone || 'full',
           customInvoiceAmount: p.customInvoiceAmount || 120000, invoiceNumberSuffix: p.invoiceNumberSuffix || '01', invoiceDueDate: p.invoiceDueDate || '',
-          staffCount: p.staffCount !== undefined ? p.staffCount : 15, monthlySalary: p.monthlySalary !== undefined ? p.monthlySalary : 25000,
-          wastedHours: p.wastedHours !== undefined ? p.wastedHours : 2.0,
+          staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate
-        }, p.annualOperationalLeakage ?? 0);
+        };
+        if (!profileSwitch && !isDirtyRef.current) {
+          const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
+          if (p.updatedAt) incomingPayload.updatedAt = p.updatedAt;
+          if (H.payloadFingerprint(incomingPayload) === lastSavedFingerprintRef.current) return;
+        }
+        lastHydratedProfileIdRef.current = activeProfileId;
+        setClientCompany(profileState.clientCompany);
+        setClientRep(profileState.clientRep);
+        setClientAddress(profileState.clientAddress);
+        setClientTin(profileState.clientTin);
+        setQuoteId(profileState.quoteId);
+        setQuoteDate(profileState.quoteDate);
+        setQuoteValidity(profileState.quoteValidity);
+        setStaffCount(profileState.staffCount);
+        setMonthlySalary(profileState.monthlySalary);
+        setWastedHours(profileState.wastedHours);
+        setIncludeTax(profileState.includeTax);
+        setPreparerTitle(profileState.preparerTitle);
+        setTargetStartDate(profileState.targetStartDate);
+        setProposalObjectives(profileState.proposalObjectives);
+        setProposalSponsor(profileState.proposalSponsor);
+        setPreDiagnosticList(profileState.preDiagnosticList);
+        setFrictionBuffer(profileState.frictionBuffer);
+        setPrincipalToSeniorDelegate(profileState.principalToSeniorDelegate);
+        setSeniorToAssociateDelegate(profileState.seniorToAssociateDelegate);
+        setOverrideTimeline(profileState.overrideTimeline);
+        setWeeklyHours(profileState.weeklyHours);
+        setClientReviewWeeks(profileState.clientReviewWeeks);
+        setTasks(profileState.tasks);
+        setDiscountPercent(profileState.discountPercent);
+        setDpaRetentionDays(profileState.dpaRetentionDays);
+        setSlaCureDays(profileState.slaCureDays);
+        setSlaRecurrenceMonths(profileState.slaRecurrenceMonths);
+        setSubscriptionMonths(profileState.subscriptionMonths);
+        setPrintSow(profileState.printSow);
+        setPrintTimeline(profileState.printTimeline);
+        setPrintSla(profileState.printSla);
+        setPrintQuote(profileState.printQuote);
+        setPrintCover(profileState.printCover);
+        setMilestoneSplit(profileState.milestoneSplit);
+        setCustomSplit1(profileState.customSplit1);
+        setCustomSplit2(profileState.customSplit2);
+        setCustomSplit3(profileState.customSplit3);
+        setNdaEffectiveDate(profileState.ndaEffectiveDate);
+        setNdaPurpose(profileState.ndaPurpose);
+        setNdaTerm(profileState.ndaTerm);
+        setNdaJurisdiction(profileState.ndaJurisdiction);
+        setInvoiceMilestone(profileState.invoiceMilestone);
+        setCustomInvoiceAmount(profileState.customInvoiceAmount);
+        setInvoiceNumberSuffix(profileState.invoiceNumberSuffix);
+        setInvoiceDueDate(profileState.invoiceDueDate);
+        setPrincipalRate(profileState.principalRate);
+        setSeniorRate(profileState.seniorRate);
+        setAssociateRate(profileState.associateRate);
+        setPartnerRate(profileState.partnerRate);
+        setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
+        isHydratingRef.current = true;
+        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
         if (p.updatedAt) hydratedPayload.updatedAt = p.updatedAt;
-        setLastSavedFingerprint(H.payloadFingerprint(hydratedPayload));
+        syncSavedFingerprint(H.payloadFingerprint(hydratedPayload));
         setSaveStatus('saved');
         setSaveError(null);
         isDirtyRef.current = false;
@@ -1060,13 +1063,12 @@
         clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity,
         includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList,
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
-        clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays,
+        clientReviewWeeks, tasks, discountPercent, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
-        printRoadmapGantt, printRoadmapTable, printRoadmapScale,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, applyCreditBack, creditBackDays, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, printRoadmapGantt, printRoadmapTable, printRoadmapScale, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1082,7 +1084,7 @@
           currentProfilePayload.updatedAt = Date.now();
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
           await window.firestoreSetDoc(docRef, currentProfilePayload);
-          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
+          syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           isDirtyRef.current = false;
           H.clearLocalDraft(activeProfileId);
@@ -1105,9 +1107,9 @@
         if (isHydratingRef.current) return;
         const payload = buildCurrentPayload();
         const fp = H.payloadFingerprint(payload);
-        if (fp === lastSavedFingerprint) {
+        if (fp === lastSavedFingerprintRef.current) {
           isDirtyRef.current = false;
-          if (isAuthed) setSaveStatus('saved');
+          if (isAuthed) setSaveStatus((prev) => (prev === 'saving' ? prev : 'saved'));
           return;
         }
         isDirtyRef.current = true;
@@ -1117,7 +1119,7 @@
         if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = setTimeout(() => { handleSaveToCloud(true); }, 2500);
         return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
-      }, [buildCurrentPayload, lastSavedFingerprint, isAuthed, activeProfileId]);
+      }, [buildCurrentPayload, isAuthed, activeProfileId]);
 
       useEffect(() => {
         const onBeforeUnload = (e) => {
@@ -1133,7 +1135,7 @@
       const requestProfileSwitch = (newId) => {
         if (newId === activeProfileId) return;
         const fp = H.payloadFingerprint(buildCurrentPayload());
-        if (fp !== lastSavedFingerprint) {
+        if (fp !== lastSavedFingerprintRef.current) {
           setPendingProfileId(newId);
           setShowUnsavedSwitchConfirm(true);
         } else {
@@ -1162,11 +1164,10 @@
         setProposalSponsor(d.proposalSponsor); setPreDiagnosticList(d.preDiagnosticList); setFrictionBuffer(d.frictionBuffer);
         setPrincipalToSeniorDelegate(d.principalToSeniorDelegate); setSeniorToAssociateDelegate(d.seniorToAssociateDelegate);
         setOverrideTimeline(d.overrideTimeline || ''); setWeeklyHours(d.weeklyHours || 16); setClientReviewWeeks(d.clientReviewWeeks ?? 1);
-        setTasks(d.tasks || INITIAL_TASKS); setDiscountPercent(d.discountPercent || 0); setApplyCreditBack(d.applyCreditBack ?? false);
-        setCreditBackDays(d.creditBackDays ?? 14); setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
+        setTasks(d.tasks || INITIAL_TASKS); setDiscountPercent(d.discountPercent || 0);
+        setDpaRetentionDays(d.dpaRetentionDays ?? 14); setSlaCureDays(d.slaCureDays ?? 30);
         setSlaRecurrenceMonths(d.slaRecurrenceMonths ?? 3); setSubscriptionMonths(d.subscriptionMonths ?? 6);
         setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintSla(d.printSla ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
-        setPrintRoadmapGantt(d.printRoadmapGantt ?? true); setPrintRoadmapTable(d.printRoadmapTable ?? true); setPrintRoadmapScale(d.printRoadmapScale ?? true);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
@@ -1221,7 +1222,7 @@
       };
 
       const createWorkspaceFromCrmDeal = async (deal) => {
-        const newId = `client-crm-${Date.now()}`;
+        const newId = `client-crm-${deal.id || Date.now()}`;
         const base = buildCurrentPayload();
         const payload = {
           ...base,
@@ -1230,7 +1231,12 @@
           clientCompany: deal.company || 'Individual',
           clientRep: deal.leadName,
           proposalSponsor: deal.titleRole ? `${deal.leadName} (${deal.titleRole})` : deal.leadName,
-          quoteId: `KC-${new Date().getFullYear()}-${(deal.company || 'CRM').substring(0, 6).toUpperCase().replace(/\s/g, '')}`,
+          quoteId: deal.id,
+          links: {
+            crmDealId: deal.id,
+            portalClientId: deal.id,
+            contractId: `contract-${newId}`,
+          },
           updatedAt: Date.now()
         };
         if (isAuthed) {
@@ -1248,9 +1254,8 @@
           targetStartDate: 'TBD', proposalObjectives: 'Deploy the Core Workspace application, digitize approval workflows, and establish managed IT infrastructure for your business.',
           proposalSponsor: 'Representative (Director)', preDiagnosticList: "• Standard active staff directory\n• Samples of current invoices and transaction flows",
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
-          discountPercent: 0, applyCreditBack: false, creditBackDays: 14, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
+          discountPercent: 0, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
-          printRoadmapGantt: true, printRoadmapTable: true, printRoadmapScale: true,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
@@ -1296,7 +1301,7 @@
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
           await window.firestoreSetDoc(docRef, currentProfilePayload);
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, workspaceName: trimmedName, updatedAt: currentProfilePayload.updatedAt } : p));
-          setLastSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
+          syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
           H.clearLocalDraft(activeProfileId);
         } catch (e) {
@@ -1525,19 +1530,19 @@
 
       const pricing = useMemo(() => H.computeProjectEconomics({
         tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
-        applyCreditBack, milestoneSplit, customSplit1, customSplit2, customSplit3,
+        milestoneSplit, customSplit1, customSplit2, customSplit3,
         rates: hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate,
         recoveryPotential, staffCount, monthlySalary, wastedHours, formatCurrency
-      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, applyCreditBack, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
+      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
 
       const sharedProfileForBilling = useMemo(() => ({
-        tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths,
+        tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
         milestoneSplit, customSplit1, customSplit2, customSplit3,
         principalRate: hourlyRates.principalRate,
         seniorRate: hourlyRates.seniorRate,
         associateRate: hourlyRates.associateRate,
         partnerRate: hourlyRates.partnerRate,
-      }), [tasks, frictionBuffer, discountPercent, includeTax, applyCreditBack, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates]);
+      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates]);
 
       const sharedBillingSchedule = useMemo(() => {
         const SF = window.SharedFinancials;
@@ -1550,12 +1555,8 @@
       }, [sharedProfileForBilling]);
 
       const {
-        isCreditBackEligible,
-        creditBackAmount,
-        appliedCreditBackAmount,
         projectCostBaseUndiscounted,
         retainerCostBaseUndiscounted,
-        mod1CostBase,
         projectCostBase,
         finalProjectCostBase,
         retainerCostBase,
@@ -1683,9 +1684,6 @@
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">Target timeline</span>
               <span className="text-sm font-bold text-slate-900">{displayTimeline}</span>
-              {applyCreditBack && isCreditBackEligible && (
-                <span className="text-[10px] text-emerald-700 block mt-2">Module 1 credit-back of {formatCurrency(creditBackAmount)} applied when implementation modules are approved within {creditBackDays} days.</span>
-              )}
             </div>
           </div>
         </div>
@@ -1728,7 +1726,6 @@
                     <th className="py-2.5 px-3 text-center">Items</th>
                     <th className="py-2.5 px-3 text-right">Base</th>
                     <th className="py-2.5 px-3 text-right">After discount</th>
-                    {applyCreditBack && isCreditBackEligible && <th className="py-2.5 px-3 text-right">After credit-back</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -1738,9 +1735,6 @@
                       <td className="py-2.5 px-3 text-center font-mono">{row.count}</td>
                       <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.baseUndiscounted)}{row.isMonthly ? '/mo' : ''}</td>
                       <td className="py-2.5 px-3 text-right font-mono">{formatCurrency(row.afterDiscount)}{row.isMonthly ? '/mo' : ''}</td>
-                      {applyCreditBack && isCreditBackEligible && (
-                        <td className="py-2.5 px-3 text-right font-mono text-emerald-700">{row.afterCredit !== undefined ? formatCurrency(row.afterCredit) + (row.isMonthly ? '/mo' : '') : '—'}</td>
-                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -1759,72 +1753,6 @@
         </p>
       );
 
-      const renderRoadmapPrintTable = () => {
-        if (!printRoadmapTable || scheduledTasks.length === 0) return null;
-        const phaseLabels = { 'MOD 1': 'Business Leak Scan', 'MOD 2': 'How Your Business Runs', 'MOD 3': 'Your Team Workspace', 'MOD 4': 'Care Plan' };
-        return (
-          <div className="print-only-table mb-6">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Implementation schedule (summary)</h4>
-            <table className="w-full border border-slate-200 rounded-lg overflow-hidden text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-[9px] uppercase font-mono text-slate-500 border-b border-slate-200">
-                  <th className="py-2 px-3 text-left">Phase</th>
-                  <th className="py-2 px-3 text-left">Deliverable</th>
-                  <th className="py-2 px-3 text-center">Start</th>
-                  <th className="py-2 px-3 text-center">End</th>
-                  <th className="py-2 px-3 text-right">Hours</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {scheduledTasks.map(task => {
-                  const modPrefix = ['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].find(p => task.category.startsWith(p)) || 'MOD';
-                  return (
-                    <tr key={task.id}>
-                      <td className="py-2 px-3 text-slate-600">{phaseLabels[modPrefix] || modPrefix}</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{task.deliverable}</td>
-                      <td className="py-2 px-3 text-center font-mono">{task.isRetainer ? `Wk ${task.startWeek}+` : `Wk ${task.startWeek}`}</td>
-                      <td className="py-2 px-3 text-center font-mono">{task.isRetainer ? 'Ongoing' : (task.endWeek != null ? `Wk ${task.endWeek}` : '—')}</td>
-                      <td className="py-2 px-3 text-right font-mono">{task.bufferedHours || task.estHours}h</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <p className="text-[9px] text-slate-500 mt-2">Estimated completion: {displayTimeline} · Kickoff target: {targetStartDate || 'Upon signup'}</p>
-          </div>
-        );
-      };
-
-      const renderRoadmapScaleNote = () => {
-        if (!printRoadmapScale) return null;
-        return (
-          <div className="roadmap-scale-note mb-6 p-4 border border-slate-200 rounded-lg bg-slate-50 text-[10px] text-slate-600 print-pill">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Timeline scale assumptions</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Execution pace</span>
-                <strong className="text-slate-900 font-mono">{weeklyHours} hrs/week</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Review buffer</span>
-                <strong className="text-slate-900 font-mono">+{clientReviewWeeks} week(s)</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Contingency reserve</span>
-                <strong className="text-slate-900 font-mono">+{frictionBuffer}% hours</strong>
-              </div>
-              <div>
-                <span className="text-[9px] font-mono uppercase text-slate-400 block mb-0.5">Estimated duration</span>
-                <strong className="text-slate-900">{displayTimeline}</strong>
-              </div>
-            </div>
-            <p className="mt-3 text-[9px] text-slate-500 leading-relaxed">
-              Kickoff target: {targetStartDate || 'Upon signup'} · Week columns below are scaled to fit the page in PDF; adjust execution pace in Package settings before printing.
-            </p>
-          </div>
-        );
-      };
-
       const getModuleCardsHeading = () => {
         const selectedMods = [activeDiag, activeSOP, activePMO, activeGov].filter(Boolean).length;
         if (selectedMods === 4) return 'Modules included in this proposal';
@@ -1835,7 +1763,7 @@
       const invoiceLineItemDescription = useMemo(() => {
         const taxMultiplier = includeTax ? 1.12 : 1.0;
         if (invoiceMilestone === 'full') {
-          return `100% Full Payment of Professional Fees under Scope of Work SOW-${quoteId}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''}${appliedCreditBackAmount > 0 ? ` (with ${formatCurrency(appliedCreditBackAmount)} Module 1 Credit-Back pre-applied)` : ''} (Total Value: ${formatCurrency(Math.round((finalProjectCostBase + retainerCostTotalBase) * taxMultiplier))})`;
+          return `100% Full Payment of Professional Fees under Scope of Work SOW-${quoteId}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} (Total Value: ${formatCurrency(Math.round((finalProjectCostBase + retainerCostTotalBase) * taxMultiplier))})`;
         }
         if (invoiceMilestone.startsWith('milestone_')) {
           const idx = parseInt(invoiceMilestone.split('_')[1], 10);
@@ -1845,7 +1773,7 @@
           return `MOD 4 Care Plan for ${subscriptionMonths} Months${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total subscription commitment)`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, appliedCreditBackAmount, subscriptionMonths]);
+      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
@@ -2054,18 +1982,6 @@
                 <span>{isInvoice ? "Subtotal Ex-Tax:" : "SOW Net Subtotal:"}</span>
                 <span className="font-bold text-slate-900 font-mono font-semibold">
                   {formatCurrency(isInvoice ? computedInvoiceCost.baseAmount : (finalProjectCostBase + retainerCostTotalBase))}
-                </span>
-              </div>
-            )}
-
-            {appliedCreditBackAmount > 0 && !isInvoice && (
-              <div className="flex justify-between items-center text-xs text-emerald-600 font-mono font-bold bg-emerald-50/50 p-1.5 rounded border border-emerald-200/50">
-                <span className="flex items-center gap-1 font-sans font-bold">
-                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Module 1 Credit-Back:
-                </span>
-                <span className="font-bold font-mono font-sans">
-                  - {formatCurrency(appliedCreditBackAmount)}
                 </span>
               </div>
             )}
@@ -2325,25 +2241,6 @@
                 </fieldset>
               )}
 
-              {isPackage && printTimeline && (
-                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
-                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans font-bold">Roadmap PDF options</legend>
-                  <div className="space-y-2.5" role="group" aria-label="Roadmap PDF options">
-                    {[
-                      { id: 'print-roadmap-gantt', label: 'Include Gantt chart', checked: printRoadmapGantt, onChange: setPrintRoadmapGantt },
-                      { id: 'print-roadmap-table', label: 'Include schedule summary table', checked: printRoadmapTable, onChange: setPrintRoadmapTable },
-                      { id: 'print-roadmap-scale', label: 'Include timeline scale note', checked: printRoadmapScale, onChange: setPrintRoadmapScale }
-                    ].map((option) => (
-                      <label key={option.id} htmlFor={option.id} className="flex items-center gap-2 text-[11px] text-slate-300 w-full hover:text-white transition-colors cursor-pointer">
-                        <input id={option.id} type="checkbox" className="sr-only" checked={option.checked} onChange={(e) => option.onChange(e.target.checked)} />
-                        <ShieldIndicator active={option.checked} />
-                        <span className="font-sans font-semibold">{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-
               {(isProposal || isPackage) && (
                 <div className="space-y-2 text-left">
                   <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold">Operational Delays Calculator</span>
@@ -2444,32 +2341,6 @@
                     <span className="text-[9px] text-slate-500 block mt-1 text-left font-sans">Preview: {quoteId.replace('KC', 'INV')}{invoiceNumberSuffix || '01'}</span>
                   </div>
                 </fieldset>
-              )}
-
-              {(isQuoteOrInvoice || isPackage) && isCreditBackEligible && (
-                <div className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left font-sans font-medium">
-                  <div className="flex items-center justify-between text-left">
-                    <div>
-                      <span className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold block text-left">Optional Credit-Back</span>
-                      <span className="text-[9px] text-slate-400 block text-left font-sans">Apply Module 1 leak scan reimbursement</span>
-                    </div>
-                    <button aria-pressed={applyCreditBack} onClick={() => setApplyCreditBack(!applyCreditBack)} className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all duration-300 ${applyCreditBack ? 'bg-brandTeal-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}>
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ${applyCreditBack ? 'translate-x-4' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                  {applyCreditBack && (
-                    <div className="space-y-2 pt-2 border-t border-brandNavy-800 animate-fade-in text-[11px] text-left font-sans">
-                      <div className="flex justify-between text-xs font-mono text-left font-sans font-bold">
-                        <span className="text-slate-400 text-left">Total Deducted:</span>
-                        <span className="text-brandTeal-300 font-bold">{formatCurrency(creditBackAmount)}</span>
-                      </div>
-                      <div>
-                        <label className="text-[9px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold font-sans">Incentive Window (Days)</label>
-                        <input type="number" value={creditBackDays} onChange={(e) => setCreditBackDays(Number(e.target.value))} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 font-mono focus:outline-none" min="1" max="90" />
-                      </div>
-                    </div>
-                  )}
-                </div>
               )}
 
               {/* Dynamic Compliance & SLA Configuration Controls */}
@@ -2705,27 +2576,6 @@
               ))}
             </div>
             <div className="mb-8 text-left font-sans"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans font-bold">3. What we need from you</h4><div className="text-xs bg-slate-50 p-5 rounded border border-slate-200 whitespace-pre-wrap font-semibold text-slate-800 text-left font-sans">{preDiagnosticList}</div></div>
-            <div className="mb-8 text-left font-sans print-avoid-break">
-              <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4 text-left font-sans font-bold">4. What you receive (summary)</h4>
-              <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[9px] uppercase font-mono text-slate-500">
-                      <th className="py-2 px-3 text-left">Deliverable</th>
-                      <th className="py-2 px-3 text-left">Module</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {tasks.filter(t => t.selected).map(task => (
-                      <tr key={task.id}>
-                        <td className="py-2 px-3 font-semibold text-slate-900">{task.deliverable}</td>
-                        <td className="py-2 px-3 text-slate-600">{H.getModDisplayName(Number(task.category.match(/^MOD (\d)/)?.[1]) || 1)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
             <div className="mb-8 text-left font-sans print-avoid-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
               <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4 text-left font-sans font-bold">Appendix A — Deliverable specifications</h4>
               <div className="space-y-4 font-medium text-left font-sans">
@@ -2756,9 +2606,7 @@
               </div>
             ) : (
               <div className="space-y-6 text-left font-sans font-medium">
-                {renderRoadmapScaleNote()}
-                {renderRoadmapPrintTable()}
-                <div className={`roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans ${!printRoadmapGantt ? 'print-section-hidden' : ''}`}>
+                <div className="roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left font-sans">
                   <h4 className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left font-sans font-bold font-sans">Implementation Timeline Map (Gantt view)</h4>
                   <div className="roadmap-gantt-grid overflow-x-auto space-y-4 text-left font-sans font-medium">
                     <div className="grid grid-cols-12 gap-2 text-center text-[10px] font-mono font-bold text-slate-500 uppercase pb-2 border-b border-slate-200 text-left font-sans font-bold font-sans">
@@ -2950,18 +2798,6 @@
 
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
-            {applyCreditBack && isCreditBackEligible && !isInv && (
-              <div className="mb-6 rounded-xl font-sans text-xs leading-relaxed transition-all text-left font-sans font-semibold">
-                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800 text-left font-sans">
-                  <div className="flex items-center gap-2 font-bold text-emerald-800 uppercase mb-1 text-left font-sans font-sans">
-                    <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span>Module 1 Credit-Back Program Active</span>
-                  </div>
-                  As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
-                </div>
-              </div>
-            )}
-
             {renderModuleInvestmentSummary()}
             {renderDeliverablesTable(isInv)}
             {renderTaxBreakoutTable(isInv)}
@@ -2996,12 +2832,6 @@
                   6. <strong>Dispute Resolution & Jurisdiction:</strong> This agreement is governed by and construed in accordance with the laws of the Republic of the Philippines. Any litigation, dispute, or enforcement arising under this contract shall fall exclusively under the courts of Taytay, Rizal, or Metro Manila.
                 </p>
               </div>
-              
-              {applyCreditBack && isCreditBackEligible && (
-                <p className="text-[9px] text-emerald-600 bg-emerald-50/50 p-2.5 rounded border border-emerald-200/50 mt-2 text-left font-sans">
-                  * <strong>Credit-Back Qualifications:</strong> The pre-applied Module 1 reimbursement of {formatCurrency(creditBackAmount)} remains strictly conditional on SOW agreement signing and approval within {creditBackDays} calendar days of proposal receipt.
-                </p>
-              )}
             </div>
 
             {renderSignaturesBlock(isInv ? "Received & Authorized by:" : null, isInv ? "Prepared & Submitted by:" : "Prepared & Submitted by:")}
@@ -3336,12 +3166,6 @@
                       </div>
                       <div className="py-4 border-b border-brandNavy-700 space-y-1.5 text-xs font-sans font-semibold text-left font-sans font-semibold">
                         <div className="flex justify-between text-left"><span>SOW Subtotal:</span><span className="font-mono text-white text-right">{formatCurrency(projectCostBase + retainerCostTotalBase)}</span></div>
-                        {applyCreditBack && isCreditBackEligible && (
-                          <div className="flex justify-between text-emerald-400 text-left">
-                            <span>Module 1 Credit-Back:</span>
-                            <span className="font-mono text-right">- {formatCurrency(appliedCreditBackAmount)}</span>
-                          </div>
-                        )}
                         {includeTax && <div className="flex justify-between text-slate-400 text-left font-sans font-semibold"><span>PH VAT (12%):</span><span className="font-mono text-right font-sans">{formatCurrency(updatedSummary.taxValue)}</span></div>}
                         <div className="flex justify-between font-bold text-slate-100 pt-1.5 text-left font-sans font-bold"><span>Project Total Quote:</span><span className="text-brandTeal-300 font-mono font-bold text-right font-sans">{formatCurrency(updatedSummary.totalCost)}</span></div>
                       </div>

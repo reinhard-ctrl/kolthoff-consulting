@@ -733,7 +733,8 @@ export const onWorkbookProfileWritten = onDocumentWritten(
     const after = event.data?.after?.data();
     if (!after) return;
 
-    if (!after.clientName || !Array.isArray(after.tasks)) {
+    const clientLabel = (after.clientCompany as string)?.trim() || (after.clientName as string)?.trim();
+    if (!clientLabel || !Array.isArray(after.tasks)) {
       console.warn('Invalid workbook profile:', event.params.profileId);
     }
 
@@ -741,8 +742,11 @@ export const onWorkbookProfileWritten = onDocumentWritten(
     const tasks = (after.tasks || []).filter((t: { selected?: boolean }) => t.selected);
     const totalHours = tasks.reduce((acc: number, t: { estHours?: number }) => acc + (t.estHours || 0), 0);
 
-    if (totalHours > 0 && after.clientName) {
-      await event.data!.after!.ref.set({ _meta: { totalHours, validatedAt: Date.now() } }, { merge: true });
+    if (totalHours > 0 && clientLabel) {
+      await event.data!.after!.ref.set(
+        { _meta: { schemaVersion: 2, totalHours, validatedAt: Date.now() } },
+        { merge: true }
+      );
     }
   }
 );

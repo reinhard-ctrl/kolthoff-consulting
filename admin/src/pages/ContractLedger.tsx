@@ -8,16 +8,19 @@ import {
   milestoneSplitLabel,
   type BillingMilestone,
 } from '../lib/financials';
+import { getChaosTaxValue, getClientDisplayName, resolveChaosTax } from '../lib/engagement-config';
 
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
+  clientName?: string;
   quoteId?: string;
+  chaosTax?: { source?: string; value?: number };
+  annualOperationalLeakage?: number;
   tasks?: { id?: string; selected?: boolean; estHours?: number; tier?: string; isMonthlyRetainer?: boolean; category?: string }[];
   frictionBuffer?: number;
   discountPercent?: number;
   includeTax?: boolean;
-  applyCreditBack?: boolean;
   subscriptionMonths?: number;
   milestoneSplit?: string;
   customSplit1?: number;
@@ -123,6 +126,23 @@ function MilestoneDetail({ profile }: { profile: WorkbookProfile }) {
           </p>
         </article>
       )}
+
+      {(() => {
+        const chaos = resolveChaosTax(profile);
+        if (!chaos.value) return null;
+        return (
+          <article className="p-3 bg-brandNavy-900 rounded border border-rose-900/40 mt-3">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-300 font-semibold">Operational Leakage (Chaos Tax)</span>
+              <span className="font-mono text-rose-400 font-bold">{formatCurrency(chaos.value)}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">
+              Source: <span className="uppercase font-mono text-slate-400">{chaos.source}</span>
+              {' · '}Read-only from workbook profile
+            </p>
+          </article>
+        );
+      })()}
     </div>
   );
 }
@@ -171,7 +191,7 @@ export default function ContractLedger() {
       const contract = contracts.find((c) => c.profileId === profile.id);
       return {
         profileId: profile.id,
-        clientCompany: profile.clientCompany || 'Unknown Client',
+        clientCompany: getClientDisplayName(profile),
         quoteId: profile.quoteId || 'N/A',
         contractStatus: contract?.status || 'draft',
         contractId: contract?.id || null,
@@ -277,29 +297,32 @@ export default function ContractLedger() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
-          <p className="text-sm text-slate-400">
-            E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
-            Client links open at {CLIENT_SIGN_BASE}.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={pullFromCloud}
-          disabled={isPulling}
-          title="Reload latest SOW profiles and contract records from Firebase"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/40 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50 shrink-0"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M8 17l4 4 4-4" /><path d="M12 12v9" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /><path d="M16 16l-4-4-4 4" />
-          </svg>
-          {isPulling ? 'Pulling…' : 'Pull from Cloud'}
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
+        <p className="text-sm text-slate-400">
+          E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
+          Client links open at {CLIENT_SIGN_BASE}.
+        </p>
       </div>
 
       <div className="glass-panel overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-brandNavy-950 border-b border-brandNavy-800">
+          <span className="text-[10px] font-mono uppercase text-slate-500 tracking-wider">
+            {ledgerData.length} SOW profile{ledgerData.length === 1 ? '' : 's'} · Firestore sync
+          </span>
+          <button
+            type="button"
+            onClick={pullFromCloud}
+            disabled={isPulling}
+            title="Reload latest SOW profiles and contract records from Firebase"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brandTeal-600 hover:bg-brandTeal-500 text-brandNavy-955 border border-brandTeal-500 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors disabled:opacity-50"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M8 17l4 4 4-4" /><path d="M12 12v9" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /><path d="M16 16l-4-4-4 4" />
+            </svg>
+            {isPulling ? 'Pulling…' : 'Pull from Cloud'}
+          </button>
+        </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
             <tr>
@@ -307,6 +330,7 @@ export default function ContractLedger() {
               <th className="p-4">Client</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4 text-center">Total Value</th>
+              <th className="p-4 text-center">Chaos Tax</th>
               <th className="p-4">Billing Milestones</th>
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-right">Actions</th>
@@ -316,6 +340,8 @@ export default function ContractLedger() {
             {ledgerData.map((item) => {
               const profile = profiles.find((p) => p.id === item.profileId);
               const estValue = getFinancials(profile).total;
+              const chaosValue = getChaosTaxValue(profile);
+              const chaosSource = resolveChaosTax(profile).source;
               const schedule = getBillingSchedule(profile);
               const isExpanded = expandedRows.has(item.profileId);
               const gateCount = schedule.milestones.length;
@@ -335,6 +361,16 @@ export default function ContractLedger() {
                     <td className="p-4 font-bold">{item.clientCompany}</td>
                     <td className="p-4 font-mono text-xs text-slate-400">{item.quoteId}</td>
                     <td className="p-4 text-center font-mono text-brandTeal-400">{formatCurrency(estValue)}</td>
+                    <td className="p-4 text-center">
+                      {chaosValue > 0 ? (
+                        <div>
+                          <span className="font-mono text-rose-400 text-xs">{formatCurrency(chaosValue)}</span>
+                          <div className="text-[9px] uppercase text-slate-500 font-mono mt-0.5">{chaosSource}</div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-600 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="p-4 min-w-[220px]">
                       <div className="flex items-start justify-between gap-2">
                         <MilestoneSummary
@@ -381,7 +417,7 @@ export default function ContractLedger() {
                   </tr>
                   {isExpanded && profile && (
                     <tr>
-                      <td colSpan={7} className="p-0 border-t border-brandNavy-800/50">
+                      <td colSpan={8} className="p-0 border-t border-brandNavy-800/50">
                         <MilestoneDetail profile={profile} />
                       </td>
                     </tr>
