@@ -49,10 +49,12 @@
         .luxury-gradient { background: radial-gradient(circle at 50% -20%, #0F1A2C 0%, #020613 100%); }
         .glass-panel { background: rgba(9, 17, 31, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(46, 69, 103, 0.4); }
         .client-gradient { background: radial-gradient(circle at top left, #f8fafc 0%, #e2e8f0 100%); }
+        .print-only { display: none; }
         
         @media print {
             body, html, #root { background: white !important; color: #0f172a !important; height: auto !important; min-height: auto !important; }
             .no-print { display: none !important; }
+            .print-only { display: block !important; }
             aside, header { display: none !important; }
             main, .overflow-y-auto, .overflow-hidden, .h-screen, .min-h-screen { 
                 overflow: visible !important; 
@@ -101,6 +103,7 @@
         const getModuleInvestmentSummaries = (profile) => window.Financials?.computeModuleInvestmentSummaries(profile) || [];
         const getModDisplayName = (modNum) => window.Financials?.getModDisplayName(modNum) || `MOD ${modNum}`;
         const contractProfile = (profile) => profile ? { ...profile, applyCreditBack: false } : profile;
+        const PREPARED_BY = 'Reinhard Ludwig A. Kolthoff';
 
         function App() {
             const [isAuthed, setIsAuthed] = useState(false);
@@ -643,6 +646,47 @@
                 );
             };
 
+            const renderContractIssuerHeader = () => (
+                <div>
+                    <h1 className="font-sans font-black tracking-wider text-lg uppercase leading-none text-white print:text-slate-900">{PREPARED_BY}</h1>
+                    <span className="text-[10px] text-brandTeal-400 print:text-brandTeal-600 font-extrabold tracking-widest uppercase block mt-1 font-sans">TRADE STYLE / DBA: KOLTHOFF CONSULTING</span>
+                    <span className="text-[9px] text-slate-400 print:text-slate-500 tracking-widest uppercase block mt-1.5 font-mono font-bold">Operational Excellence &amp; Strategy</span>
+                    <p className="text-[10px] font-mono tracking-widest text-slate-500 uppercase mt-1.5 print:text-slate-600">Official Scope of Work Agreement</p>
+                </div>
+            );
+
+            const renderWetSignatureBlock = (profileObj) => {
+                const preparerTitle = profileObj.preparerTitle || 'Chief Operations Strategist';
+                const quoteDate = profileObj.quoteDate || new Date().toLocaleDateString();
+
+                return (
+                    <div className="print-only mt-12 pt-8 border-t border-slate-300 print-force-break text-xs">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-2">Agreement Acceptance — Physical Signature</h3>
+                        <p className="text-slate-600 mb-8 leading-relaxed">
+                            By signing below, each party acknowledges receipt of this Scope of Work Agreement and agrees to the commercial terms, deliverables, and billing schedule set forth above. Use this section when saving or printing a copy for wet-ink execution.
+                        </p>
+                        <div className="grid grid-cols-2 gap-12">
+                            <div>
+                                <p className="font-bold text-slate-700 mb-6">Accepted &amp; authorized on behalf of client:</p>
+                                <div className="h-16 border-b border-slate-400 mb-2"></div>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Authorized signatory</p>
+                                <p className="font-bold text-slate-900">{profileObj.clientRep || '________________________'}</p>
+                                <p className="text-slate-500">Representative, {profileObj.clientCompany || '________________________'}</p>
+                                <p className="text-slate-400 mt-3">Date: ________________________</p>
+                            </div>
+                            <div>
+                                <p className="font-bold text-slate-700 mb-6">Accepted &amp; authorized on behalf of Kolthoff Consulting:</p>
+                                <div className="h-16 border-b border-slate-400 mb-2"></div>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Authorized signatory</p>
+                                <p className="font-bold text-slate-900">{PREPARED_BY}</p>
+                                <p className="text-slate-500">{preparerTitle}, Kolthoff Consulting</p>
+                                <p className="text-slate-400 mt-3">Date: {quoteDate}</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
             // --- 1. Client Views ---
             if (activeView === 'client_sign' && activeProfileObj) {
                 const financials = getFinancials(contractProfile(activeProfileObj));
@@ -653,15 +697,12 @@
                 return (
                     <div className="min-h-screen client-gradient text-slate-900 font-sans p-4 md:p-8 overflow-y-auto">
                         <div className="max-w-4xl mx-auto bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden relative">
-                            <div className="bg-brandNavy-955 p-6 md:p-10 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 print:border-none print:pb-2">
-                                <div>
-                                    <h1 className="text-2xl font-serif font-bold tracking-wide print:text-slate-900">Kolthoff Consulting</h1>
-                                    <p className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase mt-1 print:text-slate-500">Official Scope of Work Agreement</p>
-                                </div>
+                            <div className="bg-brandNavy-955 p-6 md:p-10 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 print:bg-white print:text-slate-900 print:border-b-2 print:border-brandTeal-500 print:pb-6">
+                                {renderContractIssuerHeader()}
                                 <div className="flex items-center gap-6">
                                     <div className="text-left md:text-right">
                                         <p className="text-xs text-slate-400 font-mono print:text-slate-600">Ref: {activeProfileObj.quoteId}</p>
-                                        <p className="text-xs text-slate-400 font-mono mt-0.5 print:text-slate-600">Date: {new Date().toLocaleDateString()}</p>
+                                        <p className="text-xs text-slate-400 font-mono mt-0.5 print:text-slate-600">Date: {activeProfileObj.quoteDate || new Date().toLocaleDateString()}</p>
                                     </div>
                                     <div className="flex items-center gap-3 no-print">
                                         {isStaffUser && (
@@ -685,6 +726,8 @@
                             <div className="p-8 md:p-12 space-y-8">
                                 
                                 {renderContractDetails(activeProfileObj, financials, selectedTasks, activePMO, activeGov)}
+
+                                {renderWetSignatureBlock(activeProfileObj)}
 
                                 <div className="mt-12 bg-slate-100 p-8 rounded-xl border border-slate-300 no-print">
                                     <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2">
@@ -787,10 +830,7 @@
                                 <div className="bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden relative print:shadow-none print:border-none print:w-full print:rounded-none">
                                     
                                     <div className="bg-brandNavy-955 p-6 md:p-10 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 print:bg-white print:text-slate-900 print:border-b-2 print:border-brandTeal-500 print:pb-6 print:px-0">
-                                        <div>
-                                            <h1 className="text-2xl font-serif font-bold tracking-wide">Kolthoff Consulting</h1>
-                                            <p className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase mt-1 print:text-brandTeal-600">Official Scope of Work Agreement</p>
-                                        </div>
+                                        {renderContractIssuerHeader()}
                                         <div className="text-left md:text-right">
                                             <p className="text-xs text-slate-400 font-mono print:text-slate-600">Ref: {activeProfileObj.quoteId}</p>
                                             <p className="text-xs text-emerald-400 font-mono mt-0.5 font-bold print:text-slate-600">Status: Executed on {new Date(contract.signedAt).toLocaleDateString()}</p>
