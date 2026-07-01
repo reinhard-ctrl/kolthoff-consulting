@@ -17,6 +17,12 @@
         ]
       },
       {
+        "source": "/apps/**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
         "source": "/workspace/**",
         "headers": [
           { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
