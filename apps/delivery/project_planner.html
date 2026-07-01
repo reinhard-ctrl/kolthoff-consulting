@@ -151,6 +151,11 @@
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
+    const MOD_1 = H.MOD_CATEGORIES.mod1;
+    const MOD_2 = H.MOD_CATEGORIES.mod2;
+    const MOD_3 = H.MOD_CATEGORIES.mod3;
+    const MOD_4 = H.MOD_CATEGORIES.mod4;
+    const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     class ErrorBoundary extends Component {
       constructor(props) {
         super(props);
@@ -216,137 +221,173 @@
 
     function getShortDeliverableName(name) {
       const mappings = {
-        // Legacy saved workspace names → plain-English card labels
-        'Staff Feedback Link: Safe Anonymous Suggestion Box': 'Anonymous Suggestion Box',
-        'Targeted Process Mapping Audit': 'Work Shadowing Review',
-        'Subscription Audit: App Consolidation Strategy': 'Software Bill Savings Audit',
-        'Visual Chaos Tax Map & ROI Solution Plan': 'Chaos Tax Money-Leak Map',
-        'Standardized Customer Order & Buying Flowcharts': 'Sales & Buying Blueprints',
-        'Clear Who-Does-What Matrix & System Org-Chart': 'Role Accountability Matrix',
-        'Pre-Loaded Employee Policies (DOLE-Shielded)': 'Employee Policy Handbook',
-        'Core Workspace Deployment & Org-Mapping': 'Secure Shared Drive',
-        'Digital Approval Workflows & Form Conversion': 'Task Status & Tracker Boards',
-        'System Onboarding & Staff Training': 'Practical Staff Training',
-        'Weekly Operations & Adoption Huddles': 'Weekly Strategy Syncs',
-        'Managed App Hosting & IT Administration': 'Ongoing Digital Support Care'
+        'Simple Privacy & Directory': 'Team List & Privacy Rules',
+        'Anonymous Suggestion Box': 'Staff Feedback Channel',
+        'Work Shadowing Review': 'Daily Work Friction Study',
+        'Software Bill Savings Audit': 'Duplicate Software Spend Review',
+        'Chaos Tax Money-Leak Map': 'Waste-to-Peso Report',
+        'Sales & Buying Blueprints': 'Order & Purchase Playbooks',
+        'Role Accountability Matrix': 'Roles & Sign-Off Chart',
+        'SOP Video & Document Vault': 'How-To Video Library',
+        'Employee Policy Handbook': 'Employee Rules Handbook',
+        'Secure Shared Drive': 'Workspace Go-Live',
+        'Task Status & Tracker Boards': 'Digital Approval Forms',
+        'Tax-Smart Sales App': 'Sales & Order Log',
+        'Practical Staff Training': 'Hands-On Team Training',
+        'Weekly Strategy Syncs': 'Operations Check-In Calls',
+        '6-Month Workspace Audits': 'System Health Check',
+        'Ongoing Digital Support Care': 'Platform Hosting & User Care',
+        'Staff Feedback Link: Safe Anonymous Suggestion Box': 'Staff Feedback Channel',
+        'Targeted Process Mapping Audit': 'Daily Work Friction Study',
+        'Subscription Audit: App Consolidation Strategy': 'Duplicate Software Spend Review',
+        'Visual Chaos Tax Map & ROI Solution Plan': 'Waste-to-Peso Report',
+        'Standardized Customer Order & Buying Flowcharts': 'Order & Purchase Playbooks',
+        'Clear Who-Does-What Matrix & System Org-Chart': 'Roles & Sign-Off Chart',
+        'Pre-Loaded Employee Policies (DOLE-Shielded)': 'Employee Rules Handbook',
+        'Core Workspace Deployment & Org-Mapping': 'Workspace Go-Live',
+        'Digital Approval Workflows & Form Conversion': 'Digital Approval Forms',
+        'System Onboarding & Staff Training': 'Hands-On Team Training',
+        'Weekly Operations & Adoption Huddles': 'Operations Check-In Calls',
+        'Managed App Hosting & IT Administration': 'Platform Hosting & User Care'
       };
       if (mappings[name]) return mappings[name];
-      return name.length > 28 ? name.substring(0, 28) + '...' : name;
+      return name.length > 32 ? name.substring(0, 32) + '...' : name;
     }
 
     // --- DATA CONSTANTS ---
     const INITIAL_TASKS = [
       {
-        id: 'diag-1', category: 'MOD 1 - Workflow Diagnosis',
-        deliverable: 'Simple Privacy & Directory',
-        description: 'We set up a basic staff contact list and simple privacy rules so customer and employee information is handled safely.',
-        estHours: 4, tier: 'associate', selected: true,
-        scopeDetails: { activities: 'Build your team directory and privacy guidelines.', expectations: 'Share current staff names, roles, and how you store customer info.', output: 'A ready-to-use staff directory with clear privacy rules.' }
+        id: 'm1-01', category: MOD_1,
+        deliverable: 'Team List & Privacy Ground Rules',
+        description: 'We set up a staff contact list, roles, and simple privacy rules so customer and employee data is handled safely (not legal advice).',
+        estHours: 3, tier: 'associate', selected: true,
+        scopeDetails: { activities: 'Build your team directory and privacy guidelines.', expectations: 'Share staff names, roles, and how you store customer info today.', output: 'A ready-to-use staff directory with clear privacy rules.' }
       },
       {
-        id: 'diag-2', category: 'MOD 1 - Workflow Diagnosis',
-        deliverable: 'Anonymous Suggestion Box',
+        id: 'm1-02', category: MOD_1,
+        deliverable: 'Anonymous Staff Feedback Channel',
         description: 'We set up a private online form where staff can flag problems without naming names — so you hear honest feedback.',
         estHours: 3, tier: 'associate', selected: true,
         scopeDetails: { activities: 'Launch a secure online suggestion box.', expectations: 'Ask employees to share honest feedback.', output: 'A prioritized list of problems worth fixing first.' }
       },
       {
-        id: 'diag-3', category: 'MOD 1 - Workflow Diagnosis',
-        deliverable: 'Work Shadowing Review',
-        description: 'We review how your everyday tasks actually get done (approvals, orders, expenses) and pinpoint what slows people down.',
-        estHours: 9, tier: 'senior', selected: true,
-        scopeDetails: { activities: 'Review your current manual workflows without long workshops.', expectations: 'Provide sample forms, chat threads, or step lists your team uses today.', output: 'A simple chart of your biggest time-wasters.' }
+        id: 'm1-03', category: MOD_1,
+        deliverable: 'Daily Work Friction Study',
+        description: 'We review 2–3 real workflows from your forms, chats, or sheets and chart what slows people down — no long workshops.',
+        estHours: 6, tier: 'senior', selected: true,
+        scopeDetails: { activities: 'Review current manual workflows asynchronously.', expectations: 'Provide sample forms, chat threads, or step lists your team uses.', output: 'A simple chart of your biggest time-wasters.' }
       },
       {
-        id: 'diag-4', category: 'MOD 1 - Workflow Diagnosis',
-        deliverable: 'Software Bill Savings Audit',
-        description: 'We review what you pay for apps (chat, tasks, spreadsheets) and show how much you could save by consolidating tools.',
+        id: 'm1-04', category: MOD_1,
+        deliverable: 'Duplicate Software Spend Review',
+        description: 'We compare what you pay for apps (chat, tasks, spreadsheets) and show monthly/annual savings if tools overlap.',
         estHours: 4, tier: 'associate', selected: true,
-        scopeDetails: { activities: 'Compare your software bills and overlapping features.', expectations: 'Provide a list of apps and monthly costs.', output: 'A savings report showing duplicate tools you can cut.' }
+        scopeDetails: { activities: 'Compare software bills and overlapping features.', expectations: 'Provide a list of apps and monthly costs.', output: 'A savings report showing duplicate tools you can cut.' }
       },
       {
-        id: 'diag-5', category: 'MOD 1 - Workflow Diagnosis',
-        deliverable: 'Chaos Tax Money-Leak Map',
-        description: 'We turn daily delays and rework into peso amounts — the money lost to chaos — and lay out a plain fix plan.',
+        id: 'm1-05', category: MOD_1,
+        deliverable: 'Waste-to-Peso Report & Fix Order',
+        description: 'We turn daily delays and rework into peso amounts and deliver a short video walkthrough plus a 90-day priority fix list.',
         estHours: 5, tier: 'senior', selected: true,
-        scopeDetails: { activities: 'Calculate wasted time in money terms and record a short walkthrough video.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and a step-by-step improvement plan.' }
+        scopeDetails: { activities: 'Calculate wasted time in money terms and record a short walkthrough video.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and step-by-step improvement plan.' }
       },
       {
-        id: 'sop-vsm', category: 'MOD 2 - Organizing How You Work',
-        deliverable: 'Sales & Buying Blueprints',
-        description: 'We draw clear step-by-step charts for how orders come in, get approved, and get paid — so everyone follows the same path.',
-        estHours: 12, tier: 'senior', selected: false,
-        scopeDetails: { activities: 'Map your sales-to-cash and buying steps on paper first.', expectations: 'Provide sample order slips, invoices, or purchase records.', output: 'Easy-to-read flowcharts your team can follow.' }
+        id: 'm1-06', category: MOD_1,
+        deliverable: 'Owner Findings Briefing',
+        description: 'Optional 60-minute presentation of diagnosis findings to the owner or general manager.',
+        estHours: 2, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Present the printable diagnosis report and answer questions.', expectations: 'Owner or GM attends the briefing.', output: 'Shared understanding of findings and next steps.' }
       },
       {
-        id: 'sop-1', category: 'MOD 2 - Organizing How You Work',
-        deliverable: 'Role Accountability Matrix',
-        description: 'We spell out who owns each task and who signs off — so nothing falls through the cracks and approvals go to the right person.',
-        estHours: 8, tier: 'senior', selected: false,
+        id: 'm2-01', category: MOD_2,
+        deliverable: 'Customer Order Playbook',
+        description: 'We draw a clear step chart for how inquiries become orders, deliveries, and invoices — so everyone follows the same path.',
+        estHours: 6, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Map inquiry → order → delivery → invoice on one flowchart.', expectations: 'Provide sample order slips or invoices.', output: 'An easy-to-read customer order playbook.' }
+      },
+      {
+        id: 'm2-02', category: MOD_2,
+        deliverable: 'Purchase & Payment Playbook',
+        description: 'We chart how purchase requests are approved and paid — so buying stays controlled and traceable.',
+        estHours: 6, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Map request → approve → pay supplier steps.', expectations: 'Provide sample purchase records or payment forms.', output: 'An easy-to-read purchase and payment playbook.' }
+      },
+      {
+        id: 'm2-03', category: MOD_2,
+        deliverable: 'Roles & Sign-Off Chart',
+        description: 'We spell out who owns each task and who signs off, with a simple org chart so approvals reach the right person.',
+        estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Document task ownership and draw a simple org chart.', expectations: 'Confirm who reports to whom.', output: 'A who-does-what chart everyone can reference.' }
       },
       {
-        id: 'sop-2', category: 'MOD 2 - Organizing How You Work',
-        deliverable: 'SOP Video & Document Vault',
-        description: 'We record short how-to videos and store your step-by-step guides in one place your staff can find anytime.',
-        estHours: 10, tier: 'associate', selected: false,
-        scopeDetails: { activities: 'Record plain-language walkthroughs and upload guides to a shared folder.', expectations: 'Nominate team members to demo key tasks on camera.', output: 'A video and document library for daily reference.' }
+        id: 'm2-04', category: MOD_2,
+        deliverable: 'How-To Video & File Library',
+        description: 'We record up to three short screen-recorded how-tos and store step-by-step guides in one shared folder.',
+        estHours: 6, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Record plain-language walkthroughs and upload guides to a shared folder.', expectations: 'Nominate team members to demo key tasks on camera.', output: 'A video and document library for daily reference. Extra videos quoted separately.' }
       },
       {
-        id: 'sop-3', category: 'MOD 2 - Organizing How You Work',
-        deliverable: 'Employee Policy Handbook',
-        description: 'We prepare standard, Philippines-ready employee rules and load them into your shared workspace so policies are easy to find.',
+        id: 'm2-05', category: MOD_2,
+        deliverable: 'Employee Rules Handbook',
+        description: 'We prepare a Philippines-ready employee handbook from templates and load it into your workspace (client legal review required).',
+        estHours: 8, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Adapt handbook templates to your company and upload them digitally.', expectations: 'Review and approve the draft handbook.', output: 'A complete digital employee rules handbook.' }
+      },
+      {
+        id: 'm3-01', category: MOD_3,
+        deliverable: 'Company Workspace Go-Live',
+        description: 'We provision your branded workspace, map departments and managers, create staff logins, and organize core folders.',
+        estHours: 10, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Set up tenant, branding, departments, user accounts, and folder layout.', expectations: 'Provide your final staff list.', output: 'A live workspace your team can log into.' }
+      },
+      {
+        id: 'm3-02', category: MOD_3,
+        deliverable: 'Digital Approval Forms Pack',
+        description: 'We digitize up to five internal requests (e.g. leave, cash advance) with simple routing to the right approver.',
+        estHours: 18, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Build up to five digital forms with a maximum of two approval steps each.', expectations: 'Provide copies of your current paper forms.', output: 'Tracker boards showing pending, approved, and overdue items.' }
+      },
+      {
+        id: 'm3-03', category: MOD_3,
+        deliverable: 'Sales & Order Log',
+        description: 'We set up a daily sales and order log tied to your invoice flow — export-friendly for bookkeeping, not a full accounting system.',
         estHours: 12, tier: 'associate', selected: false,
-        scopeDetails: { activities: 'Adapt handbook templates to your company and upload them digitally.', expectations: 'Review and approve the draft handbook.', output: 'A complete digital employee policy handbook.' }
-      },
-      {
-        id: 'pmo-core-deploy', category: 'MOD 3 - Workspace Automation',
-        deliverable: 'Secure Shared Drive',
-        description: 'We set up a private online workspace for your company, create staff logins, and organize folders by department.',
-        estHours: 16, tier: 'senior', selected: false,
-        scopeDetails: { activities: 'Set up your company workspace and map departments and managers.', expectations: 'Provide your final staff list.', output: 'A live, branded workspace your team can log into.' }
-      },
-      {
-        id: 'pmo-workflows', category: 'MOD 3 - Workspace Automation',
-        deliverable: 'Task Status & Tracker Boards',
-        description: 'We turn your top internal requests (leave, cash advances, purchases) into digital forms that route to the right approver automatically.',
-        estHours: 30, tier: 'associate', selected: false,
-        scopeDetails: { activities: 'Build up to five digital forms with simple approval steps.', expectations: 'Provide copies of your current paper forms.', output: 'Tracker boards that show what is pending, approved, or overdue.' }
-      },
-      {
-        id: 'pmo-sales', category: 'MOD 3 - Workspace Automation',
-        deliverable: 'Tax-Smart Sales App',
-        description: 'We set up a simple sales tracker so orders are logged cleanly and your records are ready when tax time comes.',
-        estHours: 20, tier: 'associate', selected: false,
         scopeDetails: { activities: 'Configure a sales log tied to your order and invoice flow.', expectations: 'Share how you record sales today.', output: 'A sales tracker your team can update daily.' }
       },
       {
-        id: 'pmo-change', category: 'MOD 3 - Workspace Automation',
-        deliverable: 'Practical Staff Training',
-        description: 'We train your team hands-on and leave quick cheat sheets so people actually use the new tools after launch day.',
-        estHours: 10, tier: 'senior', selected: false,
-        scopeDetails: { activities: 'Run live training sessions and publish short how-to guides.', expectations: 'Make sure key staff attend training.', output: 'Trained staff and a help folder they can revisit.' }
+        id: 'm3-04', category: MOD_3,
+        deliverable: 'Hands-On Team Training',
+        description: 'We run two live training sessions (90 minutes each max) and leave cheat sheets for Messenger, Approvals, and the policy library.',
+        estHours: 6, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Run two live training sessions and publish short how-to guides.', expectations: 'Ensure key staff attend both sessions.', output: 'Trained staff and a help folder they can revisit.' }
       },
       {
-        id: 'coo-1', category: 'MOD 4 - Ongoing Support',
-        deliverable: 'Weekly Strategy Syncs',
-        description: 'We meet with your managers each week to review pending items, unblock stuck tasks, and keep adoption on track.',
-        estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: true,
-        scopeDetails: { activities: 'Review dashboards, pending approvals, and team questions.', expectations: 'Key managers join the weekly call.', output: 'A short action list and steady day-to-day usage.' }
+        id: 'm3-05', category: MOD_3,
+        deliverable: 'Two-Week Launch Help Desk',
+        description: 'For two weeks after go-live we answer chat/email “how do I…?” questions so adoption doesn’t stall on day one.',
+        estHours: 4, tier: 'associate', selected: false,
+        scopeDetails: { activities: 'Provide responsive launch-week support via your agreed channel.', expectations: 'Designate a point person on your team for questions.', output: 'Smoother first two weeks of daily usage.' }
       },
       {
-        id: 'coo-audit', category: 'MOD 4 - Ongoing Support',
-        deliverable: '6-Month Workspace Audits',
-        description: 'Twice a year we check how your team uses the system, fix gaps, and refresh anything that stopped working.',
-        estHours: 8, tier: 'senior', selected: false,
-        scopeDetails: { activities: 'Audit usage, permissions, and outdated forms.', expectations: 'Provide access for a half-day review session.', output: 'An audit report with fixes applied or scheduled.' }
+        id: 'm4-01', category: MOD_4,
+        deliverable: 'Platform Hosting & User Care',
+        description: 'We maintain hosting, user logins, and minor layout tweaks. New forms or workflows are quoted separately.',
+        estHours: 4, tier: 'partner', selected: false, isMonthlyRetainer: true,
+        scopeDetails: { activities: 'Maintain hosting, credentials, and routine admin requests.', expectations: 'Submit admin requests through your support channel.', output: 'Reliable uptime and responsive admin help.' }
       },
       {
-        id: 'sp-core-admin', category: 'MOD 4 - Ongoing Support',
-        deliverable: 'Ongoing Digital Support Care',
-        description: 'We handle hosting, logins, and small layout tweaks so your workspace stays online — new builds are quoted separately.',
-        estHours: 5, tier: 'partner', selected: false, isMonthlyRetainer: true,
-        scopeDetails: { activities: 'Maintain hosting, user accounts, and routine admin requests.', expectations: 'Submit admin requests through your support channel.', output: 'Reliable uptime and responsive admin help.' }
+        id: 'm4-02', category: MOD_4,
+        deliverable: 'Operations Check-In Calls',
+        description: 'Bi-weekly 60-minute calls with your managers to review pending items, unblock tasks, and keep adoption on track.',
+        estHours: 4, tier: 'senior', selected: false, isMonthlyRetainer: true,
+        scopeDetails: { activities: 'Review dashboards, pending approvals, and team questions.', expectations: 'Key managers join each scheduled call.', output: 'A short action list and steady day-to-day usage.' }
+      },
+      {
+        id: 'm4-03', category: MOD_4,
+        deliverable: 'System Health Check',
+        description: 'Twice per year we audit usage, permissions, and outdated forms, then apply or schedule fixes from the findings.',
+        estHours: 6, tier: 'senior', selected: false,
+        scopeDetails: { activities: 'Audit usage, permissions, and broken or outdated forms.', expectations: 'Provide access for a half-day review session.', output: 'An audit report with fixes applied or scheduled.' }
       }
     ];
 
@@ -400,7 +441,7 @@
         invoiceNumberSuffix: '01',
         invoiceDueDate: 'July 15, 2026',
         ...H.DEFAULT_RATES,
-        tasks: INITIAL_TASKS.map(t => ({ ...t, selected: t.id.startsWith('diag-') }))
+        tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) }))
       },
       {
         id: 'delacruz-ent',
@@ -450,7 +491,7 @@
         invoiceNumberSuffix: '02',
         invoiceDueDate: 'August 10, 2026',
         ...H.DEFAULT_RATES,
-        tasks: INITIAL_TASKS.map(t => ({ ...t, selected: t.id.startsWith('sop-') || t.id.startsWith('diag-') }))
+        tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) || t.id.startsWith('m2-') }))
       }
     ];
 
@@ -718,7 +759,7 @@
 
       const [activePresets, setActivePresets] = useState(['mod1']);
 
-      const [newTaskCategory, setNewTaskCategory] = useState('MOD 1 - Workflow Diagnosis');
+      const [newTaskCategory, setNewTaskCategory] = useState(MOD_1);
       const [newTaskDeliv, setNewTaskDeliv] = useState('');
       const [newTaskDesc, setNewTaskDesc] = useState('');
       const [newTaskHours, setNewTaskHours] = useState('');
@@ -1037,7 +1078,7 @@
           printSow: true, printTimeline: true, printSla: true, printQuote: true,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
-          invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: t.id.startsWith('diag-') })),
+          invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
         const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
@@ -1108,10 +1149,10 @@
         setActivePresets(H.deriveActivePresetsFromTasks(tasks));
       }, [tasks]);
 
-      const activeDiag = useMemo(() => tasks.some(t => t.category === 'MOD 1 - Workflow Diagnosis' && t.selected), [tasks]);
-      const activeSOP = useMemo(() => tasks.some(t => t.category === 'MOD 2 - Organizing How You Work' && t.selected), [tasks]);
-      const activePMO = useMemo(() => tasks.some(t => t.category === 'MOD 3 - Workspace Automation' && t.selected), [tasks]);
-      const activeGov = useMemo(() => tasks.some(t => t.category === 'MOD 4 - Ongoing Support' && t.selected), [tasks]);
+      const activeDiag = useMemo(() => tasks.some(t => H.isModCategory(t.category, 1) && t.selected), [tasks]);
+      const activeSOP = useMemo(() => tasks.some(t => H.isModCategory(t.category, 2) && t.selected), [tasks]);
+      const activePMO = useMemo(() => tasks.some(t => H.isModCategory(t.category, 3) && t.selected), [tasks]);
+      const activeGov = useMemo(() => tasks.some(t => H.isModCategory(t.category, 4) && t.selected), [tasks]);
       
       const handlePrint = () => {
         const validation = H.validatePrintReadiness(view, {
@@ -1181,7 +1222,7 @@
 
         const customTaskObj = {
           id: `custom-${Date.now()}`, category: newTaskCategory, deliverable: newTaskDeliv, description: newTaskDesc || 'Bespoke operational assistance step.',
-          estHours: calculatedHours, tier: newTaskTier, selected: true, isMonthlyRetainer: newTaskCategory === 'MOD 4 - Ongoing Support',
+          estHours: calculatedHours, tier: newTaskTier, selected: true, isMonthlyRetainer: H.isModCategory(newTaskCategory, 4),
           scopeDetails: { activities: newTaskActivities || "Work closely with your team to review and complete planned milestone tasks.", expectations: "Provide basic information access and honest feedback on drafted guidelines.", output: "A completed SOW deliverable asset aligned with custom specifications." }
         };
         setTasks(prev => [...prev, customTaskObj]);
@@ -1208,10 +1249,10 @@
         const bufferMultiplier = 1 + (frictionBuffer / 100);
         let currentWeek = 1;
         
-        const p1Tasks = selected.filter(t => t.category === 'MOD 1 - Workflow Diagnosis');
-        const p2Tasks = selected.filter(t => t.category === 'MOD 2 - Organizing How You Work');
-        const p3Tasks = selected.filter(t => t.category === 'MOD 3 - Workspace Automation');
-        const p4Tasks = selected.filter(t => t.category === 'MOD 4 - Ongoing Support');
+        const p1Tasks = selected.filter(t => H.isModCategory(t.category, 1));
+        const p2Tasks = selected.filter(t => H.isModCategory(t.category, 2));
+        const p3Tasks = selected.filter(t => H.isModCategory(t.category, 3));
+        const p4Tasks = selected.filter(t => H.isModCategory(t.category, 4));
 
         const activePhases = [];
         if (p1Tasks.length) activePhases.push(p1Tasks);
@@ -1263,7 +1304,11 @@
         const p4StartWeek = maxProjectEndWeek > 0 ? maxProjectEndWeek + 1 : 1;
 
         const scheduledP4 = p4Tasks.map(task => ({
-          ...task, bufferedHours: Math.round(task.estHours * bufferMultiplier), startWeek: p4StartWeek, endWeek: null, isRetainer: true
+          ...task,
+          bufferedHours: Math.round(task.estHours * bufferMultiplier),
+          startWeek: p4StartWeek,
+          endWeek: task.isMonthlyRetainer ? null : p4StartWeek,
+          isRetainer: !!task.isMonthlyRetainer
         }));
 
         return {
@@ -1296,7 +1341,7 @@
           else timelineStr = `${ceilingWeeks - 1} - ${ceilingWeeks} Weeks`;
         }
         const retainerTasks = selectedTasks.filter(t => t.isMonthlyRetainer);
-        return retainerTasks.length > 0 ? (projectTasks.length > 0 ? `${timelineStr} + Ongoing Support Care` : "Ongoing Support Care") : timelineStr;
+        return retainerTasks.length > 0 ? (projectTasks.length > 0 ? `${timelineStr} + Care Plan` : "Care Plan") : timelineStr;
       }, [tasks, scheduledTasks]);
 
       const displayTimeline = useMemo(() => overrideTimeline || calculatedTimeline, [overrideTimeline, calculatedTimeline]);
@@ -1366,7 +1411,7 @@
           if (billingMilestones[idx]) return `Stage-Gated Milestone Payment: ${billingMilestones[idx].label} under SOW-${quoteId}`;
         }
         if (invoiceMilestone === 'retainer') {
-          return `MOD 4 Ongoing Support Care for ${subscriptionMonths} Months${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total subscription commitment)`;
+          return `MOD 4 Care Plan for ${subscriptionMonths} Months${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total subscription commitment)`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
       }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, appliedCreditBackAmount, subscriptionMonths]);
@@ -1630,7 +1675,7 @@
                     <td className="py-5 px-4 align-top text-slate-800 text-left">
                       <div className="font-bold text-slate-900 font-sans text-xs text-left font-sans font-bold">{invoiceLineItemDescription}</div>
                       <div className="text-[10px] text-slate-500 mt-2 leading-relaxed font-sans font-medium text-left">
-                        Workflow diagnosis, roadblocks discovery, safe staff directories, employee handbooks, and automated file setups.
+                        Business leak scan, playbooks, workspace setup, employee handbook, and ongoing care plan services as listed in this SOW.
                       </div>
                     </td>
                     <td className="py-5 px-4 text-right align-top font-mono font-bold text-slate-900 text-sm">
@@ -1908,7 +1953,7 @@
                       <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
                         <input type="radio" name="invoiceMilestone" value="retainer" checked={invoiceMilestone === 'retainer'} onChange={() => setInvoiceMilestone('retainer')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
                         <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                          <span className="block font-sans">MOD 4 Ongoing Support Retainer ({subscriptionMonths} mo)</span>
+                          <span className="block font-sans">MOD 4 Care Plan Retainer ({subscriptionMonths} mo)</span>
                           <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostTotalPart)}</span>
                         </span>
                       </label>
@@ -1943,7 +1988,7 @@
                   <div className="flex items-center justify-between text-left">
                     <div>
                       <span className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold block text-left">Optional Credit-Back</span>
-                      <span className="text-[9px] text-slate-400 block text-left font-sans">Apply diagnosis reimbursement</span>
+                      <span className="text-[9px] text-slate-400 block text-left font-sans">Apply Module 1 leak scan reimbursement</span>
                     </div>
                     <button aria-pressed={applyCreditBack} onClick={() => setApplyCreditBack(!applyCreditBack)} className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all duration-300 ${applyCreditBack ? 'bg-brandTeal-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}>
                       <span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ${applyCreditBack ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -2177,10 +2222,10 @@
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans" role="list" aria-label="Optional project expansion modules">
               {[
-                { id: 'MOD 1', title: 'Workflow Diagnosis', isActive: activeDiag, desc: 'A quick look at your apps, daily work, and where time and money leak.' },
-                { id: 'MOD 2', title: 'Organizing How You Work', isActive: activeSOP, desc: 'Step-by-step guides and clear charts showing who handles what.' },
-                { id: 'MOD 3', title: 'Workspace Automation', isActive: activePMO, desc: 'Shared trackers so every department sees the same up-to-date picture.' },
-                { id: 'MOD 4', title: 'Ongoing Support', isActive: activeGov, desc: 'Regular check-ins and hands-on help after go-live.' }
+                { id: 'MOD 1', title: 'Business Leak Scan', isActive: activeDiag, desc: 'Find where time and money leak before you spend on tools or training.' },
+                { id: 'MOD 2', title: 'How Your Business Runs', isActive: activeSOP, desc: 'Plain playbooks and charts so everyone knows the steps and who signs off.' },
+                { id: 'MOD 3', title: 'Your Team Workspace', isActive: activePMO, desc: 'Launch a shared workspace, digitize forms, and train your team to use it daily.' },
+                { id: 'MOD 4', title: 'Care Plan', isActive: activeGov, desc: 'Hosting, bi-weekly check-ins, and periodic health checks after go-live.' }
               ].map(mod => (
                 <article key={mod.id} role="listitem" className={`border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans ${mod.isActive ? 'border-brandTeal-500 bg-brandTeal-50/20 font-bold' : 'border-dashed bg-slate-50 opacity-50'}`}>
                   <div className="space-y-3 text-left font-sans">
@@ -2241,7 +2286,7 @@
                     {['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].map((modPrefix) => {
                       const phaseTasks = scheduledTasks.filter(t => t.category.startsWith(modPrefix));
                       if (phaseTasks.length === 0) return null;
-                      const phaseName = modPrefix === 'MOD 1' ? 'Phase 1: Diagnosis & Alignment' : modPrefix === 'MOD 2' ? 'Phase 2: Process Architecture' : modPrefix === 'MOD 3' ? 'Phase 3: Workspace Tracking & Automation' : 'Phase 4: Governance & Support Care';
+                      const phaseName = modPrefix === 'MOD 1' ? 'Phase 1: Business Leak Scan' : modPrefix === 'MOD 2' ? 'Phase 2: How Your Business Runs' : modPrefix === 'MOD 3' ? 'Phase 3: Your Team Workspace' : 'Phase 4: Care Plan';
                       
                       const isSubsequentPhase = modPrefix === 'MOD 2' || modPrefix === 'MOD 3';
                       let previousPhaseTasks = [];
@@ -2306,8 +2351,8 @@
                 <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold">1. Purpose and Covered Modules</h4>
                 <p className="text-xs mb-2 leading-relaxed text-left font-sans">This SLA specifically covers the following active deliverables in this Statement of Work:</p>
                 <ul className="list-disc pl-5 text-xs space-y-1.5 text-slate-700 leading-relaxed text-left font-sans">
-                  {activePMO && <li><strong>MOD 3 (Workspace Automation):</strong> Core database hosting, digital approval workflows, and system access.</li>}
-                  {activeGov && <li><strong>MOD 4 (Ongoing Support):</strong> Managed App Hosting, IT Administration, and Weekly Operations Huddles.</li>}
+                  {activePMO && <li><strong>MOD 3 (Your Team Workspace):</strong> Workspace hosting, digital approval forms, and user access.</li>}
+                  {activeGov && <li><strong>MOD 4 (Care Plan):</strong> Platform hosting, bi-weekly operations check-ins, and semi-annual system health checks.</li>}
                 </ul>
               </div>
 
@@ -2391,7 +2436,7 @@
               <div className="text-left font-sans text-sm">
                 <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-sans font-bold">6. Data Processing Addendum (DPA) under RA 10173</h4>
                 <p className="text-xs mb-2 leading-relaxed text-left text-slate-700 font-sans font-semibold">
-                  Since Workspace Automation (MOD 3) processes active company personnel data (leave applications, payroll details, directory rosters, and database credentials), the Parties agree to designate the Service Provider as the <strong>Personal Information Processor (PIP)</strong> and the Client as the <strong>Personal Information Controller (PIC)</strong> in accordance with the Philippine Data Privacy Act (RA 10173):
+                  Since Your Team Workspace (MOD 3) processes active company personnel data (leave applications, payroll details, directory rosters, and database credentials), the Parties agree to designate the Service Provider as the <strong>Personal Information Processor (PIP)</strong> and the Client as the <strong>Personal Information Controller (PIC)</strong> in accordance with the Philippine Data Privacy Act (RA 10173):
                 </p>
                 <ul className="list-disc pl-5 text-[11px] space-y-1.5 text-slate-700 leading-relaxed text-left font-sans font-semibold">
                   <li><strong>Administrative & Technical Safeguards:</strong> Service Provider implements robust encrypted database storage, strict authorization structures, and conditional access to prevent unauthorized collection or processing of employee profiles.</li>
@@ -2429,7 +2474,7 @@
                       <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       <span>Module 1 Credit-Back Program Active</span>
                     </div>
-                    As a strategic onboarding partner, we have credited back 100% of your Module 1 diagnostic fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
+                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
                   </div>
                 ) : (
                   <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800 no-print text-left font-sans font-semibold font-sans">
@@ -2437,7 +2482,7 @@
                       <svg className="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                       <span>Strategic Partner Offer: Credit-Back Eligible</span>
                     </div>
-                    This scope combines both Module 1 (Workflow Diagnosis) and implementation services. You can activate the **Module 1 Credit-Back Model** in the sidebar settings to subtract <strong className="text-amber-800 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong> from the contract total. This makes the workflow diagnostic risk-free if you sign within {creditBackDays} days.
+                    This scope combines both Module 1 (Business Leak Scan) and implementation services. You can activate the **Module 1 Credit-Back Model** in the sidebar settings to subtract <strong className="text-amber-800 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong> from the contract total. This makes the leak scan risk-free if you sign within {creditBackDays} days.
                   </div>
                 )}
               </div>
@@ -2839,7 +2884,7 @@
                           <div className="flex gap-2 font-sans font-semibold"><button onClick={handleSelectAllPresets} className="px-3 py-1 text-[10px] font-bold rounded bg-brandTeal-500 text-white uppercase tracking-wider">Select All</button><button onClick={handleClearAllPresets} className="px-3 py-1 text-[10px] font-bold rounded bg-brandNavy-900 text-slate-400 border border-brandNavy-700 uppercase tracking-wider">Clear All</button></div>
                         </div>
                         <div className="flex flex-wrap gap-2 text-left font-sans">
-                          {[{ name: 'mod1', label: 'MOD 1' }, { name: 'mod2', label: 'MOD 2' }, { name: 'mod3', label: 'MOD 3' }, { name: 'mod4', label: 'MOD 4' }].map(preset => {
+                          {[{ name: 'mod1', label: 'MOD 1 · Leak Scan' }, { name: 'mod2', label: 'MOD 2 · Playbooks' }, { name: 'mod3', label: 'MOD 3 · Workspace' }, { name: 'mod4', label: 'MOD 4 · Care Plan' }].map(preset => {
                             const isActive = activePresets.includes(preset.name);
                             return (
                               <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={`px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
@@ -2938,10 +2983,10 @@
                         <div className="col-span-12 md:col-span-3 text-left">
                           <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Target Phase</label>
                           <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-200 focus:outline-none font-sans font-medium">
-                            <option value="MOD 1 - Workflow Diagnosis">MOD 1 - Diagnosis</option>
-                            <option value="MOD 2 - Organizing How You Work">MOD 2 - Organizing</option>
-                            <option value="MOD 3 - Workspace Automation">MOD 3 - Automation</option>
-                            <option value="MOD 4 - Ongoing Support">MOD 4 - Ongoing Care</option>
+                            <option value={MOD_1}>MOD 1 - Business Leak Scan</option>
+                            <option value={MOD_2}>MOD 2 - How Your Business Runs</option>
+                            <option value={MOD_3}>MOD 3 - Your Team Workspace</option>
+                            <option value={MOD_4}>MOD 4 - Care Plan</option>
                           </select>
                         </div>
                         <div className="col-span-12 md:col-span-3 text-left font-sans font-medium">

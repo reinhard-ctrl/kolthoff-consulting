@@ -9,12 +9,33 @@
     partnerRate: 2000
   };
 
+  const MOD_CATEGORIES = {
+    mod1: 'MOD 1 - Business Leak Scan',
+    mod2: 'MOD 2 - How Your Business Runs',
+    mod3: 'MOD 3 - Your Team Workspace',
+    mod4: 'MOD 4 - Care Plan'
+  };
+
   const CATEGORY_TO_PRESET = {
+    'MOD 1 - Business Leak Scan': 'mod1',
+    'MOD 2 - How Your Business Runs': 'mod2',
+    'MOD 3 - Your Team Workspace': 'mod3',
+    'MOD 4 - Care Plan': 'mod4',
     'MOD 1 - Workflow Diagnosis': 'mod1',
     'MOD 2 - Organizing How You Work': 'mod2',
     'MOD 3 - Workspace Automation': 'mod3',
     'MOD 4 - Ongoing Support': 'mod4'
   };
+
+  function isModCategory(category, modNum) {
+    return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
+  }
+
+  function presetForCategory(category) {
+    if (CATEGORY_TO_PRESET[category]) return CATEGORY_TO_PRESET[category];
+    const match = typeof category === 'string' && category.match(/^MOD (\d)/);
+    return match ? `mod${match[1]}` : null;
+  }
 
   function getWorkspaceLabel(profile) {
     return profile?.workspaceName?.trim() || profile?.clientCompany || 'Untitled Workspace';
@@ -24,7 +45,7 @@
     const presets = new Set();
     (tasks || []).forEach((t) => {
       if (t.selected) {
-        const preset = CATEGORY_TO_PRESET[t.category];
+        const preset = presetForCategory(t.category);
         if (preset) presets.add(preset);
       }
     });
@@ -69,9 +90,9 @@
     const discFactor = 1 - (discountPercent / 100);
 
     const selectedTasks = tasks.filter((t) => t.selected);
-    const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis' && t.selected);
-    const activeSOP = tasks.some((t) => t.category === 'MOD 2 - Organizing How You Work' && t.selected);
-    const activePMO = tasks.some((t) => t.category === 'MOD 3 - Workspace Automation' && t.selected);
+    const activeDiag = tasks.some((t) => isModCategory(t.category, 1) && t.selected);
+    const activeSOP = tasks.some((t) => isModCategory(t.category, 2) && t.selected);
+    const activePMO = tasks.some((t) => isModCategory(t.category, 3) && t.selected);
     const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
 
     const projectCostBaseUndiscounted = Math.round(
@@ -227,9 +248,9 @@
       const arr = [];
       if (m1Net > 0) {
         arr.push({
-          label: 'Gate 1: Module 1 Commitment — Workflow Diagnosis Strategy',
+          label: 'Gate 1: Module 1 Commitment — Business Leak Scan',
           amount: Math.round(m1Net * taxMultiplier),
-          desc: 'Authorized immediately at initial signup. Deliverable yields a standalone workflow bottleneck blueprint and custom video fixes walkthrough.'
+          desc: 'Authorized immediately at initial signup. Deliverable yields a waste-to-peso report and prioritized fix list from your leak scan.'
         });
       }
       if (m2Net > 0) {
@@ -240,9 +261,9 @@
           creditNotice = ` (Pre-applied Module 1 Credit-Back savings: -${formatCurrency(Math.round(m1Net * taxMultiplier))})`;
         }
         arr.push({
-          label: `Gate 2: Module 2 Commitment — Process Architecture Authorization${creditNotice}`,
+          label: `Gate 2: Module 2 Commitment — How Your Business Runs${creditNotice}`,
           amount: Math.round(m2Billed * taxMultiplier),
-          desc: 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks visual system flowcharts and accountability charts.'
+          desc: 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.'
         });
       }
       if (m3Net > 0) {
@@ -257,9 +278,9 @@
           creditNotice = ` (Pre-applied remaining Module 1 Credit balance: -${formatCurrency(Math.round(leftoverCredit * taxMultiplier))})`;
         }
         arr.push({
-          label: `Gate 3: Module 3 Commitment — Workspace Automation Deployment${creditNotice}`,
+          label: `Gate 3: Module 3 Commitment — Your Team Workspace${creditNotice}`,
           amount: Math.round(m3Billed * taxMultiplier),
-          desc: 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks live database provisioning, digital routing workflows, and trained staff handover.'
+          desc: 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.'
         });
       }
       return arr;
@@ -434,7 +455,10 @@
 
   global.PlannerHelpers = {
     DEFAULT_RATES,
+    MOD_CATEGORIES,
     CATEGORY_TO_PRESET,
+    isModCategory,
+    presetForCategory,
     getWorkspaceLabel,
     deriveActivePresetsFromTasks,
     getRateForTier,

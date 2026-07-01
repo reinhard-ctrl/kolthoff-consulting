@@ -504,8 +504,8 @@
             if (activeView === 'client_sign' && activeProfileObj) {
                 const financials = getFinancials(activeProfileObj);
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
-                const activePMO = selectedTasks.some(t => t.category === 'MOD 3 - Workspace Automation');
-                const activeGov = selectedTasks.some(t => t.category === 'MOD 4 - Ongoing Support');
+                const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
+                const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
 
                 return (
                     <div className="min-h-screen client-gradient text-slate-900 font-sans p-4 md:p-8 overflow-y-auto">
@@ -597,8 +597,8 @@
                 const contract = activeLedgerItem.contractData;
                 const financials = getFinancials(activeProfileObj);
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
-                const activePMO = selectedTasks.some(t => t.category === 'MOD 3 - Workspace Automation');
-                const activeGov = selectedTasks.some(t => t.category === 'MOD 4 - Ongoing Support');
+                const activePMO = selectedTasks.some(t => t.category?.startsWith('MOD 3'));
+                const activeGov = selectedTasks.some(t => t.category?.startsWith('MOD 4'));
 
                 return (
                     <div className="flex h-screen overflow-hidden font-sans">

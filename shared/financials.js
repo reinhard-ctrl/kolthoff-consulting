@@ -53,9 +53,9 @@ export function getFinancials(profile) {
     tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
   );
 
-  const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis');
-  const activeSOP = tasks.some((t) => t.category === 'MOD 2 - Organizing How You Work');
-  const activePMO = tasks.some((t) => t.category === 'MOD 3 - Workspace Automation');
+  const activeDiag = tasks.some((t) => t.selected && t.category?.startsWith('MOD 1'));
+  const activeSOP = tasks.some((t) => t.selected && t.category?.startsWith('MOD 2'));
+  const activePMO = tasks.some((t) => t.selected && t.category?.startsWith('MOD 3'));
   const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
 
   const creditBackAmount = isCreditBackEligible ? Math.round(mod1CostBase * (1 - discountPercent / 100)) : 0;
@@ -90,9 +90,8 @@ export function getFinancials(profile) {
 }
 
 export const DEFAULT_TASK_CATALOG = [
-  { id: 't1', category: 'MOD 1 - Workflow Diagnosis', name: 'Process Mapping Workshop', estHours: 8, tier: 'principal', selected: false, isMonthlyRetainer: false },
-  { id: 't2', category: 'MOD 1 - Workflow Diagnosis', name: 'Friction Audit Report', estHours: 12, tier: 'senior', selected: false, isMonthlyRetainer: false },
-  { id: 't3', category: 'MOD 2 - Organizing How You Work', name: 'SOP Development', estHours: 16, tier: 'senior', selected: false, isMonthlyRetainer: false },
-  { id: 't4', category: 'MOD 3 - Workspace Automation', name: 'Workspace Deployment', estHours: 24, tier: 'principal', selected: false, isMonthlyRetainer: false },
-  { id: 't5', category: 'MOD 3 - Workspace Automation', name: 'Monthly PMO Retainer', estHours: 8, tier: 'partner', selected: false, isMonthlyRetainer: true },
+  { id: 't1', category: 'MOD 1 - Business Leak Scan', name: 'Daily Work Friction Study', estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't2', category: 'MOD 2 - How Your Business Runs', name: 'Customer Order Playbook', estHours: 6, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't3', category: 'MOD 3 - Your Team Workspace', name: 'Company Workspace Go-Live', estHours: 10, tier: 'senior', selected: false, isMonthlyRetainer: false },
+  { id: 't4', category: 'MOD 4 - Care Plan', name: 'Platform Hosting & User Care', estHours: 4, tier: 'partner', selected: false, isMonthlyRetainer: true },
 ];

@@ -75,9 +75,9 @@ export function getFinancials(profile: Profile | null | undefined) {
     tasks.filter((t) => t.category?.startsWith('MOD 1')).reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier || 'associate'), 0) * bufferMultiplier
   );
 
-  const activeDiag = tasks.some((t) => t.category === 'MOD 1 - Workflow Diagnosis');
-  const activeSOP = tasks.some((t) => t.category === 'MOD 2 - Organizing How You Work');
-  const activePMO = tasks.some((t) => t.category === 'MOD 3 - Workspace Automation');
+  const activeDiag = tasks.some((t) => t.selected && t.category?.startsWith('MOD 1'));
+  const activeSOP = tasks.some((t) => t.selected && t.category?.startsWith('MOD 2'));
+  const activePMO = tasks.some((t) => t.selected && t.category?.startsWith('MOD 3'));
   const isCreditBackEligible = activeDiag && (activeSOP || activePMO);
 
   const creditBackAmount = isCreditBackEligible ? Math.round(mod1CostBase * (1 - discountPercent / 100)) : 0;
