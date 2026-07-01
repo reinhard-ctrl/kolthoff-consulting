@@ -1580,7 +1580,7 @@
         if (printCover) count += 1;
         if (printSow) count += 1;
         if (printTimeline) count += 1;
-        if (printSla && (activePMO || activeGov)) count += 1;
+        if (printSla) count += 1;
         if (printQuote) count += 1;
         return count;
       }, [printCover, printSow, printTimeline, printSla, printQuote, activePMO, activeGov]);
@@ -1671,7 +1671,7 @@
                 {printSow && <li>✓ Scope &amp; Project Proposal</li>}
                 {printQuote && <li>✓ Official Price Quotation &amp; Terms</li>}
                 {printTimeline && <li>✓ Implementation Timeline</li>}
-                {printSla && (activePMO || activeGov) && <li>✓ Service Level Agreement</li>}
+                {printSla && <li>✓ Service Level Agreement</li>}
               </ul>
             </div>
           </div>
@@ -2187,13 +2187,13 @@
         const isQuoteOrInvoice = view === 'invoice' || view === 'package';
         const isInvoice = view === 'invoice';
         const isPackage = view === 'package';
-        const hasPrintSection = printCover || printSow || printTimeline || printQuote || (printSla && (activePMO || activeGov));
+        const hasPrintSection = printCover || printSow || printTimeline || printQuote || printSla;
 
         const printSectionOptions = [
           { id: 'print-cover', label: 'Cover Page', checked: printCover, onChange: setPrintCover },
           { id: 'print-sow', label: 'SOW Project Proposal Page', checked: printSow, onChange: setPrintSow },
           { id: 'print-timeline', label: 'Roadmap / Timeline Page', checked: printTimeline, onChange: setPrintTimeline },
-          ...(activePMO || activeGov ? [{ id: 'print-sla', label: 'SLA & Compliance Safeguards Page', checked: printSla, onChange: setPrintSla }] : []),
+          { id: 'print-sla', label: 'SLA & Compliance Safeguards Page', checked: printSla, onChange: setPrintSla },
           { id: 'print-quote', label: 'Official Price Quotation & Terms', checked: printQuote, onChange: setPrintQuote }
         ];
 
@@ -2869,7 +2869,7 @@
                 </section>
               )}
 
-              {printSla && (activePMO || activeGov) && (
+              {printSla && (
                 <section aria-label="Service level agreement" className="bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                   {renderPrintHeader("SERVICE LEVEL AGREEMENT (SLA)", false, false, false)}
                   {SlaBody}
