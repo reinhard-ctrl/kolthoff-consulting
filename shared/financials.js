@@ -247,7 +247,7 @@ export function computeModuleInvestmentSummaries(profile) {
     const auditBase = Math.round(
       mod4AuditTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier * discFactor
     );
-    summaries.push({ modNum: '4a', label: `${getModDisplayName(4)} — System Health Check (annual)`, count: mod4AuditTasks.length, baseUndiscounted: auditBase, afterDiscount: auditBase, isAnnual: true });
+    summaries.push({ modNum: '4a', label: `${getModDisplayName(4)} — System Health Check`, count: mod4AuditTasks.length, baseUndiscounted: auditBase, afterDiscount: auditBase, isAnnual: true });
   }
 
   return summaries;

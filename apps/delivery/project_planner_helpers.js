@@ -95,7 +95,7 @@
       );
       summaries.push({
         modNum: '4a',
-        label: `${getModDisplayName(4)} — System Health Check (annual)`,
+        label: `${getModDisplayName(4)} — System Health Check`,
         count: mod4AuditTasks.length,
         baseUndiscounted: auditBase,
         afterDiscount: auditBase,
