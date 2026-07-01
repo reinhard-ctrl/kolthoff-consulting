@@ -49,14 +49,58 @@ jobs:
           create_credentials_file: true
           export_environment_variables: true
 
+      - name: Prune stale Firebase preview channels
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
+          CURRENT_CHANNEL: pr-${{ github.event.pull_request.number }}
+          KEEP_CHANNELS: "8"
+        run: |
+          node <<'NODE'
+          const { execSync } = require('child_process');
+          const keep = Number(process.env.KEEP_CHANNELS || 8);
+          const current = process.env.CURRENT_CHANNEL;
+          const raw = execSync(
+            'npx --yes firebase-tools@15.22.3 hosting:channel:list --project kolthoff-portal --json',
+            { encoding: 'utf8', env: process.env, stdio: ['pipe', 'pipe', 'inherit'] }
+          );
+          const data = JSON.parse(raw);
+          const channels = (data.result?.channels || [])
+            .map((c) => ({
+              id: c.name.split('/').pop(),
+              expireTime: c.expireTime || c.updateTime || '',
+            }))
+            .filter((c) => /^pr-\d+$/.test(c.id))
+            .sort((a, b) => a.expireTime.localeCompare(b.expireTime));
+          const deletable = channels
+            .filter((c) => c.id !== current)
+            .slice(0, Math.max(0, channels.length - keep));
+          for (const ch of deletable) {
+            console.log(`Deleting stale preview channel: ${ch.id}`);
+            try {
+              execSync(
+                `npx --yes firebase-tools@15.22.3 hosting:channel:delete ${ch.id} --project kolthoff-portal --non-interactive --force`,
+                { stdio: 'inherit', env: process.env }
+              );
+            } catch (err) {
+              console.warn(`Failed to delete channel ${ch.id}`);
+            }
+          }
+          if (deletable.length === 0) console.log('No stale preview channels to prune.');
+          NODE
+
       - name: Deploy hosting preview channel
+        continue-on-error: true
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
           npx --yes firebase-tools@15.22.3 hosting:channel:deploy "pr-${{ github.event.pull_request.number }}" \
             --expires 7d \
             --project kolthoff-portal \
-            --non-interactive
+            --non-interactive || {
+              echo "::warning::Firebase preview channel deploy skipped (quota or transient error). Production deploy on merge is unaffected."
+              exit 0
+            }
 
   deploy-production:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

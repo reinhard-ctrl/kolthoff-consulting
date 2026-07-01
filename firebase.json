@@ -17,7 +17,29 @@
         ]
       },
       {
+        "source": "**/*.@(js|css)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }]
+      },
+      {
         "source": "/apps/**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/admin/**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/workspace/**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/index.html",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
         ]
@@ -44,10 +66,6 @@
           { "key": "X-Content-Type-Options", "value": "nosniff" },
           { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
         ]
-      },
-      {
-        "source": "**/*.@(js|css|html)",
-        "headers": [{ "key": "Cache-Control", "value": "max-age=3600" }]
       },
       {
         "source": "/apps/delivery/project_planner_helpers.js",
