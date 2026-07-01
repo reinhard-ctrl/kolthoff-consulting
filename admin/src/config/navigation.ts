@@ -18,7 +18,7 @@ export type NavGroup = {
 
 /**
  * Shipped sidebar layout (also the Customize → Reset target).
- * Order: Command → Admin Tools → Delivery → Operations → Analytics → Workspace → Client.
+ * Order: Command → Operations → Delivery Suite → Workspace → Analytics → Client.
  */
 export const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
@@ -26,25 +26,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Command',
     items: [
       { id: 'dashboard', label: 'Dashboard', type: 'route', path: '/' },
-      { id: 'tenants', label: 'Tenant Manager', type: 'route', path: '/tenants' },
-      { id: 'intake', label: 'Intake Center', type: 'route', path: '/intake' },
-    ],
-  },
-  {
-    id: 'admin-tools',
-    label: 'Admin Tools',
-    items: [
-      { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
-      { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
-      { id: 'master', label: 'Master Admin', type: 'route', path: '/master' },
-    ],
-  },
-  {
-    id: 'delivery',
-    label: 'Delivery Suite',
-    items: [
-      { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
-      { id: 'diagnosis-reports', label: 'Diagnosis Reports', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
     ],
   },
   {
@@ -52,8 +33,28 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Operations',
     items: [
       { id: 'crm-pipeline', label: 'CRM Pipeline', type: 'embed', href: '/apps/operations/crm_pipeline.html' },
+      { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
+      { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
+      { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
+    ],
+  },
+  {
+    id: 'delivery',
+    label: 'Delivery Suite',
+    items: [
+      { id: 'intake', label: 'Intake Center', type: 'route', path: '/intake' },
+      { id: 'diagnosis-reports', label: 'Diagnosis Reports', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
       { id: 'policy-studio', label: 'Policy Studio', type: 'embed', href: '/apps/operations/policy_studio.html' },
       { id: 'workflow-builder', label: 'Workflow Builder', type: 'embed', href: '/apps/operations/workflow_builder.html' },
+    ],
+  },
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
+      { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
+      { id: 'tenants', label: 'Tenant Manager', type: 'route', path: '/tenants' },
+      { id: 'master', label: 'Master Admin', type: 'route', path: '/master' },
     ],
   },
   {
@@ -63,13 +64,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'firm-analytics', label: 'Firm Analytics', type: 'embed', href: '/apps/analytics/firm_analytics_dashboard.html' },
       { id: 'resource-capacity', label: 'Resource Capacity', type: 'embed', href: '/apps/analytics/resource_capacity_manager.html' },
       { id: 'time-variance', label: 'Time Variance', type: 'embed', href: '/apps/analytics/time_tracking_variance_analyzer.html' },
-    ],
-  },
-  {
-    id: 'workspace',
-    label: 'Workspace',
-    items: [
-      { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
     ],
   },
   {

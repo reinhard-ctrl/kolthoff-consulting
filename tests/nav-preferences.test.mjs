@@ -15,36 +15,37 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'command',
     label: 'Command',
-    items: [
-      { id: 'dashboard' },
-      { id: 'tenants' },
-      { id: 'intake' },
-    ],
-  },
-  {
-    id: 'admin-tools',
-    label: 'Admin Tools',
-    items: [{ id: 'portals' }, { id: 'contracts' }, { id: 'master' }],
-  },
-  {
-    id: 'delivery',
-    label: 'Delivery Suite',
-    items: [{ id: 'project-planner' }, { id: 'diagnosis-reports' }],
+    items: [{ id: 'dashboard' }],
   },
   {
     id: 'operations',
     label: 'Operations',
-    items: [{ id: 'crm-pipeline' }, { id: 'policy-studio' }, { id: 'workflow-builder' }],
+    items: [
+      { id: 'crm-pipeline' },
+      { id: 'project-planner' },
+      { id: 'contracts' },
+      { id: 'portals' },
+    ],
+  },
+  {
+    id: 'delivery',
+    label: 'Delivery Suite',
+    items: [
+      { id: 'intake' },
+      { id: 'diagnosis-reports' },
+      { id: 'policy-studio' },
+      { id: 'workflow-builder' },
+    ],
+  },
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [{ id: 'core-workspace' }, { id: 'tenants' }, { id: 'master' }],
   },
   {
     id: 'analytics',
     label: 'Analytics',
     items: [{ id: 'firm-analytics' }, { id: 'resource-capacity' }, { id: 'time-variance' }],
-  },
-  {
-    id: 'workspace',
-    label: 'Workspace',
-    items: [{ id: 'core-workspace' }],
   },
   {
     id: 'client',
@@ -146,27 +147,28 @@ function assertNoDuplicates(groups) {
   assert.equal(ids.length, new Set(ids).size, `duplicate nav ids: ${ids.join(', ')}`);
 }
 
-// Shipped default: core-workspace lives in the workspace group.
 assert.equal(
-  DEFAULT_NAV_GROUPS.find((g) => g.id === 'workspace')?.items.some((i) => i.id === 'core-workspace'),
-  true,
+  DEFAULT_NAV_GROUPS.map((g) => g.id).join(','),
+  'command,operations,delivery,workspace,analytics,client',
+);
+assert.equal(DEFAULT_NAV_GROUPS.find((g) => g.id === 'command')?.items.map((i) => i.id).join(','), 'dashboard');
+assert.equal(
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'operations')?.items.map((i) => i.id).join(','),
+  'crm-pipeline,project-planner,contracts,portals',
 );
 assert.equal(
-  DEFAULT_NAV_GROUPS.find((g) => g.id === 'command')?.items.some((i) => i.id === 'core-workspace'),
-  false,
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'workspace')?.items.map((i) => i.id).join(','),
+  'core-workspace,tenants,master',
 );
-assert.equal(DEFAULT_NAV_GROUPS.map((g) => g.id).join(','), 'command,admin-tools,delivery,operations,analytics,workspace,client');
 
-// Regression: moving core-workspace to command used to duplicate it in workspace group on reload.
 const movedPrefs = {
-  groupOrder: ['command', 'admin-tools', 'delivery', 'operations', 'analytics', 'workspace', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'workspace', 'analytics', 'client'],
   assignments: {
-    command: ['dashboard', 'tenants', 'intake'],
-    'admin-tools': ['portals', 'contracts', 'master'],
-    delivery: ['project-planner', 'diagnosis-reports'],
-    operations: ['crm-pipeline', 'policy-studio', 'workflow-builder'],
+    command: ['dashboard'],
+    operations: ['crm-pipeline', 'project-planner', 'contracts', 'portals'],
+    delivery: ['intake', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
+    workspace: ['core-workspace', 'tenants', 'master'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
-    workspace: ['core-workspace'],
     client: ['client-portal', 'client-intake', 'marketing'],
   },
 };
@@ -174,35 +176,34 @@ const movedPrefs = {
 const applied = applyNavPreferences(DEFAULT_NAV_GROUPS, movedPrefs);
 assertNoDuplicates(applied);
 assert.equal(
-  applied.find((g) => g.id === 'workspace')?.items.some((i) => i.id === 'core-workspace'),
+  applied.find((g) => g.id === 'operations')?.items.some((i) => i.id === 'project-planner'),
   true,
 );
 assert.equal(
-  applied.some((g) => g.id !== 'workspace' && g.items.some((i) => i.id === 'core-workspace')),
-  false,
+  applied.find((g) => g.id === 'delivery')?.items.some((i) => i.id === 'intake'),
+  true,
 );
 
-// Corrupt prefs with duplicate ids in assignments should dedupe on sanitize path.
 const corruptPrefs = {
   groupOrder: movedPrefs.groupOrder,
   assignments: {
     ...movedPrefs.assignments,
-    workspace: ['core-workspace', 'core-workspace'],
-    command: ['dashboard', 'tenants', 'core-workspace', 'intake'],
+    operations: ['crm-pipeline', 'project-planner', 'project-planner', 'contracts', 'portals'],
+    delivery: ['intake', 'project-planner', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
   },
 };
 const cleaned = applyNavPreferences(DEFAULT_NAV_GROUPS, corruptPrefs);
 assertNoDuplicates(cleaned);
-assert.equal(allItemIds(cleaned).filter((id) => id === 'core-workspace').length, 1);
+assert.equal(allItemIds(cleaned).filter((id) => id === 'project-planner').length, 1);
 
 const hiddenPrefs = {
-  groupOrder: ['command', 'admin-tools', 'delivery', 'operations', 'workspace', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'workspace', 'client'],
   hiddenGroups: ['analytics'],
   assignments: movedPrefs.assignments,
 };
 const hiddenApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, hiddenPrefs);
 assert.equal(hiddenApplied.some((g) => g.id === 'analytics'), false);
-assert.equal(hiddenApplied.length, 6);
+assert.equal(hiddenApplied.length, 5);
 
 const labeledPrefs = {
   ...movedPrefs,
@@ -211,7 +212,6 @@ const labeledPrefs = {
 const labeledApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, labeledPrefs);
 assert.equal(labeledApplied.find((g) => g.id === 'command')?.label, 'HQ');
 assert.equal(labeledApplied.find((g) => g.id === 'delivery')?.label, 'Projects');
-assert.equal(labeledApplied.find((g) => g.id === 'operations')?.label, 'Operations');
 
 const itemLabeledPrefs = {
   ...movedPrefs,
