@@ -330,16 +330,19 @@
                 };
             };
 
-            const findSyncedProfile = (dealId) => plannerProfiles.find(p => p.quoteId === dealId || p.id === dealId);
+            const findSyncedProfile = (dealId) => plannerProfiles.find(
+                (p) => p.quoteId === dealId || p.id === dealId || p.links?.crmDealId === dealId
+            );
 
-            const getProfileSubtotal = (profile) => {
+            const getProfileDealValue = (profile) => {
                 if (!profile) return 0;
-                return window.Financials?.getFinancials(profile)?.subtotal ?? 0;
+                const fin = window.Financials?.getFinancials(profile);
+                return fin?.total ?? fin?.subtotal ?? 0;
             };
 
             const getDealDisplayValue = (deal) => {
                 const syncedProfile = findSyncedProfile(deal.id);
-                return syncedProfile ? getProfileSubtotal(syncedProfile) : parseFloat(deal.estValue || 0);
+                return syncedProfile ? getProfileDealValue(syncedProfile) : parseFloat(deal.estValue || 0);
             };
 
             // Keep stored deal values aligned when linked planner SOWs change
@@ -350,7 +353,7 @@
                     const syncedProfile = findSyncedProfile(deal.id);
                     if (!syncedProfile) return;
 
-                    const syncedValue = getProfileSubtotal(syncedProfile);
+                    const syncedValue = getProfileDealValue(syncedProfile);
                     const storedValue = Math.round(parseFloat(deal.estValue || 0));
                     if (storedValue === syncedValue) return;
 
@@ -568,7 +571,7 @@
                 const finalId = customIdInput ? customIdInput.trim().toUpperCase().replace(/\s+/g, '-') : `KC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
                 const isCurrentlySynced = findSyncedProfile(finalId);
-                const finalEstValue = isCurrentlySynced ? getProfileSubtotal(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
+                const finalEstValue = isCurrentlySynced ? getProfileDealValue(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
 
                 const data = {
                     id: finalId,
@@ -1465,7 +1468,7 @@
                                             </label>
                                             {(() => {
                                                 const isCurrentlySynced = editingItem && findSyncedProfile(editingItem.id);
-                                                const syncedDisplayValue = isCurrentlySynced ? getProfileSubtotal(isCurrentlySynced) : (editingItem?.estValue ?? "");
+                                                const syncedDisplayValue = isCurrentlySynced ? getProfileDealValue(isCurrentlySynced) : (editingItem?.estValue ?? "");
                                                 return (
                                                     <>
                                                         <input 

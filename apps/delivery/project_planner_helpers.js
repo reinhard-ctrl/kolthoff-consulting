@@ -423,7 +423,13 @@
   }
 
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
-    return {
+    const EC = global.EngagementConfig || {};
+    const chaosValue = typeof annualOperationalLeakage === 'number'
+      ? annualOperationalLeakage
+      : (EC.computePlannerChaosTax
+        ? EC.computePlannerChaosTax(state.staffCount, state.monthlySalary, state.wastedHours)
+        : 0);
+    const base = {
       id: activeProfileId,
       workspaceName: workspaceName || '',
       clientCompany: state.clientCompany,
@@ -476,13 +482,29 @@
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
-      annualOperationalLeakage,
+      annualOperationalLeakage: chaosValue,
+      chaosTax: EC.buildChaosTaxPayload
+        ? EC.buildChaosTaxPayload('planner', chaosValue, {
+          staffCount: state.staffCount,
+          monthlySalary: state.monthlySalary,
+          wastedHours: state.wastedHours
+        })
+        : { source: 'planner', value: chaosValue, inputs: { staffCount: state.staffCount, monthlySalary: state.monthlySalary, wastedHours: state.wastedHours } },
       principalRate: state.principalRate,
       seniorRate: state.seniorRate,
       associateRate: state.associateRate,
       partnerRate: state.partnerRate,
       updatedAt: Date.now()
     };
+    base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: base.updatedAt };
+    base.links = EC.buildProfileLinks
+      ? EC.buildProfileLinks({ id: activeProfileId, quoteId: state.quoteId, links: state.links })
+      : {
+        crmDealId: state.links?.crmDealId || state.quoteId || null,
+        portalClientId: state.links?.portalClientId || state.quoteId || null,
+        contractId: state.links?.contractId || (state.quoteId ? `contract-${activeProfileId}` : null)
+      };
+    return base;
   }
 
   function validatePrintReadiness(view, ctx) {
