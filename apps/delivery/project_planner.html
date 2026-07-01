@@ -1816,7 +1816,7 @@
             <div className="font-bold text-slate-900 text-base">{clientRep || "________________________"}</div>
             <div className="text-slate-700 font-bold font-sans">{clientCompany || "________________________"}</div>
             {(!isRoadmap || isInvoice) && <div className="text-xs text-slate-500 font-mono">TIN: {clientTin || "________________________"}</div>}
-            {!isRoadmap && clientAddress && <div className="text-xs text-slate-500 leading-snug mt-1">{clientAddress}</div>}
+            {!isRoadmap && !isInvoice && clientAddress && <div className="text-xs text-slate-500 leading-snug mt-1">{clientAddress}</div>}
             {isInvoice && <div className="text-xs text-slate-500 leading-snug mt-1">{clientAddress || "________________________"}</div>}
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-600"><span className="font-semibold text-slate-800">Primary Sponsor:</span> {proposalSponsor || "________________________"}</div>}
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-600"><span className="font-semibold text-slate-800">Target Kickoff:</span> {targetStartDate || "________________________"}</div>}
