@@ -8,11 +8,15 @@ import {
   milestoneSplitLabel,
   type BillingMilestone,
 } from '../lib/financials';
+import { getChaosTaxValue, getClientDisplayName, resolveChaosTax } from '../lib/engagement-config';
 
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
+  clientName?: string;
   quoteId?: string;
+  chaosTax?: { source?: string; value?: number };
+  annualOperationalLeakage?: number;
   tasks?: { id?: string; selected?: boolean; estHours?: number; tier?: string; isMonthlyRetainer?: boolean; category?: string }[];
   frictionBuffer?: number;
   discountPercent?: number;
@@ -123,6 +127,23 @@ function MilestoneDetail({ profile }: { profile: WorkbookProfile }) {
           </p>
         </article>
       )}
+
+      {(() => {
+        const chaos = resolveChaosTax(profile);
+        if (!chaos.value) return null;
+        return (
+          <article className="p-3 bg-brandNavy-900 rounded border border-rose-900/40 mt-3">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-300 font-semibold">Operational Leakage (Chaos Tax)</span>
+              <span className="font-mono text-rose-400 font-bold">{formatCurrency(chaos.value)}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1">
+              Source: <span className="uppercase font-mono text-slate-400">{chaos.source}</span>
+              {' · '}Read-only from workbook profile
+            </p>
+          </article>
+        );
+      })()}
     </div>
   );
 }
@@ -170,7 +191,7 @@ export default function ContractLedger() {
       const contract = contracts.find((c) => c.profileId === profile.id);
       return {
         profileId: profile.id,
-        clientCompany: profile.clientCompany || 'Unknown Client',
+        clientCompany: getClientDisplayName(profile),
         quoteId: profile.quoteId || 'N/A',
         contractStatus: contract?.status || 'draft',
         contractId: contract?.id || null,
@@ -264,6 +285,7 @@ export default function ContractLedger() {
               <th className="p-4">Client</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4 text-center">Total Value</th>
+              <th className="p-4 text-center">Chaos Tax</th>
               <th className="p-4">Billing Milestones</th>
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-right">Actions</th>
@@ -273,6 +295,8 @@ export default function ContractLedger() {
             {ledgerData.map((item) => {
               const profile = profiles.find((p) => p.id === item.profileId);
               const estValue = getFinancials(profile).total;
+              const chaosValue = getChaosTaxValue(profile);
+              const chaosSource = resolveChaosTax(profile).source;
               const schedule = getBillingSchedule(profile);
               const isExpanded = expandedRows.has(item.profileId);
               const gateCount = schedule.milestones.length;
@@ -292,6 +316,16 @@ export default function ContractLedger() {
                     <td className="p-4 font-bold">{item.clientCompany}</td>
                     <td className="p-4 font-mono text-xs text-slate-400">{item.quoteId}</td>
                     <td className="p-4 text-center font-mono text-brandTeal-400">{formatCurrency(estValue)}</td>
+                    <td className="p-4 text-center">
+                      {chaosValue > 0 ? (
+                        <div>
+                          <span className="font-mono text-rose-400 text-xs">{formatCurrency(chaosValue)}</span>
+                          <div className="text-[9px] uppercase text-slate-500 font-mono mt-0.5">{chaosSource}</div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-600 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="p-4 min-w-[220px]">
                       <div className="flex items-start justify-between gap-2">
                         <MilestoneSummary
@@ -338,7 +372,7 @@ export default function ContractLedger() {
                   </tr>
                   {isExpanded && profile && (
                     <tr>
-                      <td colSpan={7} className="p-0 border-t border-brandNavy-800/50">
+                      <td colSpan={8} className="p-0 border-t border-brandNavy-800/50">
                         <MilestoneDetail profile={profile} />
                       </td>
                     </tr>

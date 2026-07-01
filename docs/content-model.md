@@ -100,22 +100,24 @@ Convention:
 
 | Field | Writer | Notes |
 |-------|--------|-------|
-| `tabs[]`, `activeTabId` | Diagnosis / Workflow Builder | Flowchart tabs (merge carefully) |
-| `subSaaS` | Diagnosis / Intake | SaaS stack |
+| `tabs[]`, `activeTabId` | Diagnosis / Workflow Builder | Legacy canonical view (merged from app slices) |
+| `diagnosisWorkflow` | Diagnosis Reports | `{ tabs, activeTabId, updatedAt }` — app-specific slice |
+| `workflowBuilder` | Workflow Builder | `{ tabs, activeTabId, updatedAt }` — app-specific slice |
+| `subSaaS` | Diagnosis / Intake | SaaS stack (Intake merges by tool name) |
 | `raciAssignments` | Diagnosis | RACI matrix |
 | `synthesis` | Diagnosis | Executive summary |
 
-**Caution:** concurrent saves from Diagnosis and Workflow can overwrite `tabs` if not coordinated. Prefer merge writes and app-specific sub-keys in future schema versions.
+**Tabs merge (schema v2):** Each app saves its own slice, then merges into legacy `tabs[]` so older readers still work. Saves fetch the latest profile and merge tab IDs from both slices before writing.
 
 ### Intake mapping
 
 Intake Center merges responses into profile fields by `mappedTarget`:
 
-- `subSaaS`
-- `roles`
-- `customAssets`
+- `subSaaS` — merged by tool name (case-insensitive)
+- `roles` — merged by employee name
+- `customAssets` — appended with `_intakeAt` timestamp
 
-See `INTAKE_MAPPED_TARGETS` in engagement config.
+See `INTAKE_MAPPED_TARGETS` in engagement config and `admin/src/lib/intake-merge.ts`.
 
 ## MOD 1–4 canonical names
 

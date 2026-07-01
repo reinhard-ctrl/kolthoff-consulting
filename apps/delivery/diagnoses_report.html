@@ -90,6 +90,9 @@
 
     <div id="root"></div>
 
+    <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
+    <script src="../../shared/workflow-tabs.js?v=20250701-content-v2"></script>
+
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
 
@@ -464,8 +467,12 @@
             };
 
             const addPhase = () => {
+                const EC = window.EngagementConfig || {};
+                const modIndex = Math.min(phases.length, (EC.MODULES?.length || 4) - 1);
+                const mod = EC.MODULES?.[modIndex];
+                const defaultLabel = mod?.shortTitle || mod?.title || 'New Phase';
                 const lastPhase = phases.reduce((last, p) => p.x > last.x ? p : last, phases[0]);
-                const newPhase = { id: 'p' + Date.now(), label: 'New Phase', x: lastPhase ? lastPhase.x + lastPhase.w : 200, w: 350, type: 'mid', color: '#f5f5f5', text: '#333333' };
+                const newPhase = { id: 'p' + Date.now(), label: defaultLabel, x: lastPhase ? lastPhase.x + lastPhase.w : 200, w: 350, type: 'mid', color: '#f5f5f5', text: '#333333' };
                 commitUpdate({ ...activeTab.present, phases: [...phases, newPhase] });
                 setEditingElement({ type: 'phase', id: newPhase.id }); setSelectedElement({ type: 'phase', id: newPhase.id });
             };
@@ -1771,12 +1778,15 @@
 
             useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
+                const EC = window.EngagementConfig || {};
+                const WT = window.WorkflowTabs;
                 if (profile) {
-                    setClientCompany(profile.clientCompany || 'Untitled Company');
+                    setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
-                    if (profile.tabs) {
-                        setTabs(profile.tabs.map(t => ({ ...t, past: [], future: [] })));
-                        setActiveTabId(profile.activeTabId || profile.tabs[0].id);
+                    const resolved = WT?.resolveWorkflowTabs(profile, 'diagnosis');
+                    if (resolved) {
+                        setTabs(WT.hydrateTabs(resolved.tabs));
+                        setActiveTabId(resolved.activeTabId);
                     } else if (profile.workflows) { // Migration fallback
                         setTabs([{ id: 'tab-m', name: 'Migrated Data', past: [], future: [], present: { nodes: INITIAL_NODES, edges: INITIAL_EDGES, lanes: INITIAL_LANES, phases: INITIAL_PHASES } }]);
                         setActiveTabId('tab-m');
@@ -1852,21 +1862,28 @@
                 if (!isAuthed || !activeProfileId) return;
                 setIsSaving(true);
                 try {
+                    const EC = window.EngagementConfig || {};
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-                    const cleanTabs = tabs.map(t => ({ id: t.id, name: t.name, present: t.present })); // Strip past/future to save space
+                    const profileSnap = await window.getDoc(profileRef);
+                    const existing = profileSnap.exists() ? profileSnap.data() : {};
+                    const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload('diagnosis', tabs, activeTabId, existing);
+                    const chaosTax = EC.buildChaosTaxPayload
+                        ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
+                        : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
                     await window.setDoc(profileRef, {
-                        tabs: cleanTabs,
-                        activeTabId,
+                        ...tabsPayload,
                         subSaaS,
                         raciAssignments,
                         annualOperationalLeakage: totalAnnualChaosTax,
-                        chaosTax: { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} },
+                        chaosTax,
                         synthesis
                     }, { merge: true });
                     triggerToast("💾 Saved to Cloud!");
                 } catch (e) { triggerToast("❌ Error saving."); }
                 setIsSaving(false);
             };
+
+            const profileLabel = (p) => window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
 
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
@@ -1887,7 +1904,7 @@
                             <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1.5 block">Active Workspace</label>
                             <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 outline-none focus:border-brandTeal-500" disabled={!!authError}>
                                 {workbookProfiles.length === 0 && <option value="">{authError ? "Local Session Default" : "Loading..."}</option>}
-                                {workbookProfiles.map(p => <option key={p.id} value={p.id}>{p.clientCompany}</option>)}
+                                {workbookProfiles.map(p => <option key={p.id} value={p.id}>{profileLabel(p)}</option>)}
                             </select>
                         </div>
                         

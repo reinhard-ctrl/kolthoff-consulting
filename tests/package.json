@@ -2,7 +2,7 @@
   "name": "kolthoff-rules-tests",
   "private": true,
   "scripts": {
-    "test": "node rules.test.js && node nav-preferences.test.mjs && node quick-action-preferences.test.mjs && node engagement-config.test.mjs"
+    "test": "node rules.test.js && node nav-preferences.test.mjs && node quick-action-preferences.test.mjs && node engagement-config.test.mjs && node workflow-tabs.test.mjs && node intake-merge.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1"
