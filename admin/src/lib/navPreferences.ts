@@ -1,8 +1,11 @@
 import { DEFAULT_NAV_GROUPS, type NavGroup, type NavItem } from '../config/navigation';
 
 const STORAGE_KEY = 'kolthoff-admin-nav-preferences';
+/** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
+const NAV_PREFS_VERSION = 2;
 
 export type NavPreferences = {
+  version?: number;
   groupOrder: string[];
   /** groupId -> ordered item ids (supports moving items between groups) */
   assignments: Record<string, string[]>;
@@ -120,6 +123,10 @@ export function loadNavPreferences(): NavPreferences | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as NavPreferences & { itemOrder?: Record<string, string[]> };
+    if (parsed.version !== NAV_PREFS_VERSION) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
     let prefs: NavPreferences | null = null;
     if (parsed.assignments) {
       prefs = parsed;
@@ -142,7 +149,10 @@ export function loadNavPreferences(): NavPreferences | null {
 }
 
 export function saveNavPreferences(prefs: NavPreferences) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeNavPreferences(prefs)));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ ...sanitizeNavPreferences(prefs), version: NAV_PREFS_VERSION }),
+  );
 }
 
 export function clearNavPreferences() {
@@ -198,6 +208,10 @@ export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | 
         items,
       };
     });
+}
+
+export function getDefaultNavGroups(): NavGroup[] {
+  return DEFAULT_NAV_GROUPS;
 }
 
 export function getEffectiveNavGroups(): NavGroup[] {

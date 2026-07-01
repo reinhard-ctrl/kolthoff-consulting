@@ -16,7 +16,10 @@ export type NavGroup = {
   items: NavItem[];
 };
 
-/** Default sidebar groups and link order — edit here or use Customize in the sidebar UI. */
+/**
+ * Shipped sidebar layout (also the Customize → Reset target).
+ * Order: Command → Admin Tools → Delivery → Operations → Analytics → Workspace → Client.
+ */
 export const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     id: 'command',
@@ -24,8 +27,16 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'dashboard', label: 'Dashboard', type: 'route', path: '/' },
       { id: 'tenants', label: 'Tenant Manager', type: 'route', path: '/tenants' },
-      { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
       { id: 'intake', label: 'Intake Center', type: 'route', path: '/intake' },
+    ],
+  },
+  {
+    id: 'admin-tools',
+    label: 'Admin Tools',
+    items: [
+      { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
+      { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
+      { id: 'master', label: 'Master Admin', type: 'route', path: '/master' },
     ],
   },
   {
@@ -46,21 +57,19 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'admin-tools',
-    label: 'Admin Tools',
-    items: [
-      { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
-      { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
-      { id: 'master', label: 'Master Admin', type: 'route', path: '/master' },
-    ],
-  },
-  {
     id: 'analytics',
     label: 'Analytics',
     items: [
       { id: 'firm-analytics', label: 'Firm Analytics', type: 'embed', href: '/apps/analytics/firm_analytics_dashboard.html' },
       { id: 'resource-capacity', label: 'Resource Capacity', type: 'embed', href: '/apps/analytics/resource_capacity_manager.html' },
       { id: 'time-variance', label: 'Time Variance', type: 'embed', href: '/apps/analytics/time_tracking_variance_analyzer.html' },
+    ],
+  },
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
+      { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
     ],
   },
   {

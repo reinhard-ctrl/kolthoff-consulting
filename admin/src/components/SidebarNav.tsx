@@ -1,6 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
-import { DEFAULT_NAV_GROUPS, getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
+import { getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import {
@@ -8,6 +8,7 @@ import {
   buildPreferencesFromGroups,
   clearNavPreferences,
   getAvailableNavGroupsToAdd,
+  getDefaultNavGroups,
   getEffectiveNavGroups,
   insertItemAt,
   removeNavGroup,
@@ -225,7 +226,7 @@ export default function SidebarNav() {
 
   const reset = () => {
     clearNavPreferences();
-    setGroups(DEFAULT_NAV_GROUPS);
+    setGroups(getDefaultNavGroups());
     setCustomizing(false);
     dragPayloadRef.current = null;
   };
