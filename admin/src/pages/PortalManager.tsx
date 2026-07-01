@@ -44,6 +44,59 @@ interface WorkbookProfile {
   links?: { crmDealId?: string; portalClientId?: string };
 }
 
+interface FieldDef {
+  key: string;
+  label: string;
+  placeholder?: string;
+}
+
+const ARRAY_SECTIONS: Record<
+  'assets' | 'roadmap' | 'actionItems' | 'contracts',
+  { title: string; template: ArrayItem; fields: FieldDef[] }
+> = {
+  assets: {
+    title: 'Vault Links',
+    template: { title: 'New File', category: 'MOD 1', date: 'TBD', type: 'pdf', gDriveLink: 'https://drive.google.com/...' },
+    fields: [
+      { key: 'title', label: 'Document Title', placeholder: 'New File' },
+      { key: 'category', label: 'SOW Category', placeholder: 'MOD 1' },
+      { key: 'date', label: 'Date Finalized', placeholder: 'TBD' },
+      { key: 'type', label: 'File Type', placeholder: 'pdf' },
+      { key: 'gDriveLink', label: 'Google Drive URL', placeholder: 'https://drive.google.com/...' },
+    ],
+  },
+  roadmap: {
+    title: 'Strategic Roadmap',
+    template: { title: 'New Milestone', status: 'pending', date: 'TBD', details: '...' },
+    fields: [
+      { key: 'title', label: 'Milestone Title', placeholder: 'New Milestone' },
+      { key: 'status', label: 'Status', placeholder: 'pending' },
+      { key: 'date', label: 'Target Date', placeholder: 'TBD' },
+      { key: 'details', label: 'Details', placeholder: '...' },
+    ],
+  },
+  actionItems: {
+    title: 'Client Action Items',
+    template: { title: 'New Action', desc: '...', type: 'upload', status: 'pending' },
+    fields: [
+      { key: 'title', label: 'Action Title', placeholder: 'New Action' },
+      { key: 'desc', label: 'Description', placeholder: '...' },
+      { key: 'type', label: 'Action Type', placeholder: 'upload' },
+      { key: 'status', label: 'Status', placeholder: 'pending' },
+    ],
+  },
+  contracts: {
+    title: 'Contracts & Billing',
+    template: { title: 'New Contract', date: 'TBD', status: 'Pending', link: '' },
+    fields: [
+      { key: 'title', label: 'Document Outline', placeholder: 'New Contract' },
+      { key: 'date', label: 'Date Issued', placeholder: 'TBD' },
+      { key: 'status', label: 'Status', placeholder: 'Pending' },
+      { key: 'link', label: 'Google Drive URL', placeholder: 'https://drive.google.com/...' },
+    ],
+  },
+};
+
 function emptyClient(code: string): ClientPortal {
   return {
     companyName: 'New Client Corp',
@@ -354,55 +407,81 @@ export default function PortalManager() {
               <section className="glass-panel p-4 space-y-3">
                 <h3 className="text-xs font-bold uppercase text-slate-400">General Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <input value={draft.companyName} onChange={(e) => updateDraft('companyName', e.target.value)} placeholder="Company" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input value={draft.repName} onChange={(e) => updateDraft('repName', e.target.value)} placeholder="Representative" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input value={draft.sowReference} onChange={(e) => updateDraft('sowReference', e.target.value)} placeholder="SOW Reference" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm font-mono" />
+                  <div>
+                    <label htmlFor="portal-companyName" className="text-xs text-slate-400 block mb-1">Company Name</label>
+                    <input id="portal-companyName" value={draft.companyName} onChange={(e) => updateDraft('companyName', e.target.value)} placeholder="Acme Corp" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="portal-repName" className="text-xs text-slate-400 block mb-1">Representative</label>
+                    <input id="portal-repName" value={draft.repName} onChange={(e) => updateDraft('repName', e.target.value)} placeholder="Jane Smith" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="portal-sowReference" className="text-xs text-slate-400 block mb-1">SOW Reference</label>
+                    <input id="portal-sowReference" value={draft.sowReference} onChange={(e) => updateDraft('sowReference', e.target.value)} placeholder="KC-2026-001" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm font-mono" />
+                  </div>
                 </div>
               </section>
 
               <section className="glass-panel p-4 space-y-3">
                 <h3 className="text-xs font-bold uppercase text-slate-400">Progress & ROI Metrics</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input value={draft.currentPhase} onChange={(e) => updateDraft('currentPhase', e.target.value)} placeholder="Current Phase" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input type="number" min={0} max={100} value={draft.progressPercentage} onChange={(e) => updateDraft('progressPercentage', Number(e.target.value))} placeholder="Progress %" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input type="number" value={draft.metrics.annualLeakageIdentified} onChange={(e) => updateMetric('annualLeakageIdentified', e.target.value)} placeholder="Chaos Tax Risk" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input type="number" value={draft.metrics.chaosTaxEliminated} onChange={(e) => updateMetric('chaosTaxEliminated', e.target.value)} placeholder="Chaos Tax Eliminated" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
-                  <input type="number" value={draft.metrics.saasSavingsIdentified} onChange={(e) => updateMetric('saasSavingsIdentified', e.target.value)} placeholder="SaaS Savings" className="bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm md:col-span-2" />
+                  <div>
+                    <label htmlFor="portal-currentPhase" className="text-xs text-slate-400 block mb-1">Current Phase</label>
+                    <input id="portal-currentPhase" value={draft.currentPhase} onChange={(e) => updateDraft('currentPhase', e.target.value)} placeholder="MOD 1: Workflow Diagnosis" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="portal-progressPercentage" className="text-xs text-slate-400 block mb-1">Progress %</label>
+                    <input id="portal-progressPercentage" type="number" min={0} max={100} value={draft.progressPercentage} onChange={(e) => updateDraft('progressPercentage', Number(e.target.value))} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="portal-annualLeakageIdentified" className="text-xs text-slate-400 block mb-1">Annual Chaos Tax Risk</label>
+                    <input id="portal-annualLeakageIdentified" type="number" value={draft.metrics.annualLeakageIdentified} onChange={(e) => updateMetric('annualLeakageIdentified', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div>
+                    <label htmlFor="portal-chaosTaxEliminated" className="text-xs text-slate-400 block mb-1">Operational Leakage Eliminated</label>
+                    <input id="portal-chaosTaxEliminated" type="number" value={draft.metrics.chaosTaxEliminated} onChange={(e) => updateMetric('chaosTaxEliminated', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label htmlFor="portal-saasSavingsIdentified" className="text-xs text-slate-400 block mb-1">Identified SaaS Savings</label>
+                    <input id="portal-saasSavingsIdentified" type="number" value={draft.metrics.saasSavingsIdentified} onChange={(e) => updateMetric('saasSavingsIdentified', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                  </div>
                 </div>
               </section>
 
-              {(['assets', 'roadmap', 'actionItems', 'contracts'] as const).map((section) => {
-                const labels: Record<string, string> = {
-                  assets: 'Vault Links',
-                  roadmap: 'Strategic Roadmap',
-                  actionItems: 'Client Action Items',
-                  contracts: 'Contracts & Billing',
-                };
-                const templates: Record<string, ArrayItem> = {
-                  assets: { title: 'New File', category: 'MOD 1', date: 'TBD', type: 'pdf', gDriveLink: 'https://drive.google.com/...' },
-                  roadmap: { title: 'New Milestone', status: 'pending', date: 'TBD', details: '...' },
-                  actionItems: { title: 'New Action', desc: '...', type: 'upload', status: 'pending' },
-                  contracts: { title: 'New Contract', date: 'TBD', status: 'Pending', link: '' },
-                };
+              {(Object.keys(ARRAY_SECTIONS) as Array<keyof typeof ARRAY_SECTIONS>).map((section) => {
+                const { title, template, fields } = ARRAY_SECTIONS[section];
                 const items = draft[section] as ArrayItem[];
                 return (
                   <section key={section} className="glass-panel p-4 space-y-3">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-xs font-bold uppercase text-slate-400">{labels[section]}</h3>
-                      <button onClick={() => addArrayItem(section, templates[section])} className="text-xs bg-brandNavy-800 px-2 py-1 rounded">+ Add</button>
+                      <h3 className="text-xs font-bold uppercase text-slate-400">{title}</h3>
+                      <button onClick={() => addArrayItem(section, template)} className="text-xs bg-brandNavy-800 px-2 py-1 rounded">+ Add</button>
                     </div>
-                    {items.map((item, idx) => (
-                      <div key={item.id ?? idx} className="flex flex-wrap gap-2 items-center bg-brandNavy-950 p-3 rounded border border-brandNavy-800">
-                        {Object.keys(templates[section]).filter((k) => k !== 'id').map((field) => (
-                          <input
-                            key={field}
-                            value={String(item[field] ?? '')}
-                            onChange={(e) => updateArray(section, idx, field, e.target.value)}
-                            placeholder={field}
-                            className="flex-1 min-w-[120px] bg-brandNavy-900 border border-brandNavy-700 rounded px-2 py-1 text-xs"
-                          />
+                    {items.length > 0 && (
+                      <div className="hidden md:flex flex-wrap gap-2 px-3">
+                        {fields.map((field) => (
+                          <div key={field.key} className="flex-1 min-w-[120px]">
+                            <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wide">{field.label}</span>
+                          </div>
                         ))}
-                        <button onClick={() => removeArrayItem(section, idx)} className="text-red-400 text-xs px-2">Remove</button>
+                        <div className="w-14 shrink-0" aria-hidden />
+                      </div>
+                    )}
+                    {items.map((item, idx) => (
+                      <div key={item.id ?? idx} className="flex flex-wrap gap-2 items-end bg-brandNavy-950 p-3 rounded border border-brandNavy-800">
+                        {fields.map((field) => (
+                          <div key={field.key} className="flex-1 min-w-[120px]">
+                            <label htmlFor={`portal-${section}-${idx}-${field.key}`} className="md:sr-only text-[10px] text-slate-500 block mb-0.5">{field.label}</label>
+                            <input
+                              id={`portal-${section}-${idx}-${field.key}`}
+                              value={String(item[field.key] ?? '')}
+                              onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
+                              placeholder={field.placeholder ?? field.label}
+                              className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded px-2 py-1 text-xs"
+                            />
+                          </div>
+                        ))}
+                        <button onClick={() => removeArrayItem(section, idx)} className="text-red-400 text-xs px-2 pb-1 shrink-0">Remove</button>
                       </div>
                     ))}
                     {items.length === 0 && <p className="text-xs text-slate-500 italic">None configured.</p>}
