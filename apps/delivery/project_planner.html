@@ -1683,8 +1683,8 @@
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">Target timeline</span>
               <span className="text-sm font-bold text-slate-900">{displayTimeline}</span>
-              {isCreditBackEligible && (
-                <span className="text-[10px] text-emerald-700 block mt-2">Module 1 credit-back of {formatCurrency(creditBackAmount)} available when implementation modules are approved within {creditBackDays} days.</span>
+              {applyCreditBack && isCreditBackEligible && (
+                <span className="text-[10px] text-emerald-700 block mt-2">Module 1 credit-back of {formatCurrency(creditBackAmount)} applied when implementation modules are approved within {creditBackDays} days.</span>
               )}
             </div>
           </div>
@@ -2950,26 +2950,15 @@
 
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
-            {isCreditBackEligible && !isInv && (
+            {applyCreditBack && isCreditBackEligible && !isInv && (
               <div className="mb-6 rounded-xl font-sans text-xs leading-relaxed transition-all text-left font-sans font-semibold">
-                {applyCreditBack ? (
-                  <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800 text-left font-sans">
-                    <div className="flex items-center gap-2 font-bold text-emerald-800 uppercase mb-1 text-left font-sans font-sans">
-                      <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      <span>Module 1 Credit-Back Program Active</span>
-                    </div>
-                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
+                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800 text-left font-sans">
+                  <div className="flex items-center gap-2 font-bold text-emerald-800 uppercase mb-1 text-left font-sans font-sans">
+                    <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>Module 1 Credit-Back Program Active</span>
                   </div>
-                ) : (
-                  <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800 text-left font-sans font-semibold print-avoid-break">
-                    <div className="flex items-center gap-2 font-bold text-amber-800 uppercase mb-1 text-left font-sans">
-                      <svg className="w-5 h-5 text-amber-600 shrink-0 no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                      <span>Module 1 Credit-Back Available</span>
-                    </div>
-                    This proposal includes Module 1 (Business Leak Scan) plus implementation modules. Approve within <strong className="text-amber-800 font-bold font-sans">{creditBackDays} days</strong> to receive a <strong className="text-amber-800 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong> credit against implementation fees — making your leak scan risk-free when you proceed.
-                    <span className="no-print block mt-2 text-[10px] text-amber-700">Enable credit-back in Package settings before printing the final quote.</span>
-                  </div>
-                )}
+                  As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700 font-bold font-sans">{formatCurrency(creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700 font-bold font-sans">{creditBackDays} days</strong> of receipt.
+                </div>
               </div>
             )}
 

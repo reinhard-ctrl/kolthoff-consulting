@@ -436,19 +436,12 @@
                         </div>
                     </div>
 
-                    {financials.isCreditBackEligible && (
+                    {applyCreditBack && financials.isCreditBackEligible && (
                         <div className="mb-6 text-xs leading-relaxed">
-                            {applyCreditBack ? (
-                                <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800">
-                                    <div className="font-bold text-emerald-800 uppercase mb-1">Module 1 Credit-Back Program Active</div>
-                                    As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700">{formatCurrency(financials.creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700">{creditBackDays} days</strong> of receipt.
-                                </div>
-                            ) : (
-                                <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl text-slate-800">
-                                    <div className="font-bold text-amber-800 uppercase mb-1">Module 1 Credit-Back Available</div>
-                                    This proposal includes Module 1 plus implementation modules. Approve within <strong className="text-amber-800">{creditBackDays} days</strong> to receive a <strong className="text-amber-800">{formatCurrency(financials.creditBackAmount)}</strong> credit against implementation fees.
-                                </div>
-                            )}
+                            <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-xl text-slate-800">
+                                <div className="font-bold text-emerald-800 uppercase mb-1">Module 1 Credit-Back Program Active</div>
+                                As a strategic onboarding partner, we have credited back 100% of your Module 1 Business Leak Scan fee (<strong className="text-emerald-700">{formatCurrency(financials.creditBackAmount)}</strong>) directly against your implementation services. This deduction is pre-applied to the billing gates below, provided this SOW is approved within <strong className="text-emerald-700">{creditBackDays} days</strong> of receipt.
+                            </div>
                         </div>
                     )}
 
