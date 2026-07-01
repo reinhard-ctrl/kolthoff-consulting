@@ -422,13 +422,19 @@
     return arr;
   }
 
+  function computeAnnualOperationalLeakage(staffCount, monthlySalary, wastedHours) {
+    const EC = global.EngagementConfig || {};
+    if (EC.computePlannerChaosTax) {
+      return EC.computePlannerChaosTax(staffCount, monthlySalary, wastedHours);
+    }
+    return (staffCount ?? 15) * (monthlySalary ?? 25000) * 12 * ((wastedHours ?? 2) / 8);
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
       ? annualOperationalLeakage
-      : (EC.computePlannerChaosTax
-        ? EC.computePlannerChaosTax(state.staffCount, state.monthlySalary, state.wastedHours)
-        : 0);
+      : computeAnnualOperationalLeakage(state.staffCount, state.monthlySalary, state.wastedHours);
     const base = {
       id: activeProfileId,
       workspaceName: workspaceName || '',
@@ -464,7 +470,6 @@
       printSla: state.printSla,
       printQuote: state.printQuote,
       printCover: state.printCover,
-      printRoadmapGantt: state.printRoadmapGantt !== false,
       milestoneSplit: state.milestoneSplit,
       customSplit1: state.customSplit1,
       customSplit2: state.customSplit2,
@@ -491,10 +496,9 @@
       principalRate: state.principalRate,
       seniorRate: state.seniorRate,
       associateRate: state.associateRate,
-      partnerRate: state.partnerRate,
-      updatedAt: Date.now()
+      partnerRate: state.partnerRate
     };
-    base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: base.updatedAt };
+    base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks
       ? EC.buildProfileLinks({ id: activeProfileId, quoteId: state.quoteId, links: state.links })
       : {
@@ -537,6 +541,23 @@
     if (!payload) return '';
     const copy = { ...payload };
     delete copy.updatedAt;
+    if (copy._meta) {
+      copy._meta = { ...copy._meta };
+      delete copy._meta.updatedAt;
+    }
+    const chaosValue = computeAnnualOperationalLeakage(copy.staffCount, copy.monthlySalary, copy.wastedHours);
+    copy.annualOperationalLeakage = chaosValue;
+    if (copy.chaosTax) {
+      copy.chaosTax = {
+        ...copy.chaosTax,
+        value: chaosValue,
+        inputs: {
+          staffCount: copy.staffCount,
+          monthlySalary: copy.monthlySalary,
+          wastedHours: copy.wastedHours
+        }
+      };
+    }
     return JSON.stringify(copy);
   }
 
@@ -604,6 +625,7 @@
     getRateForTier,
     computeProjectEconomics,
     computeBillingMilestones,
+    computeAnnualOperationalLeakage,
     buildProfilePayload,
     payloadFingerprint,
     validatePrintReadiness,
