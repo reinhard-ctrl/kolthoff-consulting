@@ -64,12 +64,14 @@ check "/workspace/"
 
 # Delivery / ops HTML apps
 check "/apps/operations/crm_pipeline.html"
+check "/apps/public/crm_pipeline_view.html"
 check "/apps/delivery/project_planner.html"
 check "/apps/operations/policy_studio.html"
 
 # Shared modules
 check "/shared/auth-gate.js"
 check "/shared/firebase-init.js"
+check "/shared/crm-share.js"
 
 # Legacy redirects
 check_redirect "/admin/legacy/index.html" "/admin"
