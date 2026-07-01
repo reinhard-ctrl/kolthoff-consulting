@@ -124,6 +124,7 @@
             const [isProcessing, setIsProcessing] = useState(false);
             const [isPulling, setIsPulling] = useState(false);
             const [hasRouted, setHasRouted] = useState(false);
+            const [clientLoadState, setClientLoadState] = useState('loading');
 
             const [signatureName, setSignatureName] = useState("");
             const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
@@ -153,6 +154,10 @@
                                 }
                             } catch (e) {
                                 console.error("Firebase Auth Error:", e);
+                                if (isClientMode) {
+                                    setClientLoadState('error');
+                                    setHasRouted(true);
+                                }
                             }
                         };
                         initAuth();
@@ -171,19 +176,48 @@
                 const contractParam = urlParams.get('contract');
 
                 if (contractParam) {
+                    let profileReady = false;
+                    let contractReady = false;
+                    const markClientLoad = (state) => {
+                        setClientLoadState(state);
+                    };
+                    const maybeDone = () => {
+                        if (profileReady && contractReady) {
+                            setHasRouted(true);
+                        }
+                    };
+
                     const profileRef = window.doc(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles', contractParam);
                     const unsubProfile = window.onSnapshot(profileRef, (docSnap) => {
+                        profileReady = true;
                         if (docSnap.exists()) {
                             setProfiles([{ id: docSnap.id, ...docSnap.data() }]);
+                        } else {
+                            setProfiles([]);
                         }
-                    }, console.error);
+                        maybeDone();
+                    }, (err) => {
+                        console.error(err);
+                        profileReady = true;
+                        markClientLoad('error');
+                        maybeDone();
+                    });
 
                     const contractRef = window.doc(db, 'artifacts', appId, 'public', 'data', 'contracts_ledger', `contract-${contractParam}`);
                     const unsubContract = window.onSnapshot(contractRef, (docSnap) => {
+                        contractReady = true;
                         if (docSnap.exists()) {
                             setContracts([{ id: docSnap.id, ...docSnap.data() }]);
+                        } else {
+                            setContracts([]);
                         }
-                    }, console.error);
+                        maybeDone();
+                    }, (err) => {
+                        console.error(err);
+                        contractReady = true;
+                        markClientLoad('error');
+                        maybeDone();
+                    });
 
                     return () => { unsubProfile(); unsubContract(); };
                 }
@@ -234,21 +268,24 @@
             }, [profiles, contracts]);
 
             useEffect(() => {
-                if (!hasRouted && ledgerData && ledgerData.length > 0) {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const contractParam = urlParams.get('contract');
-                    if (contractParam) {
-                        const item = ledgerData.find(d => d.profileId === contractParam);
-                        if (item) {
-                            setActiveContractId(contractParam);
-                            const viewParam = urlParams.get('view');
-                            if (viewParam === 'audit' || item.contractStatus === 'signed') setActiveView('audit_trail');
-                            else if (item.contractStatus === 'sent') setActiveView('client_sign');
-                        }
-                    }
-                    setHasRouted(true);
+                if (!hasRouted || !isClientMode) return;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const contractParam = urlParams.get('contract');
+                if (!contractParam) return;
+
+                const item = ledgerData.find(d => d.profileId === contractParam);
+                if (item && profiles.some(p => p.id === contractParam)) {
+                    setActiveContractId(contractParam);
+                    const viewParam = urlParams.get('view');
+                    if (viewParam === 'audit' || item.contractStatus === 'signed') setActiveView('audit_trail');
+                    else if (item.contractStatus === 'sent') setActiveView('client_sign');
+                    else setClientLoadState('unavailable');
+                    if (item.contractStatus === 'sent' || item.contractStatus === 'signed') setClientLoadState('ready');
+                } else {
+                    setClientLoadState((prev) => (prev === 'error' ? 'error' : 'not_found'));
                 }
-            }, [ledgerData, hasRouted]);
+            }, [ledgerData, hasRouted, isClientMode, profiles]);
 
             const showToast = (msg) => {
                 setToast(msg);
@@ -691,7 +728,53 @@
                 );
             };
 
+            const renderClientGate = () => {
+                if (clientLoadState === 'loading') {
+                    return (
+                        <div className="min-h-screen client-gradient flex items-center justify-center p-8 font-sans">
+                            <div className="text-center">
+                                <div className="w-10 h-10 border-2 border-brandTeal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="text-sm font-bold text-slate-700 uppercase tracking-wider">Loading contract…</p>
+                                <p className="text-xs text-slate-500 mt-2">Secure document retrieval in progress</p>
+                            </div>
+                        </div>
+                    );
+                }
+
+                const messages = {
+                    error: {
+                        title: 'Unable to load contract',
+                        body: 'We could not retrieve this agreement. Check your connection and try again, or contact Kolthoff Consulting for a new signing link.',
+                    },
+                    not_found: {
+                        title: 'Contract not found',
+                        body: 'This signing link may be invalid, expired, or not yet published. Please request a new link from your Kolthoff representative.',
+                    },
+                    unavailable: {
+                        title: 'Contract not available',
+                        body: 'This agreement is not open for signing right now. If you believe this is an error, contact Kolthoff Consulting.',
+                    },
+                };
+                const msg = messages[clientLoadState] || messages.error;
+
+                return (
+                    <div className="min-h-screen client-gradient flex items-center justify-center p-8 font-sans">
+                        <div className="max-w-md bg-white border border-slate-200 rounded-xl shadow-xl p-8 text-center">
+                            <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto mb-4 text-rose-500">
+                                <Icons.Lock />
+                            </div>
+                            <h1 className="text-lg font-bold text-slate-900 mb-2">{msg.title}</h1>
+                            <p className="text-sm text-slate-600 leading-relaxed">{msg.body}</p>
+                        </div>
+                    </div>
+                );
+            };
+
             // --- 1. Client Views ---
+            if (isClientMode && clientLoadState !== 'ready') {
+                return renderClientGate();
+            }
+
             if (activeView === 'client_sign' && activeProfileObj) {
                 const financials = getFinancials(contractProfile(activeProfileObj));
                 const selectedTasks = activeProfileObj.tasks.filter(t => t.selected);
@@ -934,6 +1017,10 @@
             }
 
             // --- 3. Master Admin Dashboard Render ---
+            if (isClientMode) {
+                return renderClientGate();
+            }
+
             return (
                 <div className="flex h-screen overflow-hidden font-sans">
                     {toast && (
