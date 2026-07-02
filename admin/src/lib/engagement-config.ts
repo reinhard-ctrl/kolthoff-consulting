@@ -10,7 +10,6 @@ export interface EngagementModule {
   shortTitle: string;
   phase: string;
   portalPhase: string;
-  creditBackGate?: boolean;
 }
 
 export interface ChaosTaxSlice {
@@ -48,7 +47,6 @@ export const MODULES: EngagementModule[] = [
     shortTitle: 'Leak Scan',
     phase: 'Phase 1: Diagnosis & Alignment',
     portalPhase: 'MOD 1: Business Leak Scan',
-    creditBackGate: true,
   },
   {
     id: 'mod2',

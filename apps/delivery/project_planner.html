@@ -619,8 +619,6 @@
         selectedPackageId: 'leak-scan',
         packageCustomized: false,
         packageAppliedAt: Date.now(),
-        applyCreditBack: true,
-        creditBackDays: 30,
         tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) }))
       },
       {
@@ -672,8 +670,6 @@
         selectedPackageId: 'fix-the-flow',
         packageCustomized: false,
         packageAppliedAt: Date.now(),
-        applyCreditBack: true,
-        creditBackDays: 30,
         tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) || t.id.startsWith('m2-') }))
       }
     ];
@@ -948,8 +944,6 @@
       const [selectedPackageId, setSelectedPackageId] = useState('leak-scan');
       const [packageCustomized, setPackageCustomized] = useState(false);
       const [packageAppliedAt, setPackageAppliedAt] = useState(null);
-      const [applyCreditBack, setApplyCreditBack] = useState(true);
-      const [creditBackDays, setCreditBackDays] = useState(30);
       const [showPackageApplyConfirm, setShowPackageApplyConfirm] = useState(false);
       const [pendingPackageId, setPendingPackageId] = useState(null);
       const catalogTasksRef = useRef(INITIAL_TASKS.map(t => ({ ...t })));
@@ -1006,9 +1000,7 @@
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
           selectedPackageId: p.selectedPackageId ?? 'leak-scan',
           packageCustomized: p.packageCustomized ?? false,
-          packageAppliedAt: p.packageAppliedAt ?? null,
-          applyCreditBack: p.applyCreditBack ?? true,
-          creditBackDays: p.creditBackDays ?? 30
+          packageAppliedAt: p.packageAppliedAt ?? null
         };
         if (!profileSwitch && !isDirtyRef.current) {
           const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
@@ -1068,8 +1060,6 @@
         setSelectedPackageId(profileState.selectedPackageId);
         setPackageCustomized(profileState.packageCustomized);
         setPackageAppliedAt(profileState.packageAppliedAt);
-        setApplyCreditBack(profileState.applyCreditBack);
-        setCreditBackDays(profileState.creditBackDays);
         setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
         isHydratingRef.current = true;
         const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
@@ -1106,8 +1096,8 @@
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
-        selectedPackageId, packageCustomized, packageAppliedAt, applyCreditBack, creditBackDays
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, applyCreditBack, creditBackDays]);
+        selectedPackageId, packageCustomized, packageAppliedAt
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1222,7 +1212,7 @@
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
         setSelectedPackageId(d.selectedPackageId ?? 'leak-scan'); setPackageCustomized(d.packageCustomized ?? false);
-        setPackageAppliedAt(d.packageAppliedAt ?? null); setApplyCreditBack(d.applyCreditBack ?? true); setCreditBackDays(d.creditBackDays ?? 30);
+        setPackageAppliedAt(d.packageAppliedAt ?? null);
         setActivePresets(H.deriveActivePresetsFromTasks(d.tasks || INITIAL_TASKS));
         H.clearLocalDraft(activeProfileId);
         setLocalDraftBanner(null);
@@ -1288,8 +1278,6 @@
           packageCustomized: false,
           packageAppliedAt: Date.now(),
           proposalObjectives: defs.proposalObjectives || base.proposalObjectives,
-          applyCreditBack: defs.applyCreditBack ?? true,
-          creditBackDays: defs.creditBackDays ?? 30,
           links: {
             crmDealId: deal.id,
             portalClientId: deal.id,
@@ -1317,7 +1305,7 @@
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
-          selectedPackageId: 'leak-scan', packageCustomized: false, packageAppliedAt: Date.now(), applyCreditBack: true, creditBackDays: 30,
+          selectedPackageId: 'leak-scan', packageCustomized: false, packageAppliedAt: Date.now(),
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
         const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
@@ -1490,8 +1478,6 @@
         setPackageCustomized(false);
         setPackageAppliedAt(Date.now());
         if (defs.proposalObjectives) setProposalObjectives(defs.proposalObjectives);
-        if (defs.applyCreditBack !== undefined) setApplyCreditBack(defs.applyCreditBack);
-        if (defs.creditBackDays !== undefined) setCreditBackDays(defs.creditBackDays);
         if (defs.frictionBuffer !== undefined) setFrictionBuffer(defs.frictionBuffer);
         if (defs.discountPercent !== undefined) setDiscountPercent(defs.discountPercent);
         if (defs.milestoneSplit) setMilestoneSplit(defs.milestoneSplit);
@@ -1703,13 +1689,6 @@
       const moduleInvestmentSummaries = sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries;
       const retainerCostPart = sharedBillingSchedule?.retainerMonthly || plannerRetainerCostPart;
       const retainerCostTotalPart = sharedBillingSchedule?.retainerTotal || plannerRetainerCostTotalPart;
-
-      const mod1CreditAmount = useMemo(() => {
-        const mod1 = moduleInvestmentSummaries.find((s) => s.modNum === 1);
-        return mod1?.afterDiscount ?? mod1?.baseUndiscounted ?? 0;
-      }, [moduleInvestmentSummaries]);
-
-      const showCreditBackTerms = applyCreditBack && activeDiag && mod1CreditAmount > 0;
 
       const packageSectionCount = useMemo(() => {
         let count = 0;
@@ -2067,13 +2046,6 @@
                       * Your total project quote includes a built-in <strong className="text-slate-700 font-sans font-bold">+{frictionBuffer}% Project Buffer Hours</strong>, giving our team sufficient hours to perform complete, unhurried observation audits without any surprise billing adjustments later on.
                     </div>
                   )}
-                  {showCreditBackTerms && (
-                    <div className="mt-3 text-[10px] text-teal-800 bg-teal-50 border border-teal-200 rounded-lg p-3 font-sans leading-relaxed print-avoid-break">
-                      <strong className="block mb-1 uppercase tracking-wider font-mono text-[9px] text-teal-700">MOD 1 Credit-Back Gate</strong>
-                      If you proceed to MOD 2 and/or MOD 3 within <strong>{creditBackDays} days</strong> of completing MOD 1 (Business Leak Scan), the MOD 1 project fee of <strong className="font-mono">{formatCurrency(mod1CreditAmount)}</strong> (ex-VAT, after any partnership discount) credits toward your subsequent module investment on the same engagement.
-                      {(activeSOP || activePMO) && <span className="block mt-1 text-teal-700">This proposal includes modules beyond MOD 1 — the credit applies at billing when stage-gated milestones are invoiced.</span>}
-                    </div>
-                  )}
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-200 text-left">
                   <strong className="text-brandTeal-600 print-accent block mb-1.5 uppercase tracking-wider text-[10px] font-mono font-bold font-sans text-left font-sans">Your SME Financial Recovery (ROI Plan):</strong>
@@ -2398,25 +2370,6 @@
                     <span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all duration-300 ${includeTax ? 'translate-x-4' : 'translate-x-0'}`} />
                   </button>
                 </div>
-              )}
-
-              {(isQuoteOrInvoice || isPackage) && (
-                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
-                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">MOD 1 Credit-Back Gate</legend>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-slate-300 font-semibold">Apply MOD 1 credit toward MOD 2+3</span>
-                    <button type="button" aria-pressed={applyCreditBack} onClick={() => setApplyCreditBack(!applyCreditBack)} className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all ${applyCreditBack ? 'bg-brandTeal-500' : 'bg-brandNavy-800 border border-brandNavy-700'}`}>
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-all ${applyCreditBack ? 'translate-x-4' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                  {applyCreditBack && (
-                    <div>
-                      <label className="text-[9px] font-mono text-slate-400 uppercase block mb-1">Credit-back window (days)</label>
-                      <input type="number" min="7" max="90" value={creditBackDays} onChange={(e) => setCreditBackDays(Math.max(7, Number(e.target.value) || 30))} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 font-mono text-xs focus:outline-none focus:border-brandTeal-500" />
-                      {mod1CreditAmount > 0 && <p className="text-[9px] text-brandTeal-400/90 mt-2">MOD 1 fee eligible for credit: {formatCurrency(mod1CreditAmount)} (ex-VAT)</p>}
-                    </div>
-                  )}
-                </fieldset>
               )}
 
               {(isQuoteOrInvoice || isPackage) && (
@@ -3325,9 +3278,6 @@
                   <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Engagement Packages</span>
                   <h2 className="text-xl font-bold text-white font-serif">Choose a starting scope</h2>
                   <p className="text-xs text-slate-400 max-w-2xl">Packages set task selection and proposal defaults. Fine-tune hours, copy, and rates in the Planner tab afterward.</p>
-                  {applyCreditBack && selectedPackageId && EP?.getPackageById?.(selectedPackageId)?.defaults?.applyCreditBack && (
-                    <p className="text-[10px] text-brandTeal-400 bg-brandTeal-500/5 border border-brandTeal-500/20 rounded-lg px-3 py-2 max-w-2xl">MOD 1 credit-back active: diagnosis fee can credit toward MOD 2+3 within {creditBackDays} days when the client proceeds.</p>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
                   {(EP?.getAllPackages?.() || []).map((pkg) => {
@@ -3343,7 +3293,6 @@
                             {(pkg.modules || []).map((mod) => (
                               <span key={mod} className="text-[9px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-2 py-0.5 rounded border border-brandNavy-700">{mod.replace('mod', 'MOD ')}</span>
                             ))}
-                            {pkg.defaults?.applyCreditBack && <span className="text-[9px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-300 px-2 py-0.5 rounded border border-brandTeal-500/20">Credit-back</span>}
                           </div>
                           <h3 className="text-base font-bold text-white font-serif">{pkg.name}</h3>
                           <p className="text-[11px] text-slate-300 leading-relaxed">{pkg.tagline}</p>

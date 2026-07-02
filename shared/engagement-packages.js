@@ -19,13 +19,10 @@
       },
       defaults: {
         proposalObjectives: 'Find where your team loses time and money through scattered chats, duplicate software, and manual rework — and leave with a prioritized 90-day fix list.',
-        applyCreditBack: true,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 42500
     },
     {
       id: 'leak-scan-briefing',
@@ -41,13 +38,10 @@
       },
       defaults: {
         proposalObjectives: 'Quantify operational leakage, share findings with leadership in a dedicated briefing, and agree on the next phase together.',
-        applyCreditBack: true,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 49500
     },
     {
       id: 'fix-the-flow',
@@ -64,13 +58,10 @@
       },
       defaults: {
         proposalObjectives: 'Diagnose where time and money leak, then document how orders, purchases, and approvals run — so your team follows one path.',
-        applyCreditBack: true,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 108500
     },
     {
       id: 'run-on-rails',
@@ -86,13 +77,10 @@
       },
       defaults: {
         proposalObjectives: 'Formalize how work runs, then launch your branded workspace with forms, training, and launch-week support.',
-        applyCreditBack: false,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 153000
     },
     {
       id: 'full-transformation',
@@ -109,13 +97,10 @@
       },
       defaults: {
         proposalObjectives: 'End-to-end: diagnose leaks, document how your business runs, and launch a workspace your team is trained to use daily.',
-        applyCreditBack: true,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 195500
     },
     {
       id: 'launch-lite',
@@ -143,13 +128,10 @@
       },
       defaults: {
         proposalObjectives: 'Launch a trimmed workspace with core setup, up to three approval forms, and hands-on training — prove value before expanding scope.',
-        applyCreditBack: false,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
-      fromPriceHint: 51000
     },
     {
       id: 'care-plan',
@@ -165,14 +147,11 @@
       },
       defaults: {
         proposalObjectives: 'Keep your workspace running with monthly hosting, user care, and bi-weekly operations check-ins with your managers.',
-        applyCreditBack: false,
-        creditBackDays: 30,
         frictionBuffer: 0,
         discountPercent: 0,
         milestoneSplit: 'auto',
         subscriptionMonths: 6
       },
-      fromPriceHint: 18000,
       isMonthly: true
     },
     {
@@ -189,14 +168,11 @@
       },
       defaults: {
         proposalObjectives: 'Monthly hosting and manager check-ins, plus semi-annual audits of usage, permissions, and outdated forms.',
-        applyCreditBack: false,
-        creditBackDays: 30,
         frictionBuffer: 0,
         discountPercent: 0,
         milestoneSplit: 'auto',
         subscriptionMonths: 6
       },
-      fromPriceHint: 18000,
       isMonthly: true
     },
     {
@@ -214,14 +190,11 @@
       },
       defaults: {
         proposalObjectives: 'Full transformation from leak scan through workspace go-live, plus six months of hosting, check-ins, and adoption support.',
-        applyCreditBack: true,
-        creditBackDays: 30,
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto',
         subscriptionMonths: 6
       },
-      fromPriceHint: 195500
     }
   ];
 
