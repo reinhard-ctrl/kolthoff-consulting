@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { getNavItem } from '../lib/navPreferences';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250702-embed-v28';
+const EMBED_CACHE_VERSION = '20250702-embed-v29';
 
 function buildEmbedSrc(href: string): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
