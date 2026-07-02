@@ -122,7 +122,7 @@ export async function hasAdminSession() {
   return snap.exists();
 }
 
-/** Exchange portal access code for scoped custom token */
+/** Exchange portal access code for client session (Firestore-direct; no Cloud Functions required) */
 export async function exchangePortalToken(accessCode) {
   const normalized = accessCode.trim().toUpperCase();
   if (!normalized) {
@@ -131,7 +131,24 @@ export async function exchangePortalToken(accessCode) {
     throw err;
   }
 
-  /** Prefer Hosting rewrite — works when org policy blocks public Cloud Run invoke */
+  await bootstrapAuth();
+  const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', normalized);
+  try {
+    const snap = await getDoc(clientRef);
+    if (snap.exists()) {
+      return { token: null, client: snap.data(), accessCode: normalized };
+    }
+    const err = new Error('Invalid access code');
+    err.code = 'not-found';
+    throw err;
+  } catch (directErr) {
+    if (directErr?.code === 'not-found' || directErr?.code === 'invalid-argument') throw directErr;
+    if (directErr?.code !== 'permission-denied') {
+      console.warn('Portal Firestore auth failed, trying cloud functions:', directErr);
+    }
+  }
+
+  /** Legacy fallback when Firestore rules are not yet deployed */
   if (typeof fetch === 'function' && typeof window !== 'undefined') {
     try {
       const res = await fetch('/api/generatePortalToken', {
@@ -146,13 +163,8 @@ export async function exchangePortalToken(accessCode) {
         err.code = 'not-found';
         throw err;
       }
-      if (res.status === 403 || res.status === 401) {
-        const err = new Error('Portal authentication service is unavailable. Please contact Kolthoff support.');
-        err.code = 'functions/permission-denied';
-        throw err;
-      }
     } catch (fetchErr) {
-      if (fetchErr?.code === 'not-found' || fetchErr?.code === 'functions/permission-denied') throw fetchErr;
+      if (fetchErr?.code === 'not-found') throw fetchErr;
       console.warn('Portal token HTTP path failed, trying callable:', fetchErr);
     }
   }

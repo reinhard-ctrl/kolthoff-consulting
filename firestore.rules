@@ -145,9 +145,10 @@ service cloud.firestore {
       allow read: if collection == 'core_audit_log' && isTenantAdmin(tenantId);
     }
 
-    // Client portal access codes — scoped to portal_client custom token
+    // Client portal — doc id is the access code secret (same pattern as admin_credentials)
     match /artifacts/{tenantId}/public/data/clients/{clientId} {
-      allow read: if isStaffMember() || isPortalClientFor(clientId);
+      allow get: if isStaffMember() || isPortalClientFor(clientId) || isAuthenticated();
+      allow list: if isStaffMember();
       allow write: if isKolthoffAdmin();
     }
   }
