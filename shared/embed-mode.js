@@ -23,7 +23,7 @@
       height: 100%;
       overflow: hidden;
     }
-    html.kolthoff-embed header[data-app-chrome],
+    html.kolthoff-embed [data-app-chrome],
     html.kolthoff-embed aside[data-app-sidebar] {
       display: none !important;
     }
