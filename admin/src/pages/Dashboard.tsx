@@ -30,7 +30,7 @@ export default function Dashboard() {
     { label: 'SOW Profiles', value: stats.profiles, to: '/app/project-planner' },
     { label: 'Contracts', value: stats.contracts, to: '/contracts' },
     { label: 'Invoices', value: stats.invoices, to: '/collections' },
-    { label: 'IT Tickets', value: stats.tickets, to: '/master' },
+    { label: 'IT Tickets', value: stats.tickets, to: '/tenants?tab=support' },
   ];
 
   return (
