@@ -679,11 +679,15 @@
             <!-- Content Area: Video Only Setup -->
             <div class="flex flex-col items-center justify-center gap-4 overflow-y-auto pr-1 flex-1">
                 <div class="relative aspect-video w-full max-w-3xl rounded-lg overflow-hidden bg-black border border-brandNavy-700">
-                    <!-- LAZY LOADING OPTIMIZATION: preload="none" ensures we don't fetch any video data until clicked. Poster provides a visual placeholder. -->
-                    <video id="explainerVideo" class="w-full h-full object-contain" controls preload="none" poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90' fill='%2309111F'><rect width='100%25' height='100%25'/><g transform='translate(80, 45)'><circle r='14' fill='%2314B8A6' fill-opacity='0.15' stroke='%2314B8A6' stroke-width='1'/><polygon points='-4,-6 8,0 -4,6' fill='%2314B8A6'/></g><text x='50%25' y='75%25' fill='%232E4567' font-family='sans-serif' font-size='5' text-anchor='middle' font-weight='bold' letter-spacing='1'>KOLTHOFF CONSULTING • OPERATIONAL EXCELLENCE</text></svg>">
+                    <!-- Prefetch starts when the Watch Explainer control enters the viewport; poster shows until playback. -->
+                    <video id="explainerVideo" class="w-full h-full object-contain" controls preload="metadata" playsinline poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90' fill='%2309111F'><rect width='100%25' height='100%25'/><g transform='translate(80, 45)'><circle r='14' fill='%2314B8A6' fill-opacity='0.15' stroke='%2314B8A6' stroke-width='1'/><polygon points='-4,-6 8,0 -4,6' fill='%2314B8A6'/></g><text x='50%25' y='75%25' fill='%232E4567' font-family='sans-serif' font-size='5' text-anchor='middle' font-weight='bold' letter-spacing='1'>KOLTHOFF CONSULTING • OPERATIONAL EXCELLENCE</text></svg>">
                         <source src="/apps/public/assets/Ops_Excellence_for_SMEs.mp4" type="video/mp4">
                         Your browser does not support HTML5 video.
                     </video>
+                    <div id="videoLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brandNavy-955/85 pointer-events-none hidden">
+                        <div class="w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
+                        <p id="videoLoadingText" class="text-[10px] font-mono uppercase tracking-wider text-brandTeal-400">Buffering explainer…</p>
+                    </div>
                     <!-- Fallback Card inside Player area in case video file is unavailable -->
                     <div id="videoFallbackCard" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/90 hidden">
                         <svg class="w-12 h-12 text-brandTeal-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -1293,20 +1297,82 @@
         const explainerModalBackdrop = document.getElementById('explainerModalBackdrop');
         const explainerVideo = document.getElementById('explainerVideo');
         const videoFallbackCard = document.getElementById('videoFallbackCard');
+        const videoLoadingOverlay = document.getElementById('videoLoadingOverlay');
+        const videoLoadingText = document.getElementById('videoLoadingText');
         const videoStatus = document.getElementById('videoStatus');
+        let explainerPrefetchStarted = false;
+
+        function updateVideoStatus(message) {
+            if (videoStatus) videoStatus.textContent = message;
+        }
+
+        function updateVideoLoadingOverlay(isVisible, message) {
+            if (videoLoadingOverlay) {
+                videoLoadingOverlay.classList.toggle('hidden', !isVisible);
+            }
+            if (message && videoLoadingText) {
+                videoLoadingText.textContent = message;
+            }
+        }
+
+        function getBufferedPercent() {
+            if (!explainerVideo || !explainerVideo.duration || !Number.isFinite(explainerVideo.duration)) {
+                return null;
+            }
+            const ranges = explainerVideo.buffered;
+            if (!ranges.length) return 0;
+            const end = ranges.end(ranges.length - 1);
+            return Math.min(100, Math.round((end / explainerVideo.duration) * 100));
+        }
+
+        function refreshVideoLoadingState() {
+            if (!explainerVideo || explainerModal.classList.contains('hidden')) return;
+            if (explainerVideo.readyState >= 3 && !explainerVideo.paused) {
+                updateVideoLoadingOverlay(false);
+                updateVideoStatus('Operational Excellence Explainer');
+                return;
+            }
+            if (explainerVideo.readyState >= 3) {
+                updateVideoLoadingOverlay(false);
+                updateVideoStatus('Ready to play');
+                return;
+            }
+            const percent = getBufferedPercent();
+            const message = percent === null
+                ? 'Buffering explainer…'
+                : `Buffering explainer… ${percent}%`;
+            updateVideoLoadingOverlay(true, message);
+            updateVideoStatus(message);
+        }
+
+        function prefetchExplainerVideo() {
+            if (explainerPrefetchStarted || !explainerVideo) return;
+            explainerPrefetchStarted = true;
+            explainerVideo.preload = 'auto';
+            if (explainerVideo.readyState === 0) {
+                explainerVideo.load();
+            }
+        }
 
         function openExplainer() {
             explainerModal.classList.remove('hidden');
+            prefetchExplainerVideo();
+            if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
             if (explainerVideo) {
-                // LAZY LOADING: Dynamically call load() only if it hasn't started loading yet
-                if (explainerVideo.readyState === 0) { // HAVE_NOTHING
-                    explainerVideo.load();
+                refreshVideoLoadingState();
+                const startPlayback = () => {
+                    refreshVideoLoadingState();
+                    explainerVideo.play().catch(error => {
+                        console.log('Video autoplay prevented or file unavailable:', error);
+                        if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
+                        updateVideoLoadingOverlay(false);
+                    });
+                };
+                if (explainerVideo.readyState >= 2) {
+                    startPlayback();
+                } else {
+                    explainerVideo.addEventListener('canplay', startPlayback, { once: true });
                 }
-                explainerVideo.play().catch(error => {
-                    console.log("Video autoplay prevented or file unavailable:", error);
-                    // Show a fallback card if video loading fails entirely
-                    if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
-                });
             }
         }
 
@@ -1314,25 +1380,45 @@
             explainerModal.classList.add('hidden');
             if (explainerVideo) {
                 explainerVideo.pause();
-                // Pause download stream by forcing source reset
-                explainerVideo.removeAttribute('src'); 
-                explainerVideo.load();
-                // Restore correct video source after reset so it can play again when reopened
-                const source = document.createElement('source');
-                source.src = "/apps/public/assets/Ops_Excellence_for_SMEs.mp4";
-                source.type = "video/mp4";
-                explainerVideo.innerHTML = '';
-                explainerVideo.appendChild(source);
+                updateVideoLoadingOverlay(false);
             }
         }
 
-        // Setup HTML5 video error callback
+        // Setup HTML5 video callbacks
         if (explainerVideo) {
             explainerVideo.addEventListener('error', () => {
+                updateVideoLoadingOverlay(false);
                 if (videoFallbackCard) {
                     videoFallbackCard.classList.remove('hidden');
                 }
             });
+            explainerVideo.addEventListener('waiting', refreshVideoLoadingState);
+            explainerVideo.addEventListener('progress', refreshVideoLoadingState);
+            explainerVideo.addEventListener('canplay', refreshVideoLoadingState);
+            explainerVideo.addEventListener('playing', () => {
+                updateVideoLoadingOverlay(false);
+                updateVideoStatus('Operational Excellence Explainer');
+            });
+        }
+
+        if (openExplainerBtn) {
+            openExplainerBtn.addEventListener('mouseenter', prefetchExplainerVideo, { once: true });
+            openExplainerBtn.addEventListener('focus', prefetchExplainerVideo, { once: true });
+            if ('IntersectionObserver' in window) {
+                const explainerPrefetchObserver = new IntersectionObserver((entries) => {
+                    if (entries.some((entry) => entry.isIntersecting)) {
+                        prefetchExplainerVideo();
+                        explainerPrefetchObserver.disconnect();
+                    }
+                }, { rootMargin: '300px' });
+                explainerPrefetchObserver.observe(openExplainerBtn);
+            }
+        }
+
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => prefetchExplainerVideo(), { timeout: 4000 });
+        } else {
+            setTimeout(prefetchExplainerVideo, 4000);
         }
 
         if (openExplainerBtn) {
