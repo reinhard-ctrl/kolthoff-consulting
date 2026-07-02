@@ -41,6 +41,19 @@ service cloud.firestore {
       );
     }
 
+    function isPortalClient() {
+      return isAuthenticated() && request.auth.token.role == 'portal_client';
+    }
+
+    function isPortalClientFor(clientId) {
+      return isPortalClient() && request.auth.token.accessCode == clientId;
+    }
+
+    function isIntakeFormCompletion() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'status']) &&
+        request.resource.data.status == 'completed';
+    }
+
     function crmShareLinkEnabled(token) {
       return exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)) &&
         get(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)).data.enabled == true;
@@ -123,10 +136,15 @@ service cloud.firestore {
       allow read: if isTenantMember(tenantId) || (
         collection == 'intake_forms' && request.auth != null
       );
-      allow create, update: if isTenantMember(tenantId) || (
+      allow create: if isTenantMember(tenantId) || (
         collection == 'intake_forms' &&
         request.auth != null &&
         resource == null
+      );
+      allow update: if isTenantMember(tenantId) || (
+        collection == 'intake_forms' &&
+        request.auth != null &&
+        isIntakeFormCompletion()
       );
       allow delete: if isTenantAdmin(tenantId);
 
@@ -134,9 +152,9 @@ service cloud.firestore {
       allow read: if collection == 'core_audit_log' && isTenantAdmin(tenantId);
     }
 
-    // Client portal access codes — authenticated portal clients
+    // Client portal access codes — scoped to portal_client custom token
     match /artifacts/{tenantId}/public/data/clients/{clientId} {
-      allow read: if isAuthenticated();
+      allow read: if isStaffMember() || isPortalClientFor(clientId);
       allow write: if isKolthoffAdmin();
     }
   }
