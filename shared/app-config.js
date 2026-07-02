@@ -14,7 +14,7 @@ export const ROUTES = {
   clientContractSign: '/apps/public/contract_sign.html',
   workspace: '/workspace/',
   adminConsole: '/admin/',
-  masterAdmin: '/admin/master',
+  masterAdmin: '/admin/tenants?tab=support',
   portalManager: '/admin/portals',
   crmPipeline: '/apps/operations/crm_pipeline.html',
   crmPipelineShare: '/apps/public/crm_pipeline_view.html',

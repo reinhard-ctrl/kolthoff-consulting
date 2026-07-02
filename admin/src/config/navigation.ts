@@ -54,8 +54,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Workspace',
     items: [
       { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
-      { id: 'tenants', label: 'Tenant Manager', type: 'route', path: '/tenants' },
-      { id: 'master', label: 'Master Admin', type: 'route', path: '/master' },
+      { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
     ],
   },
   {

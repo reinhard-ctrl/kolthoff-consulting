@@ -27,7 +27,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
     setError('');
     setInfo('');
     if (!password) {
-      setError('Password is required. Ask your admin to provision you in Tenant Manager.');
+      setError('Password is required. Ask your admin to provision you in Workspace Admin.');
       setLoading(false);
       return;
     }
@@ -97,7 +97,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
         } catch (fallbackErr: unknown) {
           const fbCode = fallbackErr instanceof FirebaseError ? fallbackErr.code : '';
           if (fbCode === 'auth/user-not-found') {
-            setError('This email is not provisioned yet. Ask your Kolthoff admin to invite you in Tenant Manager.');
+            setError('This email is not provisioned yet. Ask your Kolthoff admin to invite you in Workspace Admin.');
             return;
           }
           if (fbCode === 'auth/too-many-requests') {
@@ -110,7 +110,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       if (code === 'functions/resource-exhausted' || msg.includes('Too many attempts')) {
         setError('Too many attempts. Wait a few minutes and try again.');
       } else if (code === 'functions/internal' || msg.includes('internal')) {
-        setError('Could not send reset email. Confirm you were invited in Tenant Manager, or contact your Kolthoff admin.');
+        setError('Could not send reset email. Confirm you were invited in Workspace Admin, or contact your Kolthoff admin.');
       } else {
         setError(msg);
       }

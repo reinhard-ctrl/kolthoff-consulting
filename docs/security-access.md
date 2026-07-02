@@ -18,11 +18,11 @@
 | Route | Tool |
 |-------|------|
 | `/admin/` | Operations dashboard |
-| `/admin/tenants` | Tenant manager |
+| `/admin/tenants` | Workspace admin (instances, users, IT tickets, blueprints) |
 | `/admin/intake` | Intake center |
 | `/admin/portals` | Client portal manager |
 | `/admin/contracts` | Contract ledger (staff) |
-| `/admin/master` | Master admin (tickets, blueprints) |
+| `/admin/master` | Redirects to `/admin/tenants?tab=support` (legacy bookmark) |
 
 ## Internal apps (staff gate)
 

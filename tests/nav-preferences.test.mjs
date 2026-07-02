@@ -40,7 +40,7 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'workspace',
     label: 'Workspace',
-    items: [{ id: 'core-workspace' }, { id: 'tenants' }, { id: 'master' }],
+    items: [{ id: 'core-workspace' }, { id: 'tenants' }],
   },
   {
     id: 'analytics',
@@ -158,7 +158,7 @@ assert.equal(
 );
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'workspace')?.items.map((i) => i.id).join(','),
-  'core-workspace,tenants,master',
+  'core-workspace,tenants',
 );
 
 const movedPrefs = {
@@ -167,7 +167,7 @@ const movedPrefs = {
     command: ['dashboard'],
     operations: ['crm-pipeline', 'project-planner', 'contracts', 'portals'],
     delivery: ['org-chart', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
-    workspace: ['core-workspace', 'tenants', 'master'],
+    workspace: ['core-workspace', 'tenants'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
     client: ['client-portal', 'marketing'],
   },

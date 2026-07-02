@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { onSnapshot, setDoc, doc, collection } from 'firebase/firestore';
-import { db, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
+import { useSearchParams } from 'react-router-dom';
+import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
+import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
 
 interface TenantUser {
   id: string;
@@ -37,12 +38,38 @@ interface PrepareResult {
   message: string;
 }
 
+interface MasterTemplate {
+  id: string;
+  name?: string;
+  type?: string;
+  fields?: unknown[];
+}
+
+interface ItTicket {
+  id: string;
+  tenantId?: string;
+  subject?: string;
+  description?: string;
+  status?: string;
+  timestamp?: number;
+  requesterName?: string;
+}
+
+type WorkspaceTab = 'instances' | 'access' | 'support' | 'blueprints';
+
 const INTERNAL_WORKSPACE: WorkspaceInstance = {
   tenantId: 'kolthoff-admin-app',
   clientName: 'Kolthoff Internal',
   status: 'active',
   internal: true,
 };
+
+const TABS: { id: WorkspaceTab; label: string }[] = [
+  { id: 'instances', label: 'Instances' },
+  { id: 'access', label: 'Users & Flags' },
+  { id: 'support', label: 'IT Support' },
+  { id: 'blueprints', label: 'Blueprints' },
+];
 
 function slugifyClientName(name: string): string {
   const slug = name
@@ -65,11 +92,21 @@ function derivePortalCode(clientName: string, tenantId: string): string {
   return tenantId.replace('client-', '').toUpperCase().slice(0, 24);
 }
 
+function parseTab(value: string | null): WorkspaceTab {
+  if (value === 'access' || value === 'support' || value === 'blueprints') return value;
+  return 'instances';
+}
+
 export default function Tenants() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = parseTab(searchParams.get('tab'));
+
   const [tenantId, setTenantId] = useState('kolthoff-admin-app');
   const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: false, crm: false });
+  const [templates, setTemplates] = useState<MasterTemplate[]>([]);
+  const [tickets, setTickets] = useState<ItTicket[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteStatus, setInviteStatus] = useState('');
@@ -89,6 +126,12 @@ export default function Tenants() {
   const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [publishingPortal, setPublishingPortal] = useState(false);
+  const [nukeBusy, setNukeBusy] = useState(false);
+
+  const setTab = (tab: WorkspaceTab) => {
+    if (tab === 'instances') setSearchParams({});
+    else setSearchParams({ tab });
+  };
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
@@ -104,8 +147,17 @@ export default function Tenants() {
   }, []);
 
   useEffect(() => {
+    return onSnapshot(collection(db, 'artifacts', adminAppId, 'public', 'data', 'master_templates'), (snap) => {
+      const list: MasterTemplate[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as MasterTemplate));
+      setTemplates(list);
+    });
+  }, []);
+
+  useEffect(() => {
     const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
     const usersRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_users');
+    const ticketsRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests');
 
     const u1 = onSnapshot(configRef, (snap) => {
       if (snap.exists() && snap.data().features) setFeatures(snap.data().features);
@@ -115,7 +167,12 @@ export default function Tenants() {
       snap.forEach((d) => list.push(d.data() as TenantUser));
       setUsers(list);
     });
-    return () => { u1(); u2(); };
+    const u3 = onSnapshot(ticketsRef, (snap) => {
+      const list: ItTicket[] = [];
+      snap.forEach((d) => list.push({ id: d.id, tenantId, ...d.data() } as ItTicket));
+      setTickets(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
+    });
+    return () => { u1(); u2(); u3(); };
   }, [tenantId]);
 
   const allWorkspaces = useMemo(
@@ -124,6 +181,7 @@ export default function Tenants() {
   );
 
   const activeWorkspace = allWorkspaces.find((w) => w.tenantId === tenantId);
+  const openTickets = tickets.filter((t) => t.status === 'open').length;
 
   const toggleFeature = async (key: keyof typeof features) => {
     const updated = { ...features, [key]: !features[key] };
@@ -266,6 +324,43 @@ export default function Tenants() {
     }
   };
 
+  const updateTicketStatus = async (ticketId: string, status: string) => {
+    await setDoc(
+      doc(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests', ticketId),
+      { status },
+      { merge: true },
+    );
+    setInviteStatus('Ticket updated.');
+  };
+
+  const deleteTemplate = async (id: string) => {
+    await deleteDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'master_templates', id));
+    setInviteStatus('Blueprint deleted.');
+  };
+
+  const nukeTenantData = async () => {
+    if (!tenantId || tenantId === INTERNAL_WORKSPACE.tenantId) return;
+    if (!confirm(`This permanently deletes workspace data for ${tenantId}. Continue?`)) return;
+    const typed = prompt(`Type ${tenantId} to confirm deletion:`);
+    if (typed !== tenantId) {
+      setInviteStatus('Deletion cancelled — tenant ID did not match.');
+      return;
+    }
+    setNukeBusy(true);
+    try {
+      const cols = ['core_users', 'core_departments', 'core_requests', 'core_templates', 'core_policies', 'core_it_requests'];
+      for (const col of cols) {
+        const snap = await getDocs(collection(db, 'artifacts', tenantId, 'public', 'data', col));
+        for (const d of snap.docs) {
+          await deleteDoc(d.ref);
+        }
+      }
+      setInviteStatus(`Workspace data cleared for ${tenantId}.`);
+    } finally {
+      setNukeBusy(false);
+    }
+  };
+
   const openCreateModal = () => {
     setNewClientName('');
     setNewTenantId('');
@@ -302,53 +397,13 @@ export default function Tenants() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Tenant Manager</h1>
+      <h1 className="text-2xl font-bold mb-2">Workspace Admin</h1>
+      <p className="text-sm text-slate-400 mb-6">
+        Provision client workspaces, manage users and feature flags, handle IT tickets, and maintain master blueprints.
+      </p>
 
       <div className="glass-panel p-4 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 className="font-bold">Core Workspace Instances</h2>
-            <p className="text-xs text-slate-500 mt-1">Each client gets an isolated workspace tenant with its own users and feature flags.</p>
-          </div>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
-          >
-            Prepare Client Workspace
-          </button>
-        </div>
-        <div className="space-y-2">
-          {allWorkspaces.map((ws) => {
-            const active = ws.tenantId === tenantId;
-            return (
-              <button
-                key={ws.tenantId}
-                type="button"
-                onClick={() => setTenantId(ws.tenantId)}
-                className={`w-full text-left p-3 rounded border transition-colors ${
-                  active
-                    ? 'border-brandTeal-500/60 bg-brandTeal-500/10'
-                    : 'border-brandNavy-700 bg-brandNavy-900/40 hover:border-brandNavy-600'
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="font-semibold text-sm">{ws.clientName}</div>
-                    <div className="font-mono text-xs text-slate-500">{ws.tenantId}</div>
-                  </div>
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {ws.internal ? 'Internal' : ws.portalAccessCode ? `Portal ${ws.portalAccessCode}` : ws.status || 'active'}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="glass-panel p-4 mb-6">
-        <label className="text-sm text-slate-400">Active Tenant App ID</label>
+        <label className="text-sm text-slate-400">Active workspace tenant</label>
         <input
           value={tenantId}
           onChange={(e) => setTenantId(e.target.value)}
@@ -383,61 +438,205 @@ export default function Tenants() {
         )}
       </div>
 
-      <div className="glass-panel p-4 mb-6">
-        <h2 className="font-bold mb-3">Feature Flags</h2>
-        <div className="flex flex-wrap gap-3">
-          {(Object.keys(features) as (keyof typeof features)[]).map((key) => (
-            <button key={key} onClick={() => toggleFeature(key)}
-              className={`px-3 py-1 rounded text-sm capitalize ${features[key] ? 'bg-brandTeal-500/20 text-brandTeal-400 border border-brandTeal-500/50' : 'bg-brandNavy-800 text-slate-500'}`}>
-              {key}: {features[key] ? 'ON' : 'OFF'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="glass-panel p-4 mb-6">
-        <h2 className="font-bold mb-3">Invite Workspace User</h2>
-        <p className="text-xs text-slate-500 mb-3">Creates Firebase Auth user + core_users doc and emails a password setup link. Requires Email/Password sign-in enabled.</p>
-        <div className="flex gap-2 flex-wrap">
-          <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
-          <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Email" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
-          <button onClick={provisionUser} disabled={inviting} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50">
-            {inviting ? 'Inviting...' : 'Invite User'}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setTab(tab.id)}
+            className={`px-3 py-1.5 rounded text-sm ${
+              activeTab === tab.id
+                ? 'bg-brandTeal-500 text-brandNavy-955 font-bold'
+                : 'bg-brandNavy-800 text-slate-400'
+            }`}
+          >
+            {tab.label}
+            {tab.id === 'support' && openTickets > 0 ? ` (${openTickets} open)` : ''}
+            {tab.id === 'blueprints' ? ` (${templates.length})` : ''}
           </button>
-        </div>
-        {inviteStatus && <p className="text-xs mt-2 text-slate-400">{inviteStatus}</p>}
-      </div>
-
-      <div className="glass-panel p-4">
-        <h2 className="font-bold mb-3">Users ({users.length})</h2>
-        {users.length === 0 && (
-          <p className="text-sm text-slate-500 mb-3">No users yet. Invite the client team after creating their workspace.</p>
-        )}
-        {users.map((u) => (
-          <div key={u.id} className="flex justify-between items-center gap-3 py-2 border-b border-brandNavy-800 text-sm">
-            <span>{u.name} <span className="text-slate-500">({u.email})</span></span>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => sendPasswordReset(u.email)}
-                disabled={resettingEmail === u.email || removingUserId === u.id}
-                className="px-2 py-1 text-xs rounded border border-brandNavy-700 text-slate-400 hover:text-white disabled:opacity-50"
-              >
-                {resettingEmail === u.email ? 'Sending...' : 'Reset password'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setRemoveTarget({ id: u.id, email: u.email, name: u.name })}
-                disabled={removingUserId === u.id}
-                className="px-2 py-1 text-xs rounded border border-rose-900/60 text-rose-400 hover:text-rose-300 disabled:opacity-50"
-              >
-                {removingUserId === u.id ? 'Removing...' : 'Remove'}
-              </button>
-              <span className="text-brandTeal-400 uppercase text-xs">{u.role}</span>
-            </div>
-          </div>
         ))}
       </div>
+
+      {activeTab === 'instances' && (
+        <>
+          <div className="glass-panel p-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="font-bold">Core Workspace Instances</h2>
+                <p className="text-xs text-slate-500 mt-1">Each client gets an isolated workspace tenant with its own users and feature flags.</p>
+              </div>
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
+              >
+                Prepare Client Workspace
+              </button>
+            </div>
+            <div className="space-y-2">
+              {allWorkspaces.map((ws) => {
+                const active = ws.tenantId === tenantId;
+                return (
+                  <button
+                    key={ws.tenantId}
+                    type="button"
+                    onClick={() => setTenantId(ws.tenantId)}
+                    className={`w-full text-left p-3 rounded border transition-colors ${
+                      active
+                        ? 'border-brandTeal-500/60 bg-brandTeal-500/10'
+                        : 'border-brandNavy-700 bg-brandNavy-900/40 hover:border-brandNavy-600'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="font-semibold text-sm">{ws.clientName}</div>
+                        <div className="font-mono text-xs text-slate-500">{ws.tenantId}</div>
+                      </div>
+                      <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                        {ws.internal ? 'Internal' : ws.portalAccessCode ? `Portal ${ws.portalAccessCode}` : ws.status || 'active'}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'access' && (
+        <>
+          <div className="glass-panel p-4 mb-6">
+            <h2 className="font-bold mb-3">Feature Flags</h2>
+            <div className="flex flex-wrap gap-3">
+              {(Object.keys(features) as (keyof typeof features)[]).map((key) => (
+                <button key={key} onClick={() => toggleFeature(key)}
+                  className={`px-3 py-1 rounded text-sm capitalize ${features[key] ? 'bg-brandTeal-500/20 text-brandTeal-400 border border-brandTeal-500/50' : 'bg-brandNavy-800 text-slate-500'}`}>
+                  {key}: {features[key] ? 'ON' : 'OFF'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-panel p-4 mb-6">
+            <h2 className="font-bold mb-3">Invite Workspace User</h2>
+            <p className="text-xs text-slate-500 mb-3">Creates Firebase Auth user + core_users doc and emails a password setup link. Requires Email/Password sign-in enabled.</p>
+            <div className="flex gap-2 flex-wrap">
+              <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
+              <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="Email" className="p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm" />
+              <button onClick={provisionUser} disabled={inviting} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm disabled:opacity-50">
+                {inviting ? 'Inviting...' : 'Invite User'}
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-panel p-4">
+            <h2 className="font-bold mb-3">Users ({users.length})</h2>
+            {users.length === 0 && (
+              <p className="text-sm text-slate-500 mb-3">No users yet. Invite the client team after creating their workspace.</p>
+            )}
+            {users.map((u) => (
+              <div key={u.id} className="flex justify-between items-center gap-3 py-2 border-b border-brandNavy-800 text-sm">
+                <span>{u.name} <span className="text-slate-500">({u.email})</span></span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => sendPasswordReset(u.email)}
+                    disabled={resettingEmail === u.email || removingUserId === u.id}
+                    className="px-2 py-1 text-xs rounded border border-brandNavy-700 text-slate-400 hover:text-white disabled:opacity-50"
+                  >
+                    {resettingEmail === u.email ? 'Sending...' : 'Reset password'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveTarget({ id: u.id, email: u.email, name: u.name })}
+                    disabled={removingUserId === u.id}
+                    className="px-2 py-1 text-xs rounded border border-rose-900/60 text-rose-400 hover:text-rose-300 disabled:opacity-50"
+                  >
+                    {removingUserId === u.id ? 'Removing...' : 'Remove'}
+                  </button>
+                  <span className="text-brandTeal-400 uppercase text-xs">{u.role}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'support' && (
+        <>
+          <div className="glass-panel overflow-hidden mb-6">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
+                <tr>
+                  <th className="p-4">Subject</th>
+                  <th className="p-4">Requester</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brandNavy-800">
+                {tickets.map((t) => (
+                  <tr key={t.id}>
+                    <td className="p-4">
+                      <div className="font-bold">{t.subject || 'Support Request'}</div>
+                      <div className="text-xs text-slate-500 truncate max-w-md">{t.description}</div>
+                    </td>
+                    <td className="p-4 text-xs">{t.requesterName || '—'}</td>
+                    <td className="p-4 text-xs uppercase">{t.status || 'open'}</td>
+                    <td className="p-4 text-right space-x-2">
+                      {t.status !== 'closed' && (
+                        <>
+                          <button type="button" onClick={() => updateTicketStatus(t.id, 'in_progress')} className="text-xs text-brandTeal-400">In Progress</button>
+                          <button type="button" onClick={() => updateTicketStatus(t.id, 'closed')} className="text-xs text-emerald-400">Close</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {tickets.length === 0 && (
+              <p className="p-6 text-slate-500 italic">No IT tickets for {tenantId}.</p>
+            )}
+          </div>
+
+          {tenantId !== INTERNAL_WORKSPACE.tenantId && (
+            <div className="glass-panel p-4 border border-rose-900/30">
+              <h2 className="font-bold text-rose-400 mb-2">Danger zone</h2>
+              <p className="text-xs text-slate-500 mb-3">
+                Deletes users, departments, requests, templates, policies, and IT tickets for the selected tenant. Portal and registry records are not removed.
+              </p>
+              <button
+                type="button"
+                onClick={nukeTenantData}
+                disabled={nukeBusy}
+                className="px-4 py-2 text-rose-400 border border-rose-500/30 rounded text-sm disabled:opacity-50"
+              >
+                {nukeBusy ? 'Clearing...' : 'Clear tenant workspace data'}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'blueprints' && (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500 mb-2">Global master blueprints stored on the admin tenant. Deploy-to-tenant designer is planned.</p>
+          {templates.map((tmpl) => (
+            <div key={tmpl.id} className="glass-panel p-4 flex justify-between items-center">
+              <div>
+                <div className="font-bold">{tmpl.name || tmpl.id}</div>
+                <div className="text-xs text-slate-500">{tmpl.type || 'template'} · {tmpl.fields?.length || 0} fields</div>
+              </div>
+              <button type="button" onClick={() => deleteTemplate(tmpl.id)} className="text-red-400 text-xs">Delete</button>
+            </div>
+          ))}
+          {templates.length === 0 && <p className="text-slate-500 italic">No master blueprints yet.</p>}
+        </div>
+      )}
+
+      {inviteStatus && <p className="text-xs mt-4 text-slate-400">{inviteStatus}</p>}
 
       {removeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
