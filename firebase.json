@@ -68,6 +68,12 @@
         ]
       },
       {
+        "source": "/shared/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        ]
+      },
+      {
         "source": "/apps/delivery/project_planner_helpers.js",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, must-revalidate" }

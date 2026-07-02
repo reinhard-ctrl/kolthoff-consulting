@@ -36,7 +36,13 @@ bash scripts/seed-admin-passcode.sh kolthoff2026
 https://kolthoff-portal.web.app/*
 https://kolthoff-consulting.com/*
 https://www.kolthoff-consulting.com/*
+http://localhost/*
+http://127.0.0.1/*
+http://localhost:5000/*
+http://127.0.0.1:5000/*
 ```
+
+Local dev: `npm run serve:hosting` then open http://localhost:5000/apps/delivery/project_planner.html
 
 ### 4. Verify on Firebase URL
 

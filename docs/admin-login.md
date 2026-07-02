@@ -36,6 +36,10 @@ In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/
 - `https://kolthoff-portal.web.app/*`
 - `https://kolthoff-consulting.com/*`
 - `https://www.kolthoff-consulting.com/*`
+- `http://localhost/*`
+- `http://127.0.0.1/*`
+- `http://localhost:5000/*` (Firebase hosting emulator — `npm run serve:hosting`)
+- `http://127.0.0.1:5000/*`
 
 Browser key prefix: `AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI`
 
@@ -44,6 +48,7 @@ Browser key prefix: `AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI`
 | Symptom | Fix |
 |--------|-----|
 | `auth/requests-from-referer-blocked` | Add site URL to API key HTTP referrers (above) |
+| `auth/requests-from-referer-null-are-blocked` | Do not open HTML via `file://`. Use https://kolthoff-portal.web.app/... or `npm run serve:hosting` → http://localhost:5000/... |
 | `Invalid passcode` | Create the Firestore credentials doc; passcode is case-insensitive |
 | `permission-denied` | Deploy latest Firestore rules; enable Anonymous auth |
 | Stuck on "Loading..." | Anonymous auth blocked — check referrers and Auth settings |

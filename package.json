@@ -12,6 +12,7 @@
     "test:rules": "npm run test --prefix tests",
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "serve:hosting": "npm run build && firebase emulators:start --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules,storage",
     "emulators": "firebase emulators:start"
   },
