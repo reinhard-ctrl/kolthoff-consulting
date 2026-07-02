@@ -715,7 +715,7 @@ export const prepareClientWorkspace = onCall(async (request) => {
 const KOLTHOFF_STAFF_DOMAIN = '@kolthoff-consulting.com';
 
 /** Google Workspace SSO — provision @kolthoff-consulting.com staff claims + core_users */
-export const provisionGoogleStaff = onCall(async (request) => {
+export const provisionGoogleStaff = onCall({ invoker: 'public' }, async (request) => {
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Sign in required');
   }
