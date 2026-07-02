@@ -96,7 +96,7 @@ if (recaptchaKey) {
   console.log('App Check site key injected into dist/');
 }
 
-const explainerYoutubeId = process.env.EXPLAINER_YOUTUBE_ID || '';
+const explainerYoutubeId = process.env.EXPLAINER_YOUTUBE_ID || 'pFNqGatXJ4A';
 for (const relPath of ['index.html', 'apps/public/index.html']) {
   const htmlPath = path.join(dist, relPath);
   if (!fs.existsSync(htmlPath)) continue;
