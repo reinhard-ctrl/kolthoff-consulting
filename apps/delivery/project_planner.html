@@ -366,10 +366,12 @@
   <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
   <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
   <script src="../../shared/engagement-packages.js?v=20250701-packages-v1"></script>
-  <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
+  <script src="../../shared/portal-sync.js?v=20250702-collections-v1"></script>
   <script type="module">
     import * as Financials from '../../shared/financials.js';
+    import * as InvoiceHelpers from '../../shared/invoices.js';
     window.SharedFinancials = Financials;
+    window.InvoiceHelpers = InvoiceHelpers;
   </script>
   <script src="project_planner_helpers.js?v=20250701-planner-v16"></script>
   <script type="text/babel">
@@ -842,6 +844,8 @@
       const [showPrintValidation, setShowPrintValidation] = useState(false);
       const [printValidationIssues, setPrintValidationIssues] = useState([]);
       const [printValidationWarnings, setPrintValidationWarnings] = useState([]);
+      const [isIssuingInvoice, setIsIssuingInvoice] = useState(false);
+      const [issueInvoiceToast, setIssueInvoiceToast] = useState(null);
       const [workspaceSearch, setWorkspaceSearch] = useState('');
       const [workspaceSort, setWorkspaceSort] = useState('modified');
       const [showCrmImportModal, setShowCrmImportModal] = useState(false);
@@ -1519,6 +1523,80 @@
         setShowPrintValidation(false);
         setPrintDocumentTitle();
         window.print();
+      };
+
+      const showIssueToast = (msg) => {
+        setIssueInvoiceToast(msg);
+        setTimeout(() => setIssueInvoiceToast(null), 4000);
+      };
+
+      const handleIssueInvoice = async () => {
+        if (!isAuthed || view !== 'invoice') return;
+        const validation = H.validatePrintReadiness(view, {
+          clientCompany, clientRep, clientAddress, clientTin,
+          useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          invoiceDueDate, ndaEffectiveDate, tasks,
+          printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
+          validateTIN: validatePhilippineTIN
+        });
+        if (!validation.ok) {
+          setPrintValidationIssues(validation.issues);
+          setPrintValidationWarnings(validation.warnings);
+          setShowPrintValidation(true);
+          return;
+        }
+
+        const IH = window.InvoiceHelpers;
+        if (!IH) {
+          showIssueToast('Invoice module failed to load — hard refresh.');
+          return;
+        }
+
+        setIsIssuingInvoice(true);
+        try {
+          const profilePayload = buildCurrentPayload();
+          const amounts = IH.computeInvoiceAmounts({
+            invoiceMilestone,
+            customInvoiceAmount,
+            billingMilestones,
+            finalProjectCostBase,
+            retainerCostTotalBase,
+            includeTax,
+          });
+          const milestoneLabel = IH.resolveMilestoneLabel(invoiceMilestone, billingMilestones);
+          const portalAccessCode = window.PortalSync?.resolvePortalAccessCode?.(profilePayload) || quoteId || null;
+
+          const invoice = IH.buildInvoiceRecord({
+            profileId: activeProfileId,
+            profile: { ...profilePayload, quoteId, clientCompany, includeTax },
+            invoiceMilestone,
+            invoiceNumberSuffix,
+            invoiceDueDate,
+            issueDate: quoteDate,
+            amounts,
+            milestoneLabel,
+            portalAccessCode,
+            status: 'sent',
+          });
+
+          const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'invoices', invoice.id);
+          await window.firestoreSetDoc(docRef, invoice);
+
+          if (portalAccessCode && window.PortalSync?.syncInvoicesToPortal) {
+            try {
+              await window.PortalSync.syncInvoicesToPortal(portalAccessCode);
+            } catch (portalErr) {
+              console.warn('Portal billing sync skipped:', portalErr);
+            }
+          }
+
+          showIssueToast(`Invoice ${invoice.invoiceNumber} issued and saved.`);
+        } catch (err) {
+          console.error('Issue invoice failed:', err);
+          showIssueToast(err.message || 'Failed to issue invoice.');
+        } finally {
+          setIsIssuingInvoice(false);
+        }
       };
 
       const toggleTask = (id) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t)); };
@@ -2766,6 +2844,17 @@
             >
               <IconPrint className="w-4 h-4 mr-1.5" /> Print {isNda ? "NDA" : isInvoice ? "Invoice" : isPackage ? "Package" : ""}
             </button>
+
+            {isInvoice && (
+              <button
+                type="button"
+                onClick={handleIssueInvoice}
+                disabled={!isAuthed || isIssuingInvoice}
+                className="w-full py-3 mt-2 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center shadow-lg font-sans bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-400 border border-brandTeal-500/40 disabled:opacity-50"
+              >
+                {isIssuingInvoice ? 'Issuing…' : 'Issue Invoice'}
+              </button>
+            )}
           </aside>
         );
       };
@@ -3314,6 +3403,12 @@
           </header>
 
           {renderWorkspaceToolbar()}
+
+          {issueInvoiceToast && (
+            <div className="fixed top-6 right-6 z-[1100] bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl font-bold text-xs no-print">
+              {issueInvoiceToast}
+            </div>
+          )}
 
           {localDraftBanner && (
             <div className="bg-amber-500/10 border-b border-amber-500/30 px-6 py-3 no-print text-left font-sans">

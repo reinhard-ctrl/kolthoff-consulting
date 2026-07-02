@@ -727,6 +727,20 @@
         const BillingTab = ({ data }) => {
             const contracts = data.contracts || [];
 
+            const statusClass = (status) => {
+                if (status === 'Paid') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                if (status === 'Overdue') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                if (status === 'Partial') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                if (status === 'Pending') return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+                if (status === 'Active') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                return 'bg-slate-800 text-slate-400 border-slate-700';
+            };
+
+            const formatAmount = (val) => {
+                if (val == null || val === '') return '—';
+                return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(Number(val) || 0);
+            };
+
             return (
                 <div className="space-y-8 fade-in">
                     <div>
@@ -740,26 +754,28 @@
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-brandNavy-900/30 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-800 font-mono">
-                                    <th className="p-4 w-[50%]">Document Outline</th>
-                                    <th className="p-4 w-[20%]">Date Issued</th>
-                                    <th className="p-4 w-[15%]">Status</th>
-                                    <th className="p-4 w-[15%] text-right">Action</th>
+                                    <th className="p-4 w-[40%]">Document Outline</th>
+                                    <th className="p-4 w-[15%]">Date Issued</th>
+                                    <th className="p-4 w-[12%]">Due</th>
+                                    <th className="p-4 w-[13%] text-right">Amount</th>
+                                    <th className="p-4 w-[10%]">Status</th>
+                                    <th className="p-4 w-[10%] text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-brandNavy-800/50 text-sm">
                                 {contracts.length === 0 && (
-                                    <tr><td colSpan="4" className="p-4 text-center text-slate-500 text-sm">No billing or contract files available yet.</td></tr>
+                                    <tr><td colSpan="6" className="p-4 text-center text-slate-500 text-sm">No billing or contract files available yet.</td></tr>
                                 )}
                                 {contracts.map((doc, idx) => (
                                     <tr key={doc.id || idx} className="hover:bg-brandNavy-900/40 transition-colors">
                                         <td className="p-4 font-bold text-slate-200">
                                             {doc.title}
                                         </td>
-                                        <td className="p-4 text-xs text-slate-500 font-mono">{doc.date}</td>
+                                        <td className="p-4 text-xs text-slate-500 font-mono">{doc.date || '—'}</td>
+                                        <td className="p-4 text-xs text-slate-500 font-mono">{doc.dueDate || '—'}</td>
+                                        <td className="p-4 text-xs text-brandTeal-400 font-mono text-right">{formatAmount(doc.amount)}</td>
                                         <td className="p-4">
-                                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                                                doc.status === 'Paid' || doc.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-400 border-slate-700'
-                                            }`}>
+                                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${statusClass(doc.status)}`}>
                                                 {doc.status}
                                             </span>
                                         </td>
@@ -774,7 +790,7 @@
                                                     <Icons.ExternalLink /> View
                                                 </a>
                                             ) : (
-                                                <span className="text-xs text-slate-600 italic">No link</span>
+                                                <span className="text-xs text-slate-600 italic">—</span>
                                             )}
                                         </td>
                                     </tr>

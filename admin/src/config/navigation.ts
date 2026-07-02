@@ -35,6 +35,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'crm-pipeline', label: 'CRM Pipeline', type: 'embed', href: '/apps/operations/crm_pipeline.html' },
       { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
       { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
+      { id: 'collections', label: 'Collections', type: 'route', path: '/collections' },
       { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
     ],
   },

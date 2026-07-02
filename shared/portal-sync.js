@@ -142,6 +142,49 @@
     return code;
   }
 
+  /**
+   * Push invoice rows to clients/{accessCode}.contracts for portal billing tab.
+   */
+  async function syncInvoicesToPortal(accessCode, invoiceList) {
+    if (!accessCode || !global.firebaseDb || !global.appId) return null;
+
+    const portalRef = global.doc(
+      global.firebaseDb,
+      'artifacts',
+      global.appId,
+      'public',
+      'data',
+      'clients',
+      accessCode,
+    );
+    const portalSnap = await global.getDoc(portalRef);
+    if (!portalSnap.exists()) return null;
+
+    let invoices = invoiceList;
+    if (!invoices && global.query && global.where && global.collection && global.getDocs) {
+      const invoicesRef = global.collection(
+        global.firebaseDb,
+        'artifacts',
+        global.appId,
+        'public',
+        'data',
+        'invoices',
+      );
+      const q = global.query(invoicesRef, global.where('portalAccessCode', '==', accessCode));
+      const snap = await global.getDocs(q);
+      invoices = [];
+      snap.forEach((d) => invoices.push({ id: d.id, ...d.data() }));
+    }
+
+    const Invoices = global.InvoiceHelpers;
+    if (!Invoices?.mergePortalContractsFromInvoices) return null;
+
+    const existing = portalSnap.data();
+    const contracts = Invoices.mergePortalContractsFromInvoices(existing?.contracts, invoices || []);
+    await global.setDoc(portalRef, { contracts }, { merge: true });
+    return accessCode;
+  }
+
   global.PortalSync = {
     resolvePortalAccessCode,
     computeSaasAnnualWaste,
@@ -152,5 +195,6 @@
     mergeActionItems,
     buildPortalPatchFromProfile,
     syncProfileToPortalIfExists,
+    syncInvoicesToPortal,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
