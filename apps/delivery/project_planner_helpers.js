@@ -462,7 +462,30 @@
     };
   }
 
-  function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
+  /** Slices owned by Policy Studio, Diagnosis, Workflow Builder, Org Chart — not planner form state. */
+  const PRESERVED_PROFILE_SLICE_KEYS = [
+    'branding',
+    'sponsorTitle',
+    'policySignatoryName',
+    'policySignatoryTitle',
+    'orgChart',
+    'subSaaS',
+    'raciAssignments',
+    'synthesis',
+    'tabs',
+    'roles',
+  ];
+
+  function pickPreservedProfileSlices(source) {
+    if (!source || typeof source !== 'object') return {};
+    const slices = {};
+    for (const key of PRESERVED_PROFILE_SLICE_KEYS) {
+      if (source[key] !== undefined) slices[key] = source[key];
+    }
+    return slices;
+  }
+
+  function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage, preservedSource) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
       ? annualOperationalLeakage
@@ -545,7 +568,7 @@
         portalClientId: state.links?.portalClientId || state.quoteId || null,
         contractId: state.links?.contractId || (state.quoteId ? `contract-${activeProfileId}` : null)
       };
-    return base;
+    return { ...base, ...pickPreservedProfileSlices(preservedSource) };
   }
 
   function validatePrintReadiness(view, ctx) {
@@ -668,6 +691,8 @@
     computeBillingMilestones,
     computeAnnualOperationalLeakage,
     buildProfilePayload,
+    pickPreservedProfileSlices,
+    PRESERVED_PROFILE_SLICE_KEYS,
     payloadFingerprint,
     validatePrintReadiness,
     resolveInvoiceBillTo,
