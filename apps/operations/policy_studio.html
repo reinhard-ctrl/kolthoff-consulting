@@ -11,8 +11,8 @@
     <!-- Firebase + staff auth gate (skipped in standalone offline mode) -->
     <script type="module">
       if (typeof window.STANDALONE_POLICIES === 'undefined') {
-        import('../../shared/firebase-init.js');
-        import('../../shared/auth-gate.js');
+        import('../../shared/firebase-init.js?v=20250702-firebase-v2');
+        import('../../shared/auth-gate.js?v=20250702-firebase-v2');
       } else {
         window.kolthoffStaffReady = Promise.resolve({ user: null, role: 'standalone' });
       }
