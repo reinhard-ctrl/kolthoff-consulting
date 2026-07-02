@@ -33,8 +33,19 @@ fs.mkdirSync(dist, { recursive: true });
 // Shared assets
 copyDir(path.join(root, 'shared'), path.join(dist, 'shared'));
 
+// Adaptive HLS renditions for marketing explainer (generated from source MP4)
+try {
+  execSync('node scripts/generate-explainer-hls.js', { cwd: root, stdio: 'inherit' });
+} catch (e) {
+  console.warn(`Warning: explainer HLS generation skipped (${e.message})`);
+}
+
 // Public apps
 copyDir(path.join(root, 'apps/public'), path.join(dist, 'apps/public'));
+
+// Source MP4 is build input only; adaptive HLS is served to visitors.
+const distSourceMp4 = path.join(dist, 'apps/public/assets/Ops_Excellence_for_SMEs.mp4');
+if (fs.existsSync(distSourceMp4)) fs.unlinkSync(distSourceMp4);
 copyDir(path.join(root, 'apps/delivery'), path.join(dist, 'apps/delivery'));
 copyDir(path.join(root, 'apps/operations'), path.join(dist, 'apps/operations'));
 copyDir(path.join(root, 'apps/analytics'), path.join(dist, 'apps/analytics'));
