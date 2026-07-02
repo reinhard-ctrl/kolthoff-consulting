@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
+    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
+    <script src="../../shared/analytics-baseline.js?v=20250702-analytics-v1"></script>
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js?v=20250702-firebase-v2"></script>
     <script type="module" src="../../shared/auth-gate.js?v=20250702-firebase-v2"></script>
@@ -590,7 +592,7 @@
                     </div>
 
                     {/* SIDEBAR NAVIGATION & SELECTIVE WORKSPACE MANAGER */}
-                    <aside className={`w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-40 transition-transform duration-300 fixed md:relative h-full md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                    <aside data-app-sidebar className={`w-72 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-40 transition-transform duration-300 fixed md:relative h-full md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
                         
                         <div className="p-6 border-b border-brandNavy-800 group relative">
                             <div className="flex items-center justify-between">
@@ -707,7 +709,7 @@
                     {/* MAIN CONTENT WORKSPACE */}
                     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
                         {/* Header */}
-                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <header data-app-chrome className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                                 <h2 className="text-xl font-black text-white font-serif tracking-wide flex items-center gap-2">
                                     {activeView === 'kanban' ? 'Execution Board' : 'Team Capacity Monitor'}

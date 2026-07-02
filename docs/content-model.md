@@ -83,6 +83,9 @@ Readers should use `resolveChaosTax(profile)` which prefers `chaosTax.value`, th
 {
   "links": {
     "crmDealId": "deal-abc123",
+    "crmStatus": "Won",
+    "crmPipelineStatus": "Closed Won/Lost",
+    "crmSyncedAt": 1700000000000,
     "portalClientId": "KC-2026-APARRI",
     "contractId": "contract-client-abc"
   }
@@ -92,6 +95,7 @@ Readers should use `resolveChaosTax(profile)` which prefers `chaosTax.value`, th
 Convention:
 
 - CRM deal sync: `profile.quoteId === deal.id` **or** `links.crmDealId === deal.id`
+- CRM → planner: when deal closes Won/Lost, CRM writes `links.crmStatus` + `links.crmPipelineStatus` (see `shared/crm-planner-sync.js`)
 - Contract ledger doc: `contracts_ledger/contract-{profileId}`
 - Portal client doc ID: typically `quoteId` (access code)
 

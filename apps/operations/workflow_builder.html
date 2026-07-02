@@ -8,6 +8,7 @@
     <!-- Custom SVG Logo Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' fill-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' fill-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
  
+    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
     <!-- Firebase Module Initialization -->
         <script type="module" src="../../shared/firebase-init.js?v=20250702-firebase-v2"></script>
     <script type="module" src="../../shared/auth-gate.js?v=20250702-firebase-v2"></script>
@@ -1371,7 +1372,7 @@
                             </div>
                         )}
                         {activeNav !== 'flowcharts' && (
-                            <header className="shrink-0 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center no-print">
+                            <header data-app-chrome className="shrink-0 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center no-print">
                                 <h2 className="text-sm font-bold text-brandTeal-400 font-mono tracking-widest uppercase">
                                     {activeNav === 'raci' ? '2. Accountability' : activeNav === 'orgchart' ? '3. Organization Chart' : 'Studio'}
                                 </h2>

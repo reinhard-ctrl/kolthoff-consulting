@@ -20,6 +20,9 @@
         import * as CrmShare from '../../shared/crm-share.js';
         window.CrmShare = CrmShare;
     </script>
+    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
+    <script src="../../shared/crm-planner-sync.js?v=20250702-crm-v1"></script>
+    <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <!-- Tailwind CSS with Luxury Branding Colors -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -509,6 +512,26 @@
 
             // --- FIRESTORE WRITE ACTIONS ---
 
+            const persistDealUpdate = async (dealId, patch) => {
+                const deal = deals.find((d) => d.id === dealId);
+                if (!deal) return;
+                const updatedDeal = { ...deal, ...patch };
+                const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
+                await window.setDoc(docRef, updatedDeal, { merge: true });
+                if (window.CrmPlannerSync?.syncDealToLinkedProfile) {
+                    try {
+                        await window.CrmPlannerSync.syncDealToLinkedProfile(
+                            window.firebaseDb,
+                            window.appId,
+                            updatedDeal,
+                            plannerProfiles,
+                        );
+                    } catch (err) {
+                        console.warn('CRM → planner sync skipped:', err);
+                    }
+                }
+            };
+
             const handleDragStart = (e, dealId) => {
                 e.dataTransfer.setData("dealId", dealId);
                 isDraggingDeal.current = true;
@@ -541,9 +564,8 @@
                         } else {
                             if (updatedStatus === "Won" || updatedStatus === "Lost") { updatedStatus = "Active"; }
                         }
-                        
-                        const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
-                        await window.setDoc(docRef, { ...deal, pipelineStatus: targetStage, status: updatedStatus, estValue: finalValue }, { merge: true });
+
+                        await persistDealUpdate(dealId, { pipelineStatus: targetStage, status: updatedStatus, estValue: finalValue });
                     }
                 }
             };
@@ -573,9 +595,8 @@
                         setShowCelebration(true); setTimeout(() => setShowCelebration(false), 4500);
                     }
                     const newPipelineStatus = (nextStatus === "Won" || nextStatus === "Lost") ? "Closed Won/Lost" : "Negotiation";
-                    
-                    const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', dealId);
-                    await window.setDoc(docRef, { ...deal, status: nextStatus, pipelineStatus: newPipelineStatus, estValue: finalValue }, { merge: true });
+
+                    await persistDealUpdate(dealId, { status: nextStatus, pipelineStatus: newPipelineStatus, estValue: finalValue });
                 }
             };
 
@@ -614,6 +635,13 @@
 
                 const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', data.id);
                 await window.setDoc(docRef, data);
+                if (window.CrmPlannerSync?.syncDealToLinkedProfile) {
+                    try {
+                        await window.CrmPlannerSync.syncDealToLinkedProfile(window.firebaseDb, window.appId, data, plannerProfiles);
+                    } catch (err) {
+                        console.warn('CRM → planner sync skipped:', err);
+                    }
+                }
 
                 if (editingItem && editingItem.id && !editingItem.pipelineStatusOnly && editingItem.id !== finalId) {
                     const oldDocRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'crm_deals', editingItem.id);
@@ -816,7 +844,7 @@
                     )}
 
                     {/* TOP BRAND BAR */}
-                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
+                    <header data-app-chrome className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
                         <div className="max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                             
                             <div className="flex items-center gap-3">

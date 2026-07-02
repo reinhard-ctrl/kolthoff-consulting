@@ -49,6 +49,8 @@
 
     <div id="root"></div>
 
+    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
+    <script src="../../shared/analytics-baseline.js?v=20250702-analytics-v1"></script>
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
 
     <script type="text/babel">
@@ -175,6 +177,13 @@
                 return { pipelineValue, wonValue, lostValue, activeDeals, wonDeals, lostDeals, winRate };
             }, [crmDeals]);
 
+            const plannerBaselines = useMemo(() => {
+                if (!window.AnalyticsBaseline?.aggregatePlannerBaselines) {
+                    return { totalHours: 0, activeSows: 0, byModule: { mod1: 0, mod2: 0, mod3: 0, mod4: 0 } };
+                }
+                return window.AnalyticsBaseline.aggregatePlannerBaselines(profiles);
+            }, [profiles]);
+
             // 2. Operational Variance (Firm-Wide Profitability)
             const varianceMetrics = useMemo(() => {
                 let totalEstimatedCost = 0;
@@ -268,7 +277,7 @@
                 <div className="flex h-screen overflow-hidden font-sans">
                     
                     {/* SIDEBAR NAVIGATION */}
-                    <aside className="w-64 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
+                    <aside data-app-sidebar className="w-64 bg-brandNavy-955 border-r border-brandNavy-800 flex flex-col shrink-0 z-20">
                         <div className="p-6 border-b border-brandNavy-800 group relative">
                             <div className="flex items-center gap-3">
                                 <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -307,7 +316,7 @@
                     {/* MAIN CONTENT */}
                     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-brandNavy-900/40 relative z-10">
                         {/* Header */}
-                        <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
+                        <header data-app-chrome className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
                             <div>
                                 <h2 className="text-lg font-bold text-white font-serif tracking-wide">Macro Firm Dashboard</h2>
                                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">Real-time aggregation of sales, capacity, and profitability.</p>
@@ -351,6 +360,13 @@
                                     <h3 className="text-2xl font-mono font-black text-white">{serviceMetrics.activeRetainers} <span className="text-sm font-sans font-normal text-slate-400">Clients</span></h3>
                                     <p className="text-[10px] text-purple-400/80 mt-2 font-mono">Generating Monthly Recurring Rev</p>
                                 </div>
+                            </div>
+
+                            <div className="glass-panel p-4 rounded-xl border border-brandNavy-700/80 flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-[10px] font-mono text-slate-400 uppercase font-bold tracking-widest">Planner delivery baseline</p>
+                                <p className="text-sm font-mono text-brandTeal-400">
+                                    {plannerBaselines.totalHours.toFixed(1)} hrs · {plannerBaselines.activeSows} active SOW{plannerBaselines.activeSows === 1 ? '' : 's'}
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
