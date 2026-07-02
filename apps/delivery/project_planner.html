@@ -1116,6 +1116,7 @@
       const [ndaJurisdiction, setNdaJurisdiction] = useState(activeProfile.ndaJurisdiction || 'Taytay, Rizal, Philippines');
 
       const [invoiceMilestone, setInvoiceMilestone] = useState(activeProfile.invoiceMilestone || 'full');
+      const [retainerBillingPeriod, setRetainerBillingPeriod] = useState(activeProfile.retainerBillingPeriod || '');
       const [customInvoiceAmount, setCustomInvoiceAmount] = useState(activeProfile.customInvoiceAmount || 120000);
       const [invoiceNumberSuffix, setInvoiceNumberSuffix] = useState(activeProfile.invoiceNumberSuffix || '01');
       const [invoiceDueDate, setInvoiceDueDate] = useState(activeProfile.invoiceDueDate || '');
@@ -1198,6 +1199,7 @@
           customSplit2: p.customSplit2 !== undefined ? p.customSplit2 : 40, customSplit3: p.customSplit3 !== undefined ? p.customSplit3 : 20,
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
           ndaJurisdiction: p.ndaJurisdiction || 'Taytay, Rizal, Philippines', invoiceMilestone: p.invoiceMilestone || 'full',
+          retainerBillingPeriod: p.retainerBillingPeriod || '',
           customInvoiceAmount: p.customInvoiceAmount || 120000, invoiceNumberSuffix: p.invoiceNumberSuffix || '01', invoiceDueDate: p.invoiceDueDate || '',
           useCustomInvoiceBillTo: Boolean(p.useCustomInvoiceBillTo),
           invoiceBillToCompany: p.invoiceBillToCompany || '', invoiceBillToRep: p.invoiceBillToRep || '',
@@ -1257,6 +1259,7 @@
         setNdaTerm(profileState.ndaTerm);
         setNdaJurisdiction(profileState.ndaJurisdiction);
         setInvoiceMilestone(profileState.invoiceMilestone);
+        setRetainerBillingPeriod(profileState.retainerBillingPeriod || '');
         setCustomInvoiceAmount(profileState.customInvoiceAmount);
         setInvoiceNumberSuffix(profileState.invoiceNumberSuffix);
         setInvoiceDueDate(profileState.invoiceDueDate);
@@ -1306,11 +1309,11 @@
         clientReviewWeeks, tasks, discountPercent, dpaRetentionDays,
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
-        ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
+        ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1420,6 +1423,7 @@
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
+        setRetainerBillingPeriod(d.retainerBillingPeriod || '');
         setCustomInvoiceAmount(d.customInvoiceAmount || 120000); setInvoiceNumberSuffix(d.invoiceNumberSuffix || '01'); setInvoiceDueDate(d.invoiceDueDate || '');
         setUseCustomInvoiceBillTo(Boolean(d.useCustomInvoiceBillTo));
         setInvoiceBillToCompany(d.invoiceBillToCompany || ''); setInvoiceBillToRep(d.invoiceBillToRep || '');
@@ -1648,18 +1652,32 @@
           return;
         }
 
+        if (invoiceMilestone === 'retainer_monthly' && retainerCostBase <= 0) {
+          showIssueToast('Select MOD 4 Care Plan retainer tasks in the Planner tab before issuing a monthly invoice.');
+          return;
+        }
+
+        if (invoiceMilestone === 'retainer_monthly' && !retainerBillingPeriod) {
+          showIssueToast('Choose a billing month for the monthly retainer invoice.');
+          return;
+        }
+
         setIsIssuingInvoice(true);
         try {
           const profilePayload = buildCurrentPayload();
+          const billingPeriod = invoiceMilestone === 'retainer_monthly'
+            ? (retainerBillingPeriod || window.InvoiceHelpers?.currentBillingPeriod?.() || '')
+            : null;
           const amounts = IH.computeInvoiceAmounts({
             invoiceMilestone,
             customInvoiceAmount,
             billingMilestones,
             finalProjectCostBase,
+            retainerCostBase,
             retainerCostTotalBase,
             includeTax,
           });
-          const milestoneLabel = IH.resolveMilestoneLabel(invoiceMilestone, billingMilestones);
+          const milestoneLabel = IH.resolveMilestoneLabel(invoiceMilestone, billingMilestones, { billingPeriod });
           const portalAccessCode = window.PortalSync?.resolvePortalAccessCode?.(profilePayload) || quoteId || null;
 
           const invoice = IH.buildInvoiceRecord({
@@ -1673,6 +1691,7 @@
             milestoneLabel,
             portalAccessCode,
             status: 'sent',
+            billingPeriod,
           });
 
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'invoices', invoice.id);
@@ -2002,6 +2021,7 @@
           const idx = parseInt(invoiceMilestone.split('_')[1], 10);
           if (billingMilestones[idx]) baseAmount = includeTax ? Math.round(billingMilestones[idx].amount / 1.12) : billingMilestones[idx].amount;
         } 
+        else if (invoiceMilestone === 'retainer_monthly') baseAmount = retainerCostBase;
         else if (invoiceMilestone === 'retainer') baseAmount = retainerCostTotalBase;
         else if (invoiceMilestone === 'custom') baseAmount = customInvoiceAmount;
 
@@ -2010,13 +2030,14 @@
           vatAmount: includeTax ? Math.round(baseAmount * 0.12) : 0, 
           totalAmount: baseAmount + (includeTax ? Math.round(baseAmount * 0.12) : 0) 
         };
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, billingMilestones, customInvoiceAmount, includeTax]);
+      }, [invoiceMilestone, finalProjectCostBase, retainerCostBase, retainerCostTotalBase, billingMilestones, customInvoiceAmount, includeTax]);
 
       const computedInvoiceCostUndiscounted = useMemo(() => {
         if (invoiceMilestone === 'full') return projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted;
         if (invoiceMilestone === 'retainer') return retainerCostTotalBaseUndiscounted;
+        if (invoiceMilestone === 'retainer_monthly') return retainerCostBaseUndiscounted;
         return computedInvoiceCost.baseAmount;
-      }, [invoiceMilestone, projectCostBaseUndiscounted, retainerCostTotalBaseUndiscounted, computedInvoiceCost]);
+      }, [invoiceMilestone, projectCostBaseUndiscounted, retainerCostTotalBaseUndiscounted, retainerCostBaseUndiscounted, computedInvoiceCost]);
 
       useEffect(() => {
         if (invoiceMilestone.startsWith('milestone_') && parseInt(invoiceMilestone.split('_')[1], 10) >= billingMilestones.length) {
@@ -2207,10 +2228,14 @@
           if (billingMilestones[idx]) return `Stage-Gated Milestone Payment: ${billingMilestones[idx].label} under SOW-${quoteId}`;
         }
         if (invoiceMilestone === 'retainer') {
-          return `MOD 4 Care Plan for ${subscriptionMonths} Months${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total subscription commitment)`;
+          return `MOD 4 Care Plan — full ${subscriptionMonths}-month subscription${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total commitment)`;
+        }
+        if (invoiceMilestone === 'retainer_monthly') {
+          const periodLabel = window.InvoiceHelpers?.formatBillingPeriodLabel?.(retainerBillingPeriod) || 'monthly period';
+          return `MOD 4 Care Plan — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
+      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
@@ -2404,7 +2429,7 @@
               </div>
             )}
 
-            {discountPercent > 0 && (isInvoice ? (invoiceMilestone === 'full' || invoiceMilestone === 'retainer') : true) ? (
+            {discountPercent > 0 && (isInvoice ? (invoiceMilestone === 'full' || invoiceMilestone === 'retainer' || invoiceMilestone === 'retainer_monthly') : true) ? (
               <>
                 <div className="flex justify-between items-center text-xs text-slate-500 font-mono">
                   <span>Subtotal (Standard Price):</span>
@@ -2758,13 +2783,30 @@
                       </label>
                     ))}
                     {retainerCostTotalBase > 0 && (
-                      <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
-                        <input type="radio" name="invoiceMilestone" value="retainer" checked={invoiceMilestone === 'retainer'} onChange={() => setInvoiceMilestone('retainer')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
-                        <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                          <span className="block font-sans">MOD 4 Care Plan Retainer ({subscriptionMonths} mo)</span>
-                          <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostTotalPart)}</span>
-                        </span>
-                      </label>
+                      <>
+                        <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer_monthly' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
+                          <input type="radio" name="invoiceMilestone" value="retainer_monthly" checked={invoiceMilestone === 'retainer_monthly'} onChange={() => {
+                            setInvoiceMilestone('retainer_monthly');
+                            const IH = window.InvoiceHelpers;
+                            const period = retainerBillingPeriod || IH?.currentBillingPeriod?.() || '';
+                            if (!retainerBillingPeriod && period) setRetainerBillingPeriod(period);
+                            if (IH?.suggestRetainerMonthlySuffix && (!invoiceNumberSuffix || invoiceNumberSuffix === '01')) {
+                              setInvoiceNumberSuffix(IH.suggestRetainerMonthlySuffix(period));
+                            }
+                          }} className="mt-0.5 accent-brandTeal-500 shrink-0" />
+                          <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
+                            <span className="block font-sans">MOD 4 Care Plan — Monthly Invoice</span>
+                            <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostPart)} / month{includeTax ? ' inc. VAT' : ''}</span>
+                          </span>
+                        </label>
+                        <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
+                          <input type="radio" name="invoiceMilestone" value="retainer" checked={invoiceMilestone === 'retainer'} onChange={() => setInvoiceMilestone('retainer')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
+                          <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
+                            <span className="block font-sans">MOD 4 Care Plan — Full Subscription ({subscriptionMonths} mo)</span>
+                            <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostTotalPart)} upfront</span>
+                          </span>
+                        </label>
+                      </>
                     )}
                     <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'custom' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
                       <input type="radio" name="invoiceMilestone" value="custom" checked={invoiceMilestone === 'custom'} onChange={() => setInvoiceMilestone('custom')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
@@ -2774,13 +2816,27 @@
                       </span>
                     </label>
                   </div>
+                  {invoiceMilestone === 'retainer_monthly' && (
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-[9px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans">Billing month</label>
+                        <input type="month" value={retainerBillingPeriod} onChange={(e) => {
+                          const period = e.target.value;
+                          setRetainerBillingPeriod(period);
+                          const IH = window.InvoiceHelpers;
+                          if (IH?.suggestRetainerMonthlySuffix) setInvoiceNumberSuffix(IH.suggestRetainerMonthlySuffix(period));
+                        }} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 font-mono focus:outline-none focus:border-brandTeal-500" />
+                      </div>
+                      <p className="text-[9px] text-slate-500 leading-relaxed">Use a unique invoice suffix per month (e.g. M202607) so each monthly invoice is saved separately.</p>
+                    </div>
+                  )}
                   {invoiceMilestone === 'custom' && (
                     <div>
                       <label className="text-[9px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans">Custom Invoice Amount (Ex-VAT)</label>
                       <input type="number" value={customInvoiceAmount} onChange={(e) => setCustomInvoiceAmount(Number(e.target.value))} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 font-mono focus:outline-none focus:border-brandTeal-500" min="0" step="1000" />
                     </div>
                   )}
-                  {billingMilestones.length === 0 && invoiceMilestone !== 'full' && invoiceMilestone !== 'retainer' && invoiceMilestone !== 'custom' && (
+                  {billingMilestones.length === 0 && invoiceMilestone !== 'full' && invoiceMilestone !== 'retainer' && invoiceMilestone !== 'retainer_monthly' && invoiceMilestone !== 'custom' && (
                     <p className="text-[9px] text-amber-400 font-mono text-left">No billing gates available — select modules in the Planner tab to generate gate options.</p>
                   )}
                   <div className="pt-2 border-t border-brandNavy-800">

@@ -509,6 +509,7 @@
       ndaTerm: state.ndaTerm,
       ndaJurisdiction: state.ndaJurisdiction,
       invoiceMilestone: state.invoiceMilestone,
+      retainerBillingPeriod: state.retainerBillingPeriod || '',
       customInvoiceAmount: state.customInvoiceAmount,
       invoiceNumberSuffix: state.invoiceNumberSuffix,
       invoiceDueDate: state.invoiceDueDate,
