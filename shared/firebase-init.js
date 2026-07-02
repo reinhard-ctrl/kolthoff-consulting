@@ -17,24 +17,16 @@ import {
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
-
-const DEFAULT_CONFIG = {
-  apiKey: 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI',
-  authDomain: 'kolthoff-portal.firebaseapp.com',
-  databaseURL: 'https://kolthoff-portal-default-rtdb.asia-southeast1.firebasedatabase.app',
-  projectId: 'kolthoff-portal',
-  storageBucket: 'kolthoff-portal.firebasestorage.app',
-  messagingSenderId: '413958125034',
-  appId: '1:413958125034:web:7d9d6d5f0b11a2c73b2e93',
-};
+import { writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { FIREBASE_CONFIG, DEFAULT_APP_ID, FUNCTIONS_REGION } from './firebase-config.js';
 
 const firebaseConfig = typeof __firebase_config !== 'undefined'
   ? JSON.parse(__firebase_config)
   : (typeof window !== 'undefined' && window.__FIREBASE_CONFIG__
     ? window.__FIREBASE_CONFIG__
-    : DEFAULT_CONFIG);
+    : FIREBASE_CONFIG);
 
-export const appId = typeof __app_id !== 'undefined' ? __app_id : 'kolthoff-admin-app';
+export const appId = typeof __app_id !== 'undefined' ? __app_id : DEFAULT_APP_ID;
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 /** When true, HTML apps must not auto-write demo data into empty Firestore collections */
@@ -44,7 +36,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app, 'asia-southeast1');
+export const functions = getFunctions(app, FUNCTIONS_REGION);
 
 /** Initialize App Check when site key is configured */
 export function initAppCheck() {
@@ -56,6 +48,8 @@ export function initAppCheck() {
     });
   }
 }
+
+initAppCheck();
 
 /** Firestore tenant path helpers */
 export function tenantCollection(collectionName) {
@@ -193,6 +187,7 @@ if (typeof window !== 'undefined') {
   window.initAppCheck = initAppCheck;
   window.exchangePortalToken = exchangePortalToken;
   window.httpsCallable = httpsCallable;
+  window.writeBatch = writeBatch;
 }
 
 export {
@@ -201,5 +196,5 @@ export {
   doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection, addDoc, updateDoc,
   query, where, orderBy, limit,
   ref, uploadBytes, getDownloadURL, deleteObject, listAll,
-  httpsCallable,
+  httpsCallable, writeBatch,
 };

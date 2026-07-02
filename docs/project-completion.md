@@ -143,9 +143,9 @@ Quick summary of what remains:
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **2.5** | Ops hardening — client sign/intake/portal, data model unity | **Next** |
-| **3** | SSO, App Check, React migration, tenant provisioning | Planned |
-| **4** | Content, templates, delivery automation (**your focus**) | After 2.5/3 |
+| **2.5** | Ops hardening — client sign/intake/portal, data model unity | **Engineering complete** — verify on production (Package P4) |
+| **3** | SSO, App Check, React migration, tenant provisioning | **Next** (Package P5–P7) |
+| **4** | Content, templates, delivery automation (**your focus**) | After 2.5 verify + Phase 3 |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
 Legacy bullet list (superseded by migration-roadmap.md):

@@ -104,6 +104,21 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 
 ---
 
+## Execution packages (engineering order)
+
+| Package | Scope | Status |
+|---------|--------|--------|
+| **P1** | Go-live, DNS, seed tooling | ✅ Complete |
+| **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
+| **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
+| **P4** | Production client journey verification (sign → intake → portal) | ⏳ **You** — on `kolthoff-consulting.com` |
+| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | ⏳ Next eng |
+| **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
+| **P7** | Phase 3C: Blueprint designer + client provisioning wizard | ⏳ Planned |
+| **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
+
+---
+
 ## ✅ Phases 0–2 — Complete
 
 ### Phase 0 — Unified Firebase platform
@@ -161,16 +176,16 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | 2.5.4 | **Workspace CRM schema** | ✅ Aligned | Uses ops CRM fields (`pipelineStatus`, `estValue`); CRM flag stays off by default |
 | 2.5.5 | **Policy Studio → Vault** | ✅ Done | Publish `policy_documents` → `core_policies` via Policy Studio button |
 | 2.5.6 | **Staff identity in workspace** | ✅ Done | Admin passcode session resolves first `kolthoff_admin` in `core_users` |
-| 2.5.7 | **CRM won/lost → planner** | ⚠️ Partial | Bidirectional status when deal closes |
+| 2.5.7 | **CRM won/lost → planner** | ✅ Done | `crm-planner-sync.js` writes `links.crmStatus` on deal close; portal sync on Won |
 
 ### 2.5C — Polish & Phase 3 prep
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| 2.5.8 | Embed mode — hide duplicate headers in all HTML apps | ⚠️ Partial |
-| 2.5.9 | `initAppCheck()` in all HTML bootstraps | Small |
-| 2.5.10 | Centralize Firebase config (single source) | Small |
-| 2.5.11 | Analytics: planner-driven capacity/time baselines | Medium |
+| 2.5.8 | Embed mode — hide duplicate headers in all HTML apps | ✅ Done | `shared/embed-mode.js` + `data-app-chrome` on delivery/ops/analytics |
+| 2.5.9 | `initAppCheck()` in all HTML bootstraps | ✅ Done | Auto-invoked from `firebase-init.js` when `__RECAPTCHA_SITE_KEY__` set |
+| 2.5.10 | Centralize Firebase config (single source) | ✅ Done | `shared/firebase-config.js` imported by `firebase-init.js` |
+| 2.5.11 | Analytics: planner-driven capacity/time baselines | ✅ Done | `shared/analytics-baseline.js`; firm dashboard shows planner hours |
 
 ### Phase 2.5 exit criteria (updated)
 
@@ -348,9 +363,11 @@ flowchart TB
 2. ~~Policy Studio → Vault publish~~ ✅
 3. ~~Workspace CRM alignment (or keep disabled)~~ ✅
 4. ~~Staff → `core_users` identity in workspace~~ ✅
-5. Verify intake submit + full client journey on production domain
+5. ~~CRM won/lost → planner sync~~ ✅
+6. ~~Embed polish, App Check bootstrap, config centralization, analytics baselines~~ ✅
+7. **Verify** intake submit + full client journey on production domain
 
-### Should do (Phase 3)
+### Should do (Phase 3 — Package P5–P7)
 8. Google Workspace SSO
 9. App Check enforcement
 10. React migration (delivery → ops → analytics → client)
@@ -394,4 +411,4 @@ flowchart TB
 
 ---
 
-*Last updated: June 2026 — Phase 2.5 ops hardening complete; verify client journeys on production*
+*Last updated: June 2026 — Package P3 (Phase 2.5C) complete; P4 production verification next*
