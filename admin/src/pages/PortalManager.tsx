@@ -162,7 +162,7 @@ export default function PortalManager() {
       return;
     }
     const leakage = getChaosTaxValue(profile);
-    const patch = buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true });
+    const patch = buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true, syncOrgChart: true });
     const newClient: ClientPortal = {
       companyName: patch.companyName || getClientDisplayName(profile),
       repName: patch.repName || profile.clientRep || 'Representative',
@@ -178,6 +178,7 @@ export default function PortalManager() {
       roadmap: patch.roadmap || buildDefaultPortalRoadmap(),
       assets: patch.assets || [],
       contracts: [],
+      orgChart: patch.orgChart || [],
     };
     await setDoc(adminDoc('clients', newCode), newClient);
     await writePortalLinkToProfile(profileId, newCode, profile);
@@ -196,7 +197,7 @@ export default function PortalManager() {
       return;
     }
     const chaos = resolveChaosTax(linkedProfile);
-    const patch = buildPortalPatchFromProfile(linkedProfile, draft, { syncIntakeAssets: true });
+    const patch = buildPortalPatchFromProfile(linkedProfile, draft, { syncIntakeAssets: true, syncOrgChart: true });
     setDraft({
       ...draft,
       ...patch,
@@ -206,6 +207,7 @@ export default function PortalManager() {
       },
       roadmap: draft.roadmap?.length ? draft.roadmap : (patch.roadmap || buildDefaultPortalRoadmap()),
       assets: patch.assets?.length ? patch.assets : draft.assets,
+      orgChart: patch.orgChart?.length ? patch.orgChart : draft.orgChart,
     });
     showToast(`Synced from SOW (${chaos.source} chaos tax: ${(patch.metrics?.annualLeakageIdentified ?? 0).toLocaleString()}).`);
   };
