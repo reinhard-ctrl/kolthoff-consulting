@@ -863,9 +863,21 @@
       // --- FIREBASE INITIALIZATION & SYNC ---
       useEffect(() => {
         let cancelled = false;
-        let checkInterval = setInterval(() => {
+        let checkInterval;
+        const timeout = setTimeout(() => {
+          if (cancelled) return;
+          clearInterval(checkInterval);
+          if (!window.firebaseAuth || !window.firebaseDb) {
+            setAuthErrorDetails('Cloud sync failed to load. If you see a firebase-init error in the console, refresh after the latest deploy.');
+          } else if (!window.kolthoffStaffReady) {
+            setAuthErrorDetails('Staff authentication module failed to load. Refresh the page or sign in via Admin.');
+          }
+        }, 15000);
+
+        checkInterval = setInterval(() => {
           if (window.firebaseAuth && window.firebaseDb && window.kolthoffStaffReady) {
             clearInterval(checkInterval);
+            clearTimeout(timeout);
             const initAuth = async () => {
               try {
                 await window.kolthoffStaffReady;
@@ -885,7 +897,7 @@
           }
         }, 50);
 
-        return () => { cancelled = true; clearInterval(checkInterval); };
+        return () => { cancelled = true; clearInterval(checkInterval); clearTimeout(timeout); };
       }, []);
 
       useEffect(() => {

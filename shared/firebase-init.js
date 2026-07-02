@@ -201,5 +201,5 @@ export {
   doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection, addDoc, updateDoc,
   query, where, orderBy, limit,
   ref, uploadBytes, getDownloadURL, deleteObject, listAll,
-  exchangePortalToken, functions, httpsCallable,
+  httpsCallable,
 };

@@ -179,25 +179,42 @@
 
             // 1. INITIALIZE FIREBASE AUTHENTICATION
             useEffect(() => {
-                let checkInterval = setInterval(() => {
-                    if (window.firebaseAuth && window.firebaseDb) {
+                let cancelled = false;
+                let checkInterval;
+                const timeout = setTimeout(() => {
+                    if (cancelled) return;
+                    clearInterval(checkInterval);
+                    if (!window.firebaseAuth || !window.firebaseDb) {
+                        setAuthErrorDetails('Cloud sync failed to load. If you see a firebase-init error in the console, refresh after the latest deploy.');
+                    } else if (!window.kolthoffStaffReady) {
+                        setAuthErrorDetails('Staff authentication module failed to load. Refresh the page or sign in via Admin.');
+                    }
+                }, 15000);
+
+                checkInterval = setInterval(() => {
+                    if (window.firebaseAuth && window.firebaseDb && window.kolthoffStaffReady) {
                         clearInterval(checkInterval);
+                        clearTimeout(timeout);
                         const initAuth = async () => {
                             try {
-                                await window.kolthoffStaffReady
-                                setIsAuthed(true);
-                                setAuthErrorDetails(null);
+                                await window.kolthoffStaffReady;
+                                if (!cancelled) {
+                                    setIsAuthed(true);
+                                    setAuthErrorDetails(null);
+                                }
                             } catch (e) {
                                 console.error("Firebase Auth Error:", e);
-                                setIsAuthed(false);
-                                setAuthErrorDetails(e.message || "Authentication failed.");
+                                if (!cancelled) {
+                                    setIsAuthed(false);
+                                    setAuthErrorDetails(e.message || "Authentication failed.");
+                                }
                             }
                         };
                         initAuth();
                     }
                 }, 50);
 
-                return () => clearInterval(checkInterval);
+                return () => { cancelled = true; clearInterval(checkInterval); clearTimeout(timeout); };
             }, []);
 
             // 2. ATTACH CLOUD SYNC LISTENERS
@@ -707,13 +724,13 @@
 
             if (!isAuthed) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center text-slate-400">
+                    <div className="min-h-screen flex flex-col items-center justify-center text-slate-400 px-6">
                         <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-brandTeal-500 animate-pulse" />
                             Loading...
                         </div>
                         {authErrorDetails && (
-                            <p className="text-xs text-amber-400 font-bold bg-amber-500/10 p-2 rounded mt-4">{authErrorDetails}</p>
+                            <p className="text-xs text-amber-400 font-bold bg-amber-500/10 p-3 rounded mt-4 max-w-md text-center leading-relaxed">{authErrorDetails}</p>
                         )}
                     </div>
                 );
