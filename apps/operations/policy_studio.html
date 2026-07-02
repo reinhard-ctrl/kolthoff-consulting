@@ -1370,10 +1370,10 @@
                         </div>
                     )}
 
-                    {/* Header (No Print) */}
-                    <header data-app-chrome className="border-b border-brandNavy-700/50 bg-brandNavy-955/95 top-0 z-50 backdrop-blur-md sticky no-print w-full shrink-0">
+                    {/* Header (No Print) — logo hidden in admin embed; action toolbar stays visible */}
+                    <header className="border-b border-brandNavy-700/50 bg-brandNavy-955/95 top-0 z-50 backdrop-blur-md sticky no-print w-full shrink-0">
                         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
+                            <div data-app-chrome className="flex items-center gap-3">
                                 <svg aria-hidden="true" className="w-8 h-8 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="url(#hdr-shield-grad)" strokeWidth="4.5" strokeLinejoin="round" />
                                     <path d="M36 50 L46 60 L66 36" stroke="url(#hdr-check-grad)" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
