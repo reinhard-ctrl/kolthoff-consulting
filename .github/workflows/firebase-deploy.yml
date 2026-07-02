@@ -176,7 +176,7 @@ jobs:
               --role="roles/cloudfunctions.invoker" \
               --quiet || true
           done
-          for SVC in verifyadminpasscode generateportaltoken requestworkspacepasswordreset provisiongooglestaff; do
+          for SVC in verifyadminpasscode generateportaltoken generateportaltokenhttp requestworkspacepasswordreset provisiongooglestaff; do
             gcloud run services add-iam-policy-binding "$SVC" \
               --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \

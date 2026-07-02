@@ -415,13 +415,12 @@ export const verifyAdminPasscode = onCall({ invoker: 'public' }, async (request)
   return verifyPasscode(code);
 });
 
-/** Generate portal access token from client access code */
-export const generatePortalToken = onCall({ invoker: 'public' }, async (request) => {
-  const accessCode = (request.data?.accessCode as string)?.trim()?.toUpperCase();
+async function createPortalTokenForAccessCode(accessCodeRaw: string) {
+  const accessCode = accessCodeRaw.trim().toUpperCase();
   if (!accessCode) throw new HttpsError('invalid-argument', 'Access code required');
 
   const clientSnap = await db
-    .doc(`artifacts/kolthoff-admin-app/public/data/clients/${accessCode}`)
+    .doc(`artifacts/${ADMIN_TENANT}/public/data/clients/${accessCode}`)
     .get();
 
   if (!clientSnap.exists) {
@@ -429,13 +428,64 @@ export const generatePortalToken = onCall({ invoker: 'public' }, async (request)
   }
 
   const uid = `portal_${accessCode.toLowerCase()}`;
-  const token = await admin.auth().createCustomToken(uid, {
-    role: 'portal_client',
-    accessCode,
-    tenantId: 'kolthoff-admin-app',
-  });
+  let token: string;
+  try {
+    token = await admin.auth().createCustomToken(uid, {
+      role: 'portal_client',
+      accessCode,
+      tenantId: ADMIN_TENANT,
+    });
+  } catch (err) {
+    console.error('createPortalTokenForAccessCode failed', err);
+    throw new HttpsError('internal', 'Could not create portal session. Contact Kolthoff support.');
+  }
 
   return { token, client: clientSnap.data() };
+}
+
+/** Generate portal access token from client access code */
+export const generatePortalToken = onCall({ invoker: 'public' }, async (request) => {
+  const accessCode = (request.data?.accessCode as string) || '';
+  return createPortalTokenForAccessCode(accessCode);
+});
+
+/** Hosting rewrite endpoint — private invoker; Firebase Hosting grants invoke access */
+export const generatePortalTokenHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const body = req.body as { accessCode?: string } | string | undefined;
+  let accessCode: string | undefined;
+  if (body && typeof body === 'object' && 'accessCode' in body) {
+    accessCode = body.accessCode;
+  } else if (typeof body === 'string') {
+    try { accessCode = JSON.parse(body).accessCode; } catch { /* ignore */ }
+  }
+  if (!accessCode) {
+    res.status(400).json({ error: 'Access code required', code: 'invalid-argument' });
+    return;
+  }
+
+  try {
+    const result = await createPortalTokenForAccessCode(accessCode);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof HttpsError) {
+      const status = err.code === 'not-found' ? 404
+        : err.code === 'invalid-argument' ? 400
+          : 500;
+      res.status(status).json({ error: err.message, code: err.code });
+      return;
+    }
+    console.error('generatePortalTokenHttp failed', err);
+    res.status(500).json({ error: 'Internal error', code: 'internal' });
+  }
 });
 
 /** Invite workspace user — creates Firebase Auth user + core_users doc */

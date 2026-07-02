@@ -160,10 +160,13 @@
                 } catch (e) {
                     console.error('Portal login error:', e);
                     const code = e?.code || '';
-                    if (code.includes('not-found') || String(e?.message || '').includes('Invalid access code')) {
-                        setAuthError('Invalid Access Code. Please check your SOW documentation.');
+                    const msg = String(e?.message || '');
+                    if (code.includes('not-found') || msg.includes('Invalid access code')) {
+                        setAuthError('Invalid access code. Use the SOW tracking code from your Kolthoff onboarding email — not your admin or workspace password.');
+                    } else if (code.includes('permission-denied') || msg.includes('unavailable')) {
+                        setAuthError('Portal authentication is temporarily unavailable. Please try again in a few minutes or contact Kolthoff support.');
                     } else {
-                        setAuthError('Error accessing the secure vault. Please try again.');
+                        setAuthError('Could not open the secure vault. Check your access code and try again.');
                     }
                 } finally {
                     setIsLoggingIn(false);
@@ -231,7 +234,8 @@
                             </div>
                             
                             <h1 className="text-2xl font-serif font-bold text-white mb-2">Client Access Portal</h1>
-                            <p className="text-xs text-slate-400 mb-8 font-mono">Enter your SOW tracking code to authenticate.</p>
+                            <p className="text-xs text-slate-400 mb-2 font-mono">Enter your SOW tracking code (access code).</p>
+                            <p className="text-[10px] text-slate-500 mb-8 leading-relaxed">This is not your admin passcode or Core Workspace password. Your code looks like <span className="font-mono text-slate-400">APARRI-2026</span> or your SOW quote ID.</p>
 
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
