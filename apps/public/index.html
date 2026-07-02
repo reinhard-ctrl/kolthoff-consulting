@@ -419,7 +419,10 @@
                 </div>
             </div>
 
-            <p class="text-center text-[10px] font-mono text-slate-500 mt-8 max-w-3xl mx-auto leading-relaxed">
+            <p id="packageRoiHint" class="text-center text-[10px] font-mono text-slate-500 mt-4 max-w-3xl mx-auto leading-relaxed">
+                At your calculator settings above, first-year recovery target is shown in green — Full Transformation (~₱195,500) is typically under 45% of that recovery for a 15-person team profile.
+            </p>
+            <p class="text-center text-[10px] font-mono text-slate-500 mt-4 max-w-3xl mx-auto leading-relaxed">
                 Typical starting investment: <strong class="text-slate-400">Leak Scan</strong> from ₱42,500 · <strong class="text-slate-400">Fix the Flow</strong> (M1+M2) from ₱108,500 · <strong class="text-slate-400">Full Transformation</strong> (M1–M3) from ₱195,500 · <strong class="text-slate-400">Care Plan</strong> from ₱18,000/month. MOD 1 fee credits toward MOD 2+3 when you proceed within 30 days. Exact quote in your SOW.
             </p>
         </div>
@@ -1039,6 +1042,13 @@
 
             leakageResult.innerText = formatPHP(annualLeakage);
             recoveryResult.innerText = formatPHP(annualRecovery);
+
+            const roiHint = document.getElementById('packageRoiHint');
+            if (roiHint) {
+                const fullTransform = 195500;
+                const pct = annualRecovery > 0 ? Math.round((fullTransform / annualRecovery) * 100) : 0;
+                roiHint.textContent = `At your settings above, 40% recovery target is ${formatPHP(annualRecovery)} — Full Transformation (~${formatPHP(fullTransform)}) is about ${pct}% of that first-year recovery target.`;
+            }
         }
 
         [staffRange, salaryRange, hoursRange].forEach(elem => {
