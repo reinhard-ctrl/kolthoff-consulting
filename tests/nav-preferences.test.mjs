@@ -31,7 +31,7 @@ const DEFAULT_NAV_GROUPS = [
     id: 'delivery',
     label: 'Delivery Suite',
     items: [
-      { id: 'intake' },
+      { id: 'org-chart' },
       { id: 'diagnosis-reports' },
       { id: 'policy-studio' },
       { id: 'workflow-builder' },
@@ -50,7 +50,7 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'client',
     label: 'Client Experience',
-    items: [{ id: 'client-portal' }, { id: 'client-intake' }, { id: 'marketing' }],
+    items: [{ id: 'client-portal' }, { id: 'marketing' }],
   },
 ];
 
@@ -166,10 +166,10 @@ const movedPrefs = {
   assignments: {
     command: ['dashboard'],
     operations: ['crm-pipeline', 'project-planner', 'contracts', 'portals'],
-    delivery: ['intake', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
+    delivery: ['org-chart', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
     workspace: ['core-workspace', 'tenants', 'master'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
-    client: ['client-portal', 'client-intake', 'marketing'],
+    client: ['client-portal', 'marketing'],
   },
 };
 
@@ -180,7 +180,7 @@ assert.equal(
   true,
 );
 assert.equal(
-  applied.find((g) => g.id === 'delivery')?.items.some((i) => i.id === 'intake'),
+  applied.find((g) => g.id === 'delivery')?.items.some((i) => i.id === 'org-chart'),
   true,
 );
 
@@ -189,7 +189,7 @@ const corruptPrefs = {
   assignments: {
     ...movedPrefs.assignments,
     operations: ['crm-pipeline', 'project-planner', 'project-planner', 'contracts', 'portals'],
-    delivery: ['intake', 'project-planner', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
+    delivery: ['org-chart', 'project-planner', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
   },
 };
 const cleaned = applyNavPreferences(DEFAULT_NAV_GROUPS, corruptPrefs);

@@ -39,15 +39,21 @@ const profile = {
   quoteId: 'KC-ACME',
   chaosTax: { source: 'diagnosis', value: 500000 },
   subSaaS: [{ tool: 'Zoom', billing: 50, users: 10 }],
-  roles: [{ owner: 'Jane', role: 'CEO' }],
+  orgChart: {
+    members: [
+      { id: 'm1', name: 'Jane', role: 'CEO', department: 'Executive', managerId: null },
+      { id: 'm2', name: 'Bob', role: 'Ops', department: 'Operations', managerId: 'm1' },
+    ],
+  },
 };
-const patch = PS.buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true, syncRoles: true });
+const patch = PS.buildPortalPatchFromProfile(profile, null, { syncIntakeAssets: true, syncOrgChart: true });
 assert.equal(patch.companyName, 'Acme');
 assert.equal(patch.metrics.annualLeakageIdentified, 500000);
 assert.equal(patch.metrics.saasSavingsIdentified, 6000);
 assert.equal(patch.assets.length, 1);
-assert.equal(patch.actionItems.length, 1);
-assert.equal(patch.actionItems[0].title, 'Jane');
+assert.equal(patch.orgChart.length, 2);
+assert.equal(patch.orgChart[0].name, 'Jane');
+assert.equal(patch.orgChart[1].managerId, 'm1');
 
 const mergedAssets = PS.mergePortalAssets(
   [{ title: 'Zoom', id: 1 }],

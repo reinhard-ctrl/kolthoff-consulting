@@ -59,11 +59,6 @@ service cloud.firestore {
       return isPortalClient() && request.auth.token.accessCode == clientId;
     }
 
-    function isIntakeFormCompletion() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'status']) &&
-        request.resource.data.status == 'completed';
-    }
-
     function crmShareLinkEnabled(token) {
       return exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)) &&
         get(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/crm_share_links/$(token)).data.enabled == true;
@@ -143,19 +138,7 @@ service cloud.firestore {
 
     // Tenant-scoped collections
     match /artifacts/{tenantId}/public/data/{collection}/{docId} {
-      allow read: if isTenantMember(tenantId) || (
-        collection == 'intake_forms' && request.auth != null
-      );
-      allow create: if isTenantMember(tenantId) || (
-        collection == 'intake_forms' &&
-        request.auth != null &&
-        resource == null
-      );
-      allow update: if isTenantMember(tenantId) || (
-        collection == 'intake_forms' &&
-        request.auth != null &&
-        isIntakeFormCompletion()
-      );
+      allow read, write: if isTenantMember(tenantId);
       allow delete: if isTenantAdmin(tenantId);
 
       allow create: if collection == 'core_audit_log' && isTenantMember(tenantId);

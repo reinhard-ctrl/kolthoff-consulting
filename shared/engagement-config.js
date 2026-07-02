@@ -61,9 +61,6 @@
 
   const RATE_TIERS = ['principal', 'senior', 'associate', 'partner'];
 
-  /** Intake Center → workbook_profiles field mapping targets */
-  const INTAKE_MAPPED_TARGETS = ['subSaaS', 'roles', 'customAssets'];
-
   function getModuleByCategory(category) {
     if (!category) return undefined;
     const preset = CATEGORY_TO_PRESET[category];
@@ -170,7 +167,6 @@
     CATEGORY_TO_PRESET,
     LEGACY_CATEGORY_ALIASES,
     RATE_TIERS,
-    INTAKE_MAPPED_TARGETS,
     getModuleByCategory,
     getModuleById,
     getPhaseForCategory,

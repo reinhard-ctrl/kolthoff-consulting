@@ -5,7 +5,7 @@ import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
-import IntakeCenter from './pages/IntakeCenter';
+import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import Collections from './pages/Collections';
@@ -246,7 +246,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/tenants" element={<Tenants />} />
-        <Route path="/intake" element={<IntakeCenter />} />
+        <Route path="/org-chart" element={<OrgChart />} />
+        <Route path="/intake" element={<Navigate to="/org-chart" replace />} />
         <Route path="/portals" element={<PortalManager />} />
         <Route path="/contracts" element={<ContractLedger />} />
         <Route path="/collections" element={<Collections />} />

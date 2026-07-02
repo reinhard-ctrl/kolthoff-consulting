@@ -261,8 +261,8 @@
                         return <DashboardTab data={activeClientData} handleSimulateUpload={handleSimulateUpload} uploadSimulating={uploadSimulating} uploadError={uploadError} uploadSuccess={uploadSuccess} />;
                     case 'roadmap':
                         return <RoadmapTab data={activeClientData} />;
-                    case 'intake':
-                        return <IntakeTab data={activeClientData} />;
+                    case 'organization':
+                        return <OrganizationTab data={activeClientData} />;
                     case 'vault':
                         return <VaultTab data={activeClientData} />;
                     case 'billing':
@@ -301,7 +301,7 @@
                             <nav className="space-y-2">
                                 <NavItem id="dashboard" icon={<Icons.Dashboard />} label="Executive Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} />
                                 <NavItem id="roadmap" icon={<Icons.MapMap />} label="Strategic Roadmap" activeTab={activeTab} setActiveTab={setActiveTab} />
-                                <NavItem id="intake" icon={<Icons.Database />} label="Intake & Company Data" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                <NavItem id="organization" icon={<Icons.Users />} label="Organization" activeTab={activeTab} setActiveTab={setActiveTab} />
                                 <NavItem id="vault" icon={<Icons.Vault />} label="Secure Asset Vault" activeTab={activeTab} setActiveTab={setActiveTab} />
                                 <NavItem id="billing" icon={<Icons.FileText />} label="Contracts & Billing" activeTab={activeTab} setActiveTab={setActiveTab} />
                             </nav>
@@ -318,7 +318,7 @@
                     <main className="flex-1 overflow-y-auto relative z-10 scroll-smooth">
                         <header className="sticky top-0 z-30 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-white font-serif tracking-wide capitalize">
-                                {activeTab === 'dashboard' ? 'Executive Overview' : activeTab === 'intake' ? 'Company Data & Intake Records' : activeTab.replace('-', ' ')}
+                                {activeTab === 'dashboard' ? 'Executive Overview' : activeTab === 'organization' ? 'Organization Chart' : activeTab.replace('-', ' ')}
                             </h2>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-mono text-brandTeal-400 bg-brandTeal-500/10 border border-brandTeal-500/20 px-2.5 py-1 rounded font-bold uppercase tracking-wider">
@@ -546,115 +546,64 @@
             );
         };
 
-        // --- NEW INTAKE & COMPANY DATA TAB ---
-        const IntakeTab = ({ data }) => {
-            const saasData = data.subSaaS || [];
-            const rolesData = data.roles || [];
-            const customData = data.customAssets || [];
+        const OrganizationTab = ({ data }) => {
+            const orgMembers = (data.orgChart && data.orgChart.length)
+                ? data.orgChart
+                : (data.roles || []).map((item) => ({
+                    name: item.owner || item.name || 'N/A',
+                    role: item.role || item.title || 'N/A',
+                    department: '',
+                    managerId: null,
+                }));
+            const memberById = Object.fromEntries(
+                (data.orgChart || []).filter((m) => m.id).map((m) => [m.id, m.name])
+            );
+            const managerLabel = (member) => {
+                if (!member.managerId) return '—';
+                return memberById[member.managerId] || '—';
+            };
 
             return (
                 <div className="space-y-8 fade-in">
                     <div>
-                        <h2 className="text-2xl font-serif font-bold text-white mb-2">Company Data & Intake Records</h2>
+                        <h2 className="text-2xl font-serif font-bold text-white mb-2">Organization Chart</h2>
                         <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">
-                            A live repository of all operational parameters, rosters, and inventories synchronized directly from your submitted intake forms.
+                            Your team structure synchronized from the delivery org chart — names, roles, departments, and reporting lines.
                         </p>
                     </div>
 
-                    {/* SaaS Section */}
                     <div className="glass-panel rounded-2xl overflow-hidden border border-brandNavy-800">
                         <div className="p-4 bg-brandNavy-955/50 border-b border-brandNavy-800 flex justify-between items-center">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300 font-mono flex items-center gap-2">
-                                <Icons.Monitor /> Software & SaaS Inventory
+                                <Icons.Users /> Team Structure
                             </h3>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-brandNavy-900/30 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-800 font-mono">
                                     <tr>
-                                        <th className="p-4 w-[25%]">Software / Tool</th>
-                                        <th className="p-4 w-[20%]">Monthly Cost</th>
-                                        <th className="p-4 w-[15%] text-center">Active Users</th>
-                                        <th className="p-4 w-[40%]">Primary Use Case</th>
+                                        <th className="p-4 w-[25%]">Name</th>
+                                        <th className="p-4 w-[25%]">Role</th>
+                                        <th className="p-4 w-[25%]">Department</th>
+                                        <th className="p-4 w-[25%]">Direct Manager</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-brandNavy-800/50 text-sm">
-                                    {saasData.length === 0 && (
-                                        <tr><td colSpan="4" className="p-6 text-center text-slate-500 text-sm italic">No SaaS inventory data synced yet.</td></tr>
+                                    {orgMembers.length === 0 && (
+                                        <tr><td colSpan="4" className="p-6 text-center text-slate-500 text-sm italic">No organization data synced yet.</td></tr>
                                     )}
-                                    {saasData.map((item, i) => (
-                                        <tr key={i} className="hover:bg-brandNavy-900/40 transition-colors group">
-                                            <td className="p-4 font-bold text-slate-200">{item.tool || 'N/A'}</td>
-                                            <td className="p-4 font-mono text-brandTeal-400">{formatCurrency(item.billing)}</td>
-                                            <td className="p-4 text-center font-mono text-slate-300">{item.users || '0'}</td>
-                                            <td className="p-4 text-xs text-slate-400 leading-relaxed">{item.reason || 'N/A'}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* Roles Section */}
-                    <div className="glass-panel rounded-2xl overflow-hidden border border-brandNavy-800">
-                        <div className="p-4 bg-brandNavy-955/50 border-b border-brandNavy-800 flex justify-between items-center">
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300 font-mono flex items-center gap-2">
-                                <Icons.Users /> Employee Roster & Roles
-                            </h3>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-brandNavy-900/30 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-800 font-mono">
-                                    <tr>
-                                        <th className="p-4 w-[50%]">Employee Name</th>
-                                        <th className="p-4 w-[50%]">Job Title / Position</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-brandNavy-800/50 text-sm">
-                                    {rolesData.length === 0 && (
-                                        <tr><td colSpan="2" className="p-6 text-center text-slate-500 text-sm italic">No team roster data synced yet.</td></tr>
-                                    )}
-                                    {rolesData.map((item, i) => (
-                                        <tr key={i} className="hover:bg-brandNavy-900/40 transition-colors group">
-                                            <td className="p-4 font-bold text-slate-200">{item.owner || 'N/A'}</td>
+                                    {orgMembers.map((item, i) => (
+                                        <tr key={item.id || i} className="hover:bg-brandNavy-900/40 transition-colors group">
+                                            <td className="p-4 font-bold text-slate-200">{item.name || 'N/A'}</td>
                                             <td className="p-4 text-xs text-brandTeal-400 uppercase tracking-wider font-bold">{item.role || 'N/A'}</td>
+                                            <td className="p-4 text-slate-300">{item.department || '—'}</td>
+                                            <td className="p-4 text-slate-300">{managerLabel(item)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-
-                    {/* Custom Assets Section (Dynamically renders columns based on first item keys) */}
-                    {customData.length > 0 && (
-                        <div className="glass-panel rounded-2xl overflow-hidden border border-brandNavy-800">
-                            <div className="p-4 bg-brandNavy-955/50 border-b border-brandNavy-800 flex justify-between items-center">
-                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300 font-mono flex items-center gap-2">
-                                    <Icons.Database /> Custom Process Records
-                                </h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-brandNavy-900/30 text-slate-400 uppercase text-[9px] tracking-wider font-extrabold border-b border-brandNavy-800 font-mono">
-                                        <tr>
-                                            {Object.keys(customData[0] || {}).filter(k => k !== 'id').map(key => (
-                                                <th key={key} className="p-4">{key.replace(/_/g, ' ')}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-brandNavy-800/50 text-sm">
-                                        {customData.map((item, i) => (
-                                            <tr key={i} className="hover:bg-brandNavy-900/40 transition-colors group">
-                                                {Object.keys(item).filter(k => k !== 'id').map(key => (
-                                                    <td key={key} className="p-4 text-slate-300 text-xs">{item[key]}</td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };

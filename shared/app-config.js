@@ -8,7 +8,7 @@ export const DEFAULT_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'kolt
 export const ROUTES = {
   home: '/',
   portal: '/apps/public/portal.html',
-  clientIntake: '/apps/public/client_intake.html',
+  orgChart: '/admin/org-chart',
   projectPlanner: '/apps/delivery/project_planner.html',
   contractLedger: '/admin/contracts',
   clientContractSign: '/apps/public/contract_sign.html',
@@ -16,7 +16,6 @@ export const ROUTES = {
   adminConsole: '/admin/',
   masterAdmin: '/admin/master',
   portalManager: '/admin/portals',
-  intakeCenter: '/admin/intake',
   crmPipeline: '/apps/operations/crm_pipeline.html',
   crmPipelineShare: '/apps/public/crm_pipeline_view.html',
   firmAnalytics: '/apps/analytics/firm_analytics_dashboard.html',
