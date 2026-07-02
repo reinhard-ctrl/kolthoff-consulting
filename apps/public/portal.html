@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 
-        <script type="module" src="../../shared/firebase-init.js?v=20250702-firebase-v2"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250702-portal-v3"></script>
     <!-- React and ReactDOM CDNs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
@@ -144,7 +144,9 @@
 
                 try {
                     const { token, client } = await window.exchangePortalToken(cleanCode);
-                    await window.signInWithCustomToken(window.firebaseAuth, token);
+                    if (token) {
+                        await window.signInWithCustomToken(window.firebaseAuth, token);
+                    }
                     setActiveClientData(client);
                     setAuthenticatedCode(cleanCode);
                     setAuthError('');
@@ -163,7 +165,9 @@
                     const msg = String(e?.message || '');
                     if (code.includes('not-found') || msg.includes('Invalid access code')) {
                         setAuthError('Invalid access code. Use the SOW tracking code from your Kolthoff onboarding email — not your admin or workspace password.');
-                    } else if (code.includes('permission-denied') || msg.includes('unavailable')) {
+                    } else if (code.includes('permission-denied')) {
+                        setAuthError('Portal access denied. Ensure Anonymous sign-in is enabled in Firebase Authentication, then hard-refresh this page.');
+                    } else if (msg.includes('unavailable')) {
                         setAuthError('Portal authentication is temporarily unavailable. Please try again in a few minutes or contact Kolthoff support.');
                     } else {
                         setAuthError('Could not open the secure vault. Check your access code and try again.');

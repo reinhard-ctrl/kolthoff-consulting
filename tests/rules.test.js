@@ -137,8 +137,11 @@ async function run() {
   await assertFails(
     portalClient.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/OTHER-2026').get()
   );
-  await assertFails(
+  await assertSucceeds(
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/APARRI-2026').get()
+  );
+  await assertFails(
+    anon.firestore().collection('artifacts/kolthoff-admin-app/public/data/clients').get()
   );
 
   console.log('All rules tests passed.');

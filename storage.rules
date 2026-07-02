@@ -45,10 +45,18 @@ service firebase.storage {
       return isPortalClient() && request.auth.token.accessCode == clientId;
     }
 
+    function clientPortalExists(clientId) {
+      return firestore.exists(/databases/(default)/documents/artifacts/kolthoff-admin-app/public/data/clients/$(clientId));
+    }
+
+    function isAnonymousPortalFor(clientId) {
+      return isAnonymous() && clientPortalExists(clientId);
+    }
+
     match /artifacts/{tenantId}/files/{clientId}/{filename} {
-      allow read: if isStaffMember() || isPortalClientFor(clientId);
+      allow read: if isStaffMember() || isPortalClientFor(clientId) || isAnonymousPortalFor(clientId);
       allow write: if isStaffMember() || (
-        isPortalClientFor(clientId) &&
+        (isPortalClientFor(clientId) || isAnonymousPortalFor(clientId)) &&
         request.resource.size < 25 * 1024 * 1024 &&
         request.resource.contentType.matches('application/.*|image/.*|text/.*')
       );
