@@ -1,6 +1,5 @@
 node_modules/
 dist/
-apps/public/assets/explainer-hls/
 .firebase/
 *.log
 .env

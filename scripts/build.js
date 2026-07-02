@@ -33,17 +33,10 @@ fs.mkdirSync(dist, { recursive: true });
 // Shared assets
 copyDir(path.join(root, 'shared'), path.join(dist, 'shared'));
 
-// Adaptive HLS renditions for marketing explainer (generated from source MP4)
-try {
-  execSync('node scripts/generate-explainer-hls.js', { cwd: root, stdio: 'inherit' });
-} catch (e) {
-  console.warn(`Warning: explainer HLS generation skipped (${e.message})`);
-}
-
 // Public apps
 copyDir(path.join(root, 'apps/public'), path.join(dist, 'apps/public'));
 
-// Source MP4 is build input only; adaptive HLS is served to visitors.
+// Source MP4 stays in repo for reference; marketing site uses YouTube embed instead.
 const distSourceMp4 = path.join(dist, 'apps/public/assets/Ops_Excellence_for_SMEs.mp4');
 if (fs.existsSync(distSourceMp4)) fs.unlinkSync(distSourceMp4);
 copyDir(path.join(root, 'apps/delivery'), path.join(dist, 'apps/delivery'));
@@ -101,4 +94,22 @@ if (recaptchaKey) {
     }
   }
   console.log('App Check site key injected into dist/');
+}
+
+const explainerYoutubeId = process.env.EXPLAINER_YOUTUBE_ID || '';
+for (const relPath of ['index.html', 'apps/public/index.html']) {
+  const htmlPath = path.join(dist, relPath);
+  if (!fs.existsSync(htmlPath)) continue;
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  const assignment = `const EXPLAINER_YOUTUBE_ID = ${JSON.stringify(explainerYoutubeId)};`;
+  if (html.includes("const EXPLAINER_YOUTUBE_ID = '__EXPLAINER_YOUTUBE_ID__';")) {
+    html = html.replace(
+      "const EXPLAINER_YOUTUBE_ID = '__EXPLAINER_YOUTUBE_ID__';",
+      assignment,
+    );
+    fs.writeFileSync(htmlPath, html);
+  }
+}
+if (explainerYoutubeId) {
+  console.log('Explainer YouTube ID injected into dist/');
 }
