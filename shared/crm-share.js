@@ -2,7 +2,7 @@
  * CRM pipeline external share — token-gated read-only public view.
  * Staff sync sanitized snapshots to crm_public_view/{token}; external viewers use ?token=...
  */
-import { db, appId as defaultAppId } from './firebase-init.js';
+import { db, appId as defaultAppId } from './firebase-init.js?v=20250702-firebase-v2';
 import { doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const SHARE_LINKS_COLLECTION = 'crm_share_links';

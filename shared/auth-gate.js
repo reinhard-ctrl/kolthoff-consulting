@@ -3,7 +3,7 @@
  * Redirects to /admin/ when no valid staff session exists.
  * Public apps (marketing, portal, intake) must NOT import this module.
  */
-import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js';
+import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js?v=20250702-firebase-v2';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const ADMIN_APP = 'kolthoff-admin-app';
