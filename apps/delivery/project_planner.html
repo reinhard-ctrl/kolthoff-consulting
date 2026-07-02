@@ -159,6 +159,58 @@
       overflow: hidden;
     }
 
+    /* Packages tab — compact 5×2 grid so all cards fit without scrolling (desktop embed) */
+    .packages-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .packages-view-header {
+      flex-shrink: 0;
+    }
+    .packages-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      gap: 0.5rem;
+      overflow: hidden;
+      align-content: stretch;
+    }
+    .packages-card {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .packages-card-body {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    @media (min-width: 1024px) {
+      .packages-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .packages-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow-y: auto;
+      }
+    }
+    @media (max-width: 767px) {
+      .packages-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow-y: auto;
+      }
+    }
+
     /* Print overrides must come after screen layout rules so they win at print time. */
     @media print {
       @page { size: auto; margin: 14mm 12mm; }
@@ -3271,51 +3323,54 @@
             </div>
           )}
 
-          <main id="app-main" className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans">
+          <main id="app-main" className={`max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans ${view === 'packages' ? 'p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'}`}>
             {view === 'packages' ? (
-              <div className="no-print h-full min-h-0 animate-fade-in font-sans text-left overflow-y-auto">
-                <div className="mb-6 space-y-2">
-                  <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Engagement Packages</span>
-                  <h2 className="text-xl font-bold text-white font-serif">Choose a starting scope</h2>
-                  <p className="text-xs text-slate-400 max-w-2xl">Packages set task selection and proposal defaults. Fine-tune hours, copy, and rates in the Planner tab afterward.</p>
+              <div className="packages-view no-print animate-fade-in font-sans text-left">
+                <div className="packages-view-header mb-2 lg:mb-3">
+                  <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-1 lg:gap-4">
+                    <div>
+                      <span className="text-[9px] font-mono font-bold tracking-[0.2em] text-brandTeal-400 uppercase">Engagement Packages</span>
+                      <h2 className="text-base lg:text-lg font-bold text-white font-serif leading-tight">Choose a starting scope</h2>
+                    </div>
+                    <p className="text-[10px] text-slate-500 lg:max-w-md lg:text-right leading-snug">Set task selection and defaults — fine-tune in Planner afterward.</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
+                <div className="packages-grid">
                   {(EP?.getAllPackages?.() || []).map((pkg) => {
                     const preview = packagePreviewEconomics(pkg.id);
                     const isActive = selectedPackageId === pkg.id && !packageCustomized;
                     const selectedCount = H.previewPackageSelection(pkg.id, tasks, catalogTasksRef.current).filter(t => t.selected).length;
                     const projectPart = preview.finalProjectCostBase || 0;
                     const retainerPart = preview.retainerCostTotalBase || 0;
+                    const priceLabel = pkg.isMonthly ? `${formatCurrency(retainerPart || projectPart)}/mo` : formatCurrency(projectPart);
                     return (
-                      <article key={pkg.id} className={`bg-brandNavy-900 border rounded-xl p-5 flex flex-col justify-between shadow-xl transition-all ${isActive ? 'border-brandTeal-500 ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700 hover:border-brandTeal-500/40'}`}>
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-1.5">
+                      <article key={pkg.id} title={pkg.forWhom} className={`packages-card bg-brandNavy-900 border rounded-lg p-2.5 lg:p-3 shadow-lg transition-all ${isActive ? 'border-brandTeal-500 ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700 hover:border-brandTeal-500/40'}`}>
+                        <div className="packages-card-body">
+                          <div className="flex flex-wrap gap-1">
                             {(pkg.modules || []).map((mod) => (
-                              <span key={mod} className="text-[9px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-2 py-0.5 rounded border border-brandNavy-700">{mod.replace('mod', 'MOD ')}</span>
+                              <span key={mod} className="text-[7px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-1.5 py-px rounded border border-brandNavy-700 leading-none">{mod.replace('mod', 'MOD ')}</span>
                             ))}
                           </div>
-                          <h3 className="text-base font-bold text-white font-serif">{pkg.name}</h3>
-                          <p className="text-[11px] text-slate-300 leading-relaxed">{pkg.tagline}</p>
-                          <p className="text-[10px] text-slate-500 leading-relaxed"><span className="text-slate-400 font-bold uppercase tracking-wider text-[9px] font-mono block mb-0.5">For whom</span>{pkg.forWhom}</p>
-                          <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-2 border-t border-brandNavy-700/60">
-                            <div><span className="text-slate-500 block uppercase text-[9px]">Tasks</span><span className="text-white font-bold">{selectedCount}</span></div>
-                            <div><span className="text-slate-500 block uppercase text-[9px]">{pkg.isMonthly ? 'Monthly' : 'Project'}</span><span className="text-brandTeal-300 font-bold">{pkg.isMonthly ? formatCurrency(retainerPart || projectPart) + '/mo' : formatCurrency(projectPart)}</span></div>
-                          </div>
+                          <h3 className="text-xs font-bold text-white font-serif truncate leading-tight">{pkg.name}</h3>
+                          <p className="text-[9px] text-slate-400 leading-snug line-clamp-2">{pkg.tagline}</p>
+                          <p className="text-[8px] font-mono text-slate-500 truncate mt-auto pt-1 border-t border-brandNavy-700/50">
+                            <span className="text-slate-300 font-bold">{selectedCount}</span> tasks · <span className="text-brandTeal-300 font-bold">{priceLabel}</span>
+                          </p>
                         </div>
-                        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-brandNavy-700/60">
-                          <button type="button" onClick={() => requestApplyPackage(pkg.id)} className="w-full py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider">{isActive ? 'Re-apply Package' : 'Apply Package'}</button>
-                          <button type="button" onClick={() => setView('sandbox')} className="w-full py-2 text-slate-400 hover:text-brandTeal-300 text-[10px] uppercase tracking-wider font-bold">Open Planner without applying →</button>
+                        <div className="flex gap-1 mt-1.5 shrink-0">
+                          <button type="button" onClick={() => requestApplyPackage(pkg.id)} className="flex-1 py-1 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded text-[8px] uppercase tracking-wide leading-none">{isActive ? 'Re-apply' : 'Apply'}</button>
+                          <button type="button" onClick={() => setView('sandbox')} className="px-1.5 py-1 text-slate-500 hover:text-brandTeal-300 text-[8px] uppercase font-bold leading-none" title="Open Planner without applying">Skip</button>
                         </div>
                       </article>
                     );
                   })}
-                  <article className="bg-brandNavy-900/40 border border-dashed border-brandNavy-700 rounded-xl p-5 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <span className="text-[9px] font-mono uppercase bg-brandNavy-950 text-slate-400 px-2 py-0.5 rounded border border-brandNavy-700">Custom</span>
-                      <h3 className="text-base font-bold text-white font-serif">Blank / Custom Scope</h3>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">Skip presets and build scope manually in the Planner using MOD chips and bespoke tasks.</p>
+                  <article className="packages-card bg-brandNavy-900/40 border border-dashed border-brandNavy-700 rounded-lg p-2.5 lg:p-3">
+                    <div className="packages-card-body">
+                      <span className="text-[7px] font-mono uppercase bg-brandNavy-950 text-slate-400 px-1.5 py-px rounded border border-brandNavy-700 w-fit leading-none">Custom</span>
+                      <h3 className="text-xs font-bold text-white font-serif leading-tight">Blank / Custom</h3>
+                      <p className="text-[9px] text-slate-500 leading-snug line-clamp-3">Build scope manually with MOD chips and bespoke tasks.</p>
                     </div>
-                    <button type="button" onClick={() => { setSelectedPackageId('custom'); setPackageCustomized(true); setView('sandbox'); }} className="mt-4 w-full py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 border border-brandNavy-700 font-bold rounded text-[10px] uppercase tracking-wider">Open Planner</button>
+                    <button type="button" onClick={() => { setSelectedPackageId('custom'); setPackageCustomized(true); setView('sandbox'); }} className="mt-1.5 w-full py-1 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 border border-brandNavy-700 font-bold rounded text-[8px] uppercase tracking-wide shrink-0 leading-none">Open Planner</button>
                   </article>
                 </div>
               </div>
