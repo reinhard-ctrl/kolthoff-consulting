@@ -215,6 +215,16 @@
       overflow: visible;
     }
 
+    .roadmap-gantt-chart {
+      overflow: visible;
+    }
+
+    .roadmap-gantt-grid {
+      overflow-x: auto;
+      overflow-y: visible;
+      padding-bottom: 0.25rem;
+    }
+
     .roadmap-gantt-bar {
       position: relative;
       display: flex;
@@ -235,13 +245,22 @@
 
     .roadmap-gantt-bar-label {
       position: relative;
-      z-index: 0;
+      z-index: 2;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
       white-space: nowrap;
       overflow: visible;
       text-overflow: clip;
       min-width: 0;
+    }
+
+    html.kolthoff-embed .planner-main-header {
+      display: block !important;
+    }
+
+    html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
+      display: flex !important;
+      visibility: visible !important;
     }
 
     /* Print overrides must come after screen layout rules so they win at print time. */
@@ -388,7 +407,7 @@
 
   <div id="root"></div>
 
-  <script src="../../shared/embed-mode.js?v=20250702-embed-v2"></script>
+  <script src="../../shared/embed-mode.js?v=20250702-embed-v3"></script>
   <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
   <script src="../../shared/engagement-packages.js?v=20250701-packages-v1"></script>
   <script src="../../shared/portal-sync.js?v=20250702-collections-v1"></script>

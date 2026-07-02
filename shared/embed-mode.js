@@ -27,6 +27,14 @@
     html.kolthoff-embed aside[data-app-sidebar] {
       display: none !important;
     }
+    /* Project Planner: never hide tab nav when embed chrome is stripped */
+    html.kolthoff-embed .planner-main-header {
+      display: block !important;
+    }
+    html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
+      display: flex !important;
+      visibility: visible !important;
+    }
     html.kolthoff-embed main,
     html.kolthoff-embed .flex.h-screen {
       height: 100% !important;
