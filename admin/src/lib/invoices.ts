@@ -21,6 +21,7 @@ export interface InvoiceRecord {
   vat: number;
   total: number;
   includeTax: boolean;
+  billingPeriod?: string | null;
   amountPaid: number;
   status: InvoiceStatus | string;
   issueDate: string;

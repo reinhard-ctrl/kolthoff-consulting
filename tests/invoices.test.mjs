@@ -14,6 +14,7 @@ import {
   outstandingAmount,
   portalStatusLabel,
   resolveMilestoneLabel,
+  suggestRetainerMonthlySuffix,
 } from '../shared/invoices.js';
 
 assert.equal(formatInvoiceNumber('KC2026-001', '02'), 'INV2026-00102');
@@ -28,6 +29,19 @@ const amounts = computeInvoiceAmounts({
 assert.equal(amounts.subtotal, 100000);
 assert.equal(amounts.vat, 12000);
 assert.equal(amounts.total, 112000);
+
+const monthlyAmounts = computeInvoiceAmounts({
+  invoiceMilestone: 'retainer_monthly',
+  retainerCostBase: 25000,
+  includeTax: true,
+});
+assert.equal(monthlyAmounts.subtotal, 25000);
+assert.equal(monthlyAmounts.total, 28000);
+
+const monthlyLabel = resolveMilestoneLabel('retainer_monthly', [], { billingPeriod: '2026-07' });
+assert.equal(monthlyLabel, 'MOD 4 Care Plan — July 2026');
+
+assert.equal(suggestRetainerMonthlySuffix('2026-07'), 'M202607');
 
 const label = resolveMilestoneLabel('milestone_0', [{ label: 'Gate 1: Module 1 Commitment' }]);
 assert.equal(label, 'Gate 1: Module 1 Commitment');

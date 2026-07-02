@@ -23,9 +23,36 @@ export function parseDueDate(value) {
   return new Date(parsed);
 }
 
-export function resolveMilestoneLabel(invoiceMilestone, billingMilestones) {
+export function formatBillingPeriodLabel(period) {
+  if (!period || typeof period !== 'string') return '';
+  const match = period.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return period;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  if (Number.isNaN(date.getTime())) return period;
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+export function currentBillingPeriod() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${now.getFullYear()}-${month}`;
+}
+
+export function suggestRetainerMonthlySuffix(period) {
+  const clean = String(period || '').replace(/[^\d]/g, '');
+  if (clean.length >= 6) return `M${clean.slice(0, 6)}`;
+  return 'M01';
+}
+
+export function resolveMilestoneLabel(invoiceMilestone, billingMilestones, options = {}) {
   if (invoiceMilestone === 'full') return 'Full project payment';
-  if (invoiceMilestone === 'retainer') return 'MOD 4 Care Plan retainer';
+  if (invoiceMilestone === 'retainer') return 'MOD 4 Care Plan — full subscription';
+  if (invoiceMilestone === 'retainer_monthly') {
+    const periodLabel = formatBillingPeriodLabel(options.billingPeriod);
+    return periodLabel
+      ? `MOD 4 Care Plan — ${periodLabel}`
+      : 'MOD 4 Care Plan — monthly retainer';
+  }
   if (invoiceMilestone === 'custom') return 'Custom milestone';
   if (typeof invoiceMilestone === 'string' && invoiceMilestone.startsWith('milestone_')) {
     const idx = parseInt(invoiceMilestone.split('_')[1], 10);
@@ -43,6 +70,7 @@ export function computeInvoiceAmounts(ctx) {
     customInvoiceAmount = 0,
     billingMilestones = [],
     finalProjectCostBase = 0,
+    retainerCostBase = 0,
     retainerCostTotalBase = 0,
     includeTax = false,
   } = ctx;
@@ -57,6 +85,8 @@ export function computeInvoiceAmounts(ctx) {
         ? Math.round(billingMilestones[idx].amount / 1.12)
         : billingMilestones[idx].amount;
     }
+  } else if (invoiceMilestone === 'retainer_monthly') {
+    baseAmount = retainerCostBase;
   } else if (invoiceMilestone === 'retainer') {
     baseAmount = retainerCostTotalBase;
   } else if (invoiceMilestone === 'custom') {
@@ -112,12 +142,14 @@ export function buildInvoiceRecord(input) {
     milestoneLabel,
     portalAccessCode,
     status = 'sent',
+    billingPeriod = null,
   } = input;
 
   const quoteId = profile?.quoteId || '';
   const invoiceNumber = formatInvoiceNumber(quoteId, invoiceNumberSuffix);
   const id = buildInvoiceDocId(profileId, invoiceNumberSuffix);
   const now = new Date().toISOString();
+  const resolvedLabel = milestoneLabel || resolveMilestoneLabel(invoiceMilestone, [], { billingPeriod });
 
   return {
     id,
@@ -127,7 +159,8 @@ export function buildInvoiceRecord(input) {
     clientCompany: profile?.clientCompany || profile?.clientName || 'Client',
     portalAccessCode: portalAccessCode || null,
     milestoneKey: invoiceMilestone,
-    milestoneLabel: milestoneLabel || resolveMilestoneLabel(invoiceMilestone, []),
+    milestoneLabel: resolvedLabel,
+    billingPeriod: billingPeriod || null,
     subtotal: amounts.subtotal,
     vat: amounts.vat,
     total: amounts.total,
