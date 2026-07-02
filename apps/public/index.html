@@ -112,6 +112,25 @@
             background-color: #0C1626 !important;
             box-shadow: 0 0 15px -3px rgba(20, 184, 166, 0.15);
         }
+        /* Roadmap: packages + modules in one desktop viewport */
+        @media (min-width: 1024px) {
+            .roadmap-viewport {
+                min-height: calc(100vh - 5rem);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding-top: 1.5rem;
+                padding-bottom: 1.5rem;
+            }
+            .roadmap-viewport .roadmap-body {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 1rem;
+            }
+        }
     </style>
 </head>
 <body class="luxury-gradient text-slate-300 antialiased min-h-screen font-sans selection:bg-brandTeal-600 selection:text-white">
@@ -287,148 +306,97 @@
         </div>
     </section>
 
-    <!-- Operational Diagnosis & SOW Roadmap -->
-    <section id="roadmap" class="py-20 border-t border-brandNavy-700/50 bg-brandNavy-955 px-6">
-        <div class="max-w-7xl mx-auto">
-            <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
-                <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Modular Scalability</span>
-                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
-                    How We Fix Operational Leaks — Start With a Package
-                </h2>
-                <p class="text-slate-400 text-sm leading-relaxed font-medium">
-                    Four curated starting packages built from optional modules. Start with a leak scan. Add playbooks, your team workspace, and ongoing care only when you are ready.
-                </p>
-
-                <div class="pt-2">
-                    <button id="openExplainerBtn" class="inline-flex items-center gap-2.5 px-6 py-3 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-brandTeal-500/5 group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current text-brandTeal-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                        </svg>
-                        Watch Explainer Video
-                    </button>
+    <!-- Packages + Modules (one section) -->
+    <section id="roadmap" class="roadmap-viewport py-12 lg:py-0 border-t border-brandNavy-700/50 bg-brandNavy-955 px-4 sm:px-6 scroll-mt-20">
+        <div class="max-w-7xl mx-auto roadmap-body">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 lg:gap-6 mb-6 lg:mb-4">
+                <div class="max-w-2xl">
+                    <span class="text-[9px] font-mono font-bold tracking-[0.2em] text-brandTeal-400 uppercase block">Modular Scalability</span>
+                    <h2 class="text-2xl sm:text-3xl lg:text-[1.75rem] font-serif font-bold text-white leading-tight mt-1">
+                        Pick a Package — Built From Four Modules
+                    </h2>
+                    <p class="text-slate-400 text-xs sm:text-sm leading-snug font-medium mt-2">
+                        Curated starting scopes. Add playbooks, workspace, and care only when you are ready. Exact scope in your SOW.
+                    </p>
                 </div>
+                <button id="openExplainerBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0 self-start lg:self-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    Watch Explainer
+                </button>
             </div>
 
-            <!-- Recommended Packages -->
-            <div id="packages" class="mb-12">
-                <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
-                    <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Recommended Starting Packages</span>
-                    <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">Pick a scope — tune the details in your SOW</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed font-medium">Four curated entry points. Exact task lists and quotes are validated in your Statement of Work.</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1</span></div>
-                            <h4 class="font-bold text-white font-serif">Leak Scan</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">See where time and money leak before you spend on tools or hires.</p>
-                            <p class="text-[10px] text-slate-500">For skeptical owners who want proof first.</p>
-                        </div>
+            <div id="packages">
+                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2 lg:mb-1.5">Recommended packages</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-2.5">
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
+                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1</span></div>
+                        <h4 class="font-bold text-white font-serif text-sm leading-tight">Leak Scan</h4>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">See where time and money leak before you spend on tools or hires.</p>
+                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Skeptical owners who want proof first.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1+2</span></div>
-                            <h4 class="font-bold text-white font-serif">Fix the Flow</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">Find the leaks, then write the playbooks everyone follows.</p>
-                            <p class="text-[10px] text-slate-500">For 15–30 staff with no standard operating rhythm.</p>
-                        </div>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
+                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1+2</span></div>
+                        <h4 class="font-bold text-white font-serif text-sm leading-tight">Fix the Flow</h4>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">Find the leaks, then write the playbooks everyone follows.</p>
+                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">15–30 staff with no operating rhythm.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between ring-1 ring-brandTeal-500/20">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1–3</span><span class="text-[8px] font-mono uppercase bg-brandTeal-500 text-brandNavy-950 px-2 py-0.5 rounded font-bold">Popular</span></div>
-                            <h4 class="font-bold text-white font-serif">Full Transformation</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">From leak scan to live workspace — one phased engagement.</p>
-                            <p class="text-[10px] text-slate-500">For owners ready to invest once end-to-end.</p>
+                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col ring-1 ring-brandTeal-500/20">
+                        <div class="flex gap-1.5 mb-1.5">
+                            <span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1–3</span>
+                            <span class="text-[7px] font-mono uppercase bg-brandTeal-500 text-brandNavy-950 px-1.5 py-px rounded font-bold">Popular</span>
                         </div>
+                        <h4 class="font-bold text-white font-serif text-sm leading-tight">Full Transformation</h4>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">From leak scan to live workspace — one phased engagement.</p>
+                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Owners ready to invest end-to-end.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 4</span></div>
-                            <h4 class="font-bold text-white font-serif">Care Plan</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">Hosting, manager check-ins, and health checks after go-live.</p>
-                            <p class="text-[10px] text-slate-500">For post-build continuity and adoption support.</p>
-                        </div>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
+                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 4</span></div>
+                        <h4 class="font-bold text-white font-serif text-sm leading-tight">Care Plan</h4>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">Hosting, manager check-ins, and health checks after go-live.</p>
+                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Post-build continuity and adoption.</p>
                     </article>
                 </div>
             </div>
 
-            <p id="packageRoiHint" class="text-center text-[10px] font-mono text-slate-500 mb-12 max-w-3xl mx-auto leading-relaxed">
+            <div class="lg:pt-2">
+                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2 lg:mb-1.5">Building blocks</p>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-2">
+                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors" title="Team list, anonymous feedback, workflow review, software audit, waste-to-peso report with 90-day fix list.">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M1</span>
+                        </div>
+                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Business Leak Scan</h3>
+                        <p class="text-[9px] font-mono text-brandTeal-400/90 mt-1 leading-snug">Waste-to-Peso Report</p>
+                    </div>
+                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors" title="Order and purchase playbooks, sign-off roles, how-to videos, Philippines-ready employee handbook.">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M2</span>
+                        </div>
+                        <h3 class="font-bold text-xs text-white font-serif leading-tight">How Your Business Runs</h3>
+                        <p class="text-[9px] font-mono text-brandTeal-400/90 mt-1 leading-snug">Playbooks &amp; Roles Chart</p>
+                    </div>
+                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors" title="Company workspace, up to five approval forms, daily sales log, hands-on training, two-week post go-live support.">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M3</span>
+                        </div>
+                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Your Team Workspace</h3>
+                        <p class="text-[9px] font-mono text-brandTeal-400/90 mt-1 leading-snug">Live Workspace</p>
+                    </div>
+                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors" title="Platform hosting, bi-weekly manager check-ins, semi-annual system health checks.">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M4</span>
+                        </div>
+                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Care Plan</h3>
+                        <p class="text-[9px] font-mono text-brandTeal-400/90 mt-1 leading-snug">Hosting &amp; Check-Ins</p>
+                    </div>
+                </div>
+            </div>
+
+            <p id="packageRoiHint" class="text-center text-[9px] lg:text-[10px] font-mono text-slate-500 mt-4 lg:mt-3 max-w-3xl mx-auto leading-relaxed">
                 At your calculator settings above, first-year recovery target is shown in green — a Full Transformation is often recoverable within that first year for a 15-person team profile.
             </p>
-
-            <!-- Module building blocks -->
-            <div class="pt-12 border-t border-brandNavy-700/50">
-                <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
-                    <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">The Four Modules</span>
-                    <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">What each package is built from</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed font-medium">Every package combines these optional building blocks. Add modules only when the business is ready.</p>
-                </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- MOD 1 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 1</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
-                        </div>
-                        <h3 class="font-bold text-lg text-white font-serif">Business Leak Scan</h3>
-                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
-                            We build a team list with privacy ground rules, open an anonymous staff feedback channel, review real daily workflows, audit duplicate software spend, and deliver a waste-to-peso report with a 90-day fix priority list.
-                        </p>
-                    </div>
-                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Waste-to-Peso Report &amp; Fix Order</span>
-                </div>
-
-                <!-- MOD 2 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 2</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
-                        </div>
-                        <h3 class="font-bold text-lg text-white font-serif">How Your Business Runs</h3>
-                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
-                            We document how orders and purchases move through your business, who signs off at each step, record short how-to videos, and load a Philippines-ready employee rules handbook into your workspace.
-                        </p>
-                    </div>
-                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Order Playbooks &amp; Roles Chart</span>
-                </div>
-
-                <!-- MOD 3 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 3</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
-                        </div>
-                        <h3 class="font-bold text-lg text-white font-serif">Your Team Workspace</h3>
-                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
-                            We launch your company workspace, digitize up to five approval forms, set up a daily sales log, run hands-on training, and stay on call for two weeks after go-live so adoption does not stall.
-                        </p>
-                    </div>
-                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Live Workspace Your Team Can Use</span>
-                </div>
-
-                <!-- MOD 4 -->
-                <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 4</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
-                        </div>
-                        <h3 class="font-bold text-lg text-white font-serif">Care Plan</h3>
-                        <p class="text-slate-405 text-xs leading-relaxed font-medium">
-                            After go-live we handle platform hosting and user care, run bi-weekly operations check-in calls with your managers, and perform semi-annual system health checks.
-                        </p>
-                    </div>
-                    <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Hosting, Check-Ins &amp; Health Checks</span>
-                </div>
-            </div>
-            </div>
-
-            <p class="text-center text-[10px] font-mono text-slate-500 mt-10 max-w-3xl mx-auto leading-relaxed">
-                Exact scope and quote are validated in your Statement of Work after we review your team profile.
+            <p class="text-center text-[9px] font-mono text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                Exact scope and quote validated in your Statement of Work.
             </p>
         </div>
     </section>
