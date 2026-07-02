@@ -546,22 +546,60 @@
             );
         };
 
+        const buildOrgChartTree = (members) => {
+            const nodes = new Map();
+            members.forEach((m) => nodes.set(m.id, { ...m, children: [] }));
+            const roots = [];
+            members.forEach((m) => {
+                const node = nodes.get(m.id);
+                if (!node) return;
+                if (m.managerId && nodes.has(m.managerId) && m.managerId !== m.id) {
+                    nodes.get(m.managerId).children.push(node);
+                } else {
+                    roots.push(node);
+                }
+            });
+            const sortNodes = (list) => {
+                list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                list.forEach((n) => sortNodes(n.children));
+            };
+            sortNodes(roots);
+            return roots;
+        };
+
+        const OrgTreeNode = ({ node, depth = 0 }) => (
+            <div className={depth ? 'ml-5 border-l border-brandNavy-700 pl-3' : ''}>
+                <div className="py-1.5">
+                    <div className="text-sm font-semibold text-slate-100">{node.name || 'Unnamed'}</div>
+                    <div className="text-[11px] text-slate-400">
+                        {[node.role, node.department].filter(Boolean).join(' · ') || 'Role pending'}
+                    </div>
+                </div>
+                {node.children.map((child) => (
+                    <OrgTreeNode key={child.id || child.name} node={child} depth={depth + 1} />
+                ))}
+            </div>
+        );
+
         const OrganizationTab = ({ data }) => {
             const orgMembers = (data.orgChart && data.orgChart.length)
                 ? data.orgChart
-                : (data.roles || []).map((item) => ({
+                : (data.roles || []).map((item, i) => ({
+                    id: `legacy-${i}`,
                     name: item.owner || item.name || 'N/A',
                     role: item.role || item.title || 'N/A',
                     department: '',
                     managerId: null,
                 }));
             const memberById = Object.fromEntries(
-                (data.orgChart || []).filter((m) => m.id).map((m) => [m.id, m.name])
+                orgMembers.filter((m) => m.id).map((m) => [m.id, m.name])
             );
             const managerLabel = (member) => {
                 if (!member.managerId) return '—';
                 return memberById[member.managerId] || '—';
             };
+            const treeMembers = orgMembers.filter((m) => String(m.name || '').trim());
+            const orgTree = buildOrgChartTree(treeMembers);
 
             return (
                 <div className="space-y-8 fade-in">
@@ -571,6 +609,19 @@
                             Your team structure synchronized from the delivery org chart — names, roles, departments, and reporting lines.
                         </p>
                     </div>
+
+                    {orgTree.length > 0 && (
+                        <div className="glass-panel rounded-2xl p-6 border border-brandNavy-800">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300 font-mono flex items-center gap-2 mb-4">
+                                <Icons.Users /> Reporting Structure
+                            </h3>
+                            <div className="space-y-1">
+                                {orgTree.map((node) => (
+                                    <OrgTreeNode key={node.id || node.name} node={node} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="glass-panel rounded-2xl overflow-hidden border border-brandNavy-800">
                         <div className="p-4 bg-brandNavy-955/50 border-b border-brandNavy-800 flex justify-between items-center">
