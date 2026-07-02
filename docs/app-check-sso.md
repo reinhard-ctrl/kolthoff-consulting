@@ -12,7 +12,7 @@ Staff can sign in with **@kolthoff-consulting.com** Google accounts on:
 1. [Authentication → Sign-in method](https://console.firebase.google.com/project/kolthoff-portal/authentication/providers)
 2. Enable **Google** provider
 3. Add authorized domains: `kolthoff-portal.web.app`, `kolthoff-consulting.com`, `www.kolthoff-consulting.com`
-4. Deploy Cloud Function `provisionGoogleStaff` (sets custom claims + `core_users`)
+4. Deploy Cloud Function `provisionGoogleStaff` (sets custom claims + `core_users`). If CI deploy fails on IAM for a new function, re-run the **Firebase Deploy** workflow on `main` after merge — the workflow sets Cloud Run invoker bindings and retries functions deploy.
 
 ### How it works
 

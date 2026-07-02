@@ -143,17 +143,28 @@ jobs:
             --gen2 \
             --quiet
 
-      - name: Deploy to Firebase
+      - name: Deploy hosting and security rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
           npx --yes firebase-tools@15.22.3 deploy \
-            --only hosting,firestore:rules,storage,functions \
+            --only hosting,firestore:rules,storage \
             --project kolthoff-portal \
             --non-interactive \
             --force
 
-      - name: Allow public invoke on login Cloud Functions (skipped if org policy blocks allUsers)
+      - name: Deploy Cloud Functions
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
+        run: |
+          npx --yes firebase-tools@15.22.3 deploy \
+            --only functions \
+            --project kolthoff-portal \
+            --non-interactive \
+            --force
+
+      - name: Allow public invoke on callable Cloud Functions (skipped if org policy blocks allUsers)
         continue-on-error: true
         run: |
           REGION=asia-southeast1
@@ -165,7 +176,7 @@ jobs:
               --role="roles/cloudfunctions.invoker" \
               --quiet || true
           done
-          for SVC in verifyadminpasscode generateportaltoken; do
+          for SVC in verifyadminpasscode generateportaltoken requestworkspacepasswordreset provisiongooglestaff; do
             gcloud run services add-iam-policy-binding "$SVC" \
               --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
@@ -178,3 +189,13 @@ jobs:
             --member="serviceAccount:413958125034-compute@developer.gserviceaccount.com" \
             --role="roles/iam.serviceAccountTokenCreator" \
             --quiet || true
+
+      - name: Retry Cloud Functions deploy after IAM bindings
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
+        run: |
+          npx --yes firebase-tools@15.22.3 deploy \
+            --only functions \
+            --project kolthoff-portal \
+            --non-interactive \
+            --force
