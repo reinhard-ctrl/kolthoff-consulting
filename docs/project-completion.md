@@ -121,9 +121,28 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 - Phase 2 seed tooling: `scripts/seed-firestore/` + `scripts/seed-production-data.sh`
 - Client-side demo auto-seed disabled (`KOLTHOFF_DISABLE_CLIENT_SEED`)
 
+### Go-live complete (confirmed)
+
+- Custom domain `kolthoff-consulting.com` on Firebase Hosting
+- Live production data in Firestore
+- GitHub Pages retired
+
 ---
 
-## After go-live (roadmap)
+## After go-live — see full roadmap
+
+**Holistic migration plan (Phases 2.5 → 5):** [`docs/migration-roadmap.md`](migration-roadmap.md)
+
+Quick summary of what remains:
+
+| Phase | Focus | Status |
+|-------|--------|--------|
+| **2.5** | Ops hardening — client sign/intake/portal, data model unity | **Next** |
+| **3** | SSO, App Check, React migration, tenant provisioning | Planned |
+| **4** | Content, templates, delivery automation (**your focus**) | After 2.5/3 |
+| **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
+
+Legacy bullet list (superseded by migration-roadmap.md):
 
 - Google Workspace SSO (`@kolthoff-consulting.com`)
 - App Check + reCAPTCHA
