@@ -1212,7 +1212,7 @@
           packageAppliedAt: p.packageAppliedAt ?? null
         };
         if (!profileSwitch && !isDirtyRef.current) {
-          const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
+          const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage, p);
           if (p.updatedAt) incomingPayload.updatedAt = p.updatedAt;
           if (H.payloadFingerprint(incomingPayload) === lastSavedFingerprintRef.current) return;
         }
@@ -1277,7 +1277,7 @@
         setPackageAppliedAt(profileState.packageAppliedAt);
         setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
         isHydratingRef.current = true;
-        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
+        const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage, p);
         if (p.updatedAt) hydratedPayload.updatedAt = p.updatedAt;
         syncSavedFingerprint(H.payloadFingerprint(hydratedPayload));
         setSaveStatus('saved');
@@ -1316,8 +1316,8 @@
       }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
 
       const buildCurrentPayload = useCallback(() => {
-        return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
-      }, [activeProfileId, activeProfile.workspaceName, buildCurrentProfileState, annualOperationalLeakage]);
+        return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
+      }, [activeProfileId, activeProfile, buildCurrentProfileState, annualOperationalLeakage]);
 
       const handleSaveToCloud = async (isAuto = false, retryCount = 0) => {
         if (!isAuthed) return false;
@@ -1328,7 +1328,7 @@
           const currentProfilePayload = buildCurrentPayload();
           currentProfilePayload.updatedAt = Date.now();
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await window.firestoreSetDoc(docRef, currentProfilePayload);
+          await window.firestoreSetDoc(docRef, currentProfilePayload, { merge: true });
           syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           if (window.PortalSync?.syncProfileToPortalIfExists) {
             try {
@@ -1566,7 +1566,7 @@
         try {
           const currentProfilePayload = { ...buildCurrentPayload(), workspaceName: trimmedName };
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-          await window.firestoreSetDoc(docRef, currentProfilePayload);
+          await window.firestoreSetDoc(docRef, currentProfilePayload, { merge: true });
           setProfiles(prev => prev.map(p => p.id === activeProfileId ? { ...p, workspaceName: trimmedName, updatedAt: currentProfilePayload.updatedAt } : p));
           syncSavedFingerprint(H.payloadFingerprint(currentProfilePayload));
           setSaveStatus('saved');
