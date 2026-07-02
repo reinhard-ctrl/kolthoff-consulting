@@ -2165,6 +2165,38 @@
         return 'Your roadmap — included now vs. later';
       };
 
+      const renderEngagementPackageCallout = () => {
+        if (!activePackageMeta) return null;
+        const packageModLabels = (activePackageMeta.modules || []).map((mod) =>
+          `MOD ${String(mod).replace(/^mod/i, '')}`
+        );
+        return (
+          <div className="mb-4 border border-brandTeal-200 bg-brandTeal-50/40 rounded-xl p-4 print-pill print-avoid-break text-left font-sans" aria-label="Selected engagement package">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+              <div className="min-w-0">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-brandTeal-700 font-bold block mb-1">Selected engagement package</span>
+                <h5 className="text-sm font-bold text-slate-900 leading-tight">
+                  {activePackageMeta.name}
+                  {packageCustomized ? <span className="text-[10px] font-mono font-bold text-amber-700 normal-case tracking-normal ml-1.5">· customized in planner</span> : null}
+                </h5>
+                <p className="text-[10px] text-slate-600 leading-relaxed mt-1">{activePackageMeta.tagline}</p>
+                {activePackageMeta.forWhom ? (
+                  <p className="text-[9px] text-slate-500 italic leading-snug mt-1.5">Best for: {activePackageMeta.forWhom}</p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-1 shrink-0 lg:max-w-[14rem] lg:justify-end">
+                {packageModLabels.map((label) => (
+                  <span key={label} className="text-[8px] font-mono uppercase bg-white text-brandTeal-700 px-2 py-0.5 rounded border border-brandTeal-200 font-bold">{label}</span>
+                ))}
+              </div>
+            </div>
+            <p className="text-[9px] text-slate-500 leading-relaxed mt-3 pt-3 border-t border-brandTeal-100">
+              The module cards below show what is active in this SOW and the deliverables included under each phase.
+            </p>
+          </div>
+        );
+      };
+
       const invoiceLineItemDescription = useMemo(() => {
         const taxMultiplier = includeTax ? 1.12 : 1.0;
         if (invoiceMilestone === 'full') {
@@ -3023,6 +3055,7 @@
             </div>
             
             <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-4 font-bold text-left font-sans">2. {getModuleCardsHeading()}</h4>
+            {renderEngagementPackageCallout()}
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans print-avoid-break" role="list" aria-label="Project modules">
               {[
