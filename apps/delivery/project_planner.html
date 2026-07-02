@@ -2072,15 +2072,17 @@
         );
       };
 
-      const renderSignaturesBlock = (titleLeft = "Approved and Accepted by:", titleRight = "Submitted by:") => (
+      const renderSignaturesBlock = (titleLeft = "Approved and Accepted by:", titleRight = "Submitted by:", leftParty = null) => {
+        const party = leftParty || { rep: clientRep, company: clientCompany };
+        return (
         <div className="print-quote-signatures pt-8 text-xs font-sans font-semibold border-t border-slate-200 print-divider">
           <div className="grid grid-cols-2 gap-12 sm:gap-24 font-sans">
             {titleLeft ? (
               <div className="space-y-12 flex flex-col justify-between font-sans text-left">
                 <p className="text-slate-700 font-bold font-sans text-left">{titleLeft}</p>
                 <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5 font-sans">
-                  <div className="font-bold text-slate-900">{clientRep || "________________________"}</div>
-                  <div className="text-slate-500 font-sans">Representative, {clientCompany || "________________________"}</div>
+                  <div className="font-bold text-slate-900">{party.rep || "________________________"}</div>
+                  <div className="text-slate-500 font-sans">Representative, {party.company || "________________________"}</div>
                   <div className="text-slate-400 font-sans">Date: ________________________</div>
                 </div>
               </div>
@@ -2097,7 +2099,8 @@
             )}
           </div>
         </div>
-      );
+        );
+      };
 
       const renderEOPTAlertBlock = (isInvoice) => (
         <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg mb-6 text-xs text-slate-800 space-y-2 no-print shadow-sm font-sans text-left">
@@ -3118,7 +3121,7 @@
               </div>
             </div>
 
-            {renderSignaturesBlock(isInv ? "Received & Authorized by:" : null, isInv ? "Prepared & Submitted by:" : "Prepared & Submitted by:")}
+            {renderSignaturesBlock(isInv ? "Received & Authorized by:" : null, isInv ? "Prepared & Submitted by:" : "Prepared & Submitted by:", isInv ? resolvedInvoiceBillTo : null)}
           </div>
         );
 
