@@ -445,6 +445,23 @@
     return pkg?.defaults || {};
   }
 
+  function resolveInvoiceBillTo(state) {
+    if (state.useCustomInvoiceBillTo) {
+      return {
+        company: state.invoiceBillToCompany || '',
+        rep: state.invoiceBillToRep || '',
+        address: state.invoiceBillToAddress || '',
+        tin: state.invoiceBillToTin || '',
+      };
+    }
+    return {
+      company: state.clientCompany || '',
+      rep: state.clientRep || '',
+      address: state.clientAddress || '',
+      tin: state.clientTin || '',
+    };
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -495,6 +512,11 @@
       customInvoiceAmount: state.customInvoiceAmount,
       invoiceNumberSuffix: state.invoiceNumberSuffix,
       invoiceDueDate: state.invoiceDueDate,
+      useCustomInvoiceBillTo: Boolean(state.useCustomInvoiceBillTo),
+      invoiceBillToCompany: state.invoiceBillToCompany || '',
+      invoiceBillToRep: state.invoiceBillToRep || '',
+      invoiceBillToAddress: state.invoiceBillToAddress || '',
+      invoiceBillToTin: state.invoiceBillToTin || '',
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
@@ -528,15 +550,18 @@
   function validatePrintReadiness(view, ctx) {
     const issues = [];
     const warnings = [];
-
-    if (!ctx.clientCompany?.trim()) issues.push('Company legal name is missing.');
-    if (!ctx.clientRep?.trim()) issues.push('Representative name is missing.');
+    const billTo = resolveInvoiceBillTo(ctx);
 
     if (view === 'invoice') {
+      if (!billTo.company?.trim()) issues.push('Invoice bill-to company name is missing.');
+      if (!billTo.rep?.trim()) issues.push('Invoice bill-to representative name is missing.');
       if (!ctx.invoiceDueDate?.trim()) issues.push('Invoice due date is missing.');
-      if (ctx.clientTin && !ctx.validateTIN(ctx.clientTin)) issues.push('Client TIN format is invalid.');
-      if (!ctx.clientAddress?.trim()) warnings.push('Registered address is empty.');
+      if (billTo.tin && !ctx.validateTIN(billTo.tin)) issues.push('Invoice bill-to TIN format is invalid.');
+      if (!billTo.address?.trim()) warnings.push('Invoice bill-to registered address is empty.');
       if (ctx.tasks.filter((t) => t.selected).length === 0) warnings.push('No modules/tasks are selected.');
+    } else {
+      if (!ctx.clientCompany?.trim()) issues.push('Company legal name is missing.');
+      if (!ctx.clientRep?.trim()) issues.push('Representative name is missing.');
     }
 
     if (view === 'package') {
@@ -644,6 +669,7 @@
     buildProfilePayload,
     payloadFingerprint,
     validatePrintReadiness,
+    resolveInvoiceBillTo,
     saveLocalDraft,
     loadLocalDraft,
     clearLocalDraft,

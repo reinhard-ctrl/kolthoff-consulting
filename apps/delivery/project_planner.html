@@ -1016,6 +1016,30 @@
       const [customInvoiceAmount, setCustomInvoiceAmount] = useState(activeProfile.customInvoiceAmount || 120000);
       const [invoiceNumberSuffix, setInvoiceNumberSuffix] = useState(activeProfile.invoiceNumberSuffix || '01');
       const [invoiceDueDate, setInvoiceDueDate] = useState(activeProfile.invoiceDueDate || '');
+      const [useCustomInvoiceBillTo, setUseCustomInvoiceBillTo] = useState(Boolean(activeProfile.useCustomInvoiceBillTo));
+      const [invoiceBillToCompany, setInvoiceBillToCompany] = useState(activeProfile.invoiceBillToCompany || '');
+      const [invoiceBillToRep, setInvoiceBillToRep] = useState(activeProfile.invoiceBillToRep || '');
+      const [invoiceBillToAddress, setInvoiceBillToAddress] = useState(activeProfile.invoiceBillToAddress || '');
+      const [invoiceBillToTin, setInvoiceBillToTin] = useState(activeProfile.invoiceBillToTin || '');
+
+      const resolvedInvoiceBillTo = useMemo(() => H.resolveInvoiceBillTo({
+        useCustomInvoiceBillTo,
+        invoiceBillToCompany,
+        invoiceBillToRep,
+        invoiceBillToAddress,
+        invoiceBillToTin,
+        clientCompany,
+        clientRep,
+        clientAddress,
+        clientTin,
+      }), [useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, clientCompany, clientRep, clientAddress, clientTin]);
+
+      const copyContractClientToInvoiceBillTo = () => {
+        setInvoiceBillToCompany(clientCompany || '');
+        setInvoiceBillToRep(clientRep || '');
+        setInvoiceBillToAddress(clientAddress || '');
+        setInvoiceBillToTin(clientTin || '');
+      };
 
       const [activePresets, setActivePresets] = useState(['mod1']);
       const [selectedPackageId, setSelectedPackageId] = useState('leak-scan');
@@ -1072,6 +1096,9 @@
           ndaEffectiveDate: p.ndaEffectiveDate || '', ndaPurpose: p.ndaPurpose || '', ndaTerm: p.ndaTerm || '5 (Five) Years',
           ndaJurisdiction: p.ndaJurisdiction || 'Taytay, Rizal, Philippines', invoiceMilestone: p.invoiceMilestone || 'full',
           customInvoiceAmount: p.customInvoiceAmount || 120000, invoiceNumberSuffix: p.invoiceNumberSuffix || '01', invoiceDueDate: p.invoiceDueDate || '',
+          useCustomInvoiceBillTo: Boolean(p.useCustomInvoiceBillTo),
+          invoiceBillToCompany: p.invoiceBillToCompany || '', invoiceBillToRep: p.invoiceBillToRep || '',
+          invoiceBillToAddress: p.invoiceBillToAddress || '', invoiceBillToTin: p.invoiceBillToTin || '',
           staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
@@ -1130,6 +1157,11 @@
         setCustomInvoiceAmount(profileState.customInvoiceAmount);
         setInvoiceNumberSuffix(profileState.invoiceNumberSuffix);
         setInvoiceDueDate(profileState.invoiceDueDate);
+        setUseCustomInvoiceBillTo(profileState.useCustomInvoiceBillTo);
+        setInvoiceBillToCompany(profileState.invoiceBillToCompany);
+        setInvoiceBillToRep(profileState.invoiceBillToRep);
+        setInvoiceBillToAddress(profileState.invoiceBillToAddress);
+        setInvoiceBillToTin(profileState.invoiceBillToTin);
         setPrincipalRate(profileState.principalRate);
         setSeniorRate(profileState.seniorRate);
         setAssociateRate(profileState.associateRate);
@@ -1172,9 +1204,10 @@
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
+        useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1285,6 +1318,9 @@
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
         setCustomInvoiceAmount(d.customInvoiceAmount || 120000); setInvoiceNumberSuffix(d.invoiceNumberSuffix || '01'); setInvoiceDueDate(d.invoiceDueDate || '');
+        setUseCustomInvoiceBillTo(Boolean(d.useCustomInvoiceBillTo));
+        setInvoiceBillToCompany(d.invoiceBillToCompany || ''); setInvoiceBillToRep(d.invoiceBillToRep || '');
+        setInvoiceBillToAddress(d.invoiceBillToAddress || ''); setInvoiceBillToTin(d.invoiceBillToTin || '');
         setStaffCount(d.staffCount ?? 15); setMonthlySalary(d.monthlySalary ?? 25000); setWastedHours(d.wastedHours ?? 2.0);
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
@@ -1460,7 +1496,9 @@
       
       const handlePrint = () => {
         const validation = H.validatePrintReadiness(view, {
-          clientCompany, clientRep, clientAddress, clientTin, invoiceDueDate, ndaEffectiveDate, tasks,
+          clientCompany, clientRep, clientAddress, clientTin,
+          useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          invoiceDueDate, ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
           validateTIN: validatePhilippineTIN
         });
@@ -1997,17 +2035,24 @@
         </div>
       );
 
-      const renderCustomerBlock = (isInvoice = false, isRoadmap = false) => (
+      const renderCustomerBlock = (isInvoice = false, isRoadmap = false) => {
+        const party = isInvoice ? resolvedInvoiceBillTo : {
+          company: clientCompany,
+          rep: clientRep,
+          address: clientAddress,
+          tin: clientTin,
+        };
+        return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-sm font-sans font-medium border-b border-slate-200 pb-6 print-divider text-slate-700">
           <div className="space-y-1.5 text-left font-sans">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
               {isInvoice ? "SOLD TO (Customer Corporate Registry):" : "ENGAGEMENT SPONSOR:"}
             </span>
-            <div className="font-bold text-slate-900 text-base">{clientRep || "________________________"}</div>
-            <div className="text-slate-700 font-bold font-sans">{clientCompany || "________________________"}</div>
-            {(!isRoadmap || isInvoice) && <div className="text-xs text-slate-500 font-mono">TIN: {clientTin || "________________________"}</div>}
-            {!isRoadmap && !isInvoice && clientAddress && <div className="text-xs text-slate-500 leading-snug mt-1">{clientAddress}</div>}
-            {isInvoice && <div className="text-xs text-slate-500 leading-snug mt-1">{clientAddress || "________________________"}</div>}
+            <div className="font-bold text-slate-900 text-base">{party.rep || "________________________"}</div>
+            <div className="text-slate-700 font-bold font-sans">{party.company || "________________________"}</div>
+            {(!isRoadmap || isInvoice) && <div className="text-xs text-slate-500 font-mono">TIN: {party.tin || "________________________"}</div>}
+            {!isRoadmap && !isInvoice && party.address && <div className="text-xs text-slate-500 leading-snug mt-1">{party.address}</div>}
+            {isInvoice && <div className="text-xs text-slate-500 leading-snug mt-1">{party.address || "________________________"}</div>}
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-600"><span className="font-semibold text-slate-800">Primary Sponsor:</span> {proposalSponsor || "________________________"}</div>}
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-600"><span className="font-semibold text-slate-800">Target Kickoff:</span> {targetStartDate || "________________________"}</div>}
           </div>
@@ -2022,7 +2067,8 @@
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-400 font-sans">Proposal Date: {quoteDate}</div>}
           </div>
         </div>
-      );
+        );
+      };
 
       const renderSignaturesBlock = (titleLeft = "Approved and Accepted by:", titleRight = "Submitted by:") => (
         <div className="print-quote-signatures pt-8 text-xs font-sans font-semibold border-t border-slate-200 print-divider">
@@ -2533,6 +2579,52 @@
                 </fieldset>
               )}
 
+              {isInvoice && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Invoice Bill-To (SOLD TO)</legend>
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-brandNavy-800 hover:border-brandNavy-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useCustomInvoiceBillTo}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        setUseCustomInvoiceBillTo(enabled);
+                        if (enabled && !invoiceBillToCompany && !invoiceBillToRep) copyContractClientToInvoiceBillTo();
+                      }}
+                      className="mt-0.5 accent-brandTeal-500 shrink-0"
+                    />
+                    <span className="text-[11px] text-slate-300 leading-relaxed">Bill to a different company than the contract client (Documents tab)</span>
+                  </label>
+                  {!useCustomInvoiceBillTo && (
+                    <p className="text-[10px] text-slate-500 leading-relaxed border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-900/50">
+                      Invoice uses the contract client from Documents: <strong className="text-slate-300">{clientCompany || '—'}</strong>
+                      {clientRep ? ` · ${clientRep}` : ''}
+                    </p>
+                  )}
+                  {useCustomInvoiceBillTo && (
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={copyContractClientToInvoiceBillTo}
+                        className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
+                      >
+                        Copy from contract client
+                      </button>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Bill-To Company Legal Name</label><input type="text" value={invoiceBillToCompany} onChange={(e) => setInvoiceBillToCompany(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Bill-To Representative Name</label><input type="text" value={invoiceBillToRep} onChange={(e) => setInvoiceBillToRep(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans font-semibold" /></div>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans font-semibold">Bill-To Registered Address</label><input type="text" value={invoiceBillToAddress} onChange={(e) => setInvoiceBillToAddress(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
+                      <div>
+                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left">
+                          Bill-To Company TIN (EOPT)
+                          {invoiceBillToTin && <span className={`ml-2 text-[9px] font-mono px-1.5 py-0.5 rounded ${validatePhilippineTIN(invoiceBillToTin) ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>{validatePhilippineTIN(invoiceBillToTin) ? '✓ Valid' : '✗ Invalid'}</span>}
+                        </label>
+                        <input type="text" value={invoiceBillToTin} onChange={(e) => setInvoiceBillToTin(formatTINInput(e.target.value))} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 font-mono focus:outline-none focus:border-brandTeal-500" />
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
+              )}
+
               {/* Dynamic Compliance & SLA Configuration Controls */}
               {(activePMO || activeGov) && (isPackage || isQuoteOrInvoice) && (
                 <div className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-4 text-left font-sans font-semibold">
@@ -2564,8 +2656,8 @@
                 </div>
               )}
 
-              {/* Company Block */}
-              {(isNda || isProposal || isQuoteOrInvoice || isPackage) && (
+              {/* Company Block — contract client (Documents / NDA); invoice bill-to is separate above */}
+              {(isNda || isPackage) && (
                 <div className="space-y-3 text-left font-sans">
                   {isNda && (
                     <>
@@ -2576,11 +2668,11 @@
                   <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Company Legal Name</label><input type="text" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
                   <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Representative Name</label><input type="text" value={clientRep} onChange={(e) => setClientRep(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans font-semibold" /></div>
                   
-                  {(isProposal || isPackage) && <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Project Sponsor Title</label><input type="text" value={proposalSponsor} onChange={(e) => setProposalSponsor(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans" /></div>}
+                  {isPackage && <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Project Sponsor Title</label><input type="text" value={proposalSponsor} onChange={(e) => setProposalSponsor(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans" /></div>}
                   
-                  {(isQuoteOrInvoice || isPackage) && <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans font-semibold">Registered Address</label><input type="text" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>}
+                  {isPackage && <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans font-semibold">Registered Address</label><input type="text" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>}
                   
-                  {(isQuoteOrInvoice || isPackage) && (
+                  {isPackage && (
                     <div>
                       <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left">
                         Company TIN (EOPT)
