@@ -263,6 +263,58 @@
       visibility: visible !important;
     }
 
+    /* Compact top chrome — more vertical room for planner / doc preview */
+    .planner-main-header .planner-header-inner {
+      min-height: 0;
+      padding-top: 0.375rem;
+      padding-bottom: 0.375rem;
+    }
+
+    .planner-workspace-toolbar {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    .planner-workspace-toolbar .planner-toolbar-inner {
+      gap: 0.5rem;
+    }
+
+    html.kolthoff-embed .planner-main-header .planner-header-inner {
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+
+    html.kolthoff-embed .planner-main-header .planner-header-inner nav {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    html.kolthoff-embed .planner-workspace-toolbar {
+      padding-top: 0.375rem;
+      padding-bottom: 0.375rem;
+    }
+
+    html.kolthoff-embed .planner-workspace-context h2 {
+      font-size: 0.8125rem;
+      line-height: 1.2;
+    }
+
+    html.kolthoff-embed .planner-workspace-context .planner-workspace-meta {
+      display: none;
+    }
+
+    html.kolthoff-embed .planner-workspace-context .planner-workspace-label {
+      display: none;
+    }
+
+    html.kolthoff-embed .planner-workspace-switcher {
+      padding: 0.375rem;
+    }
+
+    html.kolthoff-embed .planner-workspace-actions {
+      gap: 0.375rem;
+    }
+
     /* Print overrides must come after screen layout rules so they win at print time. */
     @media print {
       @page { size: auto; margin: 14mm 12mm; }
@@ -3347,78 +3399,78 @@
       const saveStatusClass = saveStatus === 'saved' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : saveStatus === 'saving' ? 'text-brandTeal-300 bg-brandTeal-500/10 border-brandTeal-500/20' : saveStatus === 'unsaved' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
 
       const renderWorkspaceToolbar = () => (
-        <div className="planner-workspace-toolbar bg-brandNavy-900 border-b border-brandNavy-750 py-3 px-6 sm:px-8 no-print shadow-xl shrink-0">
-          <div className="max-w-[1600px] mx-auto space-y-3 font-sans text-xs">
+        <div className="planner-workspace-toolbar bg-brandNavy-900 border-b border-brandNavy-750 px-4 sm:px-6 no-print shadow-xl shrink-0">
+          <div className="max-w-[1600px] mx-auto planner-toolbar-inner flex flex-col font-sans text-xs">
             {/* Row 1 — Active workspace context */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? 'Cloud connected' : 'Connecting…'} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 planner-workspace-context">
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isAuthed ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? 'Cloud connected' : 'Connecting…'} />
                 <div className="min-w-0">
-                  <span className="text-[9px] font-mono tracking-widest uppercase text-brandTeal-500 font-bold">Active Workspace</span>
-                  <h2 className="text-sm sm:text-base font-bold text-white truncate leading-tight">{getWorkspaceLabel(activeProfile)}</h2>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{clientCompany}{quoteId ? ` · ${quoteId}` : ''}{activePackageMeta ? ` · ${activePackageMeta.name}${packageCustomized ? ' (modified)' : ''}` : ''}</p>
+                  <span className="planner-workspace-label text-[8px] font-mono tracking-widest uppercase text-brandTeal-500 font-bold">Active Workspace</span>
+                  <h2 className="text-sm font-bold text-white truncate leading-tight">{getWorkspaceLabel(activeProfile)}</h2>
+                  <p className="planner-workspace-meta text-[9px] text-slate-500 truncate">{clientCompany}{quoteId ? ` · ${quoteId}` : ''}{activePackageMeta ? ` · ${activePackageMeta.name}${packageCustomized ? ' (modified)' : ''}` : ''}</p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
+                <div className="flex flex-wrap gap-0.5">
                   {['mod1', 'mod2', 'mod3', 'mod4'].map((mod) => {
                     const active = activePresets.includes(mod);
                     return (
-                      <span key={mod} className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase border ${active ? 'bg-brandTeal-500/15 text-brandTeal-300 border-brandTeal-500/30' : 'bg-brandNavy-950 text-slate-600 border-brandNavy-800'}`}>{mod.replace('mod', 'MOD ')}</span>
+                      <span key={mod} className={`px-1.5 py-px rounded text-[8px] font-mono font-bold uppercase border ${active ? 'bg-brandTeal-500/15 text-brandTeal-300 border-brandTeal-500/30' : 'bg-brandNavy-950 text-slate-600 border-brandNavy-800'}`}>{mod.replace('mod', 'MOD ')}</span>
                     );
                   })}
                 </div>
-                <span className={`font-mono text-[10px] font-bold px-2.5 py-1 rounded-md border ${saveStatusClass}`}>{saveStatusLabel}</span>
-                <button onClick={() => handleSaveToCloud(false)} disabled={isSaving || !isAuthed} className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold rounded-lg text-[11px] uppercase tracking-wider shadow-md disabled:opacity-50 shrink-0">
+                <span className={`font-mono text-[9px] font-bold px-2 py-0.5 rounded-md border ${saveStatusClass}`}>{saveStatusLabel}</span>
+                <button onClick={() => handleSaveToCloud(false)} disabled={isSaving || !isAuthed} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-bold rounded-lg text-[10px] uppercase tracking-wider shadow-md disabled:opacity-50 shrink-0">
                   {isSaving ? 'Syncing…' : 'Save SOW'}
                 </button>
               </div>
             </div>
 
             {saveError && (
-              <p className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{saveError}</p>
+              <p className="text-[9px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-2.5 py-1.5">{saveError}</p>
             )}
 
             {/* Row 2 — Switch workspace */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_2fr_auto] gap-2 p-3 bg-brandNavy-950/70 border border-brandNavy-800 rounded-xl items-center">
+            <div className="planner-workspace-switcher grid grid-cols-1 md:grid-cols-[1fr_auto_2fr_auto] gap-1.5 p-2 bg-brandNavy-950/70 border border-brandNavy-800 rounded-lg items-center">
               <input
                 type="search"
                 value={workspaceSearch}
                 onChange={(e) => setWorkspaceSearch(e.target.value)}
                 placeholder="Filter workspaces…"
-                className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-[11px] text-slate-300 focus:outline-none focus:border-brandTeal-500"
+                className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-md px-2.5 py-1.5 text-[10px] text-slate-300 focus:outline-none focus:border-brandTeal-500"
               />
-              <select value={workspaceSort} onChange={(e) => setWorkspaceSort(e.target.value)} className="w-full md:w-auto bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-2.5 py-2 text-[10px] font-bold text-slate-300 focus:outline-none focus:border-brandTeal-500" aria-label="Sort workspaces">
+              <select value={workspaceSort} onChange={(e) => setWorkspaceSort(e.target.value)} className="w-full md:w-auto bg-brandNavy-900 border border-brandNavy-700 rounded-md px-2 py-1.5 text-[9px] font-bold text-slate-300 focus:outline-none focus:border-brandTeal-500" aria-label="Sort workspaces">
                 <option value="modified">Recent</option>
                 <option value="name">A–Z</option>
               </select>
-              <select value={activeProfileId} onChange={(e) => requestProfileSwitch(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-brandTeal-500 truncate" aria-label="Select workspace">
+              <select value={activeProfileId} onChange={(e) => requestProfileSwitch(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-md px-2.5 py-1.5 text-[11px] font-semibold text-slate-200 focus:outline-none focus:border-brandTeal-500 truncate" aria-label="Select workspace">
                 {displayedProfiles.map(p => <option key={p.id} value={p.id}>{getWorkspaceLabel(p)}</option>)}
               </select>
-              <button onClick={openRenameWorkspace} disabled={!isAuthed} title="Rename workspace label" className="w-full md:w-auto px-3 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg text-[10px] uppercase flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0">
+              <button onClick={openRenameWorkspace} disabled={!isAuthed} title="Rename workspace label" className="w-full md:w-auto px-2.5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-md text-[9px] uppercase flex items-center justify-center gap-1 disabled:opacity-50 shrink-0">
                 <IconEdit /> Rename
               </button>
             </div>
 
             {/* Row 3 — Grouped actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-[10px]">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-slate-500 font-mono uppercase tracking-wider font-bold mr-1 w-14 shrink-0">Manage</span>
-                <button onClick={handleCreateNewWorkspace} className="px-2.5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg uppercase flex items-center gap-1"><IconPlus /> New</button>
-                <button onClick={handleCloneCurrentWorkspace} className="px-2.5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg uppercase">Clone</button>
+            <div className="planner-workspace-actions flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[9px]">
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="text-slate-500 font-mono uppercase tracking-wider font-bold mr-0.5 w-12 shrink-0">Manage</span>
+                <button onClick={handleCreateNewWorkspace} className="px-2 py-1 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-md uppercase flex items-center gap-1"><IconPlus /> New</button>
+                <button onClick={handleCloneCurrentWorkspace} className="px-2 py-1 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-md uppercase">Clone</button>
                 {profiles.length > 1 && (
-                  <button onClick={() => setShowDeleteConfirm(true)} className="px-2.5 py-1.5 bg-red-950/30 text-rose-400 border border-red-900/40 font-bold rounded-lg uppercase">Delete</button>
+                  <button onClick={() => setShowDeleteConfirm(true)} className="px-2 py-1 bg-red-950/30 text-rose-400 border border-red-900/40 font-bold rounded-md uppercase">Delete</button>
                 )}
               </div>
-              <div className="hidden sm:block w-px h-7 bg-brandNavy-700 shrink-0" aria-hidden="true" />
-              <div className="flex flex-wrap items-center gap-1.5 flex-1">
-                <span className="text-slate-500 font-mono uppercase tracking-wider font-bold mr-1 w-14 shrink-0">Data</span>
-                <select onChange={handleImportFromCRM} className="px-2.5 py-1.5 bg-brandNavy-800 text-slate-300 border border-brandNavy-700 rounded-lg uppercase font-bold focus:outline-none cursor-pointer max-w-[180px]">
+              <div className="hidden sm:block w-px h-5 bg-brandNavy-700 shrink-0" aria-hidden="true" />
+              <div className="flex flex-wrap items-center gap-1 flex-1">
+                <span className="text-slate-500 font-mono uppercase tracking-wider font-bold mr-0.5 w-12 shrink-0">Data</span>
+                <select onChange={handleImportFromCRM} className="px-2 py-1 bg-brandNavy-800 text-slate-300 border border-brandNavy-700 rounded-md uppercase font-bold focus:outline-none cursor-pointer max-w-[160px]">
                   <option value="">CRM deal…</option>
                   {crmDeals.map(d => <option key={d.id} value={d.id}>{d.leadName}</option>)}
                 </select>
-                <button onClick={() => importFileRef.current?.click()} className="px-2.5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg uppercase">Import JSON</button>
-                <button onClick={handleExportWorkspace} className="px-2.5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-lg uppercase">Export JSON</button>
+                <button onClick={() => importFileRef.current?.click()} className="px-2 py-1 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-md uppercase">Import JSON</button>
+                <button onClick={handleExportWorkspace} className="px-2 py-1 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 border border-brandNavy-700 font-bold rounded-md uppercase">Export JSON</button>
                 <input ref={importFileRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportWorkspaceFile} />
               </div>
             </div>
@@ -3429,23 +3481,23 @@
       return (
         <div className="font-sans h-full min-h-0 overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans">
           <header className="planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0">
-            <div className="max-w-[1600px] mx-auto px-6 sm:px-8 min-h-20 py-2 flex items-center justify-between flex-wrap gap-x-4 gap-y-2">
-              <div data-app-chrome className="flex items-center gap-3">
-                <svg aria-hidden="true" className="w-10 h-10 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div className="planner-header-inner max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
+              <div data-app-chrome className="flex items-center gap-2">
+                <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="url(#hdr-shield-grad)" strokeWidth="4.5" strokeLinejoin="round" />
                   <path d="M36 50 L46 60 L66 36" stroke="url(#hdr-check-grad)" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <div className="text-left font-sans font-bold">
-                  <span className="font-sans font-extrabold tracking-wider text-sm sm:text-base uppercase block text-white leading-none">
+                  <span className="font-sans font-extrabold tracking-wider text-xs sm:text-sm uppercase block text-white leading-none">
                     KOLTHoff <span className="text-brandTeal-500">CONSULTING</span>
                   </span>
-                  <span className="text-[8px] text-brandTeal-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold font-sans">Internal Project Workbook</span>
+                  <span className="text-[7px] text-brandTeal-400 font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans">Internal Project Workbook</span>
                 </div>
               </div>
               
-              <nav aria-label="Main Navigation" className="flex items-center flex-wrap gap-2 font-sans font-semibold">
+              <nav aria-label="Main Navigation" className="flex items-center flex-wrap gap-1.5 font-sans font-semibold">
                 {['nda', 'packages', 'sandbox', 'package', 'invoice'].map((tab, idx) => (
-                  <button key={tab} aria-pressed={view === tab} onClick={() => setView(tab)} className={`px-2.5 py-1.5 rounded font-mono text-[9px] uppercase font-bold border tracking-wider transition-all ${view === tab ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-500 font-extrabold shadow-lg shadow-brandTeal-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700 hover:bg-brandNavy-800 font-bold'}`}>
+                  <button key={tab} aria-pressed={view === tab} onClick={() => setView(tab)} className={`px-2 py-1 rounded font-mono text-[8px] uppercase font-bold border tracking-wider transition-all ${view === tab ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-500 font-extrabold shadow-md shadow-brandTeal-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700 hover:bg-brandNavy-800 font-bold'}`}>
                     {idx + 1}. {tab === 'sandbox' ? 'Planner' : tab === 'packages' ? 'Packages' : tab === 'package' ? 'Documents' : tab}
                   </button>
                 ))}
@@ -3602,7 +3654,7 @@
             </div>
           )}
 
-          <main id="app-main" className={`max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans ${view === 'packages' ? 'p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'}`}>
+          <main id="app-main" className={`max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans ${view === 'packages' ? 'p-2 lg:p-3' : view === 'sandbox' || view === 'package' ? 'p-2 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'}`}>
             {view === 'packages' ? (
               <div className="packages-view no-print animate-fade-in font-sans text-left">
                 <div className="packages-view-header mb-2 lg:mb-3">
