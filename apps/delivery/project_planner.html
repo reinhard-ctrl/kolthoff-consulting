@@ -12,6 +12,7 @@
   <!-- Firebase Module Initialization -->
       <script type="module" src="../../shared/firebase-init.js?v=20250702-firebase-v2"></script>
     <script type="module" src="../../shared/auth-gate.js?v=20250702-firebase-v2"></script>
+    <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -862,6 +863,12 @@
 
       // --- FIREBASE INITIALIZATION & SYNC ---
       useEffect(() => {
+        if (window.FirebaseErrors?.isFileProtocol?.()) {
+          setAuthErrorDetails('auth/requests-from-referer-null-are-blocked');
+        }
+      }, []);
+
+      useEffect(() => {
         let cancelled = false;
         let checkInterval;
         const timeout = setTimeout(() => {
@@ -889,7 +896,7 @@
                 console.error("Firebase Auth Error Caught:", e);
                 if (!cancelled) {
                   setIsAuthed(false);
-                  setAuthErrorDetails(e.message || "Authentication failed.");
+                  setAuthErrorDetails(e?.code || e.message || "Authentication failed.");
                 }
               }
             };
@@ -3225,18 +3232,30 @@
             </div>
           )}
 
-          {authErrorDetails && (
+          {authErrorDetails && (() => {
+            const help = window.FirebaseErrors?.getFirebaseConnectionHelp(authErrorDetails) || {
+              title: 'Firebase Connection Error',
+              summary: authErrorDetails,
+              steps: [],
+            };
+            return (
             <div className="bg-rose-500/10 border-b border-rose-500/30 px-6 py-3 no-print text-left font-sans animate-fade-in">
               <div className="max-w-[1600px] mx-auto flex items-start gap-3 font-sans">
                 <IconAlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <div className="text-xs text-rose-400 font-medium text-left font-sans">
-                  <strong className="block font-bold text-rose-300 mb-0.5 font-sans">Firebase Connection Error</strong>
-                  Your API Key restricts requests from this domain or local file path (`auth/requests-from-referer-null-are-blocked`). <br/>
-                  <span className="text-slate-300 font-normal mt-1 block">To fix: Go to Google Cloud Console ➔ APIs & Services ➔ Credentials ➔ API Key (`AIzaSyD...`). Under "Application restrictions", temporarily remove "HTTP referrers", add `localhost`, or test this using a local web server (like VS Code Live Server) instead of opening it directly from your file system. Your edits are still saved locally as a draft until cloud sync works.</span>
+                  <strong className="block font-bold text-rose-300 mb-0.5 font-sans">{help.title}</strong>
+                  <span className="text-slate-300 font-normal block leading-relaxed">{help.summary}</span>
+                  {help.steps.length > 0 && (
+                    <ul className="text-slate-400 font-normal mt-2 space-y-1 list-disc pl-4 leading-relaxed">
+                      {help.steps.map((step, i) => <li key={i}>{step}</li>)}
+                    </ul>
+                  )}
+                  <span className="text-slate-500 font-normal mt-2 block">Local edits are still saved as a draft until cloud sync works.</span>
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {showDeleteConfirm && (
             <div className="fixed inset-0 bg-brandNavy-955/80 z-[1000] backdrop-blur-sm flex items-center justify-center p-4 no-print animate-fade-in text-center font-sans">
