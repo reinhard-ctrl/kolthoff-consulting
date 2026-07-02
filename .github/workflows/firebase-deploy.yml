@@ -20,6 +20,8 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci
       - run: npm run build
       - run: npm run test:rules
@@ -38,6 +40,8 @@ jobs:
         with:
           node-version: '22.23.1'
           cache: 'npm'
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci --include=dev && npm run build
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
@@ -118,6 +122,8 @@ jobs:
         with:
           node-version: '22.23.1'
           cache: 'npm'
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci --include=dev && npm run build
         env:
           RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
