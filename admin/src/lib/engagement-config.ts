@@ -86,7 +86,6 @@ export const MOD_CATEGORIES: Record<string, string> = Object.fromEntries(
   MODULES.map((m) => [m.id, m.category]),
 );
 
-export const INTAKE_MAPPED_TARGETS = ['subSaaS', 'roles', 'customAssets'] as const;
 
 export function getModuleByCategory(category?: string | null) {
   if (!category) return undefined;

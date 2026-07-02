@@ -43,7 +43,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     id: 'delivery',
     label: 'Delivery Suite',
     items: [
-      { id: 'intake', label: 'Intake Center', type: 'route', path: '/intake' },
+      { id: 'org-chart', label: 'Org Chart', type: 'route', path: '/org-chart' },
       { id: 'diagnosis-reports', label: 'Diagnosis Reports', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
       { id: 'policy-studio', label: 'Policy Studio', type: 'embed', href: '/apps/operations/policy_studio.html' },
       { id: 'workflow-builder', label: 'Workflow Builder', type: 'embed', href: '/apps/operations/workflow_builder.html' },
@@ -72,7 +72,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Client Experience',
     items: [
       { id: 'client-portal', label: 'Client Portal', type: 'embed', href: '/apps/public/portal.html', openInNewTab: true },
-      { id: 'client-intake', label: 'Client Intake Form', type: 'embed', href: '/apps/public/client_intake.html', openInNewTab: true },
       { id: 'marketing', label: 'Marketing Site', type: 'embed', href: '/', openInNewTab: true },
     ],
   },

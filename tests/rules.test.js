@@ -124,12 +124,6 @@ async function run() {
     await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/OTHER-2026').set({
       companyName: 'Other Client',
     });
-    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').set({
-      title: 'Intake',
-      fields: [],
-      status: 'sent',
-      responses: [],
-    });
   });
 
   const portalClient = testEnv.authenticatedContext('portal_aparri', {
@@ -145,19 +139,6 @@ async function run() {
   );
   await assertFails(
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/APARRI-2026').get()
-  );
-
-  // Anonymous users can complete intake forms (responses + status only)
-  await assertSucceeds(
-    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').update({
-      responses: [{ id: 'r1', name: 'Jane' }],
-      status: 'completed',
-    })
-  );
-  await assertFails(
-    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').update({
-      title: 'Hijacked',
-    })
   );
 
   console.log('All rules tests passed.');

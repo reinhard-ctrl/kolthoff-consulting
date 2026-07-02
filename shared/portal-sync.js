@@ -26,7 +26,7 @@
       category: 'MOD 1',
       date: new Date().toISOString().slice(0, 10),
       type: 'link',
-      gDriveLink: String(row.reason || 'Synced from SOW / intake'),
+      gDriveLink: String(row.reason || 'Synced from SOW / diagnosis'),
     }));
   }
 
@@ -39,6 +39,19 @@
       type: 'link',
       gDriveLink: String(row.link || ''),
     }));
+  }
+
+  function mapOrgChartToPortal(orgChart) {
+    const members = orgChart?.members || [];
+    return members
+      .filter((m) => String(m.name || '').trim())
+      .map((m) => ({
+        id: String(m.id || ''),
+        name: String(m.name || '').trim(),
+        role: String(m.role || '').trim(),
+        department: String(m.department || '').trim(),
+        managerId: m.managerId ? String(m.managerId) : null,
+      }));
   }
 
   function mapRolesToActionItems(roles) {
@@ -109,9 +122,8 @@
       patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
     }
 
-    if (options?.syncRoles && profile.roles?.length) {
-      const fromRoles = mapRolesToActionItems(profile.roles);
-      patch.actionItems = mergeActionItems(existing?.actionItems || [], fromRoles);
+    if (options?.syncOrgChart) {
+      patch.orgChart = mapOrgChartToPortal(profile.orgChart);
     }
 
     return patch;
@@ -190,6 +202,7 @@
     computeSaasAnnualWaste,
     mapSubSaaSToPortalAssets,
     mapCustomAssetsToPortalAssets,
+    mapOrgChartToPortal,
     mapRolesToActionItems,
     mergePortalAssets,
     mergeActionItems,

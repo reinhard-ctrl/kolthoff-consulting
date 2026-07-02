@@ -35,6 +35,14 @@ export interface PortalClientRecord {
   roadmap: PortalAsset[];
   assets: PortalAsset[];
   contracts: PortalAsset[];
+  orgChart?: Array<{
+    id?: string;
+    name?: string;
+    role?: string;
+    department?: string;
+    managerId?: string | null;
+  }>;
+  subSaaS?: Array<{ tool?: string; billing?: number; users?: number; reason?: string }>;
 }
 
 export interface WorkbookProfileForPortal {
@@ -45,6 +53,7 @@ export interface WorkbookProfileForPortal {
   quoteId?: string;
   links?: { portalClientId?: string; crmDealId?: string };
   subSaaS?: Array<{ tool?: string; billing?: number; users?: number; reason?: string }>;
+  orgChart?: { members?: Array<{ id?: string; name?: string; role?: string; department?: string; managerId?: string | null }> };
   roles?: Array<{ owner?: string; name?: string; role?: string; title?: string }>;
   customAssets?: Array<{ title?: string; category?: string; link?: string }>;
   chaosTax?: { value?: number };
@@ -75,7 +84,7 @@ export function mapSubSaaSToPortalAssets(
     category: 'MOD 1',
     date: new Date().toISOString().slice(0, 10),
     type: 'link',
-    gDriveLink: String(row.reason || 'Synced from SOW / intake'),
+    gDriveLink: String(row.reason || 'Synced from SOW / diagnosis'),
   }));
 }
 
@@ -90,6 +99,21 @@ export function mapCustomAssetsToPortalAssets(
     type: 'link',
     gDriveLink: String(row.link || ''),
   }));
+}
+
+export function mapOrgChartToPortal(
+  orgChart?: WorkbookProfileForPortal['orgChart'],
+): PortalClientRecord['orgChart'] {
+  const members = orgChart?.members || [];
+  return members
+    .filter((m) => String(m.name || '').trim())
+    .map((m) => ({
+      id: String(m.id || ''),
+      name: String(m.name || '').trim(),
+      role: String(m.role || '').trim(),
+      department: String(m.department || '').trim(),
+      managerId: m.managerId ? String(m.managerId) : null,
+    }));
 }
 
 export function mapRolesToActionItems(
@@ -133,7 +157,7 @@ export function mergePortalAssets(existing: PortalAsset[], incoming: PortalAsset
 export function buildPortalPatchFromProfile(
   profile: WorkbookProfileForPortal,
   existing?: PortalClientRecord | null,
-  options?: { syncIntakeAssets?: boolean; syncRoles?: boolean },
+  options?: { syncIntakeAssets?: boolean; syncOrgChart?: boolean },
 ): Partial<PortalClientRecord> {
   const saasWaste = computeSaasAnnualWaste(profile.subSaaS);
   const patch: Partial<PortalClientRecord> = {
@@ -161,9 +185,8 @@ export function buildPortalPatchFromProfile(
     patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
   }
 
-  if (options?.syncRoles && profile.roles?.length) {
-    const fromRoles = mapRolesToActionItems(profile.roles);
-    patch.actionItems = mergeActionItems(existing?.actionItems || [], fromRoles);
+  if (options?.syncOrgChart) {
+    patch.orgChart = mapOrgChartToPortal(profile.orgChart);
   }
 
   return patch;
@@ -171,7 +194,7 @@ export function buildPortalPatchFromProfile(
 
 export async function syncProfileToPortalIfExists(
   profile: WorkbookProfileForPortal,
-  options?: { syncIntakeAssets?: boolean; syncRoles?: boolean },
+  options?: { syncIntakeAssets?: boolean; syncOrgChart?: boolean },
 ): Promise<string | null> {
   const code = resolvePortalAccessCode(profile);
   if (!code) return null;
