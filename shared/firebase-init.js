@@ -122,10 +122,43 @@ export async function hasAdminSession() {
   return snap.exists();
 }
 
-/** Exchange portal access code for scoped custom token (public callable) */
+/** Exchange portal access code for scoped custom token */
 export async function exchangePortalToken(accessCode) {
+  const normalized = accessCode.trim().toUpperCase();
+  if (!normalized) {
+    const err = new Error('Access code required');
+    err.code = 'invalid-argument';
+    throw err;
+  }
+
+  /** Prefer Hosting rewrite — works when org policy blocks public Cloud Run invoke */
+  if (typeof fetch === 'function' && typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/generatePortalToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode: normalized }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload?.token) return payload;
+      if (res.status === 404 || payload?.code === 'not-found') {
+        const err = new Error(payload?.error || 'Invalid access code');
+        err.code = 'not-found';
+        throw err;
+      }
+      if (res.status === 403 || res.status === 401) {
+        const err = new Error('Portal authentication service is unavailable. Please contact Kolthoff support.');
+        err.code = 'functions/permission-denied';
+        throw err;
+      }
+    } catch (fetchErr) {
+      if (fetchErr?.code === 'not-found' || fetchErr?.code === 'functions/permission-denied') throw fetchErr;
+      console.warn('Portal token HTTP path failed, trying callable:', fetchErr);
+    }
+  }
+
   const fn = httpsCallable(functions, 'generatePortalToken');
-  const result = await fn({ accessCode: accessCode.trim().toUpperCase() });
+  const result = await fn({ accessCode: normalized });
   return result.data;
 }
 

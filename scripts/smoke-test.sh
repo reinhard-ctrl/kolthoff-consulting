@@ -73,6 +73,34 @@ check "/shared/auth-gate.js"
 check "/shared/firebase-init.js"
 check "/shared/crm-share.js"
 
+# Portal auth API (Hosting rewrite → private Cloud Function)
+check_post_api() {
+  local path="$1"
+  local url="${BASE}${path}"
+  local body
+  local code
+  body=$(curl -sS -X POST "$url" \
+    -H 'Content-Type: application/json' \
+    -d '{"accessCode":"SMOKE-TEST-NO-SUCH-CLIENT"}' 2>/dev/null || echo "")
+  code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$url" \
+    -H 'Content-Type: application/json' \
+    -d '{"accessCode":"SMOKE-TEST-NO-SUCH-CLIENT"}' 2>/dev/null || echo "000")
+  if echo "$body" | rg -q '"code"[[:space:]]*:[[:space:]]*"not-found"'; then
+    echo "OK  404 JSON (portal auth API live)  $url"
+    PASS=$((PASS + 1))
+  elif [[ "$code" == "403" ]]; then
+    echo "FAIL 403 (portal auth blocked)  $url"
+    FAIL=$((FAIL + 1))
+  elif echo "$body" | rg -qi 'Page Not Found|<!doctype html>'; then
+    echo "FAIL rewrite missing (Hosting 404 HTML — deploy functions + hosting)  $url"
+    FAIL=$((FAIL + 1))
+  else
+    echo "WARN unexpected portal auth response code=$code  $url"
+    FAIL=$((FAIL + 1))
+  fi
+}
+check_post_api "/api/generatePortalToken"
+
 # Legacy redirects
 check_redirect "/admin/legacy/index.html" "/admin"
 check_redirect "/crm_pipeline.html" "crm_pipeline"

@@ -3,6 +3,13 @@
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
+      {
+        "source": "/api/generatePortalToken",
+        "function": {
+          "functionId": "generatePortalTokenHttp",
+          "region": "asia-southeast1"
+        }
+      },
       { "source": "/workspace/**", "destination": "/workspace/index.html" },
       { "source": "/admin", "destination": "/admin/index.html" },
       { "source": "/admin/**", "destination": "/admin/index.html" }
