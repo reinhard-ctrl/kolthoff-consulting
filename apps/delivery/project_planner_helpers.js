@@ -425,6 +425,26 @@
     return applyPackageToTasks(packageId, tasks, catalogDefaults).tasks;
   }
 
+  /** Package card price — aligned with SOW subtotal (project + retainer commitment). */
+  function formatPackagePriceLabel(econ, formatCurrency) {
+    const projectPart = econ.finalProjectCostBase || 0;
+    const retainerMonthly = econ.retainerCostBase || 0;
+    const retainerTotal = econ.retainerCostTotalBase || 0;
+    const subtotal = projectPart + retainerTotal;
+
+    if (retainerMonthly > 0 && projectPart === 0) {
+      return `${formatCurrency(retainerMonthly)}/mo`;
+    }
+
+    return formatCurrency(subtotal);
+  }
+
+  function packagePreviewDefaults(packageId) {
+    const EP = global.EngagementPackages || {};
+    const pkg = EP.getPackageById ? EP.getPackageById(packageId) : null;
+    return pkg?.defaults || {};
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -631,6 +651,8 @@
     filterProfiles,
     resolvePackageSelectedIds,
     applyPackageToTasks,
-    previewPackageSelection
+    previewPackageSelection,
+    formatPackagePriceLabel,
+    packagePreviewDefaults
   };
 })(window);
