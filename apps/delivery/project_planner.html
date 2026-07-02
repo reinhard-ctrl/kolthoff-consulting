@@ -1566,12 +1566,13 @@
 
       const packagePreviewEconomics = useCallback((packageId) => {
         const previewTasks = H.previewPackageSelection(packageId, tasks, catalogTasksRef.current);
+        const pkgDefaults = H.packagePreviewDefaults(packageId);
         return H.computeProjectEconomics({
           tasks: previewTasks,
-          frictionBuffer,
-          discountPercent,
+          frictionBuffer: pkgDefaults.frictionBuffer ?? frictionBuffer,
+          discountPercent: pkgDefaults.discountPercent ?? discountPercent,
           includeTax,
-          subscriptionMonths,
+          subscriptionMonths: pkgDefaults.subscriptionMonths ?? subscriptionMonths,
           milestoneSplit,
           customSplit1,
           customSplit2,
@@ -3355,9 +3356,7 @@
                     const isActive = selectedPackageId === pkg.id && !packageCustomized;
                     const selectedCount = H.previewPackageSelection(pkg.id, tasks, catalogTasksRef.current).filter(t => t.selected).length;
                     const estHours = preview.updatedSummary?.estHours || 0;
-                    const projectPart = preview.finalProjectCostBase || 0;
-                    const retainerPart = preview.retainerCostTotalBase || 0;
-                    const priceLabel = pkg.isMonthly ? `${formatCurrency(retainerPart || projectPart)}/mo` : formatCurrency(projectPart);
+                    const priceLabel = H.formatPackagePriceLabel(preview, formatCurrency);
                     return (
                       <article key={pkg.id} className={`packages-card bg-brandNavy-900 border rounded-lg p-3 shadow-lg transition-all ${isActive ? 'border-brandTeal-500 ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700 hover:border-brandTeal-500/40'}`}>
                         <div className="packages-card-body">
