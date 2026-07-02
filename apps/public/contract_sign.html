@@ -103,7 +103,7 @@
         const getBillingSchedule = (profile) => window.Financials?.getBillingSchedule(profile) || { milestones: [], milestoneSplit: 'auto', retainerMonthly: 0, retainerMonths: 6, retainerTotal: 0, includeTax: false, finalProjectCostPart: 0 };
         const getModuleInvestmentSummaries = (profile) => window.Financials?.computeModuleInvestmentSummaries(profile) || [];
         const getModDisplayName = (modNum) => window.Financials?.getModDisplayName(modNum) || `MOD ${modNum}`;
-        const contractProfile = (profile) => profile ? { ...profile, applyCreditBack: false } : profile;
+        const contractProfile = (profile) => profile;
         const PREPARED_BY = 'Reinhard Ludwig A. Kolthoff';
 
         function App() {

@@ -293,13 +293,12 @@
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
                 <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Modular Scalability</span>
                 <h2 class="text-3xl sm:text-4xl font-serif font-bold text-white leading-tight">
-                    How We Fix Operational Leaks — One Module at a Time
+                    How We Fix Operational Leaks — Start With a Package
                 </h2>
                 <p class="text-slate-400 text-sm leading-relaxed font-medium">
-                    Four optional modules. Start with a leak scan. Add playbooks, your team workspace, and ongoing care only when you are ready.
+                    Four curated starting packages built from optional modules. Start with a leak scan. Add playbooks, your team workspace, and ongoing care only when you are ready.
                 </p>
-                
-                <!-- NEW WATCH EXPLAINER BUTTON -->
+
                 <div class="pt-2">
                     <button id="openExplainerBtn" class="inline-flex items-center gap-2.5 px-6 py-3 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg shadow-brandTeal-500/5 group">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current text-brandTeal-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
@@ -310,13 +309,68 @@
                 </div>
             </div>
 
+            <!-- Recommended Packages -->
+            <div id="packages" class="mb-12">
+                <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
+                    <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Recommended Starting Packages</span>
+                    <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">Pick a scope — tune the details in your SOW</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed font-medium">Four curated entry points. Exact task lists and quotes are validated in your Statement of Work.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1</span></div>
+                            <h4 class="font-bold text-white font-serif">Leak Scan</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">See where time and money leak before you spend on tools or hires.</p>
+                            <p class="text-[10px] text-slate-500">For skeptical owners who want proof first.</p>
+                        </div>
+                    </article>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1+2</span></div>
+                            <h4 class="font-bold text-white font-serif">Fix the Flow</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Find the leaks, then write the playbooks everyone follows.</p>
+                            <p class="text-[10px] text-slate-500">For 15–30 staff with no standard operating rhythm.</p>
+                        </div>
+                    </article>
+                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between ring-1 ring-brandTeal-500/20">
+                        <div class="space-y-3">
+                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1–3</span><span class="text-[8px] font-mono uppercase bg-brandTeal-500 text-brandNavy-950 px-2 py-0.5 rounded font-bold">Popular</span></div>
+                            <h4 class="font-bold text-white font-serif">Full Transformation</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">From leak scan to live workspace — one phased engagement.</p>
+                            <p class="text-[10px] text-slate-500">For owners ready to invest once end-to-end.</p>
+                        </div>
+                    </article>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 4</span></div>
+                            <h4 class="font-bold text-white font-serif">Care Plan</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Hosting, manager check-ins, and health checks after go-live.</p>
+                            <p class="text-[10px] text-slate-500">For post-build continuity and adoption support.</p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+
+            <p id="packageRoiHint" class="text-center text-[10px] font-mono text-slate-500 mb-12 max-w-3xl mx-auto leading-relaxed">
+                At your calculator settings above, first-year recovery target is shown in green — a Full Transformation is often recoverable within that first year for a 15-person team profile.
+            </p>
+
+            <!-- Module building blocks -->
+            <div class="pt-12 border-t border-brandNavy-700/50">
+                <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
+                    <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">The Four Modules</span>
+                    <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">What each package is built from</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed font-medium">Every package combines these optional building blocks. Add modules only when the business is ready.</p>
+                </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- MOD 1 -->
                 <div class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-6 transition-all duration-300 flex flex-col justify-between">
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="flex justify-between items-center">
                             <span class="text-[9px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-2.5 py-1 rounded font-bold uppercase">MODULE 1</span>
-                            <span class="text-[8px] font-mono bg-brandAmber-500/10 text-brandAmber-400 px-2 py-0.5 rounded font-bold uppercase border border-brandAmber-500/20">Credit-back eligible</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500"></span>
                         </div>
                         <h3 class="font-bold text-lg text-white font-serif">Business Leak Scan</h3>
                         <p class="text-slate-405 text-xs leading-relaxed font-medium">
@@ -371,56 +425,10 @@
                     <span class="text-[9px] font-mono text-brandTeal-400 font-bold tracking-wider uppercase pt-6 block border-t border-brandNavy-700/50 mt-6">Outcome: Hosting, Check-Ins &amp; Health Checks</span>
                 </div>
             </div>
-
-            <!-- Recommended Packages -->
-            <div id="packages" class="mt-16 pt-12 border-t border-brandNavy-700/50">
-                <div class="text-center max-w-2xl mx-auto mb-10 space-y-3">
-                    <span class="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Recommended Starting Packages</span>
-                    <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">Pick a scope — tune the details in your SOW</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed font-medium">Four curated entry points built from the modules above. Exact task lists and quotes are validated in your Statement of Work.</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1</span></div>
-                            <h4 class="font-bold text-white font-serif">Leak Scan</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">See where time and money leak before you spend on tools or hires.</p>
-                            <p class="text-[10px] text-slate-500">For skeptical owners who want proof first.</p>
-                        </div>
-                        <p class="text-[10px] font-mono text-brandTeal-400 font-bold pt-4 mt-4 border-t border-brandNavy-700/50">From ₱42,500 project</p>
-                    </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1+2</span></div>
-                            <h4 class="font-bold text-white font-serif">Fix the Flow</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">Find the leaks, then write the playbooks everyone follows.</p>
-                            <p class="text-[10px] text-slate-500">For 15–30 staff with no standard operating rhythm.</p>
-                        </div>
-                        <p class="text-[10px] font-mono text-brandTeal-400 font-bold pt-4 mt-4 border-t border-brandNavy-700/50">From ₱108,500 project</p>
-                    </article>
-                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between ring-1 ring-brandTeal-500/20">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 1–3</span><span class="text-[8px] font-mono uppercase bg-brandTeal-500 text-brandNavy-950 px-2 py-0.5 rounded font-bold">Popular</span></div>
-                            <h4 class="font-bold text-white font-serif">Full Transformation</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">From leak scan to live workspace — one phased engagement.</p>
-                            <p class="text-[10px] text-slate-500">For owners ready to invest once end-to-end.</p>
-                        </div>
-                        <p class="text-[10px] font-mono text-brandTeal-400 font-bold pt-4 mt-4 border-t border-brandNavy-700/50">From ₱195,500 project</p>
-                    </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-xl p-5 flex flex-col justify-between">
-                        <div class="space-y-3">
-                            <div class="flex gap-1.5"><span class="text-[8px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-2 py-0.5 rounded">MOD 4</span></div>
-                            <h4 class="font-bold text-white font-serif">Care Plan</h4>
-                            <p class="text-slate-400 text-xs leading-relaxed">Hosting, manager check-ins, and health checks after go-live.</p>
-                            <p class="text-[10px] text-slate-500">For post-build continuity and adoption support.</p>
-                        </div>
-                        <p class="text-[10px] font-mono text-brandTeal-400 font-bold pt-4 mt-4 border-t border-brandNavy-700/50">From ₱18,000 / month</p>
-                    </article>
-                </div>
             </div>
 
-            <p class="text-center text-[10px] font-mono text-slate-500 mt-8 max-w-3xl mx-auto leading-relaxed">
-                Typical starting investment: <strong class="text-slate-400">Leak Scan</strong> from ₱42,500 · <strong class="text-slate-400">Fix the Flow</strong> (M1+M2) from ₱108,500 · <strong class="text-slate-400">Full Transformation</strong> (M1–M3) from ₱195,500 · <strong class="text-slate-400">Care Plan</strong> from ₱18,000/month. MOD 1 fee credits toward MOD 2+3 when you proceed within 30 days. Exact quote in your SOW.
+            <p class="text-center text-[10px] font-mono text-slate-500 mt-10 max-w-3xl mx-auto leading-relaxed">
+                Exact scope and quote are validated in your Statement of Work after we review your team profile.
             </p>
         </div>
     </section>
@@ -1039,6 +1047,11 @@
 
             leakageResult.innerText = formatPHP(annualLeakage);
             recoveryResult.innerText = formatPHP(annualRecovery);
+
+            const roiHint = document.getElementById('packageRoiHint');
+            if (roiHint) {
+                roiHint.textContent = `At your settings above, 40% recovery target is ${formatPHP(annualRecovery)} — a Full Transformation (M1–M3) is often recoverable within that first year at this team profile.`;
+            }
         }
 
         [staffRange, salaryRange, hoursRange].forEach(elem => {

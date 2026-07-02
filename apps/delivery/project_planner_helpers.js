@@ -492,9 +492,7 @@
       partnerRate: state.partnerRate,
       selectedPackageId: state.selectedPackageId ?? null,
       packageCustomized: Boolean(state.packageCustomized),
-      packageAppliedAt: state.packageAppliedAt ?? null,
-      applyCreditBack: state.applyCreditBack ?? false,
-      creditBackDays: state.creditBackDays ?? 30
+      packageAppliedAt: state.packageAppliedAt ?? null
     };
     base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks

@@ -48,7 +48,6 @@ Legacy profiles without `_meta` remain valid; readers fall back to field-level d
 | `tasks[]` | Planner | Selected modules, hours, tiers, categories |
 | `frictionBuffer`, `discountPercent`, rates | Planner | Economics inputs |
 | `milestoneSplit`, `customSplit*` | Planner | Billing structure |
-| `applyCreditBack`, `creditBackDays` | Planner | MOD 1 credit-back gate |
 
 Downstream totals use `shared/financials.js` / `admin/src/lib/financials.ts`. CRM deal value sync uses **`getFinancials(profile).total`** (includes VAT when enabled).
 

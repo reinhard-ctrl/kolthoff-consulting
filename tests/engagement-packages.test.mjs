@@ -33,7 +33,7 @@ const catalog = [
 ];
 
 assert.equal(EP.getMarketingPackages().length, 4);
-assert.equal(EP.suggestPackageFromText('MOD 1+2 with credit-back'), 'fix-the-flow');
+assert.equal(EP.suggestPackageFromText('MOD 1+2 fix the flow'), 'fix-the-flow');
 
 const leakScan = H.applyPackageToTasks('leak-scan', catalog, catalog);
 assert.ok(leakScan.tasks.find((t) => t.id === 'm1-01')?.selected);
@@ -104,11 +104,9 @@ const payload = H.buildProfilePayload('p1', 'Ws', {
   selectedPackageId: 'leak-scan',
   packageCustomized: false,
   packageAppliedAt: 1,
-  applyCreditBack: true,
-  creditBackDays: 30,
 }, 500000);
 
 assert.equal(payload.selectedPackageId, 'leak-scan');
-assert.equal(payload.applyCreditBack, true);
+assert.equal(payload.packageCustomized, false);
 
 console.log('engagement-packages.test.mjs: all assertions passed');
