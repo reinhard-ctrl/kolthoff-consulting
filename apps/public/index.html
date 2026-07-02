@@ -679,28 +679,20 @@
             <!-- Content Area: Video Only Setup -->
             <div class="flex flex-col items-center justify-center gap-4 overflow-y-auto pr-1 flex-1">
                 <div class="relative aspect-video w-full max-w-3xl rounded-lg overflow-hidden bg-black border border-brandNavy-700">
-                    <!-- Adaptive HLS stream: starts at a lower bitrate, upgrades to full 720p when bandwidth allows. -->
-                    <video id="explainerVideo" class="w-full h-full object-contain" controls playsinline preload="none" poster="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 90' fill='%2309111F'><rect width='100%25' height='100%25'/><g transform='translate(80, 45)'><circle r='14' fill='%2314B8A6' fill-opacity='0.15' stroke='%2314B8A6' stroke-width='1'/><polygon points='-4,-6 8,0 -4,6' fill='%2314B8A6'/></g><text x='50%25' y='75%25' fill='%232E4567' font-family='sans-serif' font-size='5' text-anchor='middle' font-weight='bold' letter-spacing='1'>KOLTHOFF CONSULTING • OPERATIONAL EXCELLENCE</text></svg>">
-                        Your browser does not support HTML5 video.
-                    </video>
-                    <div id="videoLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brandNavy-955/85 pointer-events-none hidden">
-                        <div class="w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
-                        <p id="videoLoadingText" class="text-[10px] font-mono uppercase tracking-wider text-brandTeal-400">Buffering explainer…</p>
-                    </div>
-                    <!-- Fallback Card inside Player area in case video file is unavailable -->
+                    <div id="explainerPlayerSlot" class="absolute inset-0 bg-brandNavy-955" aria-live="polite"></div>
                     <div id="videoFallbackCard" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/90 hidden">
                         <svg class="w-12 h-12 text-brandTeal-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125V3a1.125 1.125 0 011.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v15.375c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25m-17.25 0v1.5a1.125 1.125 0 001.125 1.125h14.25a1.125 1.125 0 001.125-1.125v-1.5M14.25 9.75l-4.5 4.5m0-4.5l4.5 4.5m1.5-6h.008v.008H15.75V3.75z" />
                         </svg>
-                        <h4 class="font-serif font-bold text-white text-sm mb-1">Direct Explainer Storyboard</h4>
-                        <p class="text-xs text-slate-400 max-w-md leading-relaxed">
-                            The video failed to load. Please verify your internet connection.
+                        <h4 class="font-serif font-bold text-white text-sm mb-1">Explainer Unavailable</h4>
+                        <p id="videoFallbackText" class="text-xs text-slate-400 max-w-md leading-relaxed">
+                            The explainer video could not be loaded. Please try again later.
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center justify-between w-full max-w-3xl text-[10px] font-mono text-slate-455 px-1">
-                    <span>Format: Adaptive HLS (720p / 480p / 360p)</span>
-                    <span id="videoStatus" class="text-brandTeal-400 font-bold">Operational Excellence Explainer</span>
+                    <span>Format: YouTube HD stream</span>
+                    <span class="text-brandTeal-400 font-bold">Operational Excellence Explainer</span>
                 </div>
             </div>
 
@@ -1288,200 +1280,58 @@
             modalBackdrop.addEventListener('click', closeModal);
         }
 
-        // --- Interactive Explainer Modal Logic (adaptive HLS) ---
-        const EXPLAINER_HLS_SRC = '/apps/public/assets/explainer-hls/master.m3u8';
+        // --- Interactive Explainer Modal Logic (YouTube embed) ---
+        const EXPLAINER_YOUTUBE_ID = '__EXPLAINER_YOUTUBE_ID__';
         const explainerModal = document.getElementById('explainerModal');
         const openExplainerBtn = document.getElementById('openExplainerBtn');
         const closeExplainerModalBtn = document.getElementById('closeExplainerModalBtn');
         const dismissExplainerModalBtn = document.getElementById('dismissExplainerModalBtn');
         const explainerModalBackdrop = document.getElementById('explainerModalBackdrop');
-        const explainerVideo = document.getElementById('explainerVideo');
+        const explainerPlayerSlot = document.getElementById('explainerPlayerSlot');
         const videoFallbackCard = document.getElementById('videoFallbackCard');
-        const videoLoadingOverlay = document.getElementById('videoLoadingOverlay');
-        const videoLoadingText = document.getElementById('videoLoadingText');
-        const videoStatus = document.getElementById('videoStatus');
-        let explainerHls = null;
-        let explainerPlayerReady = false;
-        let explainerPrefetchStarted = false;
-        let hlsLibraryPromise = null;
+        const videoFallbackText = document.getElementById('videoFallbackText');
 
-        function updateVideoStatus(message) {
-            if (videoStatus) videoStatus.textContent = message;
-        }
-
-        function updateVideoLoadingOverlay(isVisible, message) {
-            if (videoLoadingOverlay) {
-                videoLoadingOverlay.classList.toggle('hidden', !isVisible);
+        function showVideoFallback(message) {
+            if (videoFallbackText && message) {
+                videoFallbackText.textContent = message;
             }
-            if (message && videoLoadingText) {
-                videoLoadingText.textContent = message;
-            }
-        }
-
-        function showVideoFallback() {
-            updateVideoLoadingOverlay(false);
             if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
         }
 
-        function loadHlsLibrary() {
-            if (window.Hls) return Promise.resolve(window.Hls);
-            if (hlsLibraryPromise) return hlsLibraryPromise;
-            hlsLibraryPromise = new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';
-                script.crossOrigin = 'anonymous';
-                script.onload = () => resolve(window.Hls);
-                script.onerror = () => reject(new Error('Could not load HLS player library'));
-                document.head.appendChild(script);
-            });
-            return hlsLibraryPromise;
+        function clearExplainerPlayer() {
+            if (explainerPlayerSlot) explainerPlayerSlot.innerHTML = '';
         }
 
-        function getBufferedPercent() {
-            if (!explainerVideo || !explainerVideo.duration || !Number.isFinite(explainerVideo.duration)) {
-                return null;
-            }
-            const ranges = explainerVideo.buffered;
-            if (!ranges.length) return 0;
-            const end = ranges.end(ranges.length - 1);
-            return Math.min(100, Math.round((end / explainerVideo.duration) * 100));
-        }
-
-        function refreshVideoLoadingState() {
-            if (!explainerVideo || explainerModal.classList.contains('hidden')) return;
-            if (explainerVideo.readyState >= 3 && !explainerVideo.paused) {
-                updateVideoLoadingOverlay(false);
-                updateVideoStatus('Operational Excellence Explainer');
-                return;
-            }
-            if (explainerVideo.readyState >= 3) {
-                updateVideoLoadingOverlay(false);
-                updateVideoStatus('Ready to play');
-                return;
-            }
-            const percent = getBufferedPercent();
-            const message = percent === null
-                ? 'Starting adaptive stream…'
-                : `Starting adaptive stream… ${percent}%`;
-            updateVideoLoadingOverlay(true, message);
-            updateVideoStatus(message);
-        }
-
-        async function ensureExplainerPlayer() {
-            if (explainerPlayerReady || !explainerVideo) return true;
-
-            if (explainerVideo.canPlayType('application/vnd.apple.mpegurl')) {
-                explainerVideo.src = EXPLAINER_HLS_SRC;
-                explainerPlayerReady = true;
-                return true;
-            }
-
-            try {
-                const Hls = await loadHlsLibrary();
-                if (!Hls.isSupported()) {
-                    showVideoFallback();
-                    return false;
-                }
-
-                explainerHls = new Hls({
-                    autoStartLoad: false,
-                    capLevelToPlayerSize: true,
-                    startLevel: -1,
-                    maxBufferLength: 20,
-                    maxMaxBufferLength: 40,
-                });
-                explainerHls.loadSource(EXPLAINER_HLS_SRC);
-                explainerHls.attachMedia(explainerVideo);
-                explainerHls.on(Hls.Events.ERROR, (_event, data) => {
-                    if (data.fatal) showVideoFallback();
-                });
-                explainerPlayerReady = true;
-                return true;
-            } catch (error) {
-                console.log('Explainer player setup failed:', error);
-                showVideoFallback();
-                return false;
-            }
-        }
-
-        function startExplainerStreamLoad() {
-            if (explainerHls) {
-                explainerHls.startLoad(-1);
-                return;
-            }
-            if (explainerVideo && explainerVideo.src) {
-                explainerVideo.preload = 'auto';
-                explainerVideo.load();
-            }
-        }
-
-        async function prefetchExplainerVideo() {
-            if (explainerPrefetchStarted) return;
-            explainerPrefetchStarted = true;
-            const ready = await ensureExplainerPlayer();
-            if (ready) startExplainerStreamLoad();
-        }
-
-        async function openExplainer() {
-            explainerModal.classList.remove('hidden');
+        function mountExplainerPlayer() {
+            clearExplainerPlayer();
             if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
-            const ready = await ensureExplainerPlayer();
-            if (!ready) return;
 
-            startExplainerStreamLoad();
-            refreshVideoLoadingState();
-
-            const startPlayback = () => {
-                refreshVideoLoadingState();
-                explainerVideo.play().catch(error => {
-                    console.log('Video autoplay prevented or stream unavailable:', error);
-                    showVideoFallback();
-                });
-            };
-
-            if (explainerVideo.readyState >= 2) {
-                startPlayback();
-            } else {
-                explainerVideo.addEventListener('canplay', startPlayback, { once: true });
+            const videoId = String(EXPLAINER_YOUTUBE_ID || '').trim();
+            if (!videoId) {
+                showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
+                return;
             }
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'w-full h-full';
+            iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+            iframe.title = 'Operational Excellence Explainer';
+            iframe.loading = 'lazy';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            iframe.setAttribute('allowfullscreen', '');
+            explainerPlayerSlot.appendChild(iframe);
+        }
+
+        function openExplainer() {
+            explainerModal.classList.remove('hidden');
+            mountExplainerPlayer();
         }
 
         function closeExplainer() {
             explainerModal.classList.add('hidden');
-            if (explainerVideo) explainerVideo.pause();
-            if (explainerHls) explainerHls.stopLoad();
-            updateVideoLoadingOverlay(false);
-        }
-
-        if (explainerVideo) {
-            explainerVideo.addEventListener('error', showVideoFallback);
-            explainerVideo.addEventListener('waiting', refreshVideoLoadingState);
-            explainerVideo.addEventListener('progress', refreshVideoLoadingState);
-            explainerVideo.addEventListener('canplay', refreshVideoLoadingState);
-            explainerVideo.addEventListener('playing', () => {
-                updateVideoLoadingOverlay(false);
-                updateVideoStatus('Operational Excellence Explainer');
-            });
-        }
-
-        if (openExplainerBtn) {
-            openExplainerBtn.addEventListener('mouseenter', prefetchExplainerVideo, { once: true });
-            openExplainerBtn.addEventListener('focus', prefetchExplainerVideo, { once: true });
-            if ('IntersectionObserver' in window) {
-                const explainerPrefetchObserver = new IntersectionObserver((entries) => {
-                    if (entries.some((entry) => entry.isIntersecting)) {
-                        prefetchExplainerVideo();
-                        explainerPrefetchObserver.disconnect();
-                    }
-                }, { rootMargin: '300px' });
-                explainerPrefetchObserver.observe(openExplainerBtn);
-            }
-        }
-
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => prefetchExplainerVideo(), { timeout: 4000 });
-        } else {
-            setTimeout(prefetchExplainerVideo, 4000);
+            clearExplainerPlayer();
+            if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
         }
 
         if (openExplainerBtn) {
