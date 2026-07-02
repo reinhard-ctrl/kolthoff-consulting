@@ -65,3 +65,29 @@ for (const app of ['workspace', 'admin']) {
 }
 
 console.log('Build complete → dist/');
+
+const recaptchaKey = process.env.RECAPTCHA_SITE_KEY || process.env.VITE_RECAPTCHA_SITE_KEY || '';
+if (recaptchaKey) {
+  const snippet = `window.__RECAPTCHA_SITE_KEY__=${JSON.stringify(recaptchaKey)};\n`;
+  const runtimePath = path.join(dist, 'shared', 'runtime-config.js');
+  if (fs.existsSync(runtimePath)) {
+    const existing = fs.readFileSync(runtimePath, 'utf8');
+    if (!existing.includes('__RECAPTCHA_SITE_KEY__')) {
+      fs.writeFileSync(runtimePath, snippet + existing);
+    }
+  } else {
+    fs.writeFileSync(runtimePath, snippet);
+  }
+
+  for (const app of ['admin', 'workspace']) {
+    const indexPath = path.join(dist, app, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      let html = fs.readFileSync(indexPath, 'utf8');
+      if (!html.includes('__RECAPTCHA_SITE_KEY__')) {
+        html = html.replace('</head>', `  <script>${snippet.trim()}</script>\n  </head>`);
+        fs.writeFileSync(indexPath, html);
+      }
+    }
+  }
+  console.log('App Check site key injected into dist/');
+}

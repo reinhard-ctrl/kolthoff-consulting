@@ -41,6 +41,9 @@ export const functions = getFunctions(app, FUNCTIONS_REGION);
 /** Initialize App Check when site key is configured */
 export function initAppCheck() {
   const siteKey = typeof window !== 'undefined' && window.__RECAPTCHA_SITE_KEY__;
+  if (typeof window !== 'undefined' && window.FIREBASE_APPCHECK_DEBUG_TOKEN !== undefined) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = window.FIREBASE_APPCHECK_DEBUG_TOKEN;
+  }
   if (siteKey) {
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider(siteKey),

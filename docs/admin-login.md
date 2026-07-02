@@ -4,6 +4,16 @@ Admin passcode login uses **Firestore directly** (no public Cloud Function requi
 
 ## Normal flow
 
+### Google Workspace (recommended)
+
+1. Open https://kolthoff-consulting.com/admin/
+2. Click **Sign in with Google** using your `@kolthoff-consulting.com` account.
+3. The app calls `provisionGoogleStaff` to set admin claims and upsert `core_users`.
+
+See **`docs/app-check-sso.md`** for Firebase Console setup.
+
+### Passcode (break-glass)
+
 1. Open https://kolthoff-portal.web.app/admin/ (or https://kolthoff-consulting.com/admin/ after DNS cutover).
 2. The app signs in anonymously, then checks your passcode against Firestore at  
    `artifacts/kolthoff-admin-app/public/data/admin_credentials/{PASSCODE}`.
@@ -27,7 +37,7 @@ Manual path in Firestore:
 
 ### Firebase Auth
 
-Enable **Anonymous** sign-in in Firebase Console → Authentication → Sign-in method.
+Enable **Anonymous** and **Google** sign-in in Firebase Console → Authentication → Sign-in method.
 
 ### API key HTTP referrers
 
@@ -63,7 +73,7 @@ Legacy callable `verifyAdminPasscode` and HTTP `verifyAdminPasscodeHttp` require
 PROJECT=kolthoff-portal
 REGION=asia-southeast1
 
-for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken requestWorkspacePasswordReset; do
+for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken requestWorkspacePasswordReset provisionGoogleStaff; do
   gcloud functions add-invoker-policy-binding "$FN" \
     --gen2 --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \

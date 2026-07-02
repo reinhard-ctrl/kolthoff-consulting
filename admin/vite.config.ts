@@ -5,4 +5,5 @@ export default defineConfig({
   plugins: [react()],
   base: '/admin/',
   build: { outDir: 'dist', emptyOutDir: true },
+  envPrefix: ['VITE_', 'RECAPTCHA_'],
 });

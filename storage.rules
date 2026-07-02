@@ -26,7 +26,15 @@ service firebase.storage {
     }
 
     function isStaffMember() {
-      return isKolthoffAdmin() || (isAuthenticated() && !isAnonymous());
+      return isKolthoffAdmin() || (
+        isAuthenticated() &&
+        request.auth.token.email is string &&
+        request.auth.token.email.matches('.*@kolthoff-consulting\\.com$')
+      ) || (
+        isAuthenticated() &&
+        request.auth.token.tenantId is string &&
+        request.auth.token.role != 'portal_client'
+      );
     }
 
     function isPortalClient() {

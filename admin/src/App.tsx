@@ -59,6 +59,7 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +99,30 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
     }
   };
 
+  const signInGoogle = async () => {
+    setGoogleLoading(true);
+    setError('');
+    try {
+      const { signInWithGoogleStaff } = await import('./lib/staff-sso');
+      await signInWithGoogleStaff();
+      const returnUrl = getReturnUrl();
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        onAuth();
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+      if (err instanceof FirebaseError && err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled.');
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-brandNavy-955 p-4">
       <form onSubmit={submit} className="glass-panel p-8 w-full max-w-sm">
@@ -105,8 +130,21 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
           <BrandHeader />
         </div>
         <p className="text-sm text-slate-400 text-center mb-5">
-          Enter your admin passcode to access the Operations Suite.
+          Sign in with Google Workspace or use the break-glass passcode.
         </p>
+        <button
+          type="button"
+          onClick={signInGoogle}
+          disabled={googleLoading || loading}
+          className="w-full py-2.5 mb-4 bg-white text-slate-800 rounded font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-100 disabled:opacity-50"
+        >
+          {googleLoading ? 'Signing in…' : 'Sign in with Google'}
+        </button>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-brandNavy-700" />
+          <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">or passcode</span>
+          <div className="flex-1 h-px bg-brandNavy-700" />
+        </div>
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
           className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}

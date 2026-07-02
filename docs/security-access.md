@@ -10,7 +10,7 @@
 
 ## Staff hub
 
-- **`/admin/`** — single login (passcode → Firestore session)
+- **`/admin/`** — sign in with **Google Workspace** (`@kolthoff-consulting.com`) or break-glass **passcode**
 - After login, use the sidebar to open admin tools and delivery suite apps
 
 ### Admin SPA routes
@@ -36,5 +36,5 @@ Delivery, operations, and analytics HTML apps import `shared/auth-gate.js`:
 
 ## Planned
 
-- Google Workspace SSO for `@kolthoff-consulting.com`
-- App Check on all apps
+- ~~Google Workspace SSO for `@kolthoff-consulting.com`~~ — see **`docs/app-check-sso.md`**
+- App Check enforcement in Firebase Console (site key wired in build)

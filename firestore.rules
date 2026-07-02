@@ -20,11 +20,21 @@ service cloud.firestore {
       );
     }
 
-    /** Staff: admin session, email/Google login, or tenant claims — not anonymous browsing */
+    /** Staff: kolthoff admin session, Workspace SSO/claims, or tenant members — not anonymous */
+    function isKolthoffStaffEmail() {
+      return isAuthenticated() &&
+        request.auth.token.email is string &&
+        request.auth.token.email.matches('.*@kolthoff-consulting\\.com$');
+    }
+
+    function hasTenantStaffClaim() {
+      return isAuthenticated() &&
+        request.auth.token.tenantId is string &&
+        request.auth.token.role != 'portal_client';
+    }
+
     function isStaffMember() {
-      return isKolthoffAdmin() || (
-        isAuthenticated() && !isAnonymous()
-      );
+      return isKolthoffAdmin() || isKolthoffStaffEmail() || hasTenantStaffClaim();
     }
 
     function isTenantMember(tenantId) {
