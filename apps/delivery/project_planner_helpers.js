@@ -365,6 +365,66 @@
     return (staffCount ?? 15) * (monthlySalary ?? 25000) * 12 * ((wastedHours ?? 2) / 8);
   }
 
+  function resolvePackageSelectedIds(pkg, tasks) {
+    const EP = global.EngagementPackages || {};
+    if (!pkg || !Array.isArray(tasks)) return new Set();
+    const cfg = pkg.tasks || {};
+    if (cfg.mode === 'include') {
+      return new Set(cfg.include || []);
+    }
+    if (cfg.mode === 'modules') {
+      const modules = new Set(cfg.modules || []);
+      const exclude = new Set(cfg.excludeFromModules || cfg.exclude || []);
+      const selected = new Set();
+      tasks.forEach((t) => {
+        if (t.id.startsWith('custom-')) return;
+        const preset = presetForCategory(t.category);
+        if (modules.has(preset) && !exclude.has(t.id)) selected.add(t.id);
+      });
+      return selected;
+    }
+    return new Set();
+  }
+
+  function applyPackageToTasks(packageId, tasks, catalogDefaults) {
+    const EP = global.EngagementPackages || {};
+    const pkg = EP.getPackageById ? EP.getPackageById(packageId) : null;
+    if (!pkg) {
+      return { tasks, activePresets: deriveActivePresetsFromTasks(tasks), package: null };
+    }
+    const selectedIds = resolvePackageSelectedIds(pkg, tasks);
+    const catalogById = Object.fromEntries((catalogDefaults || []).map((t) => [t.id, t]));
+    const overrides = pkg.taskOverrides || {};
+
+    const nextTasks = tasks.map((t) => {
+      if (t.id.startsWith('custom-')) {
+        return { ...t, selected: false };
+      }
+      const catalog = catalogById[t.id];
+      const selected = selectedIds.has(t.id);
+      const base = catalog ? { ...catalog } : { ...t };
+      base.selected = selected;
+      if (selected && overrides[t.id]) {
+        Object.assign(base, overrides[t.id]);
+        if (overrides[t.id].scopeDetails) {
+          base.scopeDetails = { ...(catalog?.scopeDetails || {}), ...overrides[t.id].scopeDetails };
+        }
+      }
+      return base;
+    });
+
+    return {
+      tasks: nextTasks,
+      activePresets: deriveActivePresetsFromTasks(nextTasks),
+      package: pkg,
+      defaults: pkg.defaults || {}
+    };
+  }
+
+  function previewPackageSelection(packageId, tasks, catalogDefaults) {
+    return applyPackageToTasks(packageId, tasks, catalogDefaults).tasks;
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -429,7 +489,12 @@
       principalRate: state.principalRate,
       seniorRate: state.seniorRate,
       associateRate: state.associateRate,
-      partnerRate: state.partnerRate
+      partnerRate: state.partnerRate,
+      selectedPackageId: state.selectedPackageId ?? null,
+      packageCustomized: Boolean(state.packageCustomized),
+      packageAppliedAt: state.packageAppliedAt ?? null,
+      applyCreditBack: state.applyCreditBack ?? false,
+      creditBackDays: state.creditBackDays ?? 30
     };
     base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks
@@ -565,6 +630,9 @@
     loadLocalDraft,
     clearLocalDraft,
     sortProfiles,
-    filterProfiles
+    filterProfiles,
+    resolvePackageSelectedIds,
+    applyPackageToTasks,
+    previewPackageSelection
   };
 })(window);
