@@ -112,15 +112,15 @@
             background-color: #0C1626 !important;
             box-shadow: 0 0 15px -3px rgba(20, 184, 166, 0.15);
         }
-        /* Roadmap: packages + modules in one desktop viewport */
+        /* Roadmap: packages + modules — one desktop viewport */
         @media (min-width: 1024px) {
             .roadmap-viewport {
                 min-height: calc(100vh - 5rem);
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                padding-top: 1.5rem;
-                padding-bottom: 1.5rem;
+                padding-top: 1.25rem;
+                padding-bottom: 1.25rem;
             }
             .roadmap-viewport .roadmap-body {
                 flex: 1;
@@ -128,8 +128,35 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                gap: 1rem;
+                gap: 0.75rem;
             }
+            .module-block-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 0.625rem;
+                align-items: stretch;
+            }
+            .module-block-card {
+                min-height: 8.5rem;
+            }
+            .roadmap-footnote-combined {
+                display: block;
+            }
+            .roadmap-footnote-split {
+                display: none;
+            }
+        }
+        @media (max-width: 1023px) {
+            .roadmap-footnote-combined {
+                display: none;
+            }
+        }
+        .module-block-card {
+            display: flex;
+            flex-direction: column;
+        }
+        .module-explainer {
+            flex: 1;
         }
     </style>
 </head>
@@ -309,14 +336,14 @@
     <!-- Packages + Modules (one section) -->
     <section id="roadmap" class="roadmap-viewport py-12 lg:py-0 border-t border-brandNavy-700/50 bg-brandNavy-955 px-4 sm:px-6 scroll-mt-20">
         <div class="max-w-7xl mx-auto roadmap-body">
-            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 lg:gap-6 mb-6 lg:mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 lg:gap-4 mb-5 lg:mb-3">
                 <div class="max-w-2xl">
                     <span class="text-[9px] font-mono font-bold tracking-[0.2em] text-brandTeal-400 uppercase block">Modular Scalability</span>
-                    <h2 class="text-2xl sm:text-3xl lg:text-[1.75rem] font-serif font-bold text-white leading-tight mt-1">
+                    <h2 class="text-2xl sm:text-3xl lg:text-[1.65rem] font-serif font-bold text-white leading-tight mt-1">
                         Pick a Package — Built From Four Modules
                     </h2>
-                    <p class="text-slate-400 text-xs sm:text-sm leading-snug font-medium mt-2">
-                        Curated starting scopes. Add playbooks, workspace, and care only when you are ready. Exact scope in your SOW.
+                    <p class="text-slate-400 text-xs leading-snug font-medium mt-1.5 lg:mt-1">
+                        Curated starting scopes. Add playbooks, workspace, and care when you are ready.
                     </p>
                 </div>
                 <button id="openExplainerBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer shrink-0 self-start lg:self-auto">
@@ -326,81 +353,81 @@
             </div>
 
             <div id="packages">
-                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2 lg:mb-1.5">Recommended packages</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-2.5">
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
-                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1</span></div>
+                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2">Recommended packages</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-2">
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 flex flex-col">
+                        <div class="flex gap-1.5 mb-1"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1</span></div>
                         <h4 class="font-bold text-white font-serif text-sm leading-tight">Leak Scan</h4>
-                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">See where time and money leak before you spend on tools or hires.</p>
-                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Skeptical owners who want proof first.</p>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1">See where time and money leak before you spend on tools or hires.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
-                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1+2</span></div>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 flex flex-col">
+                        <div class="flex gap-1.5 mb-1"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1+2</span></div>
                         <h4 class="font-bold text-white font-serif text-sm leading-tight">Fix the Flow</h4>
-                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">Find the leaks, then write the playbooks everyone follows.</p>
-                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">15–30 staff with no operating rhythm.</p>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1">Find the leaks, then write the playbooks everyone follows.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col ring-1 ring-brandTeal-500/20">
-                        <div class="flex gap-1.5 mb-1.5">
+                    <article class="bg-brandNavy-900 border border-brandTeal-500/40 rounded-lg p-3 flex flex-col ring-1 ring-brandTeal-500/20">
+                        <div class="flex gap-1.5 mb-1">
                             <span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 1–3</span>
                             <span class="text-[7px] font-mono uppercase bg-brandTeal-500 text-brandNavy-950 px-1.5 py-px rounded font-bold">Popular</span>
                         </div>
                         <h4 class="font-bold text-white font-serif text-sm leading-tight">Full Transformation</h4>
-                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">From leak scan to live workspace — one phased engagement.</p>
-                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Owners ready to invest end-to-end.</p>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1">From leak scan to live workspace — one phased engagement.</p>
                     </article>
-                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 lg:p-3.5 flex flex-col">
-                        <div class="flex gap-1.5 mb-1.5"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 4</span></div>
+                    <article class="bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/40 rounded-lg p-3 flex flex-col">
+                        <div class="flex gap-1.5 mb-1"><span class="text-[7px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded">MOD 4</span></div>
                         <h4 class="font-bold text-white font-serif text-sm leading-tight">Care Plan</h4>
-                        <p class="text-slate-400 text-[11px] leading-snug mt-1 line-clamp-2">Hosting, manager check-ins, and health checks after go-live.</p>
-                        <p class="text-[9px] text-slate-500 mt-1.5 hidden sm:block">Post-build continuity and adoption.</p>
+                        <p class="text-slate-400 text-[11px] leading-snug mt-1">Hosting, manager check-ins, and health checks after go-live.</p>
                     </article>
                 </div>
             </div>
 
-            <div class="lg:pt-2">
-                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2 lg:mb-1.5">Building blocks</p>
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-2">
-                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors flex flex-col">
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M1</span>
+            <div>
+                <p class="text-[9px] font-mono font-bold tracking-[0.15em] text-slate-500 uppercase mb-2">Building blocks</p>
+                <div class="module-block-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-2.5">
+                    <article class="module-block-card bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/35 rounded-lg p-3 transition-colors">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase shrink-0">M1</span>
+                            <h3 class="font-bold text-xs text-white font-serif leading-tight">Business Leak Scan</h3>
                         </div>
-                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Business Leak Scan</h3>
-                        <p class="text-[10px] text-slate-400 leading-snug mt-1 line-clamp-3 lg:line-clamp-2">Anonymous staff feedback, workflow review, and software audit — plus a waste-to-peso report with your 90-day fix list.</p>
+                        <p class="module-explainer text-[10px] text-slate-400 leading-[1.45]">Staff feedback, workflow and software audits, and a waste-to-peso report with a 90-day fix list.</p>
                         <p class="text-[8px] font-mono text-brandTeal-400/90 mt-auto pt-1.5 border-t border-brandNavy-700/50 leading-snug">Outcome: Waste-to-Peso Report</p>
-                    </div>
-                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors flex flex-col">
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M2</span>
+                    </article>
+                    <article class="module-block-card bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/35 rounded-lg p-3 transition-colors">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase shrink-0">M2</span>
+                            <h3 class="font-bold text-xs text-white font-serif leading-tight">How Your Business Runs</h3>
                         </div>
-                        <h3 class="font-bold text-xs text-white font-serif leading-tight">How Your Business Runs</h3>
-                        <p class="text-[10px] text-slate-400 leading-snug mt-1 line-clamp-3 lg:line-clamp-2">Document how orders move and who signs off, record how-to videos, and load a Philippines-ready employee handbook.</p>
+                        <p class="module-explainer text-[10px] text-slate-400 leading-[1.45]">Order playbooks, sign-off roles, how-to videos, and a Philippines-ready employee handbook.</p>
                         <p class="text-[8px] font-mono text-brandTeal-400/90 mt-auto pt-1.5 border-t border-brandNavy-700/50 leading-snug">Outcome: Playbooks &amp; Roles Chart</p>
-                    </div>
-                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors flex flex-col">
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M3</span>
+                    </article>
+                    <article class="module-block-card bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/35 rounded-lg p-3 transition-colors">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase shrink-0">M3</span>
+                            <h3 class="font-bold text-xs text-white font-serif leading-tight">Your Team Workspace</h3>
                         </div>
-                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Your Team Workspace</h3>
-                        <p class="text-[10px] text-slate-400 leading-snug mt-1 line-clamp-3 lg:line-clamp-2">Launch your workspace, digitize up to five approval forms, train your team, and stay on call for two weeks after go-live.</p>
+                        <p class="module-explainer text-[10px] text-slate-400 leading-[1.45]">Workspace launch, digitized approval forms, hands-on training, and two-week post go-live support.</p>
                         <p class="text-[8px] font-mono text-brandTeal-400/90 mt-auto pt-1.5 border-t border-brandNavy-700/50 leading-snug">Outcome: Live Workspace</p>
-                    </div>
-                    <div class="bg-brandNavy-900/80 border border-brandNavy-700 hover:border-brandTeal-500/30 rounded-lg p-2.5 lg:p-3 transition-colors flex flex-col">
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase">M4</span>
+                    </article>
+                    <article class="module-block-card bg-brandNavy-900 border border-brandNavy-700 hover:border-brandTeal-500/35 rounded-lg p-3 transition-colors">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[7px] font-mono bg-brandTeal-500/10 text-brandTeal-400 px-1.5 py-px rounded font-bold uppercase shrink-0">M4</span>
+                            <h3 class="font-bold text-xs text-white font-serif leading-tight">Care Plan</h3>
                         </div>
-                        <h3 class="font-bold text-xs text-white font-serif leading-tight">Care Plan</h3>
-                        <p class="text-[10px] text-slate-400 leading-snug mt-1 line-clamp-3 lg:line-clamp-2">Hosting, bi-weekly manager check-ins, and semi-annual health checks so adoption does not stall after launch.</p>
+                        <p class="module-explainer text-[10px] text-slate-400 leading-[1.45]">Hosting, bi-weekly manager check-ins, and semi-annual health checks after launch.</p>
                         <p class="text-[8px] font-mono text-brandTeal-400/90 mt-auto pt-1.5 border-t border-brandNavy-700/50 leading-snug">Outcome: Hosting &amp; Check-Ins</p>
-                    </div>
+                    </article>
                 </div>
             </div>
 
-            <p id="packageRoiHint" class="text-center text-[9px] lg:text-[10px] font-mono text-slate-500 mt-4 lg:mt-3 max-w-3xl mx-auto leading-relaxed">
+            <p id="packageRoiHint" class="roadmap-footnote-split text-center text-[9px] lg:text-[10px] font-mono text-slate-500 mt-4 lg:mt-2 max-w-3xl mx-auto leading-relaxed">
                 At your calculator settings above, first-year recovery target is shown in green — a Full Transformation is often recoverable within that first year for a 15-person team profile.
             </p>
-            <p class="text-center text-[9px] font-mono text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            <p class="roadmap-footnote-split text-center text-[9px] font-mono text-slate-600 max-w-2xl mx-auto leading-relaxed">
                 Exact scope and quote validated in your Statement of Work.
+            </p>
+            <p class="roadmap-footnote-combined text-center text-[9px] font-mono text-slate-500 mt-2 max-w-4xl mx-auto leading-relaxed">
+                <span id="packageRoiHintDesktop">At your calculator settings, recovery target is shown in green.</span>
+                <span class="text-slate-600"> · Exact scope and quote validated in your Statement of Work.</span>
             </p>
         </div>
     </section>
@@ -1027,6 +1054,10 @@
             const roiHint = document.getElementById('packageRoiHint');
             if (roiHint) {
                 roiHint.textContent = `At your settings above, 40% recovery target is ${formatPHP(annualRecovery)} — a Full Transformation (M1–M3) is often recoverable within that first year at this team profile.`;
+            }
+            const roiHintDesktop = document.getElementById('packageRoiHintDesktop');
+            if (roiHintDesktop) {
+                roiHintDesktop.textContent = `At your settings, 40% recovery is ${formatPHP(annualRecovery)} — Full Transformation (M1–M3) often pays back in year one.`;
             }
         }
 
