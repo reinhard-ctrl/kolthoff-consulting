@@ -8,6 +8,7 @@ import Tenants from './pages/Tenants';
 import IntakeCenter from './pages/IntakeCenter';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
+import Collections from './pages/Collections';
 import MasterAdmin from './pages/MasterAdmin';
 import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
@@ -210,6 +211,7 @@ function AppRoutes() {
         <Route path="/intake" element={<IntakeCenter />} />
         <Route path="/portals" element={<PortalManager />} />
         <Route path="/contracts" element={<ContractLedger />} />
+        <Route path="/collections" element={<Collections />} />
         <Route path="/master" element={<MasterAdmin />} />
         <Route path="/app/:appId" element={<EmbedAppRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />

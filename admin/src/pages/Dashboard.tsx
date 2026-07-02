@@ -5,14 +5,21 @@ import { adminCol } from '../lib/firebase';
 import QuickActionsBar from '../components/QuickActionsBar';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ clients: 0, profiles: 0, contracts: 0, intake: 0, tickets: 0 });
+  const [stats, setStats] = useState({ clients: 0, profiles: 0, contracts: 0, invoices: 0, intake: 0, tickets: 0 });
 
   useEffect(() => {
-    const cols: (keyof typeof stats)[] = ['clients', 'workbook_profiles', 'contracts_ledger', 'intake_forms', 'core_it_requests'];
+    const cols: (keyof typeof stats)[] = ['clients', 'workbook_profiles', 'contracts_ledger', 'invoices', 'intake_forms', 'core_it_requests'];
     const unsubs = cols.map((col) =>
       onSnapshot(
         adminCol(col),
-        (snap) => setStats((s) => ({ ...s, [col === 'workbook_profiles' ? 'profiles' : col === 'contracts_ledger' ? 'contracts' : col === 'intake_forms' ? 'intake' : col === 'core_it_requests' ? 'tickets' : col]: snap.size })),
+        (snap) => setStats((s) => ({
+          ...s,
+          [col === 'workbook_profiles' ? 'profiles'
+            : col === 'contracts_ledger' ? 'contracts'
+            : col === 'intake_forms' ? 'intake'
+            : col === 'core_it_requests' ? 'tickets'
+            : col]: snap.size,
+        })),
         (err) => console.warn(`Dashboard listener failed (${col}):`, err.message)
       )
     );
@@ -23,6 +30,7 @@ export default function Dashboard() {
     { label: 'Client Portals', value: stats.clients, to: '/portals' },
     { label: 'SOW Profiles', value: stats.profiles, to: '/app/project-planner' },
     { label: 'Contracts', value: stats.contracts, to: '/contracts' },
+    { label: 'Invoices', value: stats.invoices, to: '/collections' },
     { label: 'Intake Forms', value: stats.intake, to: '/intake' },
     { label: 'IT Tickets', value: stats.tickets, to: '/master' },
   ];

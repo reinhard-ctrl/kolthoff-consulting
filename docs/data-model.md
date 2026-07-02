@@ -18,6 +18,8 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `intake_forms` | Intake form submissions | profileId, status, responses |
 | `intake_templates` | Reusable form templates | fields, mappedTarget |
 | `contracts_ledger` | E-sign status | doc ID `contract-{profileId}`, status, signatureName, signedAt |
+| `invoices` | AR / collections | profileId, invoiceNumber, milestoneKey, total, amountPaid, status, dueDate |
+| `withholding_2307` | Form 2307 certificates received | clientCompany, period, amount, receivedDate |
 | `admin_credentials` | Admin passcodes | role |
 | `admin_sessions` | Active admin login sessions | passcodeVerified, verifiedAt |
 | `core_users` | Workspace users | email, role, departmentId, firebaseUid |
