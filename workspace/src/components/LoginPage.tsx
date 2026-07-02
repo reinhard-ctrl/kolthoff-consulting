@@ -126,6 +126,35 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
     setPassword('');
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+    setInfo('');
+    try {
+      const { signInWithGoogleStaff } = await import('../lib/staff-sso');
+      await signInWithGoogleStaff();
+      const email = auth.currentUser?.email?.trim().toLowerCase() || '';
+      const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
+      if (snap.empty) {
+        await signOut(auth);
+        setError('Account not provisioned. Contact your Kolthoff admin.');
+        return;
+      }
+      const match = snap.docs[0].data() as CoreUser;
+      await logAudit('workspace_login', { email: match.email, provider: 'google' });
+      onLogin(match);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+      if (err instanceof FirebaseError && err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled.');
+      } else {
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (view === 'reset') {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
@@ -168,6 +197,23 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
       <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
         <h1 className="text-2xl font-bold text-white text-center mb-2">Team Portal</h1>
         <p className="text-sm text-slate-400 text-center mb-6">Sign in with your organizational email</p>
+        {appId === 'kolthoff-admin-app' && (
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-3 mb-3 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-100 disabled:opacity-50 text-sm"
+            >
+              Sign in with Google Workspace
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-slate-600" />
+              <span className="text-[10px] uppercase tracking-widest text-slate-500">or email</span>
+              <div className="flex-1 h-px bg-slate-600" />
+            </div>
+          </>
+        )}
         <input
           type="email"
           value={email}

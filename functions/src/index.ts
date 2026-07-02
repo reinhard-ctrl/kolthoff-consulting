@@ -712,6 +712,47 @@ export const prepareClientWorkspace = onCall(async (request) => {
   };
 });
 
+const KOLTHOFF_STAFF_DOMAIN = '@kolthoff-consulting.com';
+
+/** Google Workspace SSO — provision @kolthoff-consulting.com staff claims + core_users */
+export const provisionGoogleStaff = onCall(async (request) => {
+  if (!request.auth?.uid) {
+    throw new HttpsError('unauthenticated', 'Sign in required');
+  }
+
+  const email = normalizeEmail(String(request.auth.token.email || ''));
+  if (!email.endsWith(KOLTHOFF_STAFF_DOMAIN)) {
+    throw new HttpsError('permission-denied', 'Google SSO requires a @kolthoff-consulting.com account');
+  }
+
+  const provider = (request.auth.token.firebase as { sign_in_provider?: string } | undefined)?.sign_in_provider;
+  if (provider !== 'google.com') {
+    throw new HttpsError('failed-precondition', 'Use Google sign-in');
+  }
+
+  const existing = await findCoreUserDoc(ADMIN_TENANT, email);
+  const existingRole = (existing?.data()?.role as string) || 'kolthoff_admin';
+  const role = existingRole === 'admin' ? 'kolthoff_admin' : existingRole;
+  const displayName = (request.auth.token.name as string) || email.split('@')[0];
+  const userId = existing?.id ?? `u_${request.auth.uid.slice(0, 8)}`;
+
+  await admin.auth().setCustomUserClaims(request.auth.uid, {
+    role,
+    tenantId: ADMIN_TENANT,
+  });
+
+  await db.doc(`artifacts/${ADMIN_TENANT}/public/data/core_users/${userId}`).set({
+    id: userId,
+    email,
+    name: displayName,
+    role,
+    firebaseUid: request.auth.uid,
+    updatedAt: Date.now(),
+  }, { merge: true });
+
+  return { role, tenantId: ADMIN_TENANT, userId, email };
+});
+
 /** Set custom claims — kolthoff admin only */
 export const setUserClaims = onCall(async (request) => {
   const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);

@@ -75,6 +75,15 @@ export default function App() {
     hasAdminStaffSession().then(async (ok) => {
       if (ok && auth.currentUser) {
         try {
+          const currentEmail = auth.currentUser.email?.trim().toLowerCase();
+          if (currentEmail) {
+            const byEmail = await getDocs(query(tenantCol('core_users'), where('email', '==', currentEmail)));
+            if (!byEmail.empty) {
+              setUser(byEmail.docs[0].data() as CoreUser);
+              setCheckingStaff(false);
+              return;
+            }
+          }
           const adminSnap = await getDocs(query(tenantCol('core_users'), where('role', '==', 'kolthoff_admin')));
           if (!adminSnap.empty) {
             setUser(adminSnap.docs[0].data() as CoreUser);

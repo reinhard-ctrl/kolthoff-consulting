@@ -112,7 +112,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
 | **P4** | Production client journey verification (sign → intake → portal) | ⏳ **You** — on `kolthoff-consulting.com` |
-| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | ⏳ Next eng |
+| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **In progress** — SSO + rules shipped; enable App Check in Console |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
 | **P7** | Phase 3C: Blueprint designer + client provisioning wizard | ⏳ Planned |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
@@ -368,8 +368,8 @@ flowchart TB
 7. **Verify** intake submit + full client journey on production domain
 
 ### Should do (Phase 3 — Package P5–P7)
-8. Google Workspace SSO
-9. App Check enforcement
+8. ~~Google Workspace SSO~~ ✅ (passcode break-glass retained)
+9. App Check enforcement — **enable in Firebase Console** after setting `RECAPTCHA_SITE_KEY`
 10. React migration (delivery → ops → analytics → client)
 11. Master Admin blueprint CRUD
 12. Client workspace provisioning wizard

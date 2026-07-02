@@ -19,6 +19,12 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-southeast1');
 export const adminAppId = 'kolthoff-admin-app';
 
+const STAFF_DOMAIN = '@kolthoff-consulting.com';
+
+function isKolthoffStaffEmail(email: string | null | undefined): boolean {
+  return !!email?.toLowerCase().endsWith(STAFF_DOMAIN);
+}
+
 /** Collection ref — must use collection(), not doc(), or Firestore throws on listeners. */
 export function adminCol(name: string) {
   return collection(db, 'artifacts', adminAppId, 'public', 'data', name);
@@ -78,9 +84,22 @@ export async function verifyAdminPasscode(code: string) {
 
 export async function hasAdminSession(): Promise<boolean> {
   try {
-    await bootstrapAuth();
-    if (!auth.currentUser) return false;
-    const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+    if (!auth.currentUser) {
+      await bootstrapAuth();
+    }
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    const token = await user.getIdTokenResult();
+    if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
+      return true;
+    }
+
+    if (isKolthoffStaffEmail(user.email) && user.providerData.some((p) => p.providerId === 'google.com')) {
+      return token.claims.tenantId === adminAppId;
+    }
+
+    const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
     const snap = await getDoc(sessionRef);
     return snap.exists();
   } catch {
@@ -89,7 +108,15 @@ export async function hasAdminSession(): Promise<boolean> {
 }
 
 export function initAppCheck() {
-  const siteKey = (window as unknown as { __RECAPTCHA_SITE_KEY__?: string }).__RECAPTCHA_SITE_KEY__;
+  const win = window as unknown as {
+    __RECAPTCHA_SITE_KEY__?: string;
+    FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
+  };
+  if (win.FIREBASE_APPCHECK_DEBUG_TOKEN !== undefined) {
+    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      win.FIREBASE_APPCHECK_DEBUG_TOKEN;
+  }
+  const siteKey = win.__RECAPTCHA_SITE_KEY__ || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (siteKey) {
     initializeAppCheck(app, { provider: new ReCaptchaV3Provider(siteKey), isTokenAutoRefreshEnabled: true });
   }

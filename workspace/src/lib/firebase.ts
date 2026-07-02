@@ -56,18 +56,35 @@ const ADMIN_APP = 'kolthoff-admin-app';
 
 export async function hasAdminStaffSession(): Promise<boolean> {
   try {
-    await bootstrapAuth();
+    if (!auth.currentUser) {
+      await bootstrapAuth();
+    }
   } catch {
     return false;
   }
-  if (!auth.currentUser) return false;
-  const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', auth.currentUser.uid);
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  const token = await user.getIdTokenResult();
+  if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
+    return true;
+  }
+
+  const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', user.uid);
   const snap = await getDoc(sessionRef);
   return snap.exists();
 }
 
 export function initAppCheck() {
-  const siteKey = (window as unknown as { __RECAPTCHA_SITE_KEY__?: string }).__RECAPTCHA_SITE_KEY__;
+  const win = window as unknown as {
+    __RECAPTCHA_SITE_KEY__?: string;
+    FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
+  };
+  if (win.FIREBASE_APPCHECK_DEBUG_TOKEN !== undefined) {
+    (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      win.FIREBASE_APPCHECK_DEBUG_TOKEN;
+  }
+  const siteKey = win.__RECAPTCHA_SITE_KEY__ || import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (siteKey) {
     initializeAppCheck(app, { provider: new ReCaptchaV3Provider(siteKey), isTokenAutoRefreshEnabled: true });
   }

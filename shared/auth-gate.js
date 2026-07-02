@@ -66,8 +66,17 @@ export async function hasStaffAccess(user) {
     /* continue */
   }
 
-  const provider = user.providerData?.[0]?.providerId;
-  if (provider && provider !== 'anonymous') return true;
+  const email = user.email?.toLowerCase();
+  const isGoogle = user.providerData?.some((p) => p.providerId === 'google.com');
+  if (isGoogle && email?.endsWith('@kolthoff-consulting.com')) {
+    try {
+      const { claims } = await user.getIdTokenResult();
+      if (claims.role === 'kolthoff_admin' || claims.tenantId) return true;
+    } catch {
+      /* continue */
+    }
+    return false;
+  }
 
   const session = await getDoc(adminSessionRef(user.uid));
   return session.exists();
