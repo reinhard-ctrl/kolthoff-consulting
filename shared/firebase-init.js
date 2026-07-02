@@ -16,6 +16,7 @@ import {
   getStorage, ref, uploadBytes, getDownloadURL, deleteObject, listAll,
 } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
 
 const DEFAULT_CONFIG = {
   apiKey: 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI',
@@ -43,6 +44,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app, 'asia-southeast1');
 
 /** Initialize App Check when site key is configured */
 export function initAppCheck() {
@@ -123,6 +125,13 @@ export async function hasAdminSession() {
   return snap.exists();
 }
 
+/** Exchange portal access code for scoped custom token (public callable) */
+export async function exchangePortalToken(accessCode) {
+  const fn = httpsCallable(functions, 'generatePortalToken');
+  const result = await fn({ accessCode: accessCode.trim().toUpperCase() });
+  return result.data;
+}
+
 /** Audit log helper */
 export async function logAudit(action, details = {}) {
   try {
@@ -142,6 +151,7 @@ if (typeof window !== 'undefined') {
   window.firebaseAuth = auth;
   window.firebaseDb = db;
   window.firebaseStorage = storage;
+  window.firebaseFunctions = functions;
   window.appId = appId;
   window.initialAuthToken = initialAuthToken;
   window.KOLTHOFF_DISABLE_CLIENT_SEED = disableClientSeed;
@@ -181,6 +191,8 @@ if (typeof window !== 'undefined') {
   window.tenantCollection = tenantCollection;
   window.tenantDoc = tenantDoc;
   window.initAppCheck = initAppCheck;
+  window.exchangePortalToken = exchangePortalToken;
+  window.httpsCallable = httpsCallable;
 }
 
 export {
@@ -189,4 +201,5 @@ export {
   doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, collection, addDoc, updateDoc,
   query, where, orderBy, limit,
   ref, uploadBytes, getDownloadURL, deleteObject, listAll,
+  exchangePortalToken, functions, httpsCallable,
 };

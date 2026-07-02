@@ -109,28 +109,17 @@
             const [accessCode, setAccessCode] = useState('');
             const [authError, setAuthError] = useState('');
             const [activeClientData, setActiveClientData] = useState(null);
-            const [isAuthed, setIsAuthed] = useState(false);
+            const [authenticatedCode, setAuthenticatedCode] = useState('');
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [isLoggingIn, setIsLoggingIn] = useState(false);
+            const [uploadError, setUploadError] = useState('');
+            const [uploadSuccess, setUploadSuccess] = useState('');
 
             useEffect(() => {
                 let checkInterval = setInterval(() => {
-                    if (window.firebaseAuth && window.firebaseDb && window.signInAnonymously) {
+                    if (window.firebaseAuth && window.firebaseDb && window.exchangePortalToken) {
                         clearInterval(checkInterval);
-                        
-                        const initAuth = async () => {
-                            try {
-                                if (window.initialAuthToken) {
-                                    await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
-                                } else {
-                                    await window.signInAnonymously(window.firebaseAuth);
-                                }
-                                setIsAuthed(true);
-                            } catch (e) {
-                                console.error("Auth error:", e);
-                                setAuthError('Connection to secure server failed.');
-                            }
-                        };
-                        
-                        initAuth();
+                        setFirebaseReady(true);
                     }
                 }, 50);
 
@@ -139,58 +128,79 @@
 
             const handleLogin = async (e) => {
                 e.preventDefault();
-                if (!isAuthed) {
+                if (!firebaseReady) {
                     setAuthError('Establishing secure connection... Please wait.');
                     return;
                 }
-                
+
                 const cleanCode = accessCode.trim().toUpperCase();
-                
+                if (!cleanCode) {
+                    setAuthError('Enter your SOW tracking code.');
+                    return;
+                }
+
+                setIsLoggingIn(true);
+                setAuthError('');
+
                 try {
+                    const { token, client } = await window.exchangePortalToken(cleanCode);
+                    await window.signInWithCustomToken(window.firebaseAuth, token);
+                    setActiveClientData(client);
+                    setAuthenticatedCode(cleanCode);
+                    setAuthError('');
+
                     const docRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'clients', cleanCode);
-                    const docSnap = await window.getDoc(docRef);
-                    
-                    if (docSnap.exists()) {
-                        setActiveClientData(docSnap.data());
-                        setAuthError('');
-                        
-                        // Attach live data sync listener
-                        window.liveListener = window.onSnapshot(docRef, (snap) => {
-                            if (snap.exists()) {
-                                setActiveClientData(snap.data());
-                            } else {
-                                handleLogout(); // Admin deleted the file
-                            }
-                        }, (err) => console.error(err));
-                    } else {
+                    window.liveListener = window.onSnapshot(docRef, (snap) => {
+                        if (snap.exists()) {
+                            setActiveClientData(snap.data());
+                        } else {
+                            handleLogout();
+                        }
+                    }, (err) => console.error(err));
+                } catch (e) {
+                    console.error('Portal login error:', e);
+                    const code = e?.code || '';
+                    if (code.includes('not-found') || String(e?.message || '').includes('Invalid access code')) {
                         setAuthError('Invalid Access Code. Please check your SOW documentation.');
+                    } else {
+                        setAuthError('Error accessing the secure vault. Please try again.');
                     }
-                } catch(e) {
-                    console.error("Fetch error:", e);
-                    setAuthError('Error accessing the secure vault.');
+                } finally {
+                    setIsLoggingIn(false);
                 }
             };
 
-            const handleLogout = () => {
-                if (window.liveListener) window.liveListener(); // Detach live sync
+            const handleLogout = async () => {
+                if (window.liveListener) window.liveListener();
+                try {
+                    await window.signOut(window.firebaseAuth);
+                } catch (e) {
+                    console.warn('Sign out failed:', e);
+                }
                 setActiveClientData(null);
+                setAuthenticatedCode('');
                 setAccessCode('');
                 setActiveTab('dashboard');
+                setUploadError('');
+                setUploadSuccess('');
             };
 
             const handleRealUpload = async (actionId, file) => {
                 if (!file || !activeClientData) return;
                 setUploadSimulating(actionId);
+                setUploadError('');
+                setUploadSuccess('');
                 try {
-                    const path = `artifacts/${window.appId}/files/${activeClientData.id || accessCode}/${Date.now()}_${file.name}`;
+                    const clientKey = authenticatedCode || accessCode.trim().toUpperCase();
+                    const path = `artifacts/${window.appId}/files/${clientKey}/${Date.now()}_${file.name}`;
                     const storageRef = window.storageRef(window.firebaseStorage, path);
                     await window.uploadBytes(storageRef, file);
-                    const url = await window.getDownloadURL(storageRef);
-                    if (window.logAudit) await window.logAudit('portal_upload', { clientId: activeClientData.id, filename: file.name });
-                    alert(`File uploaded securely: ${file.name}`);
+                    await window.getDownloadURL(storageRef);
+                    if (window.logAudit) await window.logAudit('portal_upload', { clientId: clientKey, filename: file.name });
+                    setUploadSuccess(`File uploaded securely: ${file.name}`);
                 } catch (err) {
                     console.error(err);
-                    alert('Upload failed: ' + (err.message || 'Storage unavailable'));
+                    setUploadError('Upload failed: ' + (err.message || 'Storage unavailable'));
                 } finally {
                     setUploadSimulating(false);
                 }
@@ -234,8 +244,8 @@
                                     />
                                 </div>
                                 {authError && <p className="text-xs text-rose-400 font-bold bg-rose-500/10 p-2 rounded">{authError}</p>}
-                                <button type="submit" className="w-full bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded-lg px-4 py-3 text-sm transition-all flex justify-center items-center gap-2">
-                                    <Icons.Lock /> Authenticate Session
+                                <button type="submit" disabled={isLoggingIn || !firebaseReady} className="w-full bg-brandTeal-500 hover:bg-brandTeal-400 disabled:opacity-50 disabled:cursor-not-allowed text-brandNavy-955 font-bold rounded-lg px-4 py-3 text-sm transition-all flex justify-center items-center gap-2">
+                                    <Icons.Lock /> {isLoggingIn ? 'Authenticating...' : 'Authenticate Session'}
                                 </button>
                             </form>
                             
@@ -248,7 +258,7 @@
             const renderTabContent = () => {
                 switch (activeTab) {
                     case 'dashboard':
-                        return <DashboardTab data={activeClientData} handleSimulateUpload={handleSimulateUpload} uploadSimulating={uploadSimulating} />;
+                        return <DashboardTab data={activeClientData} handleSimulateUpload={handleSimulateUpload} uploadSimulating={uploadSimulating} uploadError={uploadError} uploadSuccess={uploadSuccess} />;
                     case 'roadmap':
                         return <RoadmapTab data={activeClientData} />;
                     case 'intake':
@@ -346,13 +356,15 @@
         }
 
         // --- DASHBOARD TAB ---
-        const DashboardTab = ({ data, handleSimulateUpload, uploadSimulating }) => {
+        const DashboardTab = ({ data, handleSimulateUpload, uploadSimulating, uploadError, uploadSuccess }) => {
             const pendingActions = (data.actionItems || []).filter(a => a.status === 'pending');
             const safeMetrics = data.metrics || { annualLeakageIdentified: 0, chaosTaxEliminated: 0, saasSavingsIdentified: 0 };
             const workspaceUrl = data.workspaceUrl || '';
 
             return (
                 <div className="space-y-8 fade-in">
+                    {uploadError && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-3">{uploadError}</p>}
+                    {uploadSuccess && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">{uploadSuccess}</p>}
                     {workspaceUrl && (
                         <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

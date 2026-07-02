@@ -72,14 +72,29 @@ export default function App() {
   const [restoringSession, setRestoringSession] = useState(true);
 
   useEffect(() => {
-    hasAdminStaffSession().then((ok) => {
+    hasAdminStaffSession().then(async (ok) => {
       if (ok && auth.currentUser) {
-        setUser({
-          id: auth.currentUser.uid,
-          email: 'staff@kolthoff-consulting.com',
-          name: 'Kolthoff Staff',
-          role: 'kolthoff_admin',
-        });
+        try {
+          const adminSnap = await getDocs(query(tenantCol('core_users'), where('role', '==', 'kolthoff_admin')));
+          if (!adminSnap.empty) {
+            setUser(adminSnap.docs[0].data() as CoreUser);
+          } else {
+            setUser({
+              id: auth.currentUser.uid,
+              email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
+              name: 'Kolthoff Admin',
+              role: 'kolthoff_admin',
+            });
+          }
+        } catch (err) {
+          console.warn('Admin staff lookup failed:', err);
+          setUser({
+            id: auth.currentUser.uid,
+            email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
+            name: 'Kolthoff Admin',
+            role: 'kolthoff_admin',
+          });
+        }
       }
       setCheckingStaff(false);
     });

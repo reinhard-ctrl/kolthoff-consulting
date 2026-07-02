@@ -29,13 +29,21 @@ service firebase.storage {
       return isKolthoffAdmin() || (isAuthenticated() && !isAnonymous());
     }
 
+    function isPortalClient() {
+      return isAuthenticated() && request.auth.token.role == 'portal_client';
+    }
+
+    function isPortalClientFor(clientId) {
+      return isPortalClient() && request.auth.token.accessCode == clientId;
+    }
+
     match /artifacts/{tenantId}/files/{clientId}/{filename} {
-      // Staff: full access. Portal clients (anonymous MVP): read/write own uploads.
-      allow read: if isStaffMember() || isAuthenticated();
-      allow write: if isStaffMember() ||
-        (isAuthenticated() &&
-          request.resource.size < 25 * 1024 * 1024 &&
-          request.resource.contentType.matches('application/.*|image/.*|text/.*'));
+      allow read: if isStaffMember() || isPortalClientFor(clientId);
+      allow write: if isStaffMember() || (
+        isPortalClientFor(clientId) &&
+        request.resource.size < 25 * 1024 * 1024 &&
+        request.resource.contentType.matches('application/.*|image/.*|text/.*')
+      );
       allow delete: if isKolthoffAdmin();
     }
   }

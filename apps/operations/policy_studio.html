@@ -531,6 +531,7 @@
             const [authError, setAuthError] = useState(null);
             
             const [isSaving, setIsSaving] = useState(false);
+            const [isPublishing, setIsPublishing] = useState(false);
             const [toastMessage, setToastMessage] = useState(null);
             
             const [workbookProfiles, setWorkbookProfiles] = useState([]);
@@ -798,100 +799,122 @@
                 setIsSaving(false);
             };
 
-            // --- EXPORT JSON FOR MASTER ADMIN CONSOLE IMPORTER ---
-            const handleExportJSON = () => {
-                try {
-                    const policiesArray = [];
-                    const defaultDate = new Date().toISOString().split('T')[0];
-                    
-                    // 1. Compile SOPs
-                    if (localPolicyData.sops) {
-                        localPolicyData.sops.forEach(sop => {
-                            let mdContent = `# ${sop.title}\n\n`;
-                            if (sop.objective) mdContent += `**Objective:**\n${sop.objective}\n\n`;
-                            if (sop.scope) mdContent += `**Scope:**\n${sop.scope}\n\n`;
-                            if (sop.prerequisites) mdContent += `**Prerequisites:**\n${sop.prerequisites}\n\n`;
-                            if (sop.kpis) mdContent += `**KPIs:**\n${sop.kpis}\n\n`;
-                            if (sop.troubleshooting) mdContent += `**Troubleshooting:**\n${sop.troubleshooting}\n\n`;
-                            
-                            if (sop.steps && sop.steps.length > 0) {
-                                mdContent += `### Process Steps\n`;
-                                sop.steps.forEach((step, idx) => {
-                                    mdContent += `**${idx + 1}. ${step.action}**\n*Owner: ${step.owner} | Duration: ${step.duration}*\n${step.details}\n\n`;
-                                });
-                            }
-                            
-                            policiesArray.push({
-                                id: sop.id || generateId(),
-                                title: sop.title || 'Standard Operating Procedure',
-                                content: mdContent.trim(),
-                                lastUpdated: sop.docControl?.lastReviewed || defaultDate
-                            });
-                        });
-                    }
-                    
-                    // 2. Compile Handbook
-                    if (localPolicyData.handbook) {
-                        let mdContent = `# ${localPolicyData.handbook.title || 'Employee Handbook'}\n\n`;
-                        if (localPolicyData.handbook.introduction) mdContent += `## Introduction\n${localPolicyData.handbook.introduction}\n\n`;
-                        if (localPolicyData.handbook.mission) mdContent += `## Mission\n${localPolicyData.handbook.mission}\n\n`;
-                        if (localPolicyData.handbook.vision) mdContent += `## Vision\n${localPolicyData.handbook.vision}\n\n`;
-                        if (localPolicyData.handbook.timekeeping) mdContent += `## Timekeeping & Attendance\n${localPolicyData.handbook.timekeeping}\n\n`;
-                        if (localPolicyData.handbook.compensation) mdContent += `## Compensation & Benefits\n${localPolicyData.handbook.compensation}\n\n`;
-                        if (localPolicyData.handbook.offboarding) mdContent += `## Resignation & Offboarding\n${localPolicyData.handbook.offboarding}\n\n`;
-                        
-                        if (localPolicyData.handbook.leaves && localPolicyData.handbook.leaves.length > 0) {
-                            mdContent += `## Leaves Structure\n`;
-                            localPolicyData.handbook.leaves.forEach(l => {
-                               mdContent += `- **${l.name}** (${l.duration}): ${l.condition}\n`; 
-                            });
-                            mdContent += `\n`;
-                        }
-                        
-                        if (localPolicyData.handbook.discipline && localPolicyData.handbook.discipline.length > 0) {
-                            mdContent += `## Discipline Framework\n`;
-                            localPolicyData.handbook.discipline.forEach(d => {
-                                mdContent += `### ${d.level}\n**Action:** ${d.action}\n**Details:** ${d.details}\n\n`;
-                            });
-                        }
-                        
-                        if (localPolicyData.handbook.customPolicies && localPolicyData.handbook.customPolicies.length > 0) {
-                            mdContent += `## Custom Policies\n`;
-                            localPolicyData.handbook.customPolicies.forEach(cp => {
-                               mdContent += `### ${cp.title}\n${cp.text}\n\n`; 
+            const compilePoliciesForVault = () => {
+                const policiesArray = [];
+                const defaultDate = new Date().toISOString().split('T')[0];
+
+                if (localPolicyData.sops) {
+                    localPolicyData.sops.forEach(sop => {
+                        let mdContent = `# ${sop.title}\n\n`;
+                        if (sop.objective) mdContent += `**Objective:**\n${sop.objective}\n\n`;
+                        if (sop.scope) mdContent += `**Scope:**\n${sop.scope}\n\n`;
+                        if (sop.prerequisites) mdContent += `**Prerequisites:**\n${sop.prerequisites}\n\n`;
+                        if (sop.kpis) mdContent += `**KPIs:**\n${sop.kpis}\n\n`;
+                        if (sop.troubleshooting) mdContent += `**Troubleshooting:**\n${sop.troubleshooting}\n\n`;
+
+                        if (sop.steps && sop.steps.length > 0) {
+                            mdContent += `### Process Steps\n`;
+                            sop.steps.forEach((step, idx) => {
+                                mdContent += `**${idx + 1}. ${step.action}**\n*Owner: ${step.owner} | Duration: ${step.duration}*\n${step.details}\n\n`;
                             });
                         }
 
                         policiesArray.push({
-                            id: 'doc-handbook',
-                            title: localPolicyData.handbook.title || 'Employee Handbook',
+                            id: sop.id || generateId(),
+                            title: sop.title || 'Standard Operating Procedure',
                             content: mdContent.trim(),
-                            lastUpdated: localPolicyData.handbook.docControl?.lastReviewed || defaultDate
+                            lastUpdated: sop.docControl?.lastReviewed || defaultDate
                         });
+                    });
+                }
+
+                if (localPolicyData.handbook) {
+                    let mdContent = `# ${localPolicyData.handbook.title || 'Employee Handbook'}\n\n`;
+                    if (localPolicyData.handbook.introduction) mdContent += `## Introduction\n${localPolicyData.handbook.introduction}\n\n`;
+                    if (localPolicyData.handbook.mission) mdContent += `## Mission\n${localPolicyData.handbook.mission}\n\n`;
+                    if (localPolicyData.handbook.vision) mdContent += `## Vision\n${localPolicyData.handbook.vision}\n\n`;
+                    if (localPolicyData.handbook.timekeeping) mdContent += `## Timekeeping & Attendance\n${localPolicyData.handbook.timekeeping}\n\n`;
+                    if (localPolicyData.handbook.compensation) mdContent += `## Compensation & Benefits\n${localPolicyData.handbook.compensation}\n\n`;
+                    if (localPolicyData.handbook.offboarding) mdContent += `## Resignation & Offboarding\n${localPolicyData.handbook.offboarding}\n\n`;
+
+                    if (localPolicyData.handbook.leaves && localPolicyData.handbook.leaves.length > 0) {
+                        mdContent += `## Leaves Structure\n`;
+                        localPolicyData.handbook.leaves.forEach(l => {
+                            mdContent += `- **${l.name}** (${l.duration}): ${l.condition}\n`;
+                        });
+                        mdContent += `\n`;
                     }
-                    
-                    // 3. Compile Standard Docs
-                    if (localPolicyData.standardDocs) {
-                        Object.keys(localPolicyData.standardDocs).forEach(key => {
-                            const doc = localPolicyData.standardDocs[key];
-                            let mdContent = `# ${doc.title || 'Standard Document'}\n\n`;
-                            if (doc.introduction) mdContent += `## Introduction\n${doc.introduction}\n\n`;
-                            
-                            if (doc.sections && doc.sections.length > 0) {
-                                doc.sections.forEach((sec, idx) => {
-                                    mdContent += `## ${idx + 1}. ${sec.title}\n${sec.content}\n\n`;
-                                });
-                            }
-                            
-                            policiesArray.push({
-                                id: `doc-${key}`,
-                                title: doc.title || 'Standard Document',
-                                content: mdContent.trim(),
-                                lastUpdated: doc.docControl?.lastReviewed || defaultDate
-                            });
+
+                    if (localPolicyData.handbook.discipline && localPolicyData.handbook.discipline.length > 0) {
+                        mdContent += `## Discipline Framework\n`;
+                        localPolicyData.handbook.discipline.forEach(d => {
+                            mdContent += `### ${d.level}\n**Action:** ${d.action}\n**Details:** ${d.details}\n\n`;
                         });
                     }
 
+                    if (localPolicyData.handbook.customPolicies && localPolicyData.handbook.customPolicies.length > 0) {
+                        mdContent += `## Custom Policies\n`;
+                        localPolicyData.handbook.customPolicies.forEach(cp => {
+                            mdContent += `### ${cp.title}\n${cp.text}\n\n`;
+                        });
+                    }
+
+                    policiesArray.push({
+                        id: 'doc-handbook',
+                        title: localPolicyData.handbook.title || 'Employee Handbook',
+                        content: mdContent.trim(),
+                        lastUpdated: localPolicyData.handbook.docControl?.lastReviewed || defaultDate
+                    });
+                }
+
+                if (localPolicyData.standardDocs) {
+                    Object.keys(localPolicyData.standardDocs).forEach(key => {
+                        const doc = localPolicyData.standardDocs[key];
+                        let mdContent = `# ${doc.title || 'Standard Document'}\n\n`;
+                        if (doc.introduction) mdContent += `## Introduction\n${doc.introduction}\n\n`;
+
+                        if (doc.sections && doc.sections.length > 0) {
+                            doc.sections.forEach((sec, idx) => {
+                                mdContent += `## ${idx + 1}. ${sec.title}\n${sec.content}\n\n`;
+                            });
+                        }
+
+                        policiesArray.push({
+                            id: `doc-${key}`,
+                            title: doc.title || 'Standard Document',
+                            content: mdContent.trim(),
+                            lastUpdated: doc.docControl?.lastReviewed || defaultDate
+                        });
+                    });
+                }
+
+                return policiesArray;
+            };
+
+            const handlePublishToVault = async () => {
+                if (isStandalone || authError || !isAuthed || !activeProfileId) return;
+                setIsPublishing(true);
+                try {
+                    const policies = compilePoliciesForVault();
+                    for (const policy of policies) {
+                        const vaultRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'core_policies', policy.id);
+                        await window.setDoc(vaultRef, policy, { merge: true });
+                    }
+                    if (window.logAudit) {
+                        await window.logAudit('policy_vault_publish', { profileId: activeProfileId, count: policies.length });
+                    }
+                    triggerToast(`📋 Published ${policies.length} policies to Workspace Vault`);
+                } catch (e) {
+                    console.error('Vault publish error:', e);
+                    triggerToast('❌ Failed to publish policies to Vault.');
+                }
+                setIsPublishing(false);
+            };
+
+            // --- EXPORT JSON FOR MASTER ADMIN CONSOLE IMPORTER ---
+            const handleExportJSON = () => {
+                try {
+                    const policiesArray = compilePoliciesForVault();
                     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(policiesArray, null, 2));
                     const downloadAnchorNode = document.createElement('a');
                     downloadAnchorNode.setAttribute("href", dataStr);
@@ -1369,6 +1392,17 @@
                                 >
                                     {isSaving ? "Saving..." : (isStandalone ? "💾 Save Locally" : "💾 Save to Cloud")}
                                 </button>
+
+                                {!isStandalone && (
+                                    <button
+                                        type="button"
+                                        onClick={handlePublishToVault}
+                                        disabled={isPublishing || authError || !isAuthed}
+                                        className="px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-50 text-brandTeal-400 border border-brandTeal-500/40 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all"
+                                    >
+                                        {isPublishing ? 'Publishing...' : '📋 Publish to Vault'}
+                                    </button>
+                                )}
                                 
                                 <button 
                                     type="button"

@@ -115,6 +115,51 @@ async function run() {
     anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/core_users/u1').get()
   );
 
+  // Portal clients can read only their own client doc
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/APARRI-2026').set({
+      companyName: 'Test Client',
+      sowReference: 'SOW-1',
+    });
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/OTHER-2026').set({
+      companyName: 'Other Client',
+    });
+    await context.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').set({
+      title: 'Intake',
+      fields: [],
+      status: 'sent',
+      responses: [],
+    });
+  });
+
+  const portalClient = testEnv.authenticatedContext('portal_aparri', {
+    role: 'portal_client',
+    accessCode: 'APARRI-2026',
+    tenantId: 'kolthoff-admin-app',
+  });
+  await assertSucceeds(
+    portalClient.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/APARRI-2026').get()
+  );
+  await assertFails(
+    portalClient.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/OTHER-2026').get()
+  );
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/clients/APARRI-2026').get()
+  );
+
+  // Anonymous users can complete intake forms (responses + status only)
+  await assertSucceeds(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').update({
+      responses: [{ id: 'r1', name: 'Jane' }],
+      status: 'completed',
+    })
+  );
+  await assertFails(
+    anon.firestore().doc('artifacts/kolthoff-admin-app/public/data/intake_forms/form-1').update({
+      title: 'Hijacked',
+    })
+  );
+
   console.log('All rules tests passed.');
   await testEnv.cleanup();
 }

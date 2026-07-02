@@ -73,8 +73,8 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | Operations | Workflow Builder | HTML/React CDN | **Production** — slice-based tab persistence |
 | Analytics | Firm / Capacity / Time | HTML/React CDN | **Functional** — manual data entry |
 | Workspace | Core Workspace | React (Vite) | **MVP** — modules partially built |
-| Client | Portal | HTML/React CDN | **Functional** — portal token auth still TODO |
-| Client | Intake form | HTML/React CDN | **Functional** — verify submit on production |
+| Client | Portal | HTML/React CDN | **Production** — custom-token auth via `generatePortalToken` |
+| Client | Intake form | HTML/React CDN | **Production** — client submit rules + inline errors |
 | Client | Contract sign | HTML/React CDN | **Production** — scoped Firestore rules |
 | Public | Marketing site | Static HTML | **Production** |
 
@@ -83,7 +83,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | Function | Purpose | Wired in UI |
 |----------|---------|-------------|
 | `inviteWorkspaceUser` | Auth user + `core_users` | ✅ Tenant Manager |
-| `generatePortalToken` | Client scoped custom token | ❌ Not used |
+| `generatePortalToken` | Client scoped custom token | ✅ Portal login |
 | `verifyAdminPasscode` | Callable passcode (legacy) | Partial — Firestore path preferred |
 | `onWorkbookProfileWritten` | Validate/cache profile metadata | ✅ Trigger |
 
@@ -95,7 +95,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 |-------|------|--------|------------|
 | **0–1** | Platform migration + auth | ✅ **Complete** | — |
 | **2** | Go-live + live data + DNS | ✅ **Complete** | Content in planner/CRM/portals |
-| **2.5** | Ops hardening (remaining gaps) | 🔶 **In progress** — much landed on `main` | Light — test client journeys |
+| **2.5** | Ops hardening (remaining gaps) | ✅ **Complete** on `main` | Light — verify client journeys on production |
 | **3** | Platform maturity (security + unified UI) | ⏳ Planned | Minimal |
 | **4** | Delivery excellence (content + automation) | ⏳ After 2.5/3 | **Primary focus** |
 | **5** | Idol figure (benchmark OS) | ⏳ Ongoing | Case studies, templates, metrics |
@@ -150,17 +150,17 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 
 | # | Deliverable | Status | Outcome |
 |---|-------------|--------|---------|
-| 2.5.1 | **Portal custom-token auth** | ❌ Open | Wire `generatePortalToken`; `portal_client` rules — replace anonymous portal reads |
-| 2.5.2 | **Intake submit on production** | ⚠️ Verify | Confirm client form submit works end-to-end on custom domain |
-| 2.5.3 | **Client error UX** | ⚠️ Partial | Replace remaining `alert()` with inline errors on portal/intake |
+| 2.5.1 | **Portal custom-token auth** | ✅ Done | `generatePortalToken` wired; scoped `portal_client` Firestore + Storage rules |
+| 2.5.2 | **Intake submit on production** | ✅ Rules fixed | Client completion rule for `responses` + `status`; verify on custom domain |
+| 2.5.3 | **Client error UX** | ✅ Done | Inline errors on portal login/upload and intake submit |
 
 ### 2.5B — Still open (data & workspace)
 
 | # | Deliverable | Status | Outcome |
 |---|-------------|--------|---------|
-| 2.5.4 | **Workspace CRM schema** | ❌ Open | Align with ops CRM or keep CRM flag off in workspace |
-| 2.5.5 | **Policy Studio → Vault** | ❌ Open | Publish `policy_documents` → `core_policies` for workspace Vault |
-| 2.5.6 | **Staff identity in workspace** | ❌ Open | Map admin session to real `core_users` (not hardcoded staff email) |
+| 2.5.4 | **Workspace CRM schema** | ✅ Aligned | Uses ops CRM fields (`pipelineStatus`, `estValue`); CRM flag stays off by default |
+| 2.5.5 | **Policy Studio → Vault** | ✅ Done | Publish `policy_documents` → `core_policies` via Policy Studio button |
+| 2.5.6 | **Staff identity in workspace** | ✅ Done | Admin passcode session resolves first `kolthoff_admin` in `core_users` |
 | 2.5.7 | **CRM won/lost → planner** | ⚠️ Partial | Bidirectional status when deal closes |
 
 ### 2.5C — Polish & Phase 3 prep
@@ -178,9 +178,9 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 - [x] No tab clobber between Diagnosis and Workflow Builder
 - [x] Portal sync from planner/intake (auto)
 - [x] CRM ↔ planner financial sync + explicit links
-- [ ] Portal custom-token auth live
-- [ ] Policy → Vault publish path
-- [ ] Workspace CRM aligned or disabled
+- [x] Portal custom-token auth live
+- [x] Policy → Vault publish path
+- [x] Workspace CRM aligned (ops schema; flag off by default)
 - [ ] Full client journey verified on `kolthoff-consulting.com`
 
 ---
@@ -344,10 +344,10 @@ flowchart TB
 ## Remaining engineering backlog (consolidated)
 
 ### Must do (Phase 2.5 — remaining)
-1. Portal custom-token auth (`generatePortalToken` + rules)
-2. Policy Studio → Vault publish
-3. Workspace CRM alignment (or keep disabled)
-4. Staff → `core_users` identity in workspace
+1. ~~Portal custom-token auth (`generatePortalToken` + rules)~~ ✅
+2. ~~Policy Studio → Vault publish~~ ✅
+3. ~~Workspace CRM alignment (or keep disabled)~~ ✅
+4. ~~Staff → `core_users` identity in workspace~~ ✅
 5. Verify intake submit + full client journey on production domain
 
 ### Should do (Phase 3)
@@ -394,4 +394,4 @@ flowchart TB
 
 ---
 
-*Last updated: June 2026 — go-live complete; Phase 2.5 partially shipped on `main`*
+*Last updated: June 2026 — Phase 2.5 ops hardening complete; verify client journeys on production*
