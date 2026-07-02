@@ -6,12 +6,39 @@ Holistic plan to finish the platform migration so you can focus on **content, cl
 
 ---
 
+## Current status (at a glance)
+
+**You are here:** Platform is live and feature-complete for daily delivery. Engineering is shifting from *building infrastructure* to *polish + React migration*. Your job now is **verify production**, **turn on Google SSO + App Check**, then **focus on content and client delivery**.
+
+| Lane | Status | What it means |
+|------|--------|---------------|
+| **Platform (Phases 0–2.5)** | ✅ **Done on `main`** | Hosting, auth, CRM, planner, portal, workspace, rules, CI deploys all working |
+| **P5 Security (Phase 3A)** | 🔶 **Code deployed — Console steps left** | Google SSO + tighter rules shipped; you enable Google provider + App Check in Firebase Console |
+| **P4 Verification** | ⏳ **Your turn** | Walk through production flows below and confirm they work |
+| **P6–P7 (React + provisioning)** | ⏳ **Engineering next** | Migrate HTML apps into admin shell; client onboarding wizard |
+| **Phase 4 (content)** | ⏳ **Your primary focus after P4/P5** | SOW library, playbooks, portal copy, templates |
+
+### Your checklist (do in this order)
+
+1. **Staff login** — Enable Google provider in Firebase Console → test https://kolthoff-consulting.com/admin/ with `@kolthoff-consulting.com` (passcode still works as backup). See `docs/app-check-sso.md`.
+2. **Production smoke test (P4)** — Contract sign → portal login → org chart visible in portal → file upload. ~20 min.
+3. **App Check (optional, recommended)** — Register reCAPTCHA v3 → add GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last.
+4. **Then stop worrying about infra** — Fill planner profiles, CRM deals, portal content. Engineering handles P6/P7 unless something breaks.
+
+### What engineering handles (you can ignore)
+
+- React migration of embedded HTML apps (P6)
+- Blueprint designer + client provisioning wizard (P7)
+- Planner/Gantt/Org Chart polish (ongoing as requested)
+
+---
+
 ## Vision
 
 Kolthoff OS is the **reference operating system** for how you deliver MOD 1–4 engagements: one hub where SOWs, CRM, client portals, workspace collaboration, and analytics connect. When migration is complete:
 
 - Staff sign in once and run the full delivery lifecycle.
-- Clients sign contracts, complete intake, and track progress in a branded portal.
+- Clients sign contracts, view org structure, and track progress in a branded portal.
 - Workspace modules reflect what you sold in the planner — not duplicate manual work.
 - The stack is secure, testable, and maintainable — an **idol figure** you can show clients as proof of operational excellence.
 
@@ -30,10 +57,10 @@ Kolthoff OS is the **reference operating system** for how you deliver MOD 1–4 
 ┌───────────────┐           ┌───────────────┐           ┌───────────────┐
 │  COMMAND      │           │  DELIVERY     │           │  CLIENT       │
 │  /admin/      │           │  Planner      │           │  Portal       │
-│  React SPA    │           │  Diagnosis    │           │  Intake       │
-│  Dashboard    │           │  Policy/WF    │           │  Contract Sign│
-│  Tenants      │           │  CRM          │           │  Marketing /  │
-│  Intake       │           │  Analytics×3  │           │               │
+│  React SPA    │           │  Diagnosis    │           │  Contract Sign│
+│  Dashboard    │           │  Policy/WF    │           │  Marketing /  │
+│  Tenants      │           │  CRM          │           │               │
+│  Org Chart    │           │  Analytics×3  │           │               │
 │  Portals      │           │               │           │               │
 │  Contracts    │           │  (HTML+CDN)   │           │  (HTML+CDN)   │
 │  Master Admin │           │               │           │               │
@@ -62,7 +89,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 |-------|-----|------|----------|
 | Command | Admin console | React (Vite) | **Production** — sidebar, embeds, quick actions |
 | Command | Tenant Manager | React | **Production** — flags, invites, password reset |
-| Command | Intake Center | React | **Production** — templates, auto-merge + portal sync |
+| Command | Org Chart | React | **Production** — roster editor, hierarchy preview, portal sync |
 | Command | Portal Manager | React | **Production** — SOW import, sync-from-profile |
 | Command | Contract Ledger | React | **Production** — client sign links |
 | Command | Master Admin | React | **Basic** — tickets OK; blueprints list-only |
@@ -74,7 +101,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | Analytics | Firm / Capacity / Time | HTML/React CDN | **Functional** — manual data entry |
 | Workspace | Core Workspace | React (Vite) | **MVP** — modules partially built |
 | Client | Portal | HTML/React CDN | **Production** — custom-token auth via `generatePortalToken` |
-| Client | Intake form | HTML/React CDN | **Production** — client submit rules + inline errors |
+| Client | ~~Intake form~~ | — | **Removed** — replaced by Org Chart (staff builds roster; syncs to portal Organization tab) |
 | Client | Contract sign | HTML/React CDN | **Production** — scoped Firestore rules |
 | Public | Marketing site | Static HTML | **Production** |
 
@@ -86,6 +113,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | `generatePortalToken` | Client scoped custom token | ✅ Portal login |
 | `verifyAdminPasscode` | Callable passcode (legacy) | Partial — Firestore path preferred |
 | `onWorkbookProfileWritten` | Validate/cache profile metadata | ✅ Trigger |
+| `provisionGoogleStaff` | Google SSO → custom claims + `core_users` | ✅ Admin + Workspace login |
 
 ---
 
@@ -95,8 +123,8 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 |-------|------|--------|------------|
 | **0–1** | Platform migration + auth | ✅ **Complete** | — |
 | **2** | Go-live + live data + DNS | ✅ **Complete** | Content in planner/CRM/portals |
-| **2.5** | Ops hardening (remaining gaps) | ✅ **Complete** on `main` | Light — verify client journeys on production |
-| **3** | Platform maturity (security + unified UI) | ⏳ Planned | Minimal |
+| **2.5** | Ops hardening (remaining gaps) | ✅ **Complete** on `main` | Verify client journeys on production |
+| **3** | Platform maturity (security + unified UI) | 🔶 **In progress** (3A code done; Console + P6/P7 remain) | Minimal until P4 verified |
 | **4** | Delivery excellence (content + automation) | ⏳ After 2.5/3 | **Primary focus** |
 | **5** | Idol figure (benchmark OS) | ⏳ Ongoing | Case studies, templates, metrics |
 
@@ -111,8 +139,8 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (sign → intake → portal) | ⏳ **You** — on `kolthoff-consulting.com` |
-| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **In progress** — SSO + rules shipped; enable App Check in Console |
+| **P4** | Production client journey verification (sign → portal → org chart) | ⏳ **You** — on `kolthoff-consulting.com` |
+| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **Code on `main`** — enable Google + App Check in Console; verify SSO |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
 | **P7** | Phase 3C: Blueprint designer + client provisioning wizard | ⏳ Planned |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
@@ -149,7 +177,9 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **Contract e-sign** | Scoped Firestore rules; expanded `contract_sign.html` |
 | **Workflow tabs** | `diagnosisWorkflow` / `workflowBuilder` slices via `shared/workflow-tabs.js` |
 | **Portal sync** | `portal-sync.js` + admin lib — auto-sync on planner/diagnosis/policy save |
-| **Intake merge** | `intake-merge.ts` — mapped targets, auto portal push |
+| **Org Chart** | React `/admin/org-chart` — roster editor, portal Organization tab sync |
+| **Planner polish** | Compact header, Gantt label fixes, engagement package callout |
+| **Google SSO (P5)** | `provisionGoogleStaff`, staff rules hardening, App Check bootstrap |
 | **CRM links** | `links.crmDealId`, share links, public CRM view |
 | **Tenant / workspace** | Expanded Tenants, password reset, member workflow |
 | **Admin UX** | Quick actions, nav customize, embed auth, sidebar DnD |
@@ -166,7 +196,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | # | Deliverable | Status | Outcome |
 |---|-------------|--------|---------|
 | 2.5.1 | **Portal custom-token auth** | ✅ Done | `generatePortalToken` wired; scoped `portal_client` Firestore + Storage rules |
-| 2.5.2 | **Intake submit on production** | ✅ Rules fixed | Client completion rule for `responses` + `status`; verify on custom domain |
+| 2.5.2 | ~~**Intake submit on production**~~ | ✅ Superseded | Client intake form removed; Org Chart + portal sync replaces intake flow |
 | 2.5.3 | **Client error UX** | ✅ Done | Inline errors on portal login/upload and intake submit |
 
 ### 2.5B — Still open (data & workspace)
@@ -196,7 +226,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 - [x] Portal custom-token auth live
 - [x] Policy → Vault publish path
 - [x] Workspace CRM aligned (ops schema; flag off by default)
-- [ ] Full client journey verified on `kolthoff-consulting.com`
+- [ ] Full client journey verified on `kolthoff-consulting.com` (contract sign → portal → org chart → upload)
 
 ---
 
@@ -208,9 +238,9 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 
 | Deliverable | Description |
 |-------------|-------------|
-| Google Workspace SSO | `@kolthoff-consulting.com` sign-in for admin + workspace; passcode as break-glass |
-| App Check + reCAPTCHA v3 | Enforce on all apps; configure `RECAPTCHA_SITE_KEY` |
-| Firestore rules hardening | Tighten after App Check + custom claims proven |
+| Google Workspace SSO | ✅ Code on `main` — enable Google provider in Console; passcode as break-glass |
+| App Check + reCAPTCHA v3 | 🔶 Bootstrap in code — set `RECAPTCHA_SITE_KEY`, then enforce in Console |
+| Firestore rules hardening | ✅ Done — staff requires kolthoff email, claims, or admin session |
 | Secret hygiene | Redact API key in docs; dismiss GitHub secret scanning as public client key |
 
 ### 3B — React consolidation (migration order)
@@ -220,7 +250,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **3B-1** | Project Planner, Diagnosis Reports | Highest daily use; already embedded in admin |
 | **3B-2** | CRM, Policy Studio, Workflow Builder | Operations core |
 | **3B-3** | Analytics suite (×3) | Planner-driven data after 2.5.11 |
-| **3B-4** | Portal, Intake, Contract Sign | After 2.5A client auth stable |
+| **3B-4** | Portal, Contract Sign | After client auth stable |
 | **3B-5** | Marketing site | Optional — static is fine |
 
 **Per-app standard:** React route under `/admin/app/...` or shared Vite package; shared Firebase hooks; feature parity; delete HTML duplicate.
@@ -235,8 +265,8 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 
 ### Phase 3 exit criteria
 
-- [ ] Staff SSO on admin + workspace
-- [ ] App Check enforced in production
+- [ ] Staff SSO verified on admin + workspace (code deployed; Console Google provider required)
+- [ ] App Check enforced in production (after `RECAPTCHA_SITE_KEY` + monitoring)
 - [ ] Delivery + operations apps run natively in admin (no iframes)
 - [ ] Portal uses custom tokens only (anonymous portal access removed)
 - [ ] New client onboarded via admin without manual Firestore edits
@@ -253,7 +283,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 |------|----------------|
 | SOW library | Standard MOD 1–4 profiles in `workbook_profiles`; industry variants |
 | CRM playbooks | Deal stages, follow-up templates, partner referral flows |
-| Intake templates | Pre-built forms per module with mapped planner fields |
+| Org chart templates | Default roster structures per industry / MOD phase |
 | Portal defaults | Roadmap milestones, action items, asset categories per phase |
 | Policy packs | DOLE-shielded handbook templates in Policy Studio |
 | Blueprint library | Approval flows for common client requests |
@@ -273,8 +303,8 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 
 | Flow | Automation target |
 |------|-------------------|
-| Signed SOW | → Create portal + workspace tenant + intake form |
-| MOD 1 complete | → Update portal phase + unlock MOD 2 intake |
+| Signed SOW | → Create portal + workspace tenant + org chart seed |
+| MOD 1 complete | → Update portal phase + unlock MOD 2 deliverables |
 | Policy published | → Notify client in portal action items |
 | Contract signed | → Audit log + CRM stage → Won |
 
@@ -312,7 +342,7 @@ flowchart TB
   end
 
   subgraph p25 [Phase 2.5 Ops Hardening]
-    A[Client sign + intake + portal auth]
+    A[Client sign + portal auth + org chart]
     B[CRM + diagram + policy data model]
     C[Portal sync + embed polish]
   end
@@ -348,7 +378,7 @@ flowchart TB
 |-----------|--------|-------|
 | **Content** (SOWs, policies, portal copy, intake questions) | Now — always | Phase 4 primary |
 | **Client delivery** (live engagements, portal updates) | Now | Always |
-| **Testing client journeys** | Phase 2.5 | Sign, intake, portal on production |
+| **Testing client journeys** | Now (P4) | Sign, portal, org chart on production |
 | **Feature ideas for tools** | Phase 4 backlog | Prioritize by MOD delivery impact |
 | **Infrastructure / SSO / migration** | Phase 2.5–3 | Delegate to eng; then ignore |
 
@@ -365,11 +395,11 @@ flowchart TB
 4. ~~Staff → `core_users` identity in workspace~~ ✅
 5. ~~CRM won/lost → planner sync~~ ✅
 6. ~~Embed polish, App Check bootstrap, config centralization, analytics baselines~~ ✅
-7. **Verify** intake submit + full client journey on production domain
+7. **Verify** full client journey on production domain (sign → portal → org chart → upload)
 
 ### Should do (Phase 3 — Package P5–P7)
-8. ~~Google Workspace SSO~~ ✅ (passcode break-glass retained)
-9. App Check enforcement — **enable in Firebase Console** after setting `RECAPTCHA_SITE_KEY`
+8. ~~Google Workspace SSO code~~ ✅ — **you:** enable Google provider + test login
+9. App Check enforcement — **you:** set `RECAPTCHA_SITE_KEY` secret, then enable in Firebase Console
 10. React migration (delivery → ops → analytics → client)
 11. Master Admin blueprint CRUD
 12. Client workspace provisioning wizard
@@ -388,7 +418,7 @@ flowchart TB
 | Metric | Target when migration complete |
 |--------|-------------------------------|
 | Client contract sign completion rate | >95% without staff intervention |
-| Intake form completion → planner sync | Automatic within 1 minute |
+| Org chart → portal sync | Automatic on save from `/admin/org-chart` |
 | Portal progress accuracy | Matches planner module state without manual edit |
 | Staff apps in React / admin shell | 100% of delivery + ops |
 | Time to provision new client tenant | <15 minutes via admin |
@@ -407,8 +437,9 @@ flowchart TB
 | `docs/data-seeding.md` | Production data load |
 | `docs/security-access.md` | Public vs staff apps |
 | `docs/dns-cutover.md` | DNS (complete) |
-| `docs/admin-login.md` | Passcode troubleshooting |
+| `docs/admin-login.md` | Passcode + Google SSO troubleshooting |
+| `docs/app-check-sso.md` | Google SSO + App Check Console setup (P5) |
 
 ---
 
-*Last updated: June 2026 — Package P3 (Phase 2.5C) complete; P4 production verification next*
+*Last updated: July 2026 — P5 code on `main`; P4 production verification + Console SSO/App Check are your next steps*
