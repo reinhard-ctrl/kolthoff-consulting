@@ -303,15 +303,17 @@
   <div id="root"></div>
 
   <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
+  <script src="../../shared/engagement-packages.js?v=20250701-packages-v1"></script>
   <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
   <script type="module">
     import * as Financials from '../../shared/financials.js';
     window.SharedFinancials = Financials;
   </script>
-  <script src="project_planner_helpers.js?v=20250701-planner-v14"></script>
+  <script src="project_planner_helpers.js?v=20250701-planner-v15"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
+    const EP = window.EngagementPackages;
     const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
     const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
@@ -420,16 +422,16 @@
       {
         id: 'm1-01', category: MOD_1,
         deliverable: 'Team List & Privacy Ground Rules',
-        description: 'We set up a staff contact list, roles, and simple privacy rules so customer and employee data is handled safely (not legal advice).',
+        description: 'We set up a staff directory with roles and simple privacy rules for customer and employee data — not legal advice.',
         estHours: 3, tier: 'associate', selected: true,
         scopeDetails: { activities: 'Build your team directory and privacy guidelines.', expectations: 'Share staff names, roles, and how you store customer info today.', output: 'A ready-to-use staff directory with clear privacy rules.' }
       },
       {
         id: 'm1-02', category: MOD_1,
         deliverable: 'Anonymous Staff Feedback Channel',
-        description: 'We set up a private online form where staff can flag problems without naming names — so you hear honest feedback.',
+        description: 'We launch a private online form so staff can flag problems honestly — without naming names.',
         estHours: 3, tier: 'associate', selected: true,
-        scopeDetails: { activities: 'Launch a secure online suggestion box.', expectations: 'Ask employees to share honest feedback.', output: 'A prioritized list of problems worth fixing first.' }
+        scopeDetails: { activities: 'Launch a secure anonymous feedback form.', expectations: 'Ask staff to use it for 2 weeks; share themes only (no names).', output: 'A prioritized problem list for leadership review.' }
       },
       {
         id: 'm1-03', category: MOD_1,
@@ -441,56 +443,56 @@
       {
         id: 'm1-04', category: MOD_1,
         deliverable: 'Duplicate Software Spend Review',
-        description: 'We compare what you pay for apps (chat, tasks, spreadsheets) and show monthly/annual savings if tools overlap.',
+        description: 'We compare your app subscriptions and show monthly and annual savings where tools overlap.',
         estHours: 4, tier: 'associate', selected: true,
         scopeDetails: { activities: 'Compare software bills and overlapping features.', expectations: 'Provide a list of apps and monthly costs.', output: 'A savings report showing duplicate tools you can cut.' }
       },
       {
         id: 'm1-05', category: MOD_1,
         deliverable: 'Waste-to-Peso Report & Fix Order',
-        description: 'We turn daily delays and rework into peso amounts and deliver a short video walkthrough plus a 90-day priority fix list.',
+        description: 'We turn delays and rework into peso amounts and deliver a short video walkthrough plus a 90-day priority fix list.',
         estHours: 5, tier: 'senior', selected: true,
         scopeDetails: { activities: 'Calculate wasted time in money terms and record a short walkthrough video.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and step-by-step improvement plan.' }
       },
       {
         id: 'm1-06', category: MOD_1,
-        deliverable: 'Owner Findings Briefing',
+        deliverable: 'Optional — Owner Findings Briefing',
         description: 'Optional 60-minute presentation of diagnosis findings to the owner or general manager.',
-        estHours: 2, tier: 'senior', selected: false,
+        estHours: 2, tier: 'principal', selected: false,
         scopeDetails: { activities: 'Present the printable diagnosis report and answer questions.', expectations: 'Owner or GM attends the briefing.', output: 'Shared understanding of findings and next steps.' }
       },
       {
         id: 'm2-01', category: MOD_2,
         deliverable: 'Customer Order Playbook',
-        description: 'We draw a clear step chart for how inquiries become orders, deliveries, and invoices — so everyone follows the same path.',
+        description: 'We map how inquiries become orders, deliveries, and invoices — so everyone follows the same path.',
         estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Map inquiry → order → delivery → invoice on one flowchart.', expectations: 'Provide sample order slips or invoices.', output: 'An easy-to-read customer order playbook.' }
       },
       {
         id: 'm2-02', category: MOD_2,
         deliverable: 'Purchase & Payment Playbook',
-        description: 'We chart how purchase requests are approved and paid — so buying stays controlled and traceable.',
+        description: 'We map how purchase requests are approved and paid — so buying stays controlled and traceable.',
         estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Map request → approve → pay supplier steps.', expectations: 'Provide sample purchase records or payment forms.', output: 'An easy-to-read purchase and payment playbook.' }
       },
       {
         id: 'm2-03', category: MOD_2,
         deliverable: 'Roles & Sign-Off Chart',
-        description: 'We spell out who owns each task and who signs off, with a simple org chart so approvals reach the right person.',
+        description: 'We document who owns each task and who signs off, with a simple org chart — so approvals reach the right person.',
         estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Document task ownership and draw a simple org chart.', expectations: 'Confirm who reports to whom.', output: 'A who-does-what chart everyone can reference.' }
       },
       {
         id: 'm2-04', category: MOD_2,
-        deliverable: 'How-To Video & File Library',
-        description: 'We record up to three short screen-recorded how-tos and store step-by-step guides in one shared folder.',
+        deliverable: 'Up to 3 How-To Videos & File Library',
+        description: 'We record up to three short screen-recorded how-tos and store step-by-step guides in one shared folder. Extra videos quoted separately.',
         estHours: 6, tier: 'associate', selected: false,
         scopeDetails: { activities: 'Record plain-language walkthroughs and upload guides to a shared folder.', expectations: 'Nominate team members to demo key tasks on camera.', output: 'A video and document library for daily reference. Extra videos quoted separately.' }
       },
       {
         id: 'm2-05', category: MOD_2,
         deliverable: 'Employee Rules Handbook',
-        description: 'We prepare a Philippines-ready employee handbook from templates and load it into your workspace (client legal review required).',
+        description: 'We adapt Philippines-ready handbook templates and load them into your workspace — client legal review required before use.',
         estHours: 8, tier: 'associate', selected: false,
         scopeDetails: { activities: 'Adapt handbook templates to your company and upload them digitally.', expectations: 'Review and approve the draft handbook.', output: 'A complete digital employee rules handbook.' }
       },
@@ -504,58 +506,58 @@
       {
         id: 'm3-01b', category: MOD_3,
         deliverable: 'Staff Logins & Core Folders',
-        description: 'We create staff logins and organize core shared folders so your team can log in on day one.',
+        description: 'We create staff logins and organize core shared folders — so your team can log in on day one.',
         estHours: 4, tier: 'associate', selected: false,
         scopeDetails: { activities: 'Create user accounts and lay out core folder structure.', expectations: 'Provide your final staff list.', output: 'Live logins and a folder layout your team can use.' }
       },
       {
         id: 'm3-02', category: MOD_3,
-        deliverable: 'Digital Approval Forms Pack',
-        description: 'We digitize up to five internal requests (e.g. leave, cash advance) with simple routing to the right approver.',
+        deliverable: 'Digital Approval Forms Pack (up to 5)',
+        description: 'We build up to five digital request forms (max two approval steps each) with routing and a simple pending/approved view.',
         estHours: 18, tier: 'associate', selected: false,
-        scopeDetails: { activities: 'Build up to five digital forms with a maximum of two approval steps each.', expectations: 'Provide copies of your current paper forms.', output: 'Tracker boards showing pending, approved, and overdue items.' }
+        scopeDetails: { activities: 'Build up to five digital forms; configure max two approval steps each; test with one live request per form.', expectations: 'Provide copies of current paper forms; name approvers per request type.', output: 'Five live forms + approval routing + pending/approved view.' }
       },
       {
         id: 'm3-03', category: MOD_3,
         deliverable: 'Sales & Order Log',
-        description: 'We set up a daily sales and order log tied to your invoice flow — export-friendly for bookkeeping, not a full accounting system.',
+        description: 'We set up a daily sales and order log you can export for bookkeeping — not a full accounting or ERP system.',
         estHours: 12, tier: 'associate', selected: false,
         scopeDetails: { activities: 'Configure a sales log tied to your order and invoice flow.', expectations: 'Share how you record sales today.', output: 'A sales tracker your team can update daily.' }
       },
       {
         id: 'm3-04', category: MOD_3,
         deliverable: 'Hands-On Team Training',
-        description: 'We run two live training sessions (90 minutes each max) and leave cheat sheets for Messenger, Approvals, and the policy library.',
+        description: 'We run two live sessions (90 minutes each max) and leave cheat sheets for messaging, approvals, and your policy library.',
         estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Run two live training sessions and publish short how-to guides.', expectations: 'Ensure key staff attend both sessions.', output: 'Trained staff and a help folder they can revisit.' }
       },
       {
         id: 'm3-05', category: MOD_3,
         deliverable: 'Two-Week Launch Help Desk',
-        description: 'For two weeks after go-live we answer chat/email “how do I…?” questions so adoption doesn’t stall on day one.',
+        description: 'For two weeks after go-live we answer chat/email “how do I…?” questions during business hours — so adoption doesn’t stall.',
         estHours: 4, tier: 'associate', selected: false,
-        scopeDetails: { activities: 'Provide responsive launch-week support via your agreed channel.', expectations: 'Designate a point person on your team for questions.', output: 'Smoother first two weeks of daily usage.' }
+        scopeDetails: { activities: 'Provide launch support via agreed chat/email channel, business hours, for two weeks.', expectations: 'Designate one point person; escalate blockers within 1 business day.', output: 'Faster first two weeks; FAQ notes added to help folder.' }
       },
       {
         id: 'm4-01', category: MOD_4,
         deliverable: 'Platform Hosting & User Care',
-        description: 'We maintain hosting, user logins, and minor layout tweaks. New forms or workflows are quoted separately.',
+        description: 'Monthly: we maintain hosting, user logins, and minor layout tweaks. New forms or workflows are quoted separately.',
         estHours: 4, tier: 'partner', selected: false, isMonthlyRetainer: true,
-        scopeDetails: { activities: 'Maintain hosting, credentials, and routine admin requests.', expectations: 'Submit admin requests through your support channel.', output: 'Reliable uptime and responsive admin help.' }
+        scopeDetails: { activities: 'Maintain hosting, credentials, and routine admin (users, permissions, minor layout).', expectations: 'Submit requests through support channel; 48-hour response target.', output: 'Reliable uptime and responsive admin help.' }
       },
       {
         id: 'm4-02', category: MOD_4,
         deliverable: 'Operations Check-In Calls',
-        description: 'Bi-weekly 60-minute calls with your managers to review pending items, unblock tasks, and keep adoption on track.',
+        description: 'Monthly: bi-weekly 60-minute calls with your managers to review pending items, unblock tasks, and keep adoption on track.',
         estHours: 4, tier: 'senior', selected: false, isMonthlyRetainer: true,
         scopeDetails: { activities: 'Review dashboards, pending approvals, and team questions.', expectations: 'Key managers join each scheduled call.', output: 'A short action list and steady day-to-day usage.' }
       },
       {
         id: 'm4-03', category: MOD_4,
         deliverable: 'System Health Check',
-        description: 'Twice per year we audit usage, permissions, and outdated forms, then apply or schedule fixes from the findings.',
+        description: 'Twice per year: we audit usage, permissions, and outdated forms, then apply or schedule fixes from the findings.',
         estHours: 6, tier: 'senior', selected: false,
-        scopeDetails: { activities: 'Audit usage, permissions, and broken or outdated forms.', expectations: 'Provide access for a half-day review session.', output: 'An audit report with fixes applied or scheduled.' }
+        scopeDetails: { activities: 'Half-day audit of usage, permissions, broken/outdated forms; schedule or apply fixes.', expectations: 'Manager access for review session; twice per year on calendar.', output: 'Audit report + fixes applied or scheduled.' }
       }
     ];
 
@@ -607,6 +609,11 @@
         invoiceNumberSuffix: '01',
         invoiceDueDate: 'July 15, 2026',
         ...H.DEFAULT_RATES,
+        selectedPackageId: 'leak-scan',
+        packageCustomized: false,
+        packageAppliedAt: Date.now(),
+        applyCreditBack: true,
+        creditBackDays: 30,
         tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) }))
       },
       {
@@ -655,6 +662,11 @@
         invoiceNumberSuffix: '02',
         invoiceDueDate: 'August 10, 2026',
         ...H.DEFAULT_RATES,
+        selectedPackageId: 'fix-the-flow',
+        packageCustomized: false,
+        packageAppliedAt: Date.now(),
+        applyCreditBack: true,
+        creditBackDays: 30,
         tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) || t.id.startsWith('m2-') }))
       }
     ];
@@ -926,6 +938,14 @@
       const [invoiceDueDate, setInvoiceDueDate] = useState(activeProfile.invoiceDueDate || '');
 
       const [activePresets, setActivePresets] = useState(['mod1']);
+      const [selectedPackageId, setSelectedPackageId] = useState('leak-scan');
+      const [packageCustomized, setPackageCustomized] = useState(false);
+      const [packageAppliedAt, setPackageAppliedAt] = useState(null);
+      const [applyCreditBack, setApplyCreditBack] = useState(true);
+      const [creditBackDays, setCreditBackDays] = useState(30);
+      const [showPackageApplyConfirm, setShowPackageApplyConfirm] = useState(false);
+      const [pendingPackageId, setPendingPackageId] = useState(null);
+      const catalogTasksRef = useRef(INITIAL_TASKS.map(t => ({ ...t })));
 
       const [newTaskCategory, setNewTaskCategory] = useState(MOD_1);
       const [newTaskDeliv, setNewTaskDeliv] = useState('');
@@ -976,7 +996,12 @@
           customInvoiceAmount: p.customInvoiceAmount || 120000, invoiceNumberSuffix: p.invoiceNumberSuffix || '01', invoiceDueDate: p.invoiceDueDate || '',
           staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
-          associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate
+          associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
+          selectedPackageId: p.selectedPackageId ?? 'leak-scan',
+          packageCustomized: p.packageCustomized ?? false,
+          packageAppliedAt: p.packageAppliedAt ?? null,
+          applyCreditBack: p.applyCreditBack ?? true,
+          creditBackDays: p.creditBackDays ?? 30
         };
         if (!profileSwitch && !isDirtyRef.current) {
           const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
@@ -1033,6 +1058,11 @@
         setSeniorRate(profileState.seniorRate);
         setAssociateRate(profileState.associateRate);
         setPartnerRate(profileState.partnerRate);
+        setSelectedPackageId(profileState.selectedPackageId);
+        setPackageCustomized(profileState.packageCustomized);
+        setPackageAppliedAt(profileState.packageAppliedAt);
+        setApplyCreditBack(profileState.applyCreditBack);
+        setCreditBackDays(profileState.creditBackDays);
         setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
         isHydratingRef.current = true;
         const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage);
@@ -1068,8 +1098,9 @@
         slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
-        staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate]);
+        staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
+        selectedPackageId, packageCustomized, packageAppliedAt, applyCreditBack, creditBackDays
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, applyCreditBack, creditBackDays]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage);
@@ -1183,6 +1214,8 @@
         setStaffCount(d.staffCount ?? 15); setMonthlySalary(d.monthlySalary ?? 25000); setWastedHours(d.wastedHours ?? 2.0);
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
+        setSelectedPackageId(d.selectedPackageId ?? 'leak-scan'); setPackageCustomized(d.packageCustomized ?? false);
+        setPackageAppliedAt(d.packageAppliedAt ?? null); setApplyCreditBack(d.applyCreditBack ?? true); setCreditBackDays(d.creditBackDays ?? 30);
         setActivePresets(H.deriveActivePresetsFromTasks(d.tasks || INITIAL_TASKS));
         H.clearLocalDraft(activeProfileId);
         setLocalDraftBanner(null);
@@ -1232,6 +1265,9 @@
       const createWorkspaceFromCrmDeal = async (deal) => {
         const newId = `client-crm-${deal.id || Date.now()}`;
         const base = buildCurrentPayload();
+        const suggestedPackage = EP?.suggestPackageFromText?.(deal.notes || '') || 'leak-scan';
+        const packageResult = H.applyPackageToTasks(suggestedPackage, INITIAL_TASKS.map(t => ({ ...t })), catalogTasksRef.current);
+        const defs = packageResult.defaults || {};
         const payload = {
           ...base,
           id: newId,
@@ -1240,6 +1276,13 @@
           clientRep: deal.leadName,
           proposalSponsor: deal.titleRole ? `${deal.leadName} (${deal.titleRole})` : deal.leadName,
           quoteId: deal.id,
+          tasks: packageResult.tasks,
+          selectedPackageId: suggestedPackage,
+          packageCustomized: false,
+          packageAppliedAt: Date.now(),
+          proposalObjectives: defs.proposalObjectives || base.proposalObjectives,
+          applyCreditBack: defs.applyCreditBack ?? true,
+          creditBackDays: defs.creditBackDays ?? 30,
           links: {
             crmDealId: deal.id,
             portalClientId: deal.id,
@@ -1267,10 +1310,11 @@
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
+          selectedPackageId: 'leak-scan', packageCustomized: false, packageAppliedAt: Date.now(), applyCreditBack: true, creditBackDays: 30,
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
         const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        window.firestoreSetDoc(docRef, newClientObj).then(() => setActiveProfileId(newId));
+        window.firestoreSetDoc(docRef, newClientObj).then(() => { setActiveProfileId(newId); setView('packages'); });
       };
 
       const handleCloneCurrentWorkspace = () => {
@@ -1364,12 +1408,12 @@
         window.print();
       };
 
-      const toggleTask = (id) => setTasks(prev => prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t));
-      const updateTaskHours = (id, value) => setTasks(prev => prev.map(t => t.id === id ? { ...t, estHours: Number(value) } : t));
-      const updateTaskTier = (id, tier) => setTasks(prev => prev.map(t => t.id === id ? { ...t, tier: tier } : t));
-      const updateTaskDeliverable = (id, value) => setTasks(prev => prev.map(t => t.id === id ? { ...t, deliverable: value } : t));
-      const updateTaskDescription = (id, value) => setTasks(prev => prev.map(t => t.id === id ? { ...t, description: value } : t));
-      const removeTask = (id) => setTasks(prev => prev.filter(t => t.id !== id));
+      const toggleTask = (id) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t)); };
+      const updateTaskHours = (id, value) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, estHours: Math.max(0, Number(value) || 0) } : t)); };
+      const updateTaskTier = (id, tier) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, tier: tier } : t)); };
+      const updateTaskDeliverable = (id, value) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, deliverable: value } : t)); };
+      const updateTaskDescription = (id, value) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, description: value } : t)); };
+      const removeTask = (id) => { setPackageCustomized(true); setTasks(prev => prev.filter(t => t.id !== id)); };
 
       const reorderTasks = (fromId, toId) => {
         if (!fromId || !toId || fromId === toId) return;
@@ -1415,11 +1459,69 @@
           estHours: calculatedHours, tier: newTaskTier, selected: true, isMonthlyRetainer: H.isModCategory(newTaskCategory, 4),
           scopeDetails: { activities: newTaskActivities || "Work closely with your team to review and complete planned milestone tasks.", expectations: "Provide basic information access and honest feedback on drafted guidelines.", output: "A completed SOW deliverable asset aligned with custom specifications." }
         };
+        setPackageCustomized(true);
         setTasks(prev => [...prev, customTaskObj]);
         setNewTaskDeliv(''); setNewTaskDesc(''); setNewTaskHours(''); setNewTaskMultiplier(0); setNewTaskActivities(''); setNewTaskExpectations(''); setNewTaskOutput('');
       };
 
+      const executeApplyPackage = useCallback((packageId) => {
+        const result = H.applyPackageToTasks(packageId, tasks, catalogTasksRef.current);
+        if (!result.package) return;
+        const defs = result.defaults || {};
+        setTasks(result.tasks);
+        setActivePresets(result.activePresets);
+        setSelectedPackageId(packageId);
+        setPackageCustomized(false);
+        setPackageAppliedAt(Date.now());
+        if (defs.proposalObjectives) setProposalObjectives(defs.proposalObjectives);
+        if (defs.applyCreditBack !== undefined) setApplyCreditBack(defs.applyCreditBack);
+        if (defs.creditBackDays !== undefined) setCreditBackDays(defs.creditBackDays);
+        if (defs.frictionBuffer !== undefined) setFrictionBuffer(defs.frictionBuffer);
+        if (defs.discountPercent !== undefined) setDiscountPercent(defs.discountPercent);
+        if (defs.milestoneSplit) setMilestoneSplit(defs.milestoneSplit);
+        if (defs.subscriptionMonths !== undefined) setSubscriptionMonths(defs.subscriptionMonths);
+        setView('sandbox');
+      }, [tasks]);
+
+      const requestApplyPackage = useCallback((packageId) => {
+        if (packageCustomized || tasks.some(t => t.id.startsWith('custom-'))) {
+          setPendingPackageId(packageId);
+          setShowPackageApplyConfirm(true);
+          return;
+        }
+        executeApplyPackage(packageId);
+      }, [packageCustomized, tasks, executeApplyPackage]);
+
+      const packagePreviewEconomics = useCallback((packageId) => {
+        const previewTasks = H.previewPackageSelection(packageId, tasks, catalogTasksRef.current);
+        return H.computeProjectEconomics({
+          tasks: previewTasks,
+          frictionBuffer,
+          discountPercent,
+          includeTax,
+          subscriptionMonths,
+          milestoneSplit,
+          customSplit1,
+          customSplit2,
+          customSplit3,
+          rates: hourlyRates,
+          principalToSeniorDelegate,
+          seniorToAssociateDelegate,
+          recoveryPotential,
+          staffCount,
+          monthlySalary,
+          wastedHours,
+          formatCurrency
+        });
+      }, [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
+
+      const activePackageMeta = useMemo(() => {
+        if (!EP?.getPackageById) return null;
+        return selectedPackageId ? EP.getPackageById(selectedPackageId) : null;
+      }, [selectedPackageId]);
+
       const handleTogglePreset = (presetName) => {
+        setPackageCustomized(true);
         const updatedPresets = activePresets.includes(presetName) ? activePresets.filter(p => p !== presetName) : [...activePresets, presetName];
         setActivePresets(updatedPresets);
         const categoryToPreset = H.CATEGORY_TO_PRESET;
@@ -1429,8 +1531,8 @@
         }));
       };
 
-      const handleSelectAllPresets = () => { setActivePresets(['mod1', 'mod2', 'mod3', 'mod4']); setTasks(prev => prev.map(t => ({ ...t, selected: true }))); };
-      const handleClearAllPresets = () => { setActivePresets([]); setTasks(prev => prev.map(t => ({ ...t, selected: false }))); };
+      const handleSelectAllPresets = () => { setPackageCustomized(true); setActivePresets(['mod1', 'mod2', 'mod3', 'mod4']); setTasks(prev => prev.map(t => ({ ...t, selected: true }))); };
+      const handleClearAllPresets = () => { setPackageCustomized(true); setActivePresets([]); setTasks(prev => prev.map(t => ({ ...t, selected: false }))); };
 
       const scheduledTasksAndPhases = useMemo(() => {
         const selected = tasks.filter(t => t.selected);
@@ -2187,7 +2289,7 @@
       };
 
       const renderSettingsSidebar = () => {
-        if (view === 'sandbox') return null;
+        if (view === 'sandbox' || view === 'packages') return null;
 
         const isNda = view === 'nda';
         const isProposal = view === 'package';
@@ -2936,7 +3038,7 @@
                 <div className="min-w-0">
                   <span className="text-[9px] font-mono tracking-widest uppercase text-brandTeal-500 font-bold">Active Workspace</span>
                   <h2 className="text-sm sm:text-base font-bold text-white truncate leading-tight">{getWorkspaceLabel(activeProfile)}</h2>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{clientCompany}{quoteId ? ` · ${quoteId}` : ''}</p>
+                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{clientCompany}{quoteId ? ` · ${quoteId}` : ''}{activePackageMeta ? ` · ${activePackageMeta.name}${packageCustomized ? ' (modified)' : ''}` : ''}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -3024,9 +3126,9 @@
               </div>
               
               <nav aria-label="Main Navigation" className="flex items-center flex-wrap gap-2 font-sans font-semibold">
-                {['nda', 'sandbox', 'package', 'invoice'].map((tab, idx) => (
+                {['nda', 'packages', 'sandbox', 'package', 'invoice'].map((tab, idx) => (
                   <button key={tab} aria-pressed={view === tab} onClick={() => setView(tab)} className={`px-2.5 py-1.5 rounded font-mono text-[9px] uppercase font-bold border tracking-wider transition-all ${view === tab ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-500 font-extrabold shadow-lg shadow-brandTeal-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700 hover:bg-brandNavy-800 font-bold'}`}>
-                    {idx + 1}. {tab === 'sandbox' ? 'Planner' : tab === 'package' ? 'Package' : tab}
+                    {idx + 1}. {tab === 'sandbox' ? 'Planner' : tab === 'packages' ? 'Packages' : tab === 'package' ? 'Documents' : tab}
                   </button>
                 ))}
               </nav>
@@ -3151,8 +3253,72 @@
             </div>
           )}
 
+          {showPackageApplyConfirm && pendingPackageId && (
+            <div className="fixed inset-0 bg-brandNavy-955/80 z-[1000] backdrop-blur-sm flex items-center justify-center p-4 no-print animate-fade-in text-left font-sans">
+              <div className="bg-brandNavy-900 border border-brandTeal-500/30 p-6 rounded-xl max-w-md w-full shadow-2xl font-sans font-medium">
+                <h4 className="font-extrabold text-slate-200 text-sm uppercase tracking-wider mb-2">Apply Package?</h4>
+                <p className="text-[11px] text-slate-400 mb-4 leading-relaxed">Applying <strong className="text-white">{EP?.getPackageById?.(pendingPackageId)?.name || pendingPackageId}</strong> will replace your current task selection and proposal defaults. Custom tasks are kept but deselected.</p>
+                <div className="flex justify-end gap-3 font-sans font-semibold">
+                  <button onClick={() => { executeApplyPackage(pendingPackageId); setShowPackageApplyConfirm(false); setPendingPackageId(null); }} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 text-xs font-bold rounded-lg uppercase">Apply Package</button>
+                  <button onClick={() => { setShowPackageApplyConfirm(false); setPendingPackageId(null); }} className="px-4 py-2 bg-brandNavy-955 text-slate-300 border border-brandNavy-700 text-xs font-bold rounded-lg uppercase">Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <main id="app-main" className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans">
-            {view === 'sandbox' ? (
+            {view === 'packages' ? (
+              <div className="no-print h-full min-h-0 animate-fade-in font-sans text-left overflow-y-auto">
+                <div className="mb-6 space-y-2">
+                  <span className="text-[10px] font-mono font-bold tracking-[0.25em] text-brandTeal-400 uppercase block">Engagement Packages</span>
+                  <h2 className="text-xl font-bold text-white font-serif">Choose a starting scope</h2>
+                  <p className="text-xs text-slate-400 max-w-2xl">Packages set task selection and proposal defaults. Fine-tune hours, copy, and rates in the Planner tab afterward.</p>
+                  {applyCreditBack && selectedPackageId && EP?.getPackageById?.(selectedPackageId)?.defaults?.applyCreditBack && (
+                    <p className="text-[10px] text-brandTeal-400 bg-brandTeal-500/5 border border-brandTeal-500/20 rounded-lg px-3 py-2 max-w-2xl">MOD 1 credit-back active: diagnosis fee can credit toward MOD 2+3 within {creditBackDays} days when the client proceeds.</p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-8">
+                  {(EP?.getAllPackages?.() || []).map((pkg) => {
+                    const preview = packagePreviewEconomics(pkg.id);
+                    const isActive = selectedPackageId === pkg.id && !packageCustomized;
+                    const selectedCount = H.previewPackageSelection(pkg.id, tasks, catalogTasksRef.current).filter(t => t.selected).length;
+                    const projectPart = preview.finalProjectCostBase || 0;
+                    const retainerPart = preview.retainerCostTotalBase || 0;
+                    return (
+                      <article key={pkg.id} className={`bg-brandNavy-900 border rounded-xl p-5 flex flex-col justify-between shadow-xl transition-all ${isActive ? 'border-brandTeal-500 ring-1 ring-brandTeal-500/30' : 'border-brandNavy-700 hover:border-brandTeal-500/40'}`}>
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            {(pkg.modules || []).map((mod) => (
+                              <span key={mod} className="text-[9px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-2 py-0.5 rounded border border-brandNavy-700">{mod.replace('mod', 'MOD ')}</span>
+                            ))}
+                            {pkg.defaults?.applyCreditBack && <span className="text-[9px] font-mono uppercase bg-brandTeal-500/10 text-brandTeal-300 px-2 py-0.5 rounded border border-brandTeal-500/20">Credit-back</span>}
+                          </div>
+                          <h3 className="text-base font-bold text-white font-serif">{pkg.name}</h3>
+                          <p className="text-[11px] text-slate-300 leading-relaxed">{pkg.tagline}</p>
+                          <p className="text-[10px] text-slate-500 leading-relaxed"><span className="text-slate-400 font-bold uppercase tracking-wider text-[9px] font-mono block mb-0.5">For whom</span>{pkg.forWhom}</p>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-2 border-t border-brandNavy-700/60">
+                            <div><span className="text-slate-500 block uppercase text-[9px]">Tasks</span><span className="text-white font-bold">{selectedCount}</span></div>
+                            <div><span className="text-slate-500 block uppercase text-[9px]">{pkg.isMonthly ? 'Monthly' : 'Project'}</span><span className="text-brandTeal-300 font-bold">{pkg.isMonthly ? formatCurrency(retainerPart || projectPart) + '/mo' : formatCurrency(projectPart)}</span></div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-brandNavy-700/60">
+                          <button type="button" onClick={() => requestApplyPackage(pkg.id)} className="w-full py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider">{isActive ? 'Re-apply Package' : 'Apply Package'}</button>
+                          <button type="button" onClick={() => setView('sandbox')} className="w-full py-2 text-slate-400 hover:text-brandTeal-300 text-[10px] uppercase tracking-wider font-bold">Open Planner without applying →</button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                  <article className="bg-brandNavy-900/40 border border-dashed border-brandNavy-700 rounded-xl p-5 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <span className="text-[9px] font-mono uppercase bg-brandNavy-950 text-slate-400 px-2 py-0.5 rounded border border-brandNavy-700">Custom</span>
+                      <h3 className="text-base font-bold text-white font-serif">Blank / Custom Scope</h3>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">Skip presets and build scope manually in the Planner using MOD chips and bespoke tasks.</p>
+                    </div>
+                    <button type="button" onClick={() => { setSelectedPackageId('custom'); setPackageCustomized(true); setView('sandbox'); }} className="mt-4 w-full py-2.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 border border-brandNavy-700 font-bold rounded text-[10px] uppercase tracking-wider">Open Planner</button>
+                  </article>
+                </div>
+              </div>
+            ) : view === 'sandbox' ? (
               <div className="no-print h-full min-h-0 animate-fade-in font-sans font-semibold text-left">
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full min-h-0 planner-split-layout text-left font-sans font-medium">
                   <aside className="xl:col-span-3 planner-split-panel space-y-6 text-left font-sans">
