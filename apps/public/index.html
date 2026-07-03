@@ -1342,6 +1342,9 @@
         const videoFallbackText = document.getElementById('videoFallbackText');
         let explainerEmbedPrewarmed = false;
         let explainerPlayerMounted = false;
+        let explainerIframeLoaded = false;
+        let explainerShellIframe = null;
+        const prefersFinePointer = window.matchMedia('(pointer: fine)').matches;
 
         function getExplainerVideoId() {
             return String(EXPLAINER_YOUTUBE_ID || '').trim();
@@ -1362,7 +1365,12 @@
             return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
         }
 
+        function isExplainerModalOpen() {
+            return explainerModal && !explainerModal.classList.contains('hidden');
+        }
+
         function setExplainerLoading(isVisible) {
+            if (!isExplainerModalOpen()) return;
             if (explainerLoadingOverlay) {
                 explainerLoadingOverlay.classList.toggle('hidden', !isVisible);
             }
@@ -1376,9 +1384,17 @@
             if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
         }
 
+        function discardExplainerShell() {
+            if (explainerShellIframe) {
+                explainerShellIframe.remove();
+                explainerShellIframe = null;
+            }
+        }
+
         function clearExplainerPlayer() {
             if (explainerPlayerSlot) explainerPlayerSlot.innerHTML = '';
             explainerPlayerMounted = false;
+            explainerIframeLoaded = false;
             setExplainerLoading(false);
         }
 
@@ -1406,52 +1422,100 @@
             document.head.appendChild(prefetch);
         }
 
-        function mountExplainerPlayer() {
-            if (explainerPlayerMounted) return;
+        function warmExplainerShell() {
+            const videoId = getExplainerVideoId();
+            if (explainerShellIframe || explainerPlayerMounted || !videoId) return;
+            explainerShellIframe = document.createElement('iframe');
+            explainerShellIframe.src = getExplainerEmbedUrl(videoId, false);
+            explainerShellIframe.title = 'Explainer preload';
+            explainerShellIframe.tabIndex = -1;
+            explainerShellIframe.setAttribute('aria-hidden', 'true');
+            explainerShellIframe.className = 'fixed w-0 h-0 opacity-0 pointer-events-none border-0';
+            document.body.appendChild(explainerShellIframe);
+        }
 
-            clearExplainerPlayer();
+        function mountExplainerPlayer(options = {}) {
+            const { autoplay = true, showLoading = true } = options;
+            if (explainerPlayerMounted) {
+                if (showLoading && isExplainerModalOpen() && !explainerIframeLoaded) {
+                    setExplainerLoading(true);
+                }
+                return true;
+            }
+
             if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
 
             const videoId = getExplainerVideoId();
             if (!videoId) {
-                showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
-                return;
+                if (isExplainerModalOpen()) {
+                    showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
+                }
+                return false;
             }
 
             setupExplainerThumbnails();
-            setExplainerLoading(true);
+            discardExplainerShell();
+            if (showLoading && isExplainerModalOpen()) {
+                setExplainerLoading(true);
+            }
 
             const iframe = document.createElement('iframe');
             iframe.className = 'w-full h-full';
-            iframe.src = getExplainerEmbedUrl(videoId, true);
+            iframe.src = getExplainerEmbedUrl(videoId, autoplay);
             iframe.title = 'Operational Excellence Explainer';
             iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
             iframe.setAttribute('allowfullscreen', '');
             iframe.addEventListener('load', () => {
+                explainerIframeLoaded = true;
                 setExplainerLoading(false);
             }, { once: true });
             explainerPlayerSlot.appendChild(iframe);
             explainerPlayerMounted = true;
+            return true;
+        }
+
+        function prepareExplainerOnIntent() {
+            prewarmExplainerEmbed();
+            warmExplainerShell();
+            mountExplainerPlayer({ autoplay: true, showLoading: false });
         }
 
         function openExplainer() {
-            prewarmExplainerEmbed();
             explainerModal.classList.remove('hidden');
-            mountExplainerPlayer();
+            const ready = mountExplainerPlayer({ autoplay: true, showLoading: true });
+            if (ready && !explainerIframeLoaded) {
+                setExplainerLoading(true);
+            }
         }
 
         function closeExplainer() {
             explainerModal.classList.add('hidden');
             clearExplainerPlayer();
+            discardExplainerShell();
             if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
         }
 
+        function scheduleDesktopWarm() {
+            if (!prefersFinePointer || !getExplainerVideoId()) return;
+            const run = () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            };
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(run, { timeout: 2500 });
+            } else {
+                setTimeout(run, 1500);
+            }
+        }
+
         setupExplainerThumbnails();
+        scheduleDesktopWarm();
         if ('IntersectionObserver' in window && openExplainerBtn) {
             const explainerWarmObserver = new IntersectionObserver((entries) => {
                 if (entries.some((entry) => entry.isIntersecting)) {
                     prewarmExplainerEmbed();
+                    warmExplainerShell();
                     setupExplainerThumbnails();
                     explainerWarmObserver.disconnect();
                 }
@@ -1459,9 +1523,20 @@
             explainerWarmObserver.observe(openExplainerBtn);
         }
         if (openExplainerBtn) {
-            openExplainerBtn.addEventListener('mouseenter', prewarmExplainerEmbed, { once: true });
-            openExplainerBtn.addEventListener('focus', prewarmExplainerEmbed, { once: true });
-            openExplainerBtn.addEventListener('touchstart', prewarmExplainerEmbed, { once: true, passive: true });
+            openExplainerBtn.addEventListener('mouseenter', () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            }, { once: true });
+            openExplainerBtn.addEventListener('focus', () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            }, { once: true });
+            openExplainerBtn.addEventListener('pointerdown', (event) => {
+                if (event.pointerType !== 'touch') {
+                    prepareExplainerOnIntent();
+                }
+            }, { passive: true });
+            openExplainerBtn.addEventListener('touchstart', prepareExplainerOnIntent, { once: true, passive: true });
             openExplainerBtn.addEventListener('click', openExplainer);
         }
         if (closeExplainerModalBtn) {
