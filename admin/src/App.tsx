@@ -54,9 +54,9 @@ function getReturnUrl(): string | null {
   return null;
 }
 
-function LoginGate({ onAuth }: { onAuth: () => void }) {
+function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
   const [code, setCode] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -102,22 +102,11 @@ function LoginGate({ onAuth }: { onAuth: () => void }) {
     setGoogleLoading(true);
     setError('');
     try {
-      const { signInWithGoogleStaff } = await import('./lib/staff-sso');
-      await signInWithGoogleStaff();
-      const returnUrl = getReturnUrl();
-      if (returnUrl) {
-        window.location.href = returnUrl;
-      } else {
-        onAuth();
-      }
+      const { startGoogleStaffSignIn } = await import('./lib/staff-sso');
+      await startGoogleStaffSignIn();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-      if (err instanceof FirebaseError && err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in cancelled.');
-      } else {
-        setError(msg);
-      }
-    } finally {
+      setError(msg);
       setGoogleLoading(false);
     }
   };
@@ -201,22 +190,41 @@ function EmbedAppRoute() {
 function AppRoutes() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [bootError, setBootError] = useState('');
+  const [googleSsoError, setGoogleSsoError] = useState('');
 
   useEffect(() => {
-    hasAdminSession()
-      .then((ok) => {
+    (async () => {
+      try {
+        const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
+        const user = await completeGoogleStaffRedirect();
+        if (user) {
+          const returnUrl = getReturnUrl();
+          if (returnUrl) {
+            window.location.href = returnUrl;
+            return;
+          }
+          setAuthed(true);
+          return;
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+        setGoogleSsoError(msg);
+      }
+
+      try {
+        const ok = await hasAdminSession();
         const returnUrl = getReturnUrl();
         if (ok && returnUrl) {
           window.location.href = returnUrl;
           return;
         }
         setAuthed(ok);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.warn('Admin session check failed:', err);
         setBootError(err instanceof Error ? err.message : 'Could not verify admin session.');
         setAuthed(false);
-      });
+      }
+    })();
   }, []);
 
   if (authed === null) {
@@ -235,7 +243,7 @@ function AppRoutes() {
             {bootError}
           </div>
         )}
-        <LoginGate onAuth={() => setAuthed(true)} />
+        <LoginGate onAuth={() => setAuthed(true)} initialError={googleSsoError} />
       </>
     );
   }

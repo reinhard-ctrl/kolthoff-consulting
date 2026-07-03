@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
-  signInWithPopup,
+  getRedirectResult,
+  signInWithRedirect,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -8,22 +9,30 @@ import { auth } from './firebase';
 import { isKolthoffStaffEmail } from './staff-domain';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
 
-export async function signInWithGoogleStaff(): Promise<User> {
-  if (auth.currentUser?.isAnonymous) {
-    await signOut(auth);
-  }
-
+function buildGoogleProvider() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ hd: 'kolthoff-consulting.com' });
+  return provider;
+}
 
-  const cred = await signInWithPopup(auth, provider);
-  const email = cred.user.email;
-
-  if (!isKolthoffStaffEmail(email)) {
+async function finalizeGoogleStaffUser(user: User): Promise<User> {
+  if (!isKolthoffStaffEmail(user.email)) {
     await signOut(auth);
     throw new Error('Use your @kolthoff-consulting.com Google Workspace account.');
   }
+  await provisionGoogleStaffViaFirestore(user);
+  return user;
+}
 
-  await provisionGoogleStaffViaFirestore(cred.user);
-  return cred.user;
+export async function startGoogleStaffSignIn(): Promise<void> {
+  if (auth.currentUser?.isAnonymous) {
+    await signOut(auth);
+  }
+  await signInWithRedirect(auth, buildGoogleProvider());
+}
+
+export async function completeGoogleStaffRedirect(): Promise<User | null> {
+  const result = await getRedirectResult(auth);
+  if (!result?.user) return null;
+  return finalizeGoogleStaffUser(result.user);
 }

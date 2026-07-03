@@ -70,24 +70,54 @@ export default function App() {
   const [user, setUser] = useState<CoreUser | null>(null);
   const [checkingStaff, setCheckingStaff] = useState(true);
   const [restoringSession, setRestoringSession] = useState(true);
+  const [googleSsoError, setGoogleSsoError] = useState('');
 
   useEffect(() => {
-    hasAdminStaffSession().then(async (ok) => {
-      if (ok && auth.currentUser) {
-        try {
-          const currentEmail = auth.currentUser.email?.trim().toLowerCase();
-          if (currentEmail) {
-            const byEmail = await getDocs(query(tenantCol('core_users'), where('email', '==', currentEmail)));
-            if (!byEmail.empty) {
-              setUser(byEmail.docs[0].data() as CoreUser);
-              setCheckingStaff(false);
-              return;
-            }
+    (async () => {
+      try {
+        const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
+        const googleUser = await completeGoogleStaffRedirect();
+        if (googleUser?.email) {
+          const email = googleUser.email.trim().toLowerCase();
+          const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
+          if (!snap.empty) {
+            const match = snap.docs[0].data() as CoreUser;
+            await logAudit('workspace_login', { email: match.email, provider: 'google' });
+            setUser(match);
+            setCheckingStaff(false);
+            setRestoringSession(false);
+            return;
           }
-          const adminSnap = await getDocs(query(tenantCol('core_users'), where('role', '==', 'kolthoff_admin')));
-          if (!adminSnap.empty) {
-            setUser(adminSnap.docs[0].data() as CoreUser);
-          } else {
+        }
+      } catch (err) {
+        setGoogleSsoError(err instanceof Error ? err.message : 'Google sign-in failed');
+      }
+
+      hasAdminStaffSession().then(async (ok) => {
+        if (ok && auth.currentUser) {
+          try {
+            const currentEmail = auth.currentUser.email?.trim().toLowerCase();
+            if (currentEmail) {
+              const byEmail = await getDocs(query(tenantCol('core_users'), where('email', '==', currentEmail)));
+              if (!byEmail.empty) {
+                setUser(byEmail.docs[0].data() as CoreUser);
+                setCheckingStaff(false);
+                return;
+              }
+            }
+            const adminSnap = await getDocs(query(tenantCol('core_users'), where('role', '==', 'kolthoff_admin')));
+            if (!adminSnap.empty) {
+              setUser(adminSnap.docs[0].data() as CoreUser);
+            } else {
+              setUser({
+                id: auth.currentUser.uid,
+                email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
+                name: 'Kolthoff Admin',
+                role: 'kolthoff_admin',
+              });
+            }
+          } catch (err) {
+            console.warn('Admin staff lookup failed:', err);
             setUser({
               id: auth.currentUser.uid,
               email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
@@ -95,18 +125,10 @@ export default function App() {
               role: 'kolthoff_admin',
             });
           }
-        } catch (err) {
-          console.warn('Admin staff lookup failed:', err);
-          setUser({
-            id: auth.currentUser.uid,
-            email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
-            name: 'Kolthoff Admin',
-            role: 'kolthoff_admin',
-          });
         }
-      }
-      setCheckingStaff(false);
-    });
+        setCheckingStaff(false);
+      });
+    })();
   }, []);
 
   useEffect(() => {
@@ -151,7 +173,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={
-        user ? <Shell user={user} onLogout={logout} /> : <LoginPage onLogin={setUser} />
+        user ? <Shell user={user} onLogout={logout} /> : <LoginPage onLogin={setUser} googleSsoError={googleSsoError} />
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
