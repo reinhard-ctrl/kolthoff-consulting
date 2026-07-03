@@ -9,14 +9,14 @@ function staffSsoRequestRef(uid: string) {
   return doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'staff_sso_requests', uid);
 }
 
-async function waitForStaffProvision(uid: string): Promise<void> {
+async function waitForStaffProvision(uid: string, timeoutMs: number): Promise<void> {
   const ref = staffSsoRequestRef(uid);
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
       reject(new Error('Staff provisioning timed out. Try again or use passcode login.'));
-    }, PROVISION_TIMEOUT_MS);
+    }, timeoutMs);
 
     const unsub = onSnapshot(
       ref,
@@ -41,7 +41,11 @@ async function waitForStaffProvision(uid: string): Promise<void> {
   });
 }
 
-export async function provisionGoogleStaffViaFirestore(user: User): Promise<void> {
+export async function provisionGoogleStaffViaFirestore(
+  user: User,
+  options?: { timeoutMs?: number },
+): Promise<void> {
+  const provisionTimeout = options?.timeoutMs ?? PROVISION_TIMEOUT_MS;
   const token = await user.getIdTokenResult();
   if (
     (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') &&
@@ -71,6 +75,6 @@ export async function provisionGoogleStaffViaFirestore(user: User): Promise<void
     await setDoc(ref, payload);
   }
 
-  await waitForStaffProvision(user.uid);
+  await waitForStaffProvision(user.uid, provisionTimeout);
   await user.getIdToken(true);
 }
