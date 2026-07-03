@@ -5,11 +5,11 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, bootstrapAuth } from './firebase';
 import { isKolthoffStaffEmail } from './staff-domain';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
 
-let redirectResultConsumed = false;
+let redirectBootPromise: Promise<User | null> | null = null;
 
 function buildGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -43,32 +43,46 @@ export async function startGoogleStaffSignIn(): Promise<void> {
   if (auth.currentUser?.isAnonymous) {
     await signOut(auth);
   }
-  redirectResultConsumed = false;
+  redirectBootPromise = null;
   await signInWithRedirect(auth, buildGoogleProvider());
 }
 
-export async function completeGoogleStaffRedirect(): Promise<User | null> {
-  await auth.authStateReady();
-
-  if (!redirectResultConsumed) {
-    redirectResultConsumed = true;
-    try {
-      const result = await getRedirectResult(auth);
-      if (result?.user) {
-        return finalizeGoogleStaffUser(result.user);
+/** Must run before any anonymous/custom-token sign-in on app boot. */
+export function completeGoogleStaffRedirect(): Promise<User | null> {
+  if (!redirectBootPromise) {
+    redirectBootPromise = (async () => {
+      await auth.authStateReady();
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          return finalizeGoogleStaffUser(result.user);
+        }
+      } catch (err) {
+        redirectBootPromise = null;
+        throw err;
       }
-    } catch (err) {
-      redirectResultConsumed = false;
-      throw err;
-    }
-  }
 
-  const existing = auth.currentUser;
-  if (isGoogleStaffUser(existing)) {
-    return finalizeGoogleStaffUser(existing);
-  }
+      const existing = auth.currentUser;
+      if (isGoogleStaffUser(existing)) {
+        return finalizeGoogleStaffUser(existing);
+      }
 
-  return null;
+      return null;
+    })();
+  }
+  return redirectBootPromise;
+}
+
+/** Single boot entry: Google redirect first, anonymous bootstrap only after. */
+export async function ensureAuthReady(): Promise<User | null> {
+  const googleUser = await completeGoogleStaffRedirect();
+  if (googleUser) return googleUser;
+
+  await auth.authStateReady();
+  if (!auth.currentUser) {
+    await bootstrapAuth();
+  }
+  return auth.currentUser;
 }
 
 export { isGoogleStaffUser };

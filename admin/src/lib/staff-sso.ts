@@ -9,7 +9,7 @@ import { auth } from './firebase';
 import { isKolthoffStaffEmail } from './staff-domain';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
 
-let redirectResultConsumed = false;
+let redirectBootPromise: Promise<User | null> | null = null;
 
 function buildGoogleProvider() {
   const provider = new GoogleAuthProvider();
@@ -44,33 +44,34 @@ export async function startGoogleStaffSignIn(): Promise<void> {
   if (auth.currentUser?.isAnonymous) {
     await signOut(auth);
   }
-  redirectResultConsumed = false;
+  redirectBootPromise = null;
   await signInWithRedirect(auth, buildGoogleProvider());
 }
 
 /** Call once on app boot after returning from Google — must run before anonymous bootstrap */
-export async function completeGoogleStaffRedirect(): Promise<User | null> {
-  await auth.authStateReady();
-
-  if (!redirectResultConsumed) {
-    redirectResultConsumed = true;
-    try {
-      const result = await getRedirectResult(auth);
-      if (result?.user) {
-        return finalizeGoogleStaffUser(result.user);
+export function completeGoogleStaffRedirect(): Promise<User | null> {
+  if (!redirectBootPromise) {
+    redirectBootPromise = (async () => {
+      await auth.authStateReady();
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          return finalizeGoogleStaffUser(result.user);
+        }
+      } catch (err) {
+        redirectBootPromise = null;
+        throw err;
       }
-    } catch (err) {
-      redirectResultConsumed = false;
-      throw err;
-    }
-  }
 
-  const existing = auth.currentUser;
-  if (isGoogleStaffUser(existing)) {
-    return finalizeGoogleStaffUser(existing);
-  }
+      const existing = auth.currentUser;
+      if (isGoogleStaffUser(existing)) {
+        return finalizeGoogleStaffUser(existing);
+      }
 
-  return null;
+      return null;
+    })();
+  }
+  return redirectBootPromise;
 }
 
 export async function hasGoogleStaffClaims(): Promise<boolean> {
