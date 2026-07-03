@@ -5,7 +5,9 @@
   "description": "Idempotent Firestore seed loader for Kolthoff production data",
   "scripts": {
     "seed": "node seed.mjs",
-    "seed:dry": "node seed.mjs --dry-run"
+    "seed:dry": "node seed.mjs --dry-run",
+    "reset-diagnosis": "node reset-diagnosis-slices.mjs",
+    "reset-diagnosis:dry": "node reset-diagnosis-slices.mjs --dry-run"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0"

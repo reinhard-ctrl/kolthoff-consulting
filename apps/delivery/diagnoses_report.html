@@ -139,6 +139,21 @@
 
         const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val);
 
+        const EMPTY_CANVAS = { nodes: [], edges: [], lanes: [], phases: [] };
+
+        const createDefaultSynthesis = () => ({
+            communication: 3,
+            documentation: 3,
+            accountability: 3,
+            software: 3,
+            expectedGrowth: 0,
+            nextModuleId: 'MOD 1',
+            customPitch: '',
+            matrix: { items: [] },
+        });
+
+        const createEmptyTab = (id, name) => ({ id, name, past: [], present: { ...EMPTY_CANVAS }, future: [] });
+
         // --- GLOBAL CONSTANTS & DATA SEEDS ---
         const INITIAL_PHASES = [
             { id: 'p1', label: 'Initiation', x: 200, w: 350, type: 'start', color: '#f5f5f5', text: '#333333' },
@@ -1472,41 +1487,22 @@
 
             // View State
             const [activeNav, setActiveNav] = useState('flowcharts');
-            const [printConfig, setPrintConfig] = useState({ showFlowcharts: true, showRaci: true, showSaas: true, showSynthesis: true, showMatrix: true, showAIReport: true });
+            const [printConfig, setPrintConfig] = useState({ showFlowcharts: true, showRaci: false, showSaas: true, showSynthesis: true, showMatrix: true, showAIReport: true });
 
             // Deep States
             const [clientCompany, setClientCompany] = useState('');
             const [preparedBy, setPreparedBy] = useState('Reinhard Ludwig A. Kolthoff');
-            
-            const createEmptyTab = (id, name) => ({ id, name, past: [], present: { nodes: [], edges: [], lanes: INITIAL_LANES, phases: INITIAL_PHASES }, future: [] });
-            
-            const [tabs, setTabs] = useState([
-                { id: 'tab-1', name: 'Sales Pipeline (Demo)', past: [], future: [], present: { nodes: INITIAL_NODES, edges: INITIAL_EDGES, lanes: INITIAL_LANES, phases: INITIAL_PHASES } }
-            ]);
-            const [activeTabId, setActiveTabId] = useState('tab-1');
 
-            const [subSaaS, setSubSaaS] = useState(INITIAL_SAAS);
-            const [raciAssignments, setRaciAssignments] = useState({});
-            
-            // Reconstructed baseline synthesis with structured visual matrix coordinates
-            const [synthesis, setSynthesis] = useState({
-                communication: 2, documentation: 1, accountability: 2, software: 3, expectedGrowth: 5, nextModuleId: 'MOD 2',
-                customPitch: 'To systematically recover the lost hours and subscription leakage identified in this audit, we recommend immediate progression to Module 2: Process Architecture. This transition resolves structural root causes by standardizing accountability (RACI) and shielding handovers with SOP Vaults.',
-                matrix: {
-                    items: [
-                        { id: 'item-1', text: 'Cancel 6 inactive Zoom Pro seats', effort: 1, impact: 4 },
-                        { id: 'item-2', text: 'Consolidate Canva access to team plan', effort: 1.5, impact: 3 },
-                        { id: 'item-3', text: 'Set team Slack parameters for file handoffs', effort: 2, impact: 3.5 },
-                        { id: 'item-4', text: 'Deploy locked SOP Vaults (Module 2)', effort: 4, impact: 5 },
-                        { id: 'item-5', text: 'Integrate automated proposal tracking boards (Module 3)', effort: 5, impact: 4 },
-                        { id: 'item-6', text: 'Establish fractional COO campaign oversight (Module 4)', effort: 3, impact: 4 },
-                        { id: 'item-7', text: 'Update active lead tracking spreadsheet schema', effort: 2, impact: 2 },
-                        { id: 'item-8', text: 'Standardize campaign rulebook typography', effort: 1, impact: 2 },
-                        { id: 'item-9', text: 'Build custom internal CRM software from scratch', effort: 5, impact: 1.5 },
-                        { id: 'item-10', text: 'Authorize 4-hour daily standup syncs', effort: 4, impact: 1 }
-                    ]
-                }
+            const [diagnosisInit] = useState(() => {
+                const id = `tab-${Date.now()}`;
+                return { tabs: [createEmptyTab(id, 'Diagram 1')], activeTabId: id };
             });
+            const [tabs, setTabs] = useState(diagnosisInit.tabs);
+            const [activeTabId, setActiveTabId] = useState(diagnosisInit.activeTabId);
+
+            const [subSaaS, setSubSaaS] = useState([]);
+            const [raciAssignments, setRaciAssignments] = useState({});
+            const [synthesis, setSynthesis] = useState(createDefaultSynthesis);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -1557,22 +1553,21 @@
                     if (reportTabs.length) {
                         setTabs(WT.hydrateTabs(reportTabs));
                         setActiveTabId(profile.activeTabId || reportTabs[0].id);
-                    } else if (profile.workflows) { // Migration fallback
-                        setTabs([{ id: 'tab-m', name: 'Migrated Data', past: [], future: [], present: { nodes: INITIAL_NODES, edges: INITIAL_EDGES, lanes: INITIAL_LANES, phases: INITIAL_PHASES } }]);
-                        setActiveTabId('tab-m');
+                    } else {
+                        const id = `tab-${Date.now()}`;
+                        setTabs([createEmptyTab(id, 'Diagram 1')]);
+                        setActiveTabId(id);
                     }
-                    if (profile.subSaaS) setSubSaaS(profile.subSaaS);
-                    if (profile.raciAssignments) setRaciAssignments(profile.raciAssignments);
-                    
-                    // Resilient data loader fallback for missing Prioritization Matrices
+                    setSubSaaS(Array.isArray(profile.subSaaS) ? profile.subSaaS : []);
+                    setRaciAssignments(profile.raciAssignments || {});
+
                     if (profile.synthesis) {
                         const loadedSynthesis = { ...profile.synthesis };
-                        
-                        // If we hold legacy array keys, map them immediately into a structured coordinate-based matrix list
+
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
                             const migratedItems = [];
-                            
+
                             if (Array.isArray(oldMatrix.quickWins)) {
                                 oldMatrix.quickWins.forEach((text, i) => migratedItems.push({ id: `mig-qw-${i}-${Date.now()}`, text, effort: 1.5, impact: 4.5 }));
                             }
@@ -1588,24 +1583,13 @@
 
                             loadedSynthesis.matrix = { items: migratedItems };
                         }
-                        
-                        if (!loadedSynthesis.matrix || !loadedSynthesis.matrix.items) {
-                            loadedSynthesis.matrix = {
-                                items: [
-                                    { id: 'item-1', text: 'Cancel 6 inactive Zoom Pro seats', effort: 1, impact: 4 },
-                                    { id: 'item-2', text: 'Consolidate Canva access to team plan', effort: 1.5, impact: 3 },
-                                    { id: 'item-3', text: 'Set team Slack parameters for file handoffs', effort: 2, impact: 3.5 },
-                                    { id: 'item-4', text: 'Deploy locked SOP Vaults (Module 2)', effort: 4, impact: 5 },
-                                    { id: 'item-5', text: 'Integrate automated proposal tracking boards (Module 3)', effort: 5, impact: 4 },
-                                    { id: 'item-6', text: 'Establish fractional COO campaign oversight (Module 4)', effort: 3, impact: 4 },
-                                    { id: 'item-7', text: 'Update active lead tracking spreadsheet schema', effort: 2, impact: 2 },
-                                    { id: 'item-8', text: 'Standardize campaign rulebook typography', effort: 1, impact: 2 },
-                                    { id: 'item-9', text: 'Build custom internal CRM software from scratch', effort: 5, impact: 1.5 },
-                                    { id: 'item-10', text: 'Authorize 4-hour daily standup syncs', effort: 4, impact: 1 }
-                                ]
-                            };
+
+                        if (!loadedSynthesis.matrix || !Array.isArray(loadedSynthesis.matrix.items)) {
+                            loadedSynthesis.matrix = { items: [] };
                         }
                         setSynthesis(loadedSynthesis);
+                    } else {
+                        setSynthesis(createDefaultSynthesis());
                     }
                 }
             }, [activeProfileId, workbookProfiles]);
@@ -1660,7 +1644,7 @@
 
             const profileLabel = (p) => window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
 
-            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0] || { id: 'empty', name: 'No workflow', present: { nodes: [], edges: [], lanes: INITIAL_LANES, phases: INITIAL_PHASES } };
+            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0] || { id: 'empty', name: 'No workflow', present: { ...EMPTY_CANVAS } };
 
             return (
                 <div className="flex h-full min-h-0 overflow-hidden bg-brandNavy-955 font-sans">
