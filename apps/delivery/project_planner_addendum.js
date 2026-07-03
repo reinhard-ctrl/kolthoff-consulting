@@ -112,8 +112,8 @@
         ),
       ),
       activeAddendum && React.createElement(
-        React.Fragment,
-        null,
+        'div',
+        { className: 'space-y-4' },
         React.createElement(
           'div',
           { className: 'grid grid-cols-1 md:grid-cols-2 gap-3' },
@@ -215,7 +215,7 @@
           React.createElement(
             'div',
             { className: 'space-y-4' },
-            BrandLogo && BrandLogo(),
+            BrandLogo ? React.createElement(BrandLogo, null) : null,
             React.createElement('h1', { className: 'text-2xl font-serif font-bold text-slate-900' }, 'Statement of Work Addendum'),
             React.createElement('p', { className: 'text-sm font-mono text-slate-500' }, `${addendum.ref} · Supplements ${parentQuoteId}`),
             React.createElement(
