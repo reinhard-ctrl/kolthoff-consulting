@@ -8,9 +8,7 @@ Admin passcode login uses **Firestore directly** (no public Cloud Function requi
 
 1. Open https://kolthoff-consulting.com/admin/
 2. Click **Sign in with Google** using your `@kolthoff-consulting.com` account.
-3. The app calls `provisionGoogleStaff` to set admin claims and upsert `core_users`.
-
-See **`docs/app-check-sso.md`** for Firebase Console setup.
+3. The app provisions staff via Firestore (`staff_sso_requests`) — no public Cloud Function required. See **`docs/app-check-sso.md`**.
 
 ### Passcode (break-glass)
 

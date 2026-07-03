@@ -90,6 +90,25 @@ service cloud.firestore {
       allow write: if isKolthoffAdmin();
     }
 
+    function isGoogleStaffSignIn() {
+      return isKolthoffStaffEmail() &&
+        request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+
+    // Google SSO provisioning — Firestore trigger sets claims (no public Cloud Function required)
+    match /artifacts/kolthoff-admin-app/public/data/staff_sso_requests/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated() && request.auth.uid == uid &&
+        isGoogleStaffSignIn() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.email == request.auth.token.email;
+      allow update: if isAuthenticated() && request.auth.uid == uid &&
+        isGoogleStaffSignIn() &&
+        resource.data.status == 'error' &&
+        request.resource.data.status == 'pending';
+      allow delete: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // Admin console session after passcode verify (no public Cloud Function required)
     match /artifacts/kolthoff-admin-app/public/data/admin_sessions/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;

@@ -18,8 +18,11 @@ Staff can sign in with **@kolthoff-consulting.com** Google accounts on:
 
 1. User clicks **Sign in with Google**
 2. Firebase Auth validates Google account (hosted domain hint: `kolthoff-consulting.com`)
-3. Callable `provisionGoogleStaff` sets `role` + `tenantId` claims and upserts `core_users`
-4. Embedded HTML apps inherit the same Auth session and pass `auth-gate.js` via claims
+3. The app writes a `staff_sso_requests/{uid}` document in Firestore
+4. Cloud Function trigger `onStaffSsoProvisionRequest` sets `role` + `tenantId` claims and upserts `core_users`
+5. Embedded HTML apps inherit the same Auth session and pass `auth-gate.js` via claims or kolthoff Google email
+
+This Firestore path works when your GCP org policy blocks public Cloud Function invoke (same constraint as passcode login). Callable `provisionGoogleStaff` remains as a fallback where public invoke is allowed.
 
 Passcode login still works for break-glass and environments where Google popup is blocked.
 

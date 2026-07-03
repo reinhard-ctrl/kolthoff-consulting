@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import type { Request, Response } from 'express';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 
 setGlobalOptions({ region: 'asia-southeast1' });
@@ -764,6 +764,50 @@ export const prepareClientWorkspace = onCall(async (request) => {
 
 const KOLTHOFF_STAFF_DOMAIN = '@kolthoff-consulting.com';
 
+async function provisionKolthoffGoogleStaffUser(
+  uid: string,
+  email: string,
+  displayName?: string,
+): Promise<{ role: string; tenantId: string; userId: string; email: string }> {
+  const normalized = normalizeEmail(email);
+  if (!normalized.endsWith(KOLTHOFF_STAFF_DOMAIN)) {
+    throw new HttpsError('permission-denied', 'Google SSO requires a @kolthoff-consulting.com account');
+  }
+
+  const authUser = await admin.auth().getUser(uid);
+  const hasGoogle = authUser.providerData.some((p) => p.providerId === 'google.com');
+  if (!hasGoogle) {
+    throw new HttpsError('failed-precondition', 'Use Google sign-in');
+  }
+
+  const authEmail = normalizeEmail(authUser.email || '');
+  if (authEmail !== normalized) {
+    throw new HttpsError('permission-denied', 'Email mismatch');
+  }
+
+  const existing = await findCoreUserDoc(ADMIN_TENANT, normalized);
+  const existingRole = (existing?.data()?.role as string) || 'kolthoff_admin';
+  const role = existingRole === 'admin' ? 'kolthoff_admin' : existingRole;
+  const name = displayName || authUser.displayName || normalized.split('@')[0];
+  const userId = existing?.id ?? `u_${uid.slice(0, 8)}`;
+
+  await admin.auth().setCustomUserClaims(uid, {
+    role,
+    tenantId: ADMIN_TENANT,
+  });
+
+  await db.doc(`artifacts/${ADMIN_TENANT}/public/data/core_users/${userId}`).set({
+    id: userId,
+    email: normalized,
+    name,
+    role,
+    firebaseUid: uid,
+    updatedAt: Date.now(),
+  }, { merge: true });
+
+  return { role, tenantId: ADMIN_TENANT, userId, email: normalized };
+}
+
 /** Google Workspace SSO — provision @kolthoff-consulting.com staff claims + core_users */
 export const provisionGoogleStaff = onCall({ invoker: 'public' }, async (request) => {
   if (!request.auth?.uid) {
@@ -771,37 +815,48 @@ export const provisionGoogleStaff = onCall({ invoker: 'public' }, async (request
   }
 
   const email = normalizeEmail(String(request.auth.token.email || ''));
-  if (!email.endsWith(KOLTHOFF_STAFF_DOMAIN)) {
-    throw new HttpsError('permission-denied', 'Google SSO requires a @kolthoff-consulting.com account');
-  }
-
   const provider = (request.auth.token.firebase as { sign_in_provider?: string } | undefined)?.sign_in_provider;
   if (provider !== 'google.com') {
     throw new HttpsError('failed-precondition', 'Use Google sign-in');
   }
 
-  const existing = await findCoreUserDoc(ADMIN_TENANT, email);
-  const existingRole = (existing?.data()?.role as string) || 'kolthoff_admin';
-  const role = existingRole === 'admin' ? 'kolthoff_admin' : existingRole;
-  const displayName = (request.auth.token.name as string) || email.split('@')[0];
-  const userId = existing?.id ?? `u_${request.auth.uid.slice(0, 8)}`;
-
-  await admin.auth().setCustomUserClaims(request.auth.uid, {
-    role,
-    tenantId: ADMIN_TENANT,
-  });
-
-  await db.doc(`artifacts/${ADMIN_TENANT}/public/data/core_users/${userId}`).set({
-    id: userId,
-    email,
-    name: displayName,
-    role,
-    firebaseUid: request.auth.uid,
-    updatedAt: Date.now(),
-  }, { merge: true });
-
-  return { role, tenantId: ADMIN_TENANT, userId, email };
+  const displayName = (request.auth.token.name as string) || undefined;
+  return provisionKolthoffGoogleStaffUser(request.auth.uid, email, displayName);
 });
+
+/** Firestore path for Google SSO when org policy blocks public Cloud Function invoke */
+export const onStaffSsoProvisionRequest = onDocumentCreated(
+  'artifacts/kolthoff-admin-app/public/data/staff_sso_requests/{uid}',
+  async (event) => {
+    const uid = event.params.uid;
+    const data = event.data?.data();
+    if (!data || data.status !== 'pending') return;
+
+    const ref = event.data!.ref;
+    try {
+      const result = await provisionKolthoffGoogleStaffUser(
+        uid,
+        String(data.email || ''),
+        typeof data.displayName === 'string' ? data.displayName : undefined,
+      );
+      await ref.update({
+        status: 'complete',
+        role: result.role,
+        tenantId: result.tenantId,
+        userId: result.userId,
+        completedAt: Date.now(),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Provisioning failed';
+      console.error('onStaffSsoProvisionRequest failed', uid, err);
+      await ref.update({
+        status: 'error',
+        error: message,
+        failedAt: Date.now(),
+      });
+    }
+  },
+);
 
 /** Set custom claims — kolthoff admin only */
 export const setUserClaims = onCall(async (request) => {
