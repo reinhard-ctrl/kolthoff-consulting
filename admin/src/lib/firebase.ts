@@ -96,7 +96,7 @@ export async function hasAdminSession(): Promise<boolean> {
     }
 
     if (isKolthoffStaffEmail(user.email) && user.providerData.some((p) => p.providerId === 'google.com')) {
-      return token.claims.tenantId === adminAppId;
+      return true;
     }
 
     const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);

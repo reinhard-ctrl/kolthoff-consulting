@@ -69,13 +69,7 @@ export async function hasStaffAccess(user) {
   const email = user.email?.toLowerCase();
   const isGoogle = user.providerData?.some((p) => p.providerId === 'google.com');
   if (isGoogle && email?.endsWith('@kolthoff-consulting.com')) {
-    try {
-      const { claims } = await user.getIdTokenResult();
-      if (claims.role === 'kolthoff_admin' || claims.tenantId) return true;
-    } catch {
-      /* continue */
-    }
-    return false;
+    return true;
   }
 
   const session = await getDoc(adminSessionRef(user.uid));

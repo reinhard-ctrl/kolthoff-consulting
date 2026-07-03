@@ -4,9 +4,9 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
-import { auth, functions } from './firebase';
+import { auth } from './firebase';
 import { isKolthoffStaffEmail } from './staff-domain';
+import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
 
 export async function signInWithGoogleStaff(): Promise<User> {
   if (auth.currentUser?.isAnonymous) {
@@ -24,10 +24,7 @@ export async function signInWithGoogleStaff(): Promise<User> {
     throw new Error('Use your @kolthoff-consulting.com Google Workspace account.');
   }
 
-  const provision = httpsCallable(functions, 'provisionGoogleStaff');
-  await provision({});
-  await cred.user.getIdToken(true);
-
+  await provisionGoogleStaffViaFirestore(cred.user);
   return cred.user;
 }
 
