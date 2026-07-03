@@ -113,6 +113,10 @@ export async function hasAdminSession(): Promise<boolean> {
       return true;
     }
 
+    const googleSessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'google_admin_sessions', user.uid);
+    const googleSnap = await getDoc(googleSessionRef);
+    if (googleSnap.exists()) return true;
+
     const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
     const snap = await getDoc(sessionRef);
     return snap.exists();
