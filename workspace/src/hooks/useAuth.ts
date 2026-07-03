@@ -8,11 +8,20 @@ export function useAuth() {
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
-    bootstrapAuth()
-      .catch((err) => console.warn('Auth bootstrap failed:', err))
-      .finally(() => {
-        unsub = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+    (async () => {
+      await auth.authStateReady();
+      if (!auth.currentUser) {
+        try {
+          await bootstrapAuth();
+        } catch (err) {
+          console.warn('Auth bootstrap failed:', err);
+        }
+      }
+      unsub = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        setLoading(false);
       });
+    })();
     return () => unsub?.();
   }, []);
 

@@ -80,14 +80,19 @@ export default function App() {
         if (googleUser?.email) {
           const email = googleUser.email.trim().toLowerCase();
           const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
-          if (!snap.empty) {
-            const match = snap.docs[0].data() as CoreUser;
-            await logAudit('workspace_login', { email: match.email, provider: 'google' });
-            setUser(match);
-            setCheckingStaff(false);
-            setRestoringSession(false);
-            return;
-          }
+          const match = snap.empty
+            ? {
+                id: googleUser.uid,
+                email,
+                name: googleUser.displayName || email.split('@')[0],
+                role: 'kolthoff_admin',
+              }
+            : (snap.docs[0].data() as CoreUser);
+          await logAudit('workspace_login', { email: match.email, provider: 'google' });
+          setUser(match);
+          setCheckingStaff(false);
+          setRestoringSession(false);
+          return;
         }
       } catch (err) {
         setGoogleSsoError(err instanceof Error ? err.message : 'Google sign-in failed');
