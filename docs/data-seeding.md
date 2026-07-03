@@ -162,6 +162,22 @@ Run `bash scripts/smoke-test.sh` for HTTP checks.
 
 ---
 
+## Reset diagnosis report data (all workspaces)
+
+If workspaces still show stale demo flowcharts (e.g. “Sales Pipeline (Demo)”) or old RACI/SaaS/synthesis content in **Diagnosis Reports**, clear the diagnosis slices from every `workbook_profiles` document:
+
+```bash
+cd scripts/seed-firestore && npm install
+npm run reset-diagnosis:dry    # preview affected profiles
+npm run reset-diagnosis        # apply
+```
+
+Optional: reset one profile only — `node reset-diagnosis-slices.mjs --profile client-abc123`
+
+This removes `workflowBuilder`, `diagnosisWorkflow`, `tabs`, `raciAssignments`, `subSaaS`, and `synthesis` while keeping Project Planner / SOW fields intact. Planner-owned `chaosTax` values are preserved.
+
+---
+
 ## Related docs
 
 - `docs/data-model.md` — collection reference
