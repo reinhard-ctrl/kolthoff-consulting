@@ -45,7 +45,12 @@ export function suggestRetainerMonthlySuffix(period) {
 }
 
 export function resolveMilestoneLabel(invoiceMilestone, billingMilestones, options = {}) {
-  if (invoiceMilestone === 'full') return 'Full project payment';
+  const prefix = options.isAddendum ? 'Addendum — ' : '';
+  if (invoiceMilestone === 'full') {
+    return options.isAddendum
+      ? `${prefix}${options.addendumTitle || 'Full payment'}`
+      : 'Full project payment';
+  }
   if (invoiceMilestone === 'retainer') return 'MOD 4 Care Plan — full subscription';
   if (invoiceMilestone === 'retainer_monthly') {
     const periodLabel = formatBillingPeriodLabel(options.billingPeriod);
@@ -53,12 +58,17 @@ export function resolveMilestoneLabel(invoiceMilestone, billingMilestones, optio
       ? `MOD 4 Care Plan — ${periodLabel}`
       : 'MOD 4 Care Plan — monthly retainer';
   }
-  if (invoiceMilestone === 'custom') return 'Custom milestone';
+  if (invoiceMilestone === 'custom') {
+    return options.isAddendum ? `${prefix}Custom amount` : 'Custom milestone';
+  }
   if (typeof invoiceMilestone === 'string' && invoiceMilestone.startsWith('milestone_')) {
     const idx = parseInt(invoiceMilestone.split('_')[1], 10);
-    if (billingMilestones?.[idx]?.label) return billingMilestones[idx].label;
+    if (billingMilestones?.[idx]?.label) {
+      const label = billingMilestones[idx].label;
+      return options.isAddendum ? `${prefix}${label}` : label;
+    }
   }
-  return 'Milestone payment';
+  return options.isAddendum ? `${prefix}Payment` : 'Milestone payment';
 }
 
 /**
@@ -143,13 +153,19 @@ export function buildInvoiceRecord(input) {
     portalAccessCode,
     status = 'sent',
     billingPeriod = null,
+    addendumId = null,
+    addendumRef = null,
   } = input;
 
   const quoteId = profile?.quoteId || '';
   const invoiceNumber = formatInvoiceNumber(quoteId, invoiceNumberSuffix);
   const id = buildInvoiceDocId(profileId, invoiceNumberSuffix);
   const now = new Date().toISOString();
-  const resolvedLabel = milestoneLabel || resolveMilestoneLabel(invoiceMilestone, [], { billingPeriod });
+  const resolvedLabel = milestoneLabel || resolveMilestoneLabel(invoiceMilestone, [], {
+    billingPeriod,
+    isAddendum: Boolean(addendumId),
+    addendumTitle: addendumRef || null,
+  });
 
   return {
     id,
@@ -161,6 +177,9 @@ export function buildInvoiceRecord(input) {
     milestoneKey: invoiceMilestone,
     milestoneLabel: resolvedLabel,
     billingPeriod: billingPeriod || null,
+    addendumId: addendumId || null,
+    addendumRef: addendumRef || null,
+    documentType: addendumId ? 'addendum' : 'milestone',
     subtotal: amounts.subtotal,
     vat: amounts.vat,
     total: amounts.total,
@@ -172,7 +191,7 @@ export function buildInvoiceRecord(input) {
     sentAt: status === 'sent' ? now : null,
     paidAt: null,
     paymentReference: null,
-    notes: null,
+    notes: addendumRef ? `Addendum ${addendumRef}` : null,
     documentLink: null,
     createdAt: Date.now(),
     updatedAt: Date.now(),

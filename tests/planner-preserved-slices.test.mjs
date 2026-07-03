@@ -13,9 +13,13 @@ const root = join(__dirname, '..');
 
 function loadPlannerHelpers() {
   const engagementCode = readFileSync(join(root, 'shared/engagement-config.js'), 'utf8');
+  const packagesCode = readFileSync(join(root, 'shared/engagement-packages.js'), 'utf8');
+  const addendumCode = readFileSync(join(root, 'shared/engagement-addendum-templates.js'), 'utf8');
   const helpersCode = readFileSync(join(root, 'apps/delivery/project_planner_helpers.js'), 'utf8');
   const sandbox = { window: {} };
   vm.runInNewContext(engagementCode, sandbox);
+  vm.runInNewContext(packagesCode, sandbox);
+  vm.runInNewContext(addendumCode, sandbox);
   vm.runInNewContext(helpersCode, sandbox);
   return sandbox.window.PlannerHelpers;
 }
@@ -106,5 +110,44 @@ assert.equal(withoutPreserved.branding, undefined);
 
 const picked = H.pickPreservedProfileSlices(preservedProfile);
 assert.equal(Object.keys(picked).length, H.PRESERVED_PROFILE_SLICE_KEYS.filter((k) => preservedProfile[k] !== undefined).length);
+
+const addendumRecord = H.createAddendumRecord({
+  parentQuoteId: 'KC-2026-APARRI',
+  addenda: [],
+  templateId: 'training-day',
+  catalogTasks: [{ id: 'm3-05', deliverable: 'Training', category: 'MOD 3', selected: false, estHours: 8, tier: 'senior' }],
+  quoteDate: '2026-07-01',
+});
+assert.equal(addendumRecord.suffix, 'A1');
+assert.equal(addendumRecord.ref, 'KC-2026-APARRI-A1');
+assert.equal(addendumRecord.templateId, 'training-day');
+assert.ok(addendumRecord.tasks.find((t) => t.id === 'm3-05')?.selected);
+
+const secondAddendum = H.createAddendumRecord({
+  parentQuoteId: 'KC-2026-APARRI',
+  addenda: [addendumRecord],
+  templateId: 'custom',
+  catalogTasks: [],
+});
+assert.equal(secondAddendum.suffix, 'A2');
+
+const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
+  ...plannerState,
+  addenda: [addendumRecord],
+  activeAddendumId: addendumRecord.id,
+}, 1125000, preservedProfile);
+assert.equal(payloadWithAddenda.addenda.length, 1);
+assert.equal(payloadWithAddenda.activeAddendumId, addendumRecord.id);
+assert.equal(payloadWithAddenda.branding.primaryColor, '#112233');
+
+const addendumValidation = H.validatePrintReadiness('addendum', {
+  clientCompany: 'Acme Corp',
+  clientRep: 'John Smith',
+  activeAddendum: addendumRecord,
+  issueInvoice: true,
+  invoiceDueDate: '',
+});
+assert.equal(addendumValidation.ok, false);
+assert.ok(addendumValidation.issues.some((i) => i.includes('due date')));
 
 console.log('planner-preserved-slices.test.mjs passed');

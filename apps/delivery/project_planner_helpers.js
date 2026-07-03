@@ -558,7 +558,9 @@
       partnerRate: state.partnerRate,
       selectedPackageId: state.selectedPackageId ?? null,
       packageCustomized: Boolean(state.packageCustomized),
-      packageAppliedAt: state.packageAppliedAt ?? null
+      packageAppliedAt: state.packageAppliedAt ?? null,
+      addenda: Array.isArray(state.addenda) ? state.addenda : (preservedSource?.addenda || []),
+      activeAddendumId: state.activeAddendumId ?? preservedSource?.activeAddendumId ?? null,
     };
     base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks
@@ -597,6 +599,21 @@
 
     if (view === 'nda') {
       if (!ctx.ndaEffectiveDate?.trim()) warnings.push('NDA effective date is empty.');
+    }
+
+    if (view === 'addendum') {
+      const addendum = ctx.activeAddendum;
+      if (!addendum) {
+        issues.push('Select or create an addendum first.');
+      } else {
+        if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
+        if (!(addendum.tasks || []).filter((t) => t.selected).length) {
+          issues.push('No deliverables selected for this addendum.');
+        }
+        if (ctx.issueInvoice && !ctx.invoiceDueDate?.trim()) {
+          issues.push('Addendum invoice due date is missing.');
+        }
+      }
     }
 
     return { ok: issues.length === 0, issues, warnings };
@@ -675,6 +692,109 @@
     });
   }
 
+  function nextAddendumSuffix(addenda) {
+    const used = new Set((addenda || []).map((a) => a.suffix));
+    for (let i = 1; i < 100; i += 1) {
+      const suffix = `A${i}`;
+      if (!used.has(suffix)) return suffix;
+    }
+    return `A${Date.now()}`;
+  }
+
+  function buildAddendumRef(parentQuoteId, suffix) {
+    const base = String(parentQuoteId || 'KC0000').trim();
+    return `${base}-${suffix}`;
+  }
+
+  function cloneTasksForAddendum(catalogTasks, selectedIds) {
+    const idSet = new Set(selectedIds || []);
+    return (catalogTasks || []).map((task) => ({
+      ...task,
+      selected: idSet.has(task.id),
+    }));
+  }
+
+  function createAddendumRecord(options) {
+    const {
+      parentQuoteId,
+      addenda = [],
+      templateId = 'custom',
+      catalogTasks = [],
+      quoteDate = '',
+    } = options;
+    const AT = global.AddendumTemplates || {};
+    const template = AT.getTemplate ? AT.getTemplate(templateId) : null;
+    const suffix = nextAddendumSuffix(addenda);
+    const ref = buildAddendumRef(parentQuoteId, suffix);
+    const defaults = template?.defaults || {};
+    let selectedIds = [];
+    if (template?.tasks?.mode === 'modules' && global.PlannerHelpers?.resolvePackageSelectedIds) {
+      selectedIds = resolvePackageSelectedIds(template.tasks, catalogTasks);
+    } else if (template?.tasks?.mode === 'include') {
+      selectedIds = template.tasks.include || [];
+    }
+    const tasks = cloneTasksForAddendum(catalogTasks, selectedIds);
+    return {
+      id: `addendum-${Date.now()}`,
+      ref,
+      suffix,
+      parentQuoteId: parentQuoteId || '',
+      title: defaults.title || template?.name || 'Scope Addendum',
+      templateId: template?.id || 'custom',
+      status: 'draft',
+      createdAt: Date.now(),
+      issuedAt: null,
+      quoteDate: quoteDate || new Date().toISOString().slice(0, 10),
+      proposalObjectives: defaults.proposalObjectives || '',
+      addendumTerms: defaults.addendumTerms || '',
+      tasks,
+      frictionBuffer: defaults.frictionBuffer ?? 10,
+      discountPercent: defaults.discountPercent ?? 0,
+      milestoneSplit: defaults.milestoneSplit || '50-50',
+      customSplit1: 50,
+      customSplit2: 50,
+      customSplit3: 0,
+      subscriptionMonths: defaults.subscriptionMonths ?? 6,
+      invoiceMilestone: 'full',
+      invoiceNumberSuffix: suffix,
+      invoiceDueDate: '',
+      customInvoiceAmount: 0,
+      useCustomInvoiceBillTo: false,
+      invoiceBillToCompany: '',
+      invoiceBillToRep: '',
+      invoiceBillToAddress: '',
+      invoiceBillToTin: '',
+    };
+  }
+
+  function computeAddendumEconomics(addendum, parentCtx) {
+    if (!addendum) return null;
+    const includeTax = parentCtx.includeTax;
+    return computeProjectEconomics({
+      tasks: addendum.tasks || [],
+      frictionBuffer: addendum.frictionBuffer ?? parentCtx.frictionBuffer ?? 10,
+      discountPercent: addendum.discountPercent ?? 0,
+      includeTax,
+      subscriptionMonths: addendum.subscriptionMonths ?? parentCtx.subscriptionMonths ?? 6,
+      milestoneSplit: addendum.milestoneSplit || '50-50',
+      customSplit1: addendum.customSplit1 ?? 50,
+      customSplit2: addendum.customSplit2 ?? 50,
+      customSplit3: addendum.customSplit3 ?? 0,
+      rates: parentCtx.rates,
+      principalToSeniorDelegate: parentCtx.principalToSeniorDelegate ?? 20,
+      seniorToAssociateDelegate: parentCtx.seniorToAssociateDelegate ?? 40,
+      recoveryPotential: parentCtx.recoveryPotential ?? 0,
+      staffCount: parentCtx.staffCount ?? 15,
+      monthlySalary: parentCtx.monthlySalary ?? 25000,
+      wastedHours: parentCtx.wastedHours ?? 2,
+      formatCurrency: parentCtx.formatCurrency || ((n) => String(n)),
+    });
+  }
+
+  function updateAddendumInList(addenda, addendumId, patch) {
+    return (addenda || []).map((item) => (item.id === addendumId ? { ...item, ...patch } : item));
+  }
+
   global.PlannerHelpers = {
     DEFAULT_RATES,
     MOD_CATEGORIES,
@@ -705,6 +825,12 @@
     applyPackageToTasks,
     previewPackageSelection,
     formatPackagePriceLabel,
-    packagePreviewDefaults
+    packagePreviewDefaults,
+    nextAddendumSuffix,
+    buildAddendumRef,
+    createAddendumRecord,
+    computeAddendumEconomics,
+    updateAddendumInList,
+    cloneTasksForAddendum,
   };
 })(window);

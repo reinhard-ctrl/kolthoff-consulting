@@ -89,4 +89,26 @@ const csv = invoicesToCsv([invoice]);
 assert.ok(csv.includes('Invoice Number'));
 assert.ok(csv.includes('INV2026-00101'));
 
+const addendumLabel = resolveMilestoneLabel('full', [], { isAddendum: true, addendumTitle: 'Training Day Add-On' });
+assert.equal(addendumLabel, 'Addendum — Training Day Add-On');
+
+const addendumInvoice = buildInvoiceRecord({
+  profileId: 'p1',
+  profile: { quoteId: 'KC-2026-APARRI', clientCompany: 'Acme Corp', includeTax: true },
+  invoiceMilestone: 'full',
+  invoiceNumberSuffix: 'A1',
+  invoiceDueDate: 'August 1, 2026',
+  issueDate: '2026-07-01',
+  amounts,
+  milestoneLabel: addendumLabel,
+  portalAccessCode: 'KC-2026-APARRI',
+  status: 'sent',
+  addendumId: 'addendum-1',
+  addendumRef: 'KC-2026-APARRI-A1',
+});
+assert.equal(addendumInvoice.invoiceNumber, 'INV-2026-APARRIA1');
+assert.equal(addendumInvoice.documentType, 'addendum');
+assert.equal(addendumInvoice.addendumRef, 'KC-2026-APARRI-A1');
+assert.equal(addendumInvoice.id, 'inv-p1-A1');
+
 console.log('invoices.test.mjs: all assertions passed');
