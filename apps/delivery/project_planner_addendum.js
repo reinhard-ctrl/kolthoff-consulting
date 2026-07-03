@@ -141,7 +141,7 @@
             }),
           ),
         ),
-        activeAddendum.status === 'draft' && onDeleteActive && React.createElement(
+        (activeAddendum.status === 'draft' || activeAddendum.status === 'issued') && onDeleteActive && React.createElement(
           'div',
           { className: 'flex justify-end' },
           React.createElement(
@@ -151,8 +151,13 @@
               onClick: onDeleteActive,
               className: 'px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-[10px] font-mono uppercase font-bold tracking-wider',
             },
-            'Delete draft addendum',
+            activeAddendum.status === 'issued' ? 'Delete issued addendum' : 'Delete draft addendum',
           ),
+        ),
+        activeAddendum.status === 'invoiced' && React.createElement(
+          'p',
+          { className: 'text-[10px] font-mono text-slate-500 text-right' },
+          'Invoiced addenda cannot be deleted here. Void the invoice in Collections first.',
         ),
         React.createElement(
           'div',

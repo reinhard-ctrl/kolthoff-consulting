@@ -146,6 +146,10 @@ const afterDelete = H.removeAddendumFromList([addendumRecord, secondAddendum], a
 assert.equal(afterDelete.length, 1);
 assert.equal(afterDelete[0].suffix, 'A2');
 
+assert.equal(H.canDeleteAddendum({ status: 'draft' }), true);
+assert.equal(H.canDeleteAddendum({ status: 'issued' }), true);
+assert.equal(H.canDeleteAddendum({ status: 'invoiced' }), false);
+
 const addendumValidation = H.validatePrintReadiness('addendum', {
   clientCompany: 'Acme Corp',
   clientRep: 'John Smith',

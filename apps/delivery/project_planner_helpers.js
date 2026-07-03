@@ -799,6 +799,11 @@
     return (addenda || []).filter((item) => item.id !== addendumId);
   }
 
+  function canDeleteAddendum(addendum) {
+    if (!addendum) return false;
+    return addendum.status === 'draft' || addendum.status === 'issued';
+  }
+
   global.PlannerHelpers = {
     DEFAULT_RATES,
     MOD_CATEGORIES,
@@ -836,6 +841,7 @@
     computeAddendumEconomics,
     updateAddendumInList,
     removeAddendumFromList,
+    canDeleteAddendum,
     cloneTasksForAddendum,
   };
 })(window);

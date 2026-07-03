@@ -482,7 +482,7 @@
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
   <script src="project_planner_helpers.js?v=20250703-planner-addendum-v1"></script>
-  <script src="project_planner_addendum.js?v=20250703-addendum-v4"></script>
+  <script src="project_planner_addendum.js?v=20250703-addendum-v5"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -1246,9 +1246,10 @@
       }, [activeAddendum, patchActiveAddendum]);
 
       const deleteActiveAddendum = useCallback(() => {
-        if (!activeAddendum || activeAddendum.status !== 'draft') return;
+        if (!activeAddendum || !H.canDeleteAddendum(activeAddendum)) return;
         const label = activeAddendum.ref || activeAddendum.suffix || 'this addendum';
-        if (!window.confirm(`Delete draft addendum ${label}? This cannot be undone.`)) return;
+        const statusLabel = activeAddendum.status === 'issued' ? 'issued' : 'draft';
+        if (!window.confirm(`Delete ${statusLabel} addendum ${label}? This cannot be undone.`)) return;
         const remaining = H.removeAddendumFromList(addenda, activeAddendum.id);
         setAddenda(remaining);
         setActiveAddendumId(remaining[0]?.id ?? null);
