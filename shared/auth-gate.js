@@ -4,6 +4,7 @@
  * Public apps (marketing, portal, intake) must NOT import this module.
  */
 import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js?v=20250702-firebase-v2';
+import { getRedirectResult } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 const ADMIN_APP = 'kolthoff-admin-app';
@@ -78,6 +79,21 @@ export async function hasStaffAccess(user) {
 
 async function resolveAuthUser() {
   await auth.authStateReady();
+
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user && (await hasStaffAccess(result.user))) {
+      return result.user;
+    }
+  } catch (err) {
+    console.warn('Google redirect result failed:', err);
+  }
+
+  const existing = auth.currentUser;
+  if (existing && (await hasStaffAccess(existing))) {
+    return existing;
+  }
+
   return bootstrapAuth();
 }
 
@@ -85,13 +101,16 @@ async function waitForStaffAccess(maxMs = 10000) {
   await auth.authStateReady();
   const start = Date.now();
   while (Date.now() - start < maxMs) {
+    const user = auth.currentUser;
+    if (user && (await hasStaffAccess(user))) return user;
     try {
       await bootstrapAuth();
     } catch {
       /* anonymous auth may be blocked briefly */
     }
-    const user = auth.currentUser;
-    if (user && (await hasStaffAccess(user))) return user;
+    if (auth.currentUser && (await hasStaffAccess(auth.currentUser))) {
+      return auth.currentUser;
+    }
     await new Promise((r) => setTimeout(r, 300));
   }
   return null;

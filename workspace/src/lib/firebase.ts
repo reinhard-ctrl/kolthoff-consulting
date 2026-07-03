@@ -57,9 +57,7 @@ const ADMIN_APP = 'kolthoff-admin-app';
 
 export async function hasAdminStaffSession(): Promise<boolean> {
   try {
-    if (!auth.currentUser) {
-      await bootstrapAuth();
-    }
+    await auth.authStateReady();
   } catch {
     return false;
   }
