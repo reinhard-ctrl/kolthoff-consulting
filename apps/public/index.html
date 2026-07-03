@@ -257,9 +257,15 @@
         .explainer-card-thumb {
             transition: transform 0.25s ease;
         }
-        .explainer-card:hover .explainer-card-thumb,
-        .explainer-card:focus-visible .explainer-card-thumb {
+        .explainer-card:not(.is-playing):hover .explainer-card-thumb,
+        .explainer-card:not(.is-playing):focus-within .explainer-card-thumb {
             transform: scale(1.03);
+        }
+        .explainer-card.is-playing {
+            border-color: rgba(20, 184, 166, 0.55);
+        }
+        .explainer-card.is-playing .explainer-play-trigger {
+            display: none;
         }
     </style>
 </head>
@@ -339,26 +345,41 @@
                 </p>
                 </div>
 
-                <button id="openExplainerBtn" type="button" class="explainer-card lg:col-span-2 lg:row-span-2 order-2 w-full text-left bg-brandNavy-900 border border-brandTeal-500/35 hover:border-brandTeal-500 rounded-xl overflow-hidden transition-all hover:bg-brandNavy-850 group premium-glow cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brandTeal-500 focus-visible:ring-offset-2 focus-visible:ring-offset-brandNavy-950">
-                    <div class="relative aspect-video w-full bg-black border-b border-brandNavy-700/80">
-                        <img id="explainerCardThumb" src="" alt="Operational Excellence explainer preview" class="explainer-card-thumb absolute inset-0 w-full h-full object-cover" width="480" height="270" decoding="async" fetchpriority="high">
-                        <div class="absolute inset-0 bg-gradient-to-t from-brandNavy-955/90 via-brandNavy-955/20 to-transparent"></div>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="w-14 h-14 rounded-full bg-brandTeal-500/95 text-brandNavy-950 flex items-center justify-center shadow-lg shadow-brandTeal-500/30 group-hover:scale-105 transition-transform">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                <article id="explainerCard" class="explainer-card lg:col-span-2 lg:row-span-2 order-2 w-full bg-brandNavy-900 border border-brandTeal-500/35 hover:border-brandTeal-500 rounded-xl overflow-hidden transition-all hover:bg-brandNavy-850 group premium-glow">
+                    <div class="relative aspect-video w-full bg-brandNavy-900 border-b border-brandNavy-700/80">
+                        <div id="explainerPlayerSlot" class="absolute inset-0 bg-brandNavy-955" aria-live="polite"></div>
+                        <button id="playExplainerBtn" type="button" class="explainer-play-trigger absolute inset-0 w-full h-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brandTeal-500" aria-label="Play Operational Excellence explainer video">
+                            <img id="explainerCardThumb" src="/apps/public/assets/explainer-thumbnail.jpg" alt="Operational Excellence explainer preview" class="explainer-card-thumb absolute inset-0 w-full h-full object-cover" width="1280" height="720" decoding="async" fetchpriority="high">
+                            <div class="absolute inset-0 bg-gradient-to-t from-brandNavy-955/80 via-transparent to-brandNavy-955/10"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="w-14 h-14 rounded-full bg-brandTeal-500/95 text-brandNavy-950 flex items-center justify-center shadow-lg shadow-brandTeal-500/30 group-hover:scale-105 transition-transform">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                                </span>
+                            </div>
+                            <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-brandNavy-955/90 border border-brandTeal-500/30 text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">
+                                <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
+                                Explainer
                             </span>
+                        </button>
+                        <div id="explainerLoadingOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 hidden pointer-events-none">
+                            <img id="explainerLoadingThumb" src="/apps/public/assets/explainer-thumbnail.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" width="1280" height="720" decoding="async">
+                            <div class="absolute inset-0 bg-brandNavy-955/55"></div>
+                            <div class="relative z-10 w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
+                            <p class="relative z-10 text-[10px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">Starting YouTube player…</p>
                         </div>
-                        <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-brandNavy-955/90 border border-brandTeal-500/30 text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">
-                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
-                            Explainer
-                        </span>
+                        <div id="videoFallbackCard" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/95 hidden">
+                            <h4 class="font-serif font-bold text-white text-sm mb-1">Explainer Unavailable</h4>
+                            <p id="videoFallbackText" class="text-xs text-slate-400 max-w-md leading-relaxed">
+                                The explainer video could not be loaded. Please try again later.
+                            </p>
+                        </div>
                     </div>
-                    <div class="p-4 space-y-1">
+                    <div id="explainerCardMeta" class="p-4 space-y-1">
                         <span class="text-white font-bold text-xs uppercase tracking-wider block">Watch Operational Excellence Explainer</span>
                         <p class="text-slate-400 text-xs leading-relaxed font-medium">How we eliminate the chaos tax — full quality stream via YouTube.</p>
-                        <span class="text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold block pt-1">Tap to play · ~7 min</span>
+                        <span id="explainerCardHint" class="text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold block pt-1">Tap to play · ~7 min</span>
                     </div>
-                </button>
+                </article>
 
                 <div class="lg:col-span-3 order-3 space-y-5 text-center lg:text-left">
                 <div class="flex flex-wrap gap-3 justify-center lg:justify-start pt-1">
@@ -694,63 +715,6 @@
             </div>
         </div>
     </section>
-
-    <!-- NEW Explainer Video Modal Container -->
-    <div id="explainerModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
-        <!-- Backdrop -->
-        <div id="explainerModalBackdrop" class="absolute inset-0 backdrop-blur-md bg-slate-950/80 transition-opacity"></div>
-        
-        <!-- Modal Card -->
-        <div class="relative bg-brandNavy-900 border-2 border-brandTeal-500/50 rounded-xl p-6 max-w-4xl w-full shadow-2xl premium-glow text-left overflow-hidden z-10 flex flex-col max-h-[90vh]">
-            <!-- Close Button -->
-            <button id="closeExplainerModalBtn" type="button" class="absolute top-4 right-4 p-1.5 rounded bg-brandNavy-955 border border-brandNavy-700 text-slate-400 hover:text-white hover:border-brandAmber-500 transition-colors cursor-pointer z-20" aria-label="Close modal">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-
-            <!-- Modal Header -->
-            <div class="pb-3 border-b border-brandNavy-700 mb-4 pr-10">
-                <h3 class="text-base font-bold text-white tracking-wide flex items-center gap-2 uppercase font-sans">
-                    <span class="w-2.5 h-2.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
-                    Operational Excellence Explainer
-                </h3>
-                <p class="text-[9px] text-slate-455 mt-1 font-mono uppercase tracking-wider">Achieve Operational Excellence &amp; Eliminate the Chaos Tax</p>
-            </div>
-
-            <!-- Content Area: Video Only Setup -->
-            <div class="flex flex-col items-center justify-center gap-4 overflow-y-auto pr-1 flex-1">
-                <div class="relative aspect-video w-full max-w-3xl rounded-lg overflow-hidden bg-black border border-brandNavy-700">
-                    <div id="explainerPlayerSlot" class="absolute inset-0 bg-brandNavy-955" aria-live="polite"></div>
-                    <div id="explainerLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brandNavy-955 hidden pointer-events-none">
-                        <img id="explainerModalThumb" src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-35" width="960" height="540" decoding="async">
-                        <div class="relative z-10 w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
-                        <p class="relative z-10 text-[10px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">Starting YouTube player…</p>
-                    </div>
-                    <div id="videoFallbackCard" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/90 hidden">
-                        <svg class="w-12 h-12 text-brandTeal-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125V3a1.125 1.125 0 011.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v15.375c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25m-17.25 0v1.5a1.125 1.125 0 001.125 1.125h14.25a1.125 1.125 0 001.125-1.125v-1.5M14.25 9.75l-4.5 4.5m0-4.5l4.5 4.5m1.5-6h.008v.008H15.75V3.75z" />
-                        </svg>
-                        <h4 class="font-serif font-bold text-white text-sm mb-1">Explainer Unavailable</h4>
-                        <p id="videoFallbackText" class="text-xs text-slate-400 max-w-md leading-relaxed">
-                            The explainer video could not be loaded. Please try again later.
-                        </p>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between w-full max-w-3xl text-[10px] font-mono text-slate-455 px-1">
-                    <span>Format: YouTube HD stream</span>
-                    <span class="text-brandTeal-400 font-bold">Operational Excellence Explainer</span>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="mt-4 pt-4 border-t border-brandNavy-700 flex justify-end">
-                <button id="dismissExplainerModalBtn" type="button" class="px-5 py-2.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] tracking-wider uppercase transition-all shadow-md cursor-pointer">
-                    Close Explainer
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Loss Formula Explained Popup Modal Container -->
     <div id="formulaModal" class="fixed inset-0 flex items-center justify-center p-4 z-50 hidden no-print">
@@ -1327,22 +1291,18 @@
             modalBackdrop.addEventListener('click', closeModal);
         }
 
-        // --- Interactive Explainer Modal Logic (YouTube embed) ---
+        // --- Hero inline explainer (YouTube embed) ---
         const EXPLAINER_YOUTUBE_ID = '__EXPLAINER_YOUTUBE_ID__';
-        const explainerModal = document.getElementById('explainerModal');
-        const openExplainerBtn = document.getElementById('openExplainerBtn');
-        const closeExplainerModalBtn = document.getElementById('closeExplainerModalBtn');
-        const dismissExplainerModalBtn = document.getElementById('dismissExplainerModalBtn');
-        const explainerModalBackdrop = document.getElementById('explainerModalBackdrop');
+        const explainerCard = document.getElementById('explainerCard');
+        const playExplainerBtn = document.getElementById('playExplainerBtn');
         const explainerPlayerSlot = document.getElementById('explainerPlayerSlot');
         const explainerLoadingOverlay = document.getElementById('explainerLoadingOverlay');
         const explainerCardThumb = document.getElementById('explainerCardThumb');
-        const explainerModalThumb = document.getElementById('explainerModalThumb');
+        const explainerCardHint = document.getElementById('explainerCardHint');
         const videoFallbackCard = document.getElementById('videoFallbackCard');
         const videoFallbackText = document.getElementById('videoFallbackText');
         let explainerEmbedPrewarmed = false;
         let explainerPlayerMounted = false;
-        let explainerIframeLoaded = false;
         let explainerShellIframe = null;
         const prefersFinePointer = window.matchMedia('(pointer: fine)').matches;
 
@@ -1350,8 +1310,25 @@
             return String(EXPLAINER_YOUTUBE_ID || '').trim();
         }
 
-        function getExplainerThumbUrl(videoId) {
-            return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
+        function getExplainerThumbUrl(videoId, size) {
+            const variant = size || 'maxresdefault';
+            return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/${variant}.jpg`;
+        }
+
+        function getExplainerThumbFallbacks(videoId) {
+            return [
+                '/apps/public/assets/explainer-thumbnail.jpg',
+                getExplainerThumbUrl(videoId, 'maxresdefault'),
+                getExplainerThumbUrl(videoId, 'sddefault'),
+                getExplainerThumbUrl(videoId, 'hqdefault'),
+            ];
+        }
+
+        function syncExplainerLoadingThumb() {
+            const loadingThumb = document.getElementById('explainerLoadingThumb');
+            if (loadingThumb && explainerCardThumb && explainerCardThumb.src) {
+                loadingThumb.src = explainerCardThumb.src;
+            }
         }
 
         function getExplainerEmbedUrl(videoId, autoplay) {
@@ -1365,12 +1342,7 @@
             return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
         }
 
-        function isExplainerModalOpen() {
-            return explainerModal && !explainerModal.classList.contains('hidden');
-        }
-
         function setExplainerLoading(isVisible) {
-            if (!isExplainerModalOpen()) return;
             if (explainerLoadingOverlay) {
                 explainerLoadingOverlay.classList.toggle('hidden', !isVisible);
             }
@@ -1384,6 +1356,13 @@
             if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
         }
 
+        function markExplainerPlaying() {
+            if (explainerCard) explainerCard.classList.add('is-playing');
+            if (explainerCardHint) {
+                explainerCardHint.textContent = 'Playing via YouTube · use player controls';
+            }
+        }
+
         function discardExplainerShell() {
             if (explainerShellIframe) {
                 explainerShellIframe.remove();
@@ -1391,23 +1370,22 @@
             }
         }
 
-        function clearExplainerPlayer() {
-            if (explainerPlayerSlot) explainerPlayerSlot.innerHTML = '';
-            explainerPlayerMounted = false;
-            explainerIframeLoaded = false;
-            setExplainerLoading(false);
-        }
-
-        function setupExplainerThumbnails() {
+        function setupExplainerThumbnail() {
             const videoId = getExplainerVideoId();
-            if (!videoId) return;
-            const thumbUrl = getExplainerThumbUrl(videoId);
-            if (explainerCardThumb && !explainerCardThumb.src) {
-                explainerCardThumb.src = thumbUrl;
+            if (!videoId || !explainerCardThumb) return;
+            if (!explainerCardThumb.dataset.fallbackReady) {
+                const sources = getExplainerThumbFallbacks(videoId);
+                const currentSrc = explainerCardThumb.getAttribute('src') || sources[0];
+                let index = Math.max(0, sources.indexOf(currentSrc)) + 1;
+                explainerCardThumb.onerror = () => {
+                    if (index < sources.length) {
+                        explainerCardThumb.src = sources[index++];
+                        syncExplainerLoadingThumb();
+                    }
+                };
+                explainerCardThumb.dataset.fallbackReady = '1';
             }
-            if (explainerModalThumb && !explainerModalThumb.src) {
-                explainerModalThumb.src = thumbUrl;
-            }
+            syncExplainerLoadingThumb();
         }
 
         function prewarmExplainerEmbed() {
@@ -1434,66 +1412,38 @@
             document.body.appendChild(explainerShellIframe);
         }
 
-        function mountExplainerPlayer(options = {}) {
-            const { autoplay = true, showLoading = true } = options;
-            if (explainerPlayerMounted) {
-                if (showLoading && isExplainerModalOpen() && !explainerIframeLoaded) {
-                    setExplainerLoading(true);
-                }
-                return true;
-            }
-
-            if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
+        function playExplainer() {
+            if (explainerPlayerMounted) return;
 
             const videoId = getExplainerVideoId();
             if (!videoId) {
-                if (isExplainerModalOpen()) {
-                    showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
-                }
-                return false;
+                showVideoFallback('The explainer video is not configured yet.');
+                return;
             }
 
-            setupExplainerThumbnails();
+            if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
+            setupExplainerThumbnail();
             discardExplainerShell();
-            if (showLoading && isExplainerModalOpen()) {
-                setExplainerLoading(true);
-            }
+            markExplainerPlaying();
+            syncExplainerLoadingThumb();
+            setExplainerLoading(true);
 
             const iframe = document.createElement('iframe');
             iframe.className = 'w-full h-full';
-            iframe.src = getExplainerEmbedUrl(videoId, autoplay);
+            iframe.src = getExplainerEmbedUrl(videoId, true);
             iframe.title = 'Operational Excellence Explainer';
             iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
             iframe.setAttribute('allowfullscreen', '');
-            iframe.addEventListener('load', () => {
-                explainerIframeLoaded = true;
-                setExplainerLoading(false);
-            }, { once: true });
+            iframe.addEventListener('load', () => setExplainerLoading(false), { once: true });
             explainerPlayerSlot.appendChild(iframe);
             explainerPlayerMounted = true;
-            return true;
         }
 
         function prepareExplainerOnIntent() {
+            if (explainerPlayerMounted) return;
             prewarmExplainerEmbed();
             warmExplainerShell();
-            mountExplainerPlayer({ autoplay: true, showLoading: false });
-        }
-
-        function openExplainer() {
-            explainerModal.classList.remove('hidden');
-            const ready = mountExplainerPlayer({ autoplay: true, showLoading: true });
-            if (ready && !explainerIframeLoaded) {
-                setExplainerLoading(true);
-            }
-        }
-
-        function closeExplainer() {
-            explainerModal.classList.add('hidden');
-            clearExplainerPlayer();
-            discardExplainerShell();
-            if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
         }
 
         function scheduleDesktopWarm() {
@@ -1509,44 +1459,33 @@
             }
         }
 
-        setupExplainerThumbnails();
+        setupExplainerThumbnail();
         scheduleDesktopWarm();
-        if ('IntersectionObserver' in window && openExplainerBtn) {
+        if ('IntersectionObserver' in window && explainerCard) {
             const explainerWarmObserver = new IntersectionObserver((entries) => {
                 if (entries.some((entry) => entry.isIntersecting)) {
                     prewarmExplainerEmbed();
                     warmExplainerShell();
-                    setupExplainerThumbnails();
+                    setupExplainerThumbnail();
                     explainerWarmObserver.disconnect();
                 }
             }, { rootMargin: '240px' });
-            explainerWarmObserver.observe(openExplainerBtn);
+            explainerWarmObserver.observe(explainerCard);
         }
-        if (openExplainerBtn) {
-            openExplainerBtn.addEventListener('mouseenter', () => {
+        if (playExplainerBtn) {
+            playExplainerBtn.addEventListener('mouseenter', () => {
                 prewarmExplainerEmbed();
                 warmExplainerShell();
             }, { once: true });
-            openExplainerBtn.addEventListener('focus', () => {
+            playExplainerBtn.addEventListener('focus', () => {
                 prewarmExplainerEmbed();
                 warmExplainerShell();
             }, { once: true });
-            openExplainerBtn.addEventListener('pointerdown', (event) => {
-                if (event.pointerType !== 'touch') {
-                    prepareExplainerOnIntent();
-                }
+            playExplainerBtn.addEventListener('pointerdown', (event) => {
+                if (event.pointerType !== 'touch') prepareExplainerOnIntent();
             }, { passive: true });
-            openExplainerBtn.addEventListener('touchstart', prepareExplainerOnIntent, { once: true, passive: true });
-            openExplainerBtn.addEventListener('click', openExplainer);
-        }
-        if (closeExplainerModalBtn) {
-            closeExplainerModalBtn.addEventListener('click', closeExplainer);
-        }
-        if (dismissExplainerModalBtn) {
-            dismissExplainerModalBtn.addEventListener('click', closeExplainer);
-        }
-        if (explainerModalBackdrop) {
-            explainerModalBackdrop.addEventListener('click', closeExplainer);
+            playExplainerBtn.addEventListener('touchstart', prepareExplainerOnIntent, { passive: true });
+            playExplainerBtn.addEventListener('click', playExplainer);
         }
 
         // --- Interactive Core Ethos Modal Logic ---
@@ -1647,9 +1586,6 @@
             if (e.key === 'Escape' || e.key === 'Esc') {
                 if (!formulaModal.classList.contains('hidden')) {
                     closeModal();
-                }
-                if (!explainerModal.classList.contains('hidden')) {
-                    closeExplainer();
                 }
                 if (!ethosModal.classList.contains('hidden')) {
                     closeEthos();
