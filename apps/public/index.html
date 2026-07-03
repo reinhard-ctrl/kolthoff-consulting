@@ -12,6 +12,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="dns-prefetch" href="https://www.youtube-nocookie.com">
+    <link rel="dns-prefetch" href="https://i.ytimg.com">
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
+    <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
     
     <!-- Configure MathJax 3 globally before loading script to avoid compilation races -->
     <script>
@@ -241,12 +245,28 @@
             flex-direction: column;
             justify-content: space-between;
         }
+        /* Solid header on mobile — semi-transparent + blur lets page content show through while scrolling */
+        .site-header {
+            background-color: #01040e;
+        }
+        @media (min-width: 768px) {
+            .site-header {
+                background-color: rgba(1, 4, 14, 0.92);
+            }
+        }
+        .explainer-card-thumb {
+            transition: transform 0.25s ease;
+        }
+        .explainer-card:hover .explainer-card-thumb,
+        .explainer-card:focus-visible .explainer-card-thumb {
+            transform: scale(1.03);
+        }
     </style>
 </head>
 <body class="luxury-gradient text-slate-300 antialiased min-h-screen font-sans selection:bg-brandTeal-600 selection:text-white">
 
     <!-- Header Navigation -->
-    <header class="border-b border-brandNavy-700/50 bg-brandNavy-955/90 sticky top-0 z-50 backdrop-blur-md">
+    <header class="site-header border-b border-brandNavy-700/50 sticky top-0 z-50 md:backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <!-- Brand Logo -->
             <div class="flex items-center gap-3">
@@ -291,7 +311,7 @@
         </div>
 
         <!-- Mobile Drawer Menu -->
-        <div id="mobileDrawer" class="hidden md:hidden absolute top-20 left-0 w-full bg-brandNavy-955/98 border-b border-brandNavy-700/80 backdrop-blur-lg transition-all duration-300 z-50 py-6 px-6 shadow-xl space-y-4">
+        <div id="mobileDrawer" class="hidden md:hidden absolute top-20 left-0 w-full bg-brandNavy-955 border-b border-brandNavy-700 shadow-xl transition-all duration-300 z-50 py-6 px-6 space-y-4">
             <a href="#calculator" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Chaos Tax Calculator</a>
             <a href="#roadmap" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Modules &amp; Packages</a>
             <a href="#about" class="block py-2 text-sm uppercase tracking-widest font-semibold text-slate-300 hover:text-white" onclick="toggleMobileMenu()">Our Approach</a>
@@ -305,7 +325,8 @@
     <section id="hero" class="site-section relative pt-12 pb-16 lg:py-0 overflow-hidden px-4 sm:px-6 scroll-mt-20">
         <div class="absolute inset-0 bg-cover bg-center opacity-[0.02]" style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200');"></div>
         <div class="max-w-5xl mx-auto relative z-10 site-section-inner">
-            <div class="space-y-5 lg:space-y-4 text-center lg:text-left">
+            <div class="grid lg:grid-cols-5 lg:grid-rows-[auto_auto] gap-8 lg:gap-10 items-start">
+                <div class="lg:col-span-3 order-1 space-y-5 lg:space-y-4 text-center lg:text-left">
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-brandTeal-500/10 border border-brandTeal-500/30 rounded text-brandTeal-400 font-mono text-[10px] uppercase tracking-widest font-extrabold">
                     <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
                     Operational Excellence for Philippine SMEs
@@ -316,6 +337,30 @@
                 <p class="text-slate-400 text-base leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
                     Most growing Philippine SMEs bleed up to 30% of payroll in manual tracking loops and Viber chaos. I execute direct operational audits to organize and automate workflows—reclaiming capacity without bloating headcount.
                 </p>
+                </div>
+
+                <button id="openExplainerBtn" type="button" class="explainer-card lg:col-span-2 lg:row-span-2 order-2 w-full text-left bg-brandNavy-900 border border-brandTeal-500/35 hover:border-brandTeal-500 rounded-xl overflow-hidden transition-all hover:bg-brandNavy-850 group premium-glow cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brandTeal-500 focus-visible:ring-offset-2 focus-visible:ring-offset-brandNavy-950">
+                    <div class="relative aspect-video w-full bg-black border-b border-brandNavy-700/80">
+                        <img id="explainerCardThumb" src="" alt="Operational Excellence explainer preview" class="explainer-card-thumb absolute inset-0 w-full h-full object-cover" width="480" height="270" decoding="async" fetchpriority="high">
+                        <div class="absolute inset-0 bg-gradient-to-t from-brandNavy-955/90 via-brandNavy-955/20 to-transparent"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="w-14 h-14 rounded-full bg-brandTeal-500/95 text-brandNavy-950 flex items-center justify-center shadow-lg shadow-brandTeal-500/30 group-hover:scale-105 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                            </span>
+                        </div>
+                        <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-brandNavy-955/90 border border-brandTeal-500/30 text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse"></span>
+                            Explainer
+                        </span>
+                    </div>
+                    <div class="p-4 space-y-1">
+                        <span class="text-white font-bold text-xs uppercase tracking-wider block">Watch Operational Excellence Explainer</span>
+                        <p class="text-slate-400 text-xs leading-relaxed font-medium">How we eliminate the chaos tax — full quality stream via YouTube.</p>
+                        <span class="text-[9px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold block pt-1">Tap to play · ~7 min</span>
+                    </div>
+                </button>
+
+                <div class="lg:col-span-3 order-3 space-y-5 text-center lg:text-left">
                 <div class="flex flex-wrap gap-3 justify-center lg:justify-start pt-1">
                     <a href="#get-started" class="px-7 py-3.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-white font-extrabold text-xs uppercase tracking-wider rounded shadow-xl hover:translate-y-[-1px] hover:shadow-brandTeal-500/20 transition-all">
                         Request Operations Scorecard &amp; SOW
@@ -337,6 +382,7 @@
                         <span class="text-white text-lg font-serif font-bold block leading-none mb-1">100% ASYNC</span>
                         SOW Guarantee
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -420,10 +466,6 @@
                         Curated starting scopes. Add playbooks, workspace, and care when you are ready.
                     </p>
                 </div>
-                <button id="openExplainerBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brandNavy-900 hover:bg-brandNavy-850 text-brandTeal-400 hover:text-white border border-brandTeal-500/30 hover:border-brandTeal-500 rounded font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shrink-0 self-start lg:self-auto">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    Watch Explainer
-                </button>
             </div>
 
             <div id="packages" class="packages-featured rounded-xl border border-brandTeal-500/30 bg-gradient-to-br from-brandNavy-900 via-brandNavy-900/95 to-brandTeal-500/[0.07] p-4 lg:p-5">
@@ -680,6 +722,11 @@
             <div class="flex flex-col items-center justify-center gap-4 overflow-y-auto pr-1 flex-1">
                 <div class="relative aspect-video w-full max-w-3xl rounded-lg overflow-hidden bg-black border border-brandNavy-700">
                     <div id="explainerPlayerSlot" class="absolute inset-0 bg-brandNavy-955" aria-live="polite"></div>
+                    <div id="explainerLoadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-brandNavy-955 hidden pointer-events-none">
+                        <img id="explainerModalThumb" src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-35" width="960" height="540" decoding="async">
+                        <div class="relative z-10 w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
+                        <p class="relative z-10 text-[10px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">Starting YouTube player…</p>
+                    </div>
                     <div id="videoFallbackCard" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/90 hidden">
                         <svg class="w-12 h-12 text-brandTeal-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125V3a1.125 1.125 0 011.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v15.375c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25m-17.25 0v1.5a1.125 1.125 0 001.125 1.125h14.25a1.125 1.125 0 001.125-1.125v-1.5M14.25 9.75l-4.5 4.5m0-4.5l4.5 4.5m1.5-6h.008v.008H15.75V3.75z" />
@@ -1288,53 +1335,208 @@
         const dismissExplainerModalBtn = document.getElementById('dismissExplainerModalBtn');
         const explainerModalBackdrop = document.getElementById('explainerModalBackdrop');
         const explainerPlayerSlot = document.getElementById('explainerPlayerSlot');
+        const explainerLoadingOverlay = document.getElementById('explainerLoadingOverlay');
+        const explainerCardThumb = document.getElementById('explainerCardThumb');
+        const explainerModalThumb = document.getElementById('explainerModalThumb');
         const videoFallbackCard = document.getElementById('videoFallbackCard');
         const videoFallbackText = document.getElementById('videoFallbackText');
+        let explainerEmbedPrewarmed = false;
+        let explainerPlayerMounted = false;
+        let explainerIframeLoaded = false;
+        let explainerShellIframe = null;
+        const prefersFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+        function getExplainerVideoId() {
+            return String(EXPLAINER_YOUTUBE_ID || '').trim();
+        }
+
+        function getExplainerThumbUrl(videoId) {
+            return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
+        }
+
+        function getExplainerEmbedUrl(videoId, autoplay) {
+            const params = new URLSearchParams({
+                autoplay: autoplay ? '1' : '0',
+                rel: '0',
+                modestbranding: '1',
+                playsinline: '1',
+                iv_load_policy: '3',
+            });
+            return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+        }
+
+        function isExplainerModalOpen() {
+            return explainerModal && !explainerModal.classList.contains('hidden');
+        }
+
+        function setExplainerLoading(isVisible) {
+            if (!isExplainerModalOpen()) return;
+            if (explainerLoadingOverlay) {
+                explainerLoadingOverlay.classList.toggle('hidden', !isVisible);
+            }
+        }
 
         function showVideoFallback(message) {
+            setExplainerLoading(false);
             if (videoFallbackText && message) {
                 videoFallbackText.textContent = message;
             }
             if (videoFallbackCard) videoFallbackCard.classList.remove('hidden');
         }
 
-        function clearExplainerPlayer() {
-            if (explainerPlayerSlot) explainerPlayerSlot.innerHTML = '';
+        function discardExplainerShell() {
+            if (explainerShellIframe) {
+                explainerShellIframe.remove();
+                explainerShellIframe = null;
+            }
         }
 
-        function mountExplainerPlayer() {
-            clearExplainerPlayer();
+        function clearExplainerPlayer() {
+            if (explainerPlayerSlot) explainerPlayerSlot.innerHTML = '';
+            explainerPlayerMounted = false;
+            explainerIframeLoaded = false;
+            setExplainerLoading(false);
+        }
+
+        function setupExplainerThumbnails() {
+            const videoId = getExplainerVideoId();
+            if (!videoId) return;
+            const thumbUrl = getExplainerThumbUrl(videoId);
+            if (explainerCardThumb && !explainerCardThumb.src) {
+                explainerCardThumb.src = thumbUrl;
+            }
+            if (explainerModalThumb && !explainerModalThumb.src) {
+                explainerModalThumb.src = thumbUrl;
+            }
+        }
+
+        function prewarmExplainerEmbed() {
+            if (explainerEmbedPrewarmed) return;
+            const videoId = getExplainerVideoId();
+            if (!videoId) return;
+            explainerEmbedPrewarmed = true;
+            const prefetch = document.createElement('link');
+            prefetch.rel = 'prefetch';
+            prefetch.href = getExplainerEmbedUrl(videoId, false);
+            prefetch.as = 'document';
+            document.head.appendChild(prefetch);
+        }
+
+        function warmExplainerShell() {
+            const videoId = getExplainerVideoId();
+            if (explainerShellIframe || explainerPlayerMounted || !videoId) return;
+            explainerShellIframe = document.createElement('iframe');
+            explainerShellIframe.src = getExplainerEmbedUrl(videoId, false);
+            explainerShellIframe.title = 'Explainer preload';
+            explainerShellIframe.tabIndex = -1;
+            explainerShellIframe.setAttribute('aria-hidden', 'true');
+            explainerShellIframe.className = 'fixed w-0 h-0 opacity-0 pointer-events-none border-0';
+            document.body.appendChild(explainerShellIframe);
+        }
+
+        function mountExplainerPlayer(options = {}) {
+            const { autoplay = true, showLoading = true } = options;
+            if (explainerPlayerMounted) {
+                if (showLoading && isExplainerModalOpen() && !explainerIframeLoaded) {
+                    setExplainerLoading(true);
+                }
+                return true;
+            }
+
             if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
 
-            const videoId = String(EXPLAINER_YOUTUBE_ID || '').trim();
+            const videoId = getExplainerVideoId();
             if (!videoId) {
-                showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
-                return;
+                if (isExplainerModalOpen()) {
+                    showVideoFallback('The explainer video is not configured yet. Upload it to YouTube as unlisted and set EXPLAINER_YOUTUBE_ID in the deployment environment.');
+                }
+                return false;
+            }
+
+            setupExplainerThumbnails();
+            discardExplainerShell();
+            if (showLoading && isExplainerModalOpen()) {
+                setExplainerLoading(true);
             }
 
             const iframe = document.createElement('iframe');
             iframe.className = 'w-full h-full';
-            iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+            iframe.src = getExplainerEmbedUrl(videoId, autoplay);
             iframe.title = 'Operational Excellence Explainer';
-            iframe.loading = 'lazy';
             iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
             iframe.setAttribute('allowfullscreen', '');
+            iframe.addEventListener('load', () => {
+                explainerIframeLoaded = true;
+                setExplainerLoading(false);
+            }, { once: true });
             explainerPlayerSlot.appendChild(iframe);
+            explainerPlayerMounted = true;
+            return true;
+        }
+
+        function prepareExplainerOnIntent() {
+            prewarmExplainerEmbed();
+            warmExplainerShell();
+            mountExplainerPlayer({ autoplay: true, showLoading: false });
         }
 
         function openExplainer() {
             explainerModal.classList.remove('hidden');
-            mountExplainerPlayer();
+            const ready = mountExplainerPlayer({ autoplay: true, showLoading: true });
+            if (ready && !explainerIframeLoaded) {
+                setExplainerLoading(true);
+            }
         }
 
         function closeExplainer() {
             explainerModal.classList.add('hidden');
             clearExplainerPlayer();
+            discardExplainerShell();
             if (videoFallbackCard) videoFallbackCard.classList.add('hidden');
         }
 
+        function scheduleDesktopWarm() {
+            if (!prefersFinePointer || !getExplainerVideoId()) return;
+            const run = () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            };
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(run, { timeout: 2500 });
+            } else {
+                setTimeout(run, 1500);
+            }
+        }
+
+        setupExplainerThumbnails();
+        scheduleDesktopWarm();
+        if ('IntersectionObserver' in window && openExplainerBtn) {
+            const explainerWarmObserver = new IntersectionObserver((entries) => {
+                if (entries.some((entry) => entry.isIntersecting)) {
+                    prewarmExplainerEmbed();
+                    warmExplainerShell();
+                    setupExplainerThumbnails();
+                    explainerWarmObserver.disconnect();
+                }
+            }, { rootMargin: '240px' });
+            explainerWarmObserver.observe(openExplainerBtn);
+        }
         if (openExplainerBtn) {
+            openExplainerBtn.addEventListener('mouseenter', () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            }, { once: true });
+            openExplainerBtn.addEventListener('focus', () => {
+                prewarmExplainerEmbed();
+                warmExplainerShell();
+            }, { once: true });
+            openExplainerBtn.addEventListener('pointerdown', (event) => {
+                if (event.pointerType !== 'touch') {
+                    prepareExplainerOnIntent();
+                }
+            }, { passive: true });
+            openExplainerBtn.addEventListener('touchstart', prepareExplainerOnIntent, { once: true, passive: true });
             openExplainerBtn.addEventListener('click', openExplainer);
         }
         if (closeExplainerModalBtn) {
