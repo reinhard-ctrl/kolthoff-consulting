@@ -60,7 +60,7 @@ export async function provisionGoogleStaffViaFirestore(user: User): Promise<void
 
   const payload = {
     status: 'pending',
-    email: user.email,
+    email: user.email?.trim().toLowerCase() || null,
     displayName: user.displayName || null,
     requestedAt: Date.now(),
   };

@@ -36,6 +36,7 @@ export function adminDoc(col: string, id: string) {
 }
 
 export async function bootstrapAuth() {
+  await auth.authStateReady();
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
   if (token) {
     const { signInWithCustomToken } = await import('firebase/auth');
@@ -50,9 +51,18 @@ export async function bootstrapAuth() {
   }
 }
 
+/** Passcode flow only — do not call before Google redirect handling on app boot */
+export async function bootstrapAnonymousForPasscode() {
+  await auth.authStateReady();
+  if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+}
+
 /** Verify passcode via Firestore — works when org policy blocks public Cloud Functions */
 export async function verifyAdminPasscode(code: string) {
-  await bootstrapAuth();
+  await bootstrapAnonymousForPasscode();
   const trimmed = code.trim();
   if (!trimmed) return { valid: false as const };
 
@@ -84,11 +94,15 @@ export async function verifyAdminPasscode(code: string) {
 
 export async function hasAdminSession(): Promise<boolean> {
   try {
-    if (!auth.currentUser) {
-      await bootstrapAuth();
-    }
+    await auth.authStateReady();
     const user = auth.currentUser;
     if (!user) return false;
+
+    if (user.isAnonymous) {
+      const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
+      const snap = await getDoc(sessionRef);
+      return snap.exists();
+    }
 
     const token = await user.getIdTokenResult();
     if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
@@ -102,7 +116,8 @@ export async function hasAdminSession(): Promise<boolean> {
     const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
     const snap = await getDoc(sessionRef);
     return snap.exists();
-  } catch {
+  } catch (err) {
+    console.warn('hasAdminSession failed:', err);
     return false;
   }
 }

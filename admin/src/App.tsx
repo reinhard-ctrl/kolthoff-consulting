@@ -1,7 +1,7 @@
 import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
-import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
+import { verifyAdminPasscode, hasAdminSession, adminCol, auth } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import Tenants from './pages/Tenants';
@@ -208,11 +208,15 @@ function AppRoutes() {
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+        console.error('Google SSO boot failed:', err);
         setGoogleSsoError(msg);
       }
 
       try {
         const ok = await hasAdminSession();
+        if (!ok && auth.currentUser && !auth.currentUser.isAnonymous) {
+          console.warn('Signed-in user lacks admin session:', auth.currentUser.email);
+        }
         const returnUrl = getReturnUrl();
         if (ok && returnUrl) {
           window.location.href = returnUrl;
