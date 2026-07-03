@@ -795,6 +795,10 @@
     return (addenda || []).map((item) => (item.id === addendumId ? { ...item, ...patch } : item));
   }
 
+  function removeAddendumFromList(addenda, addendumId) {
+    return (addenda || []).filter((item) => item.id !== addendumId);
+  }
+
   global.PlannerHelpers = {
     DEFAULT_RATES,
     MOD_CATEGORIES,
@@ -831,6 +835,7 @@
     createAddendumRecord,
     computeAddendumEconomics,
     updateAddendumInList,
+    removeAddendumFromList,
     cloneTasksForAddendum,
   };
 })(window);

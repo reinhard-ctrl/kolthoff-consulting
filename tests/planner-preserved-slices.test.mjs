@@ -118,6 +118,7 @@ const addendumRecord = H.createAddendumRecord({
   catalogTasks: [{ id: 'm3-05', deliverable: 'Training', category: 'MOD 3', selected: false, estHours: 8, tier: 'senior' }],
   quoteDate: '2026-07-01',
 });
+addendumRecord.id = 'addendum-test-a1';
 assert.equal(addendumRecord.suffix, 'A1');
 assert.equal(addendumRecord.ref, 'KC-2026-APARRI-A1');
 assert.equal(addendumRecord.templateId, 'training-day');
@@ -129,6 +130,7 @@ const secondAddendum = H.createAddendumRecord({
   templateId: 'custom',
   catalogTasks: [],
 });
+secondAddendum.id = 'addendum-test-a2';
 assert.equal(secondAddendum.suffix, 'A2');
 
 const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
@@ -139,6 +141,10 @@ const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
 assert.equal(payloadWithAddenda.addenda.length, 1);
 assert.equal(payloadWithAddenda.activeAddendumId, addendumRecord.id);
 assert.equal(payloadWithAddenda.branding.primaryColor, '#112233');
+
+const afterDelete = H.removeAddendumFromList([addendumRecord, secondAddendum], addendumRecord.id);
+assert.equal(afterDelete.length, 1);
+assert.equal(afterDelete[0].suffix, 'A2');
 
 const addendumValidation = H.validatePrintReadiness('addendum', {
   clientCompany: 'Acme Corp',
