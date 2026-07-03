@@ -66,6 +66,7 @@
       onToggleTask,
       onUpdateHours,
       templates,
+      onDeleteActive,
       H,
       formatCurrency,
       rates,
@@ -138,6 +139,19 @@
               onChange: (e) => onPatchActive({ title: e.target.value }),
               className: 'w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-200 text-xs focus:outline-none focus:border-brandTeal-500',
             }),
+          ),
+        ),
+        activeAddendum.status === 'draft' && onDeleteActive && React.createElement(
+          'div',
+          { className: 'flex justify-end' },
+          React.createElement(
+            'button',
+            {
+              type: 'button',
+              onClick: onDeleteActive,
+              className: 'px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-[10px] font-mono uppercase font-bold tracking-wider',
+            },
+            'Delete draft addendum',
           ),
         ),
         React.createElement(

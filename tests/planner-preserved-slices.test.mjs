@@ -140,6 +140,10 @@ assert.equal(payloadWithAddenda.addenda.length, 1);
 assert.equal(payloadWithAddenda.activeAddendumId, addendumRecord.id);
 assert.equal(payloadWithAddenda.branding.primaryColor, '#112233');
 
+const afterDelete = H.removeAddendumFromList([addendumRecord, secondAddendum], addendumRecord.id);
+assert.equal(afterDelete.length, 1);
+assert.equal(afterDelete[0].suffix, 'A2');
+
 const addendumValidation = H.validatePrintReadiness('addendum', {
   clientCompany: 'Acme Corp',
   clientRep: 'John Smith',

@@ -471,7 +471,7 @@
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
   <script src="project_planner_helpers.js?v=20250703-planner-addendum-v1"></script>
-  <script src="project_planner_addendum.js?v=20250703-addendum-v1"></script>
+  <script src="project_planner_addendum.js?v=20250703-addendum-v3"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -1233,6 +1233,17 @@
         ));
         patchActiveAddendum({ tasks: nextTasks });
       }, [activeAddendum, patchActiveAddendum]);
+
+      const deleteActiveAddendum = useCallback(() => {
+        if (!activeAddendum || activeAddendum.status !== 'draft') return;
+        const label = activeAddendum.ref || activeAddendum.suffix || 'this addendum';
+        if (!window.confirm(`Delete draft addendum ${label}? This cannot be undone.`)) return;
+        const remaining = H.removeAddendumFromList(addenda, activeAddendum.id);
+        setAddenda(remaining);
+        setActiveAddendumId(remaining[0]?.id ?? null);
+        isDirtyRef.current = true;
+        setSaveStatus('unsaved');
+      }, [activeAddendum, addenda]);
 
       const addendumTemplates = useMemo(
         () => (window.AddendumTemplates?.listTemplates?.() || []),
@@ -2779,7 +2790,7 @@
         );
       };
 
-      const renderSettingsSidebar = () => {
+      const renderSettingsSidebar = ({ embedded = false } = {}) => {
         if (view === 'sandbox' || view === 'packages') return null;
 
         const isNda = view === 'nda';
@@ -2800,7 +2811,7 @@
         ];
 
         return (
-          <aside aria-label="Settings" className="xl:col-span-4 planner-split-panel bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left">
+          <aside aria-label="Settings" className={`${embedded ? '' : 'xl:col-span-4 planner-split-panel'} bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left`}>
             <h3 className="text-sm font-bold tracking-wider text-brandTeal-400 uppercase font-mono flex items-center gap-2 text-left font-sans font-bold">
               {isRoadmap && !isPackage ? <IconCalendar /> : <IconEdit />}
               {isNda ? "Customize NDA Fields" : isPackage ? "Package Settings" : isAddendum ? "Addendum & Invoice" : isInvoice ? "Customize Invoice Fields" : ""}
@@ -3217,7 +3228,7 @@
         if (!UI) return <p className="text-slate-400 text-sm">Addendum module failed to load.</p>;
         return (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full min-h-0 planner-split-layout animate-fade-in font-sans text-left">
-            <div className="xl:col-span-4 space-y-4 no-print">
+            <div className="xl:col-span-4 planner-split-panel no-print space-y-4">
               {UI.renderAddendumEditor({
                 addenda,
                 activeAddendum,
@@ -3227,6 +3238,7 @@
                 onPatchActive: patchActiveAddendum,
                 onToggleTask: toggleAddendumTask,
                 onUpdateHours: updateAddendumTaskHours,
+                onDeleteActive: deleteActiveAddendum,
                 templates: addendumTemplates,
                 H,
                 formatCurrency,
@@ -3234,7 +3246,7 @@
                 getRateForTier,
                 addendumEconomics,
               })}
-              {renderSettingsSidebar()}
+              {renderSettingsSidebar({ embedded: true })}
             </div>
             {UI.renderAddendumPrintDocument({
               addendum: activeAddendum,
