@@ -15,7 +15,33 @@ Staff can sign in with **@kolthoff-consulting.com** Google accounts on:
 4. **Auth domain must match your URL** — the app sets `authDomain` to `kolthoff-portal.web.app` or `kolthoff-consulting.com` automatically (not `firebaseapp.com`). Chrome 115+ blocks Google redirect sign-in when those differ. See [Firebase redirect best practices](https://firebase.google.com/docs/auth/web/redirect-best-practices).
 5. Deploy functions + rules (Firestore `staff_sso_requests` trigger provisions claims)
 
-### How it works
+### Google OAuth redirect URIs (required after authDomain change)
+
+If Google sign-in shows **`Error 400: redirect_uri_mismatch`**, add these **Authorized redirect URIs** to the Firebase Google OAuth client:
+
+1. Open [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials?project=kolthoff-portal)
+2. Edit the **Web client** used by Firebase (often named *Web client (auto created by Google Service)*)
+3. Under **Authorized redirect URIs**, add **all** of:
+
+```
+https://kolthoff-portal.web.app/__/auth/handler
+https://kolthoff-consulting.com/__/auth/handler
+https://www.kolthoff-consulting.com/__/auth/handler
+https://kolthoff-portal.firebaseapp.com/__/auth/handler
+```
+
+4. Under **Authorized JavaScript origins**, ensure these exist:
+
+```
+https://kolthoff-portal.web.app
+https://kolthoff-consulting.com
+https://www.kolthoff-consulting.com
+https://kolthoff-portal.firebaseapp.com
+```
+
+5. Save — changes can take a few minutes. Hard refresh admin and try Google sign-in again.
+
+No app redeploy needed for this step; it is Google Cloud Console configuration only.
 
 1. User clicks **Sign in with Google**
 2. Firebase Auth validates Google account (hosted domain hint: `kolthoff-consulting.com`)

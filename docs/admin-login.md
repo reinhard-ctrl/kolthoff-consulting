@@ -56,6 +56,7 @@ Browser key prefix: `AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI`
 | Symptom | Fix |
 |--------|-----|
 | `auth/requests-from-referer-blocked` | Add site URL to API key HTTP referrers (above) |
+| `Error 400: redirect_uri_mismatch` (Google) | Add OAuth redirect URIs — see **`docs/app-check-sso.md`** § Google OAuth redirect URIs |
 | `auth/requests-from-referer-null-are-blocked` | Do not open HTML via `file://`. Use https://kolthoff-portal.web.app/... or `npm run serve:hosting` → http://localhost:5000/... |
 | `Invalid passcode` | Create the Firestore credentials doc; passcode is case-insensitive |
 | `permission-denied` | Deploy latest Firestore rules; enable Anonymous auth |
