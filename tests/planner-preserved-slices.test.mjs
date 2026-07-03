@@ -118,6 +118,7 @@ const addendumRecord = H.createAddendumRecord({
   catalogTasks: [{ id: 'm3-05', deliverable: 'Training', category: 'MOD 3', selected: false, estHours: 8, tier: 'senior' }],
   quoteDate: '2026-07-01',
 });
+addendumRecord.id = 'addendum-test-a1';
 assert.equal(addendumRecord.suffix, 'A1');
 assert.equal(addendumRecord.ref, 'KC-2026-APARRI-A1');
 assert.equal(addendumRecord.templateId, 'training-day');
@@ -129,6 +130,7 @@ const secondAddendum = H.createAddendumRecord({
   templateId: 'custom',
   catalogTasks: [],
 });
+secondAddendum.id = 'addendum-test-a2';
 assert.equal(secondAddendum.suffix, 'A2');
 
 const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {

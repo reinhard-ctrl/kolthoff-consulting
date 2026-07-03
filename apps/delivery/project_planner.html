@@ -373,6 +373,17 @@
         page-break-before: always;
       }
 
+      #addendum-print-area .print-section + .print-section,
+      #addendum-print-area section + section {
+        break-before: auto;
+        page-break-before: auto;
+      }
+
+      #addendum-print-area .print-card {
+        break-inside: auto;
+        page-break-inside: auto;
+      }
+
       .print-quote-terms {
         break-inside: auto;
         page-break-inside: auto;
@@ -471,7 +482,7 @@
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
   <script src="project_planner_helpers.js?v=20250703-planner-addendum-v1"></script>
-  <script src="project_planner_addendum.js?v=20250703-addendum-v3"></script>
+  <script src="project_planner_addendum.js?v=20250703-addendum-v4"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
