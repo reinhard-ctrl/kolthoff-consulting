@@ -11,11 +11,11 @@ interface CoreUser {
 
 type ViewMode = 'login' | 'reset';
 
-export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => void }) {
+export default function LoginPage({ onLogin, googleSsoError = '' }: { onLogin: (user: CoreUser) => void; googleSsoError?: string }) {
   const [view, setView] = useState<ViewMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(googleSsoError);
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -131,26 +131,11 @@ export default function LoginPage({ onLogin }: { onLogin: (user: CoreUser) => vo
     setError('');
     setInfo('');
     try {
-      const { signInWithGoogleStaff } = await import('../lib/staff-sso');
-      await signInWithGoogleStaff();
-      const email = auth.currentUser?.email?.trim().toLowerCase() || '';
-      const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
-      if (snap.empty) {
-        await signOut(auth);
-        setError('Account not provisioned. Contact your Kolthoff admin.');
-        return;
-      }
-      const match = snap.docs[0].data() as CoreUser;
-      await logAudit('workspace_login', { email: match.email, provider: 'google' });
-      onLogin(match);
+      const { startGoogleStaffSignIn } = await import('../lib/staff-sso');
+      await startGoogleStaffSignIn();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-      if (err instanceof FirebaseError && err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in cancelled.');
-      } else {
-        setError(msg);
-      }
-    } finally {
+      setError(msg);
       setLoading(false);
     }
   };

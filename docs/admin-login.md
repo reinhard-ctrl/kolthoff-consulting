@@ -7,7 +7,7 @@ Admin passcode login uses **Firestore directly** (no public Cloud Function requi
 ### Google Workspace (recommended)
 
 1. Open https://kolthoff-consulting.com/admin/
-2. Click **Sign in with Google** using your `@kolthoff-consulting.com` account.
+2. Click **Sign in with Google** using your `@kolthoff-consulting.com` account (full-page redirect — no popup).
 3. The app provisions staff via Firestore (`staff_sso_requests`) — no public Cloud Function required. See **`docs/app-check-sso.md`**.
 
 ### Passcode (break-glass)
