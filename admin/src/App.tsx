@@ -60,6 +60,10 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -102,11 +106,19 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
     setGoogleLoading(true);
     setError('');
     try {
-      const { startGoogleStaffSignIn } = await import('./lib/staff-sso');
-      await startGoogleStaffSignIn();
+      const { signInWithGoogleStaff } = await import('./lib/staff-sso');
+      await signInWithGoogleStaff();
+      const returnUrl = getReturnUrl();
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        onAuth();
+      }
     } catch (err) {
+      if (err instanceof Error && err.message === 'REDIRECT_STARTED') return;
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
       setError(msg);
+    } finally {
       setGoogleLoading(false);
     }
   };

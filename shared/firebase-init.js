@@ -18,13 +18,13 @@ import {
 import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
 import { writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-import { FIREBASE_CONFIG, DEFAULT_APP_ID, FUNCTIONS_REGION } from './firebase-config.js';
+import { getFirebaseConfig, DEFAULT_APP_ID, FUNCTIONS_REGION } from './firebase-config.js';
 
 const firebaseConfig = typeof __firebase_config !== 'undefined'
   ? JSON.parse(__firebase_config)
   : (typeof window !== 'undefined' && window.__FIREBASE_CONFIG__
     ? window.__FIREBASE_CONFIG__
-    : FIREBASE_CONFIG);
+    : getFirebaseConfig());
 
 export const appId = typeof __app_id !== 'undefined' ? __app_id : DEFAULT_APP_ID;
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;

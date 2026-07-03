@@ -131,11 +131,25 @@ export default function LoginPage({ onLogin, googleSsoError = '' }: { onLogin: (
     setError('');
     setInfo('');
     try {
-      const { startGoogleStaffSignIn } = await import('../lib/staff-sso');
-      await startGoogleStaffSignIn();
+      const { signInWithGoogleStaff } = await import('../lib/staff-sso');
+      await signInWithGoogleStaff();
+      const email = auth.currentUser?.email?.trim().toLowerCase() || '';
+      const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
+      const match = snap.empty
+        ? {
+            id: auth.currentUser!.uid,
+            email,
+            name: auth.currentUser!.displayName || email.split('@')[0],
+            role: 'kolthoff_admin',
+          }
+        : (snap.docs[0].data() as CoreUser);
+      await logAudit('workspace_login', { email: match.email, provider: 'google' });
+      onLogin(match);
     } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'REDIRECT_STARTED') return;
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
       setError(msg);
+    } finally {
       setLoading(false);
     }
   };
