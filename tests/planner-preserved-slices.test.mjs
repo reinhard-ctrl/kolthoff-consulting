@@ -160,4 +160,26 @@ const addendumValidation = H.validatePrintReadiness('addendum', {
 assert.equal(addendumValidation.ok, false);
 assert.ok(addendumValidation.issues.some((i) => i.includes('due date')));
 
+const payloadWithInvoiceAddendum = H.buildProfilePayload('client-1', 'Acme Workspace', {
+  ...plannerState,
+  addenda: [addendumRecord],
+  activeAddendumId: addendumRecord.id,
+  invoiceAddendumId: addendumRecord.id,
+}, 1125000, preservedProfile);
+assert.equal(payloadWithInvoiceAddendum.invoiceAddendumId, addendumRecord.id);
+
+const addendumInvoiceValidation = H.validatePrintReadiness('invoice', {
+  clientCompany: 'Acme Corp',
+  clientRep: 'John Smith',
+  clientAddress: '123 Main',
+  clientTin: '123-456-789-000',
+  invoiceTargetAddendum: addendumRecord,
+  issueInvoice: true,
+  invoiceDueDate: '',
+  validateTIN: () => true,
+  tasks: [],
+});
+assert.equal(addendumInvoiceValidation.ok, false);
+assert.ok(addendumInvoiceValidation.issues.some((i) => i.includes('due date')));
+
 console.log('planner-preserved-slices.test.mjs passed');

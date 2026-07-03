@@ -561,6 +561,7 @@
       packageAppliedAt: state.packageAppliedAt ?? null,
       addenda: Array.isArray(state.addenda) ? state.addenda : (preservedSource?.addenda || []),
       activeAddendumId: state.activeAddendumId ?? preservedSource?.activeAddendumId ?? null,
+      invoiceAddendumId: state.invoiceAddendumId ?? preservedSource?.invoiceAddendumId ?? null,
     };
     base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks
@@ -581,10 +582,22 @@
     if (view === 'invoice') {
       if (!billTo.company?.trim()) issues.push('Invoice bill-to company name is missing.');
       if (!billTo.rep?.trim()) issues.push('Invoice bill-to representative name is missing.');
-      if (!ctx.invoiceDueDate?.trim()) issues.push('Invoice due date is missing.');
       if (billTo.tin && !ctx.validateTIN(billTo.tin)) issues.push('Invoice bill-to TIN format is invalid.');
       if (!billTo.address?.trim()) warnings.push('Invoice bill-to registered address is empty.');
-      if (ctx.tasks.filter((t) => t.selected).length === 0) warnings.push('No modules/tasks are selected.');
+
+      const addendum = ctx.invoiceTargetAddendum || null;
+      if (addendum) {
+        if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
+        if (!(addendum.tasks || []).filter((t) => t.selected).length) {
+          issues.push('No deliverables selected for this addendum.');
+        }
+        if (ctx.issueInvoice && !ctx.invoiceDueDate?.trim()) {
+          issues.push('Addendum invoice due date is missing.');
+        }
+      } else {
+        if (!ctx.invoiceDueDate?.trim()) issues.push('Invoice due date is missing.');
+        if (ctx.tasks.filter((t) => t.selected).length === 0) warnings.push('No modules/tasks are selected.');
+      }
     } else {
       if (!ctx.clientCompany?.trim()) issues.push('Company legal name is missing.');
       if (!ctx.clientRep?.trim()) issues.push('Representative name is missing.');

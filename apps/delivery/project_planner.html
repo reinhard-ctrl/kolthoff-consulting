@@ -490,8 +490,8 @@
     window.SharedFinancials = Financials;
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
-  <script src="project_planner_helpers.js?v=20250703-planner-addendum-v1"></script>
-  <script src="project_planner_addendum.js?v=20250703-addendum-v5"></script>
+  <script src="project_planner_helpers.js?v=20250703-planner-addendum-v2"></script>
+  <script src="project_planner_addendum.js?v=20250703-addendum-v6"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -1150,6 +1150,7 @@
 
       const [addenda, setAddenda] = useState(activeProfile.addenda || []);
       const [activeAddendumId, setActiveAddendumId] = useState(activeProfile.activeAddendumId || null);
+      const [invoiceAddendumId, setInvoiceAddendumId] = useState(activeProfile.invoiceAddendumId || null);
 
       const resolvedInvoiceBillTo = useMemo(() => H.resolveInvoiceBillTo({
         useCustomInvoiceBillTo,
@@ -1218,6 +1219,41 @@
           formatCurrency,
         });
       }, [activeAddendum, includeTax, frictionBuffer, subscriptionMonths, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours, hourlyRates]);
+
+      const invoiceTargetAddendum = useMemo(
+        () => (invoiceAddendumId ? (addenda || []).find((a) => a.id === invoiceAddendumId) : null),
+        [addenda, invoiceAddendumId],
+      );
+
+      const invoiceTargetEconomics = useMemo(() => {
+        if (!invoiceTargetAddendum) return null;
+        return H.computeAddendumEconomics(invoiceTargetAddendum, {
+          includeTax,
+          frictionBuffer,
+          subscriptionMonths,
+          principalToSeniorDelegate,
+          seniorToAssociateDelegate,
+          recoveryPotential,
+          staffCount,
+          monthlySalary,
+          wastedHours,
+          rates: hourlyRates,
+          formatCurrency,
+        });
+      }, [invoiceTargetAddendum, includeTax, frictionBuffer, subscriptionMonths, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours, hourlyRates]);
+
+      const isAddendumInvoiceMode = view === 'invoice' && Boolean(invoiceTargetAddendum);
+
+      const patchInvoiceTargetAddendum = useCallback((patch) => {
+        if (!invoiceAddendumId) return;
+        setAddenda((prev) => H.updateAddendumInList(prev, invoiceAddendumId, patch));
+      }, [invoiceAddendumId]);
+
+      useEffect(() => {
+        if (!invoiceAddendumId) return;
+        const target = (addenda || []).find((a) => a.id === invoiceAddendumId);
+        if (!target || target.status === 'invoiced') setInvoiceAddendumId(null);
+      }, [addenda, invoiceAddendumId]);
 
       const patchActiveAddendum = useCallback((patch) => {
         if (!activeAddendumId) return;
@@ -1311,6 +1347,7 @@
           packageAppliedAt: p.packageAppliedAt ?? null,
           addenda: p.addenda || [],
           activeAddendumId: p.activeAddendumId || null,
+          invoiceAddendumId: p.invoiceAddendumId || null,
         };
         if (!profileSwitch && !isDirtyRef.current) {
           const incomingPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage, p);
@@ -1378,6 +1415,7 @@
         setPackageAppliedAt(profileState.packageAppliedAt);
         setAddenda(profileState.addenda || []);
         setActiveAddendumId(profileState.activeAddendumId || (profileState.addenda?.[0]?.id ?? null));
+        setInvoiceAddendumId(profileState.invoiceAddendumId || null);
         setActivePresets(H.deriveActivePresetsFromTasks(profileState.tasks));
         isHydratingRef.current = true;
         const hydratedPayload = H.buildProfilePayload(activeProfileId, p.workspaceName || '', profileState, profileLeakage, p);
@@ -1415,8 +1453,8 @@
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
-        selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId]);
+        selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -1538,6 +1576,7 @@
         setPackageAppliedAt(d.packageAppliedAt ?? null);
         setAddenda(d.addenda || []);
         setActiveAddendumId(d.activeAddendumId || (d.addenda?.[0]?.id ?? null));
+        setInvoiceAddendumId(d.invoiceAddendumId || null);
         setActivePresets(H.deriveActivePresetsFromTasks(d.tasks || INITIAL_TASKS));
         H.clearLocalDraft(activeProfileId);
         setLocalDraftBanner(null);
@@ -1744,16 +1783,16 @@
       };
 
       const handleIssueInvoice = async () => {
-        if (!isAuthed || (view !== 'invoice' && view !== 'addendum')) return;
-        const isAddendumInvoice = view === 'addendum';
-        const validation = H.validatePrintReadiness(isAddendumInvoice ? 'addendum' : view, {
+        if (!isAuthed || view !== 'invoice') return;
+        const isAddendumInvoice = Boolean(invoiceTargetAddendum);
+        const validation = H.validatePrintReadiness('invoice', {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
-          invoiceDueDate: isAddendumInvoice ? (activeAddendum?.invoiceDueDate || '') : invoiceDueDate,
+          invoiceDueDate: isAddendumInvoice ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
           validateTIN: validatePhilippineTIN,
-          activeAddendum,
+          invoiceTargetAddendum: isAddendumInvoice ? invoiceTargetAddendum : null,
           issueInvoice: true,
         });
         if (!validation.ok) {
@@ -1769,12 +1808,12 @@
           return;
         }
 
-        if (invoiceMilestone === 'retainer_monthly' && retainerCostBase <= 0) {
+        if (!isAddendumInvoice && invoiceMilestone === 'retainer_monthly' && retainerCostBase <= 0) {
           showIssueToast('Select MOD 4 Care Plan retainer tasks in the Planner tab before issuing a monthly invoice.');
           return;
         }
 
-        if (invoiceMilestone === 'retainer_monthly' && !retainerBillingPeriod) {
+        if (!isAddendumInvoice && invoiceMilestone === 'retainer_monthly' && !retainerBillingPeriod) {
           showIssueToast('Choose a billing month for the monthly retainer invoice.');
           return;
         }
@@ -1782,7 +1821,7 @@
         setIsIssuingInvoice(true);
         try {
           const profilePayload = buildCurrentPayload();
-          const billingPeriod = invoiceMilestone === 'retainer_monthly'
+          const billingPeriod = !isAddendumInvoice && invoiceMilestone === 'retainer_monthly'
             ? (retainerBillingPeriod || window.InvoiceHelpers?.currentBillingPeriod?.() || '')
             : null;
 
@@ -1792,22 +1831,22 @@
           let suffix;
           let dueDate;
 
-          if (isAddendumInvoice && activeAddendum && addendumEconomics) {
-            milestoneKey = activeAddendum.invoiceMilestone || 'full';
-            suffix = activeAddendum.invoiceNumberSuffix || activeAddendum.suffix;
-            dueDate = activeAddendum.invoiceDueDate || '';
+          if (isAddendumInvoice && invoiceTargetAddendum && invoiceTargetEconomics) {
+            milestoneKey = invoiceTargetAddendum.invoiceMilestone || 'full';
+            suffix = invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix;
+            dueDate = invoiceTargetAddendum.invoiceDueDate || '';
             amounts = IH.computeInvoiceAmounts({
               invoiceMilestone: milestoneKey,
-              customInvoiceAmount: activeAddendum.customInvoiceAmount || 0,
-              billingMilestones: addendumEconomics.billingMilestones || [],
-              finalProjectCostBase: addendumEconomics.finalProjectCostBase,
-              retainerCostBase: addendumEconomics.retainerCostBase,
-              retainerCostTotalBase: addendumEconomics.retainerCostTotalBase,
+              customInvoiceAmount: invoiceTargetAddendum.customInvoiceAmount || 0,
+              billingMilestones: invoiceTargetEconomics.billingMilestones || [],
+              finalProjectCostBase: invoiceTargetEconomics.finalProjectCostBase,
+              retainerCostBase: invoiceTargetEconomics.retainerCostBase,
+              retainerCostTotalBase: invoiceTargetEconomics.retainerCostTotalBase,
               includeTax,
             });
-            milestoneLabel = IH.resolveMilestoneLabel(milestoneKey, addendumEconomics.billingMilestones, {
+            milestoneLabel = IH.resolveMilestoneLabel(milestoneKey, invoiceTargetEconomics.billingMilestones, {
               isAddendum: true,
-              addendumTitle: activeAddendum.title,
+              addendumTitle: invoiceTargetAddendum.title,
             });
           } else {
             amounts = IH.computeInvoiceAmounts({
@@ -1839,17 +1878,17 @@
             portalAccessCode,
             status: 'sent',
             billingPeriod,
-            addendumId: isAddendumInvoice ? activeAddendum?.id : null,
-            addendumRef: isAddendumInvoice ? activeAddendum?.ref : null,
+            addendumId: isAddendumInvoice ? invoiceTargetAddendum?.id : null,
+            addendumRef: isAddendumInvoice ? invoiceTargetAddendum?.ref : null,
           });
 
           const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'invoices', invoice.id);
           await window.firestoreSetDoc(docRef, invoice);
 
-          if (isAddendumInvoice && activeAddendum) {
-            setAddenda((prev) => H.updateAddendumInList(prev, activeAddendum.id, {
+          if (isAddendumInvoice && invoiceTargetAddendum) {
+            setAddenda((prev) => H.updateAddendumInList(prev, invoiceTargetAddendum.id, {
               status: 'invoiced',
-              issuedAt: activeAddendum.issuedAt || Date.now(),
+              issuedAt: invoiceTargetAddendum.issuedAt || Date.now(),
             }));
           }
 
@@ -2175,22 +2214,48 @@
       };
 
       const computedInvoiceCost = useMemo(() => {
-        let baseAmount = 0;
-        if (invoiceMilestone === 'full') baseAmount = finalProjectCostBase + retainerCostTotalBase;
-        else if (invoiceMilestone.startsWith('milestone_')) {
-          const idx = parseInt(invoiceMilestone.split('_')[1], 10);
-          if (billingMilestones[idx]) baseAmount = includeTax ? Math.round(billingMilestones[idx].amount / 1.12) : billingMilestones[idx].amount;
-        } 
-        else if (invoiceMilestone === 'retainer_monthly') baseAmount = retainerCostBase;
-        else if (invoiceMilestone === 'retainer') baseAmount = retainerCostTotalBase;
-        else if (invoiceMilestone === 'custom') baseAmount = customInvoiceAmount;
+        const milestone = isAddendumInvoiceMode
+          ? (invoiceTargetAddendum?.invoiceMilestone || 'full')
+          : invoiceMilestone;
+        const milestones = isAddendumInvoiceMode
+          ? (invoiceTargetEconomics?.billingMilestones || [])
+          : billingMilestones;
+        const projectBase = isAddendumInvoiceMode
+          ? (invoiceTargetEconomics?.finalProjectCostBase || 0)
+          : finalProjectCostBase;
+        const retainerBase = isAddendumInvoiceMode
+          ? (invoiceTargetEconomics?.retainerCostBase || 0)
+          : retainerCostBase;
+        const retainerTotalBase = isAddendumInvoiceMode
+          ? (invoiceTargetEconomics?.retainerCostTotalBase || 0)
+          : retainerCostTotalBase;
+        const customAmount = isAddendumInvoiceMode
+          ? (invoiceTargetAddendum?.customInvoiceAmount || 0)
+          : customInvoiceAmount;
 
-        return { 
-          baseAmount, 
-          vatAmount: includeTax ? Math.round(baseAmount * 0.12) : 0, 
-          totalAmount: baseAmount + (includeTax ? Math.round(baseAmount * 0.12) : 0) 
+        let baseAmount = 0;
+        if (milestone === 'full') baseAmount = projectBase + retainerTotalBase;
+        else if (milestone.startsWith('milestone_')) {
+          const idx = parseInt(milestone.split('_')[1], 10);
+          if (milestones[idx]) baseAmount = includeTax ? Math.round(milestones[idx].amount / 1.12) : milestones[idx].amount;
+        }
+        else if (milestone === 'retainer_monthly') baseAmount = retainerBase;
+        else if (milestone === 'retainer') baseAmount = retainerTotalBase;
+        else if (milestone === 'custom') baseAmount = customAmount;
+
+        return {
+          baseAmount,
+          vatAmount: includeTax ? Math.round(baseAmount * 0.12) : 0,
+          totalAmount: baseAmount + (includeTax ? Math.round(baseAmount * 0.12) : 0),
         };
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostBase, retainerCostTotalBase, billingMilestones, customInvoiceAmount, includeTax]);
+      }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostBase, retainerCostTotalBase, billingMilestones, customInvoiceAmount, includeTax]);
+
+      const previewInvoiceSuffix = isAddendumInvoiceMode
+        ? (invoiceTargetAddendum?.invoiceNumberSuffix || invoiceTargetAddendum?.suffix || '01')
+        : invoiceNumberSuffix;
+      const previewInvoiceDueDate = isAddendumInvoiceMode
+        ? (invoiceTargetAddendum?.invoiceDueDate || '')
+        : invoiceDueDate;
 
       const computedInvoiceCostUndiscounted = useMemo(() => {
         if (invoiceMilestone === 'full') return projectCostBaseUndiscounted + retainerCostTotalBaseUndiscounted;
@@ -2380,6 +2445,29 @@
 
       const invoiceLineItemDescription = useMemo(() => {
         const taxMultiplier = includeTax ? 1.12 : 1.0;
+        const milestone = isAddendumInvoiceMode
+          ? (invoiceTargetAddendum?.invoiceMilestone || 'full')
+          : invoiceMilestone;
+        const milestones = isAddendumInvoiceMode
+          ? (invoiceTargetEconomics?.billingMilestones || [])
+          : billingMilestones;
+        const addendumRef = invoiceTargetAddendum?.ref || '';
+        const addendumTitle = invoiceTargetAddendum?.title || 'Addendum';
+        const addendumDiscount = invoiceTargetAddendum?.discountPercent || 0;
+        const addendumProjectBase = invoiceTargetEconomics?.finalProjectCostBase || 0;
+        const addendumRetainerTotal = invoiceTargetEconomics?.retainerCostTotalBase || 0;
+
+        if (isAddendumInvoiceMode) {
+          if (milestone === 'full') {
+            return `100% Full Payment of Professional Fees under Addendum ${addendumRef} — ${addendumTitle}${addendumDiscount > 0 ? ` (with ${addendumDiscount}% discount applied)` : ''} (Total Value: ${formatCurrency(Math.round((addendumProjectBase + addendumRetainerTotal) * taxMultiplier))})`;
+          }
+          if (milestone.startsWith('milestone_')) {
+            const idx = parseInt(milestone.split('_')[1], 10);
+            if (milestones[idx]) return `Addendum Milestone Payment: ${milestones[idx].label} under ${addendumRef}`;
+          }
+          return `Custom Addendum Billing under ${addendumRef}`;
+        }
+
         if (invoiceMilestone === 'full') {
           return `100% Full Payment of Professional Fees under Scope of Work SOW-${quoteId}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} (Total Value: ${formatCurrency(Math.round((finalProjectCostBase + retainerCostTotalBase) * taxMultiplier))})`;
         }
@@ -2395,7 +2483,7 @@
           return `MOD 4 Care Plan — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
-      }, [invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
+      }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
@@ -2417,14 +2505,17 @@
               <div className="text-[9px] font-bold text-slate-600 text-right">{includeTax ? 'VAT QUOTATION · 12% VAT applies' : 'NON-VAT QUOTATION'}</div>
             )}
             {isInvoice && <div className="text-[9px] text-rose-600 font-bold block mb-1">RA 11976 (EOPT) Compliant Billing</div>}
-            {isInvoice && <div>Invoice No: <span className="font-bold text-slate-900">{quoteId.replace('KC', 'INV')}{invoiceNumberSuffix}</span></div>}
+            {isInvoice && <div>Invoice No: <span className="font-bold text-slate-900">{quoteId.replace('KC', 'INV')}{previewInvoiceSuffix}</span></div>}
             {!isInvoice && <div>Reference SOW: <span className="font-bold text-slate-900">{isNda ? `${quoteId}-NDA` : quoteId}</span></div>}
+            {isInvoice && isAddendumInvoiceMode && invoiceTargetAddendum && (
+              <div>Addendum Ref: <span className="font-bold text-slate-900">{invoiceTargetAddendum.ref}</span></div>
+            )}
             {isRoadmap && <div>Launch Target: <span className="font-bold text-slate-900">{targetStartDate || "Upon Signup"}</span></div>}
             {!isRoadmap && <div>Date Issued: {quoteDate}</div>}
             {!isNda && !isRoadmap && !isInvoice && <div>Valid Until: {quoteValidity}</div>}
             {!isNda && !isInvoice && <div>Project Timeline: <span className="font-bold text-slate-900">{displayTimeline}</span></div>}
             {isNda && <div>Governing Law: Philippines</div>}
-            {isInvoice && <div>Payment Due: <span className="font-bold text-slate-900">{invoiceDueDate || "________________________"}</span></div>}
+            {isInvoice && <div>Payment Due: <span className="font-bold text-slate-900">{previewInvoiceDueDate || "________________________"}</span></div>}
           </div>
         </div>
       );
@@ -2640,8 +2731,10 @@
       const renderDeliverablesTable = (isInvoice) => (
         <>
           <div className="text-xs text-slate-600 mb-6 italic leading-relaxed font-sans font-semibold text-left font-sans">
-            {isInvoice 
-              ? "Please find below the itemized billing details for operational support services rendered in accordance with our master project SOW:"
+            {isInvoice
+              ? (isAddendumInvoiceMode
+                ? `Please find below the itemized billing details for addendum scope ${invoiceTargetAddendum?.ref || ''} in accordance with the master project SOW ${quoteId}:`
+                : "Please find below the itemized billing details for operational support services rendered in accordance with our master project SOW:")
               : "We are pleased to submit our formal flat-rate pricing proposal to fix operational leaks, document how your business runs, and launch your team workspace:"}
           </div>
 
@@ -2659,7 +2752,16 @@
                     <td className="py-5 px-4 align-top text-slate-800 text-left">
                       <div className="font-bold text-slate-900 font-sans text-xs text-left font-sans font-bold">{invoiceLineItemDescription}</div>
                       <div className="text-[10px] text-slate-500 mt-2 leading-relaxed font-sans font-medium text-left">
-                        Business leak scan, playbooks, workspace setup, employee handbook, and ongoing care plan services as listed in this SOW.
+                        {isAddendumInvoiceMode ? (
+                          <>
+                            <span className="font-semibold text-slate-700">{invoiceTargetAddendum?.title}</span>
+                            {(invoiceTargetAddendum?.tasks || []).filter((t) => t.selected).slice(0, 4).map((task) => (
+                              <span key={task.id} className="block mt-1">· {task.deliverable}</span>
+                            ))}
+                          </>
+                        ) : (
+                          'Business leak scan, playbooks, workspace setup, employee handbook, and ongoing care plan services as listed in this SOW.'
+                        )}
                       </div>
                     </td>
                     <td className="py-5 px-4 text-right align-top font-mono font-bold text-slate-900 text-sm">
@@ -2835,7 +2937,7 @@
           <aside aria-label="Settings" className={`${embedded ? '' : 'xl:col-span-4 planner-split-panel'} bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left`}>
             <h3 className="text-sm font-bold tracking-wider text-brandTeal-400 uppercase font-mono flex items-center gap-2 text-left font-sans font-bold">
               {isRoadmap && !isPackage ? <IconCalendar /> : <IconEdit />}
-              {isNda ? "Customize NDA Fields" : isPackage ? "Package Settings" : isAddendum ? "Addendum & Invoice" : isInvoice ? "Customize Invoice Fields" : ""}
+              {isNda ? "Customize NDA Fields" : isPackage ? "Package Settings" : isAddendum ? "Addendum Settings" : isInvoice ? "Customize Invoice Fields" : ""}
             </h3>
             
             <div className="space-y-4 text-xs font-sans font-medium text-left">
@@ -2866,24 +2968,41 @@
                       </div>
                     ))}
                   </fieldset>
-                  <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
-                    <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1">Addendum invoice gate</legend>
-                    <select value={activeAddendum.invoiceMilestone || 'full'} onChange={(e) => patchActiveAddendum({ invoiceMilestone: e.target.value })} className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-brandTeal-500">
-                      <option value="full">100% full addendum payment</option>
-                      {(addendumEconomics?.billingMilestones || []).map((m, idx) => (
-                        <option key={idx} value={`milestone_${idx}`}>{m.label} — {formatCurrency(m.amount)}</option>
-                      ))}
-                    </select>
-                    <div>
-                      <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Invoice suffix</label>
-                      <input type="text" readOnly value={activeAddendum.invoiceNumberSuffix || activeAddendum.suffix} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-400 font-mono text-xs" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Due date</label>
-                      <input type="date" value={activeAddendum.invoiceDueDate || ''} onChange={(e) => patchActiveAddendum({ invoiceDueDate: e.target.value })} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-200 text-xs focus:outline-none focus:border-brandTeal-500" />
-                    </div>
-                  </fieldset>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInvoiceAddendumId(activeAddendum.id);
+                      setView('invoice');
+                    }}
+                    className="w-full py-2.5 text-[10px] font-bold rounded-lg uppercase tracking-wider bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/30"
+                  >
+                    Issue invoice on Invoice tab →
+                  </button>
                 </>
+              )}
+
+              {isInvoice && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1">Invoice document</legend>
+                  <select
+                    value={invoiceAddendumId || ''}
+                    onChange={(e) => setInvoiceAddendumId(e.target.value || null)}
+                    className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-brandTeal-500"
+                  >
+                    <option value="">Main SOW — {quoteId}</option>
+                    {(addenda || []).map((item) => (
+                      <option key={item.id} value={item.id} disabled={item.status === 'invoiced'}>
+                        {item.ref} — {item.title}{item.status === 'invoiced' ? ' (invoiced)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {isAddendumInvoiceMode && invoiceTargetAddendum && (
+                    <p className="text-[9px] text-brandTeal-400/80 bg-brandTeal-500/5 border border-brandTeal-500/20 rounded p-2">
+                      Billing addendum <strong className="text-white">{invoiceTargetAddendum.ref}</strong>. Milestone split is configured on the{' '}
+                      <button type="button" onClick={() => { setActiveAddendumId(invoiceTargetAddendum.id); setView('addendum'); }} className="underline font-bold hover:text-brandTeal-300">Addendum tab</button>.
+                    </p>
+                  )}
+                </fieldset>
               )}
 
               {/* Package Selector Matrix for Print Out Sections */}
@@ -2931,7 +3050,7 @@
                 </div>
               )}
 
-              {(isQuoteOrInvoice || isPackage) && (
+              {(isQuoteOrInvoice || isPackage) && !(isInvoice && isAddendumInvoiceMode) && (
                 <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Billing Milestone Structure</legend>
                   <p className="text-[9px] text-slate-400 -mt-1 text-left">Controls payment gates on the Package quotation and Invoice tab options.</p>
@@ -2961,7 +3080,33 @@
                 </fieldset>
               )}
 
-              {isInvoice && (
+              {isInvoice && isAddendumInvoiceMode && invoiceTargetAddendum && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Addendum invoice gate</legend>
+                  <p className="text-[9px] text-slate-400 text-left font-sans -mt-1">Choose which addendum payment stage this invoice bills.</p>
+                  <select
+                    value={invoiceTargetAddendum.invoiceMilestone || 'full'}
+                    onChange={(e) => patchInvoiceTargetAddendum({ invoiceMilestone: e.target.value })}
+                    className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-brandTeal-500"
+                  >
+                    <option value="full">100% full addendum payment — {formatCurrency(Math.round(((invoiceTargetEconomics?.finalProjectCostBase || 0) + (invoiceTargetEconomics?.retainerCostTotalBase || 0)) * (includeTax ? 1.12 : 1)))}</option>
+                    {(invoiceTargetEconomics?.billingMilestones || []).map((m, idx) => (
+                      <option key={idx} value={`milestone_${idx}`}>{m.label} — {formatCurrency(m.amount)}</option>
+                    ))}
+                  </select>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Invoice suffix</label>
+                    <input type="text" readOnly value={invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-400 font-mono text-xs" />
+                    <span className="text-[9px] text-slate-500 block mt-1 text-left font-sans">Preview: {quoteId.replace('KC', 'INV')}{invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix}</span>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Due date</label>
+                    <input type="date" value={invoiceTargetAddendum.invoiceDueDate || ''} onChange={(e) => patchInvoiceTargetAddendum({ invoiceDueDate: e.target.value })} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-200 text-xs focus:outline-none focus:border-brandTeal-500" />
+                  </div>
+                </fieldset>
+              )}
+
+              {isInvoice && !isAddendumInvoiceMode && (
                 <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Invoice Billing Gate</legend>
                   <p className="text-[9px] text-slate-400 text-left font-sans -mt-1">Choose which payment stage this invoice bills — full project total or an individual gate.</p>
@@ -3214,9 +3359,9 @@
                 <div className="grid grid-cols-2 gap-3 text-left font-sans font-semibold">
                   {(view === 'quotation' || isPackage) ? (
                     <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold">Validity</label><input type="text" value={quoteValidity} onChange={(e) => setQuoteValidity(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
-                  ) : (
+                  ) : !isAddendumInvoiceMode ? (
                     <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left">Due Date</label><input type="text" value={invoiceDueDate} onChange={(e) => setInvoiceDueDate(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
-                  )}
+                  ) : null}
                   {!isPackage && <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 font-sans">Date</label><input type="text" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>}
                 </div>
               )}
@@ -3230,14 +3375,14 @@
               <IconPrint className="w-4 h-4 mr-1.5" /> Print {isNda ? "NDA" : isAddendum ? "Addendum" : isInvoice ? "Invoice" : isPackage ? "Package" : ""}
             </button>
 
-            {(isInvoice || isAddendum) && (
+            {isInvoice && (
               <button
                 type="button"
                 onClick={handleIssueInvoice}
-                disabled={!isAuthed || isIssuingInvoice || (isAddendum && !activeAddendum)}
+                disabled={!isAuthed || isIssuingInvoice || (isAddendumInvoiceMode && !invoiceTargetAddendum)}
                 className="w-full py-3 mt-2 font-bold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center shadow-lg font-sans bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-400 border border-brandTeal-500/40 disabled:opacity-50"
               >
-                {isIssuingInvoice ? 'Issuing…' : isAddendum ? 'Issue Addendum Invoice' : 'Issue Invoice'}
+                {isIssuingInvoice ? 'Issuing…' : isAddendumInvoiceMode ? 'Issue Addendum Invoice' : 'Issue Invoice'}
               </button>
             )}
           </aside>
@@ -3613,7 +3758,7 @@
 
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
-            {renderModuleInvestmentSummary()}
+            {(!isInv || !isAddendumInvoiceMode) && renderModuleInvestmentSummary()}
             {renderDeliverablesTable(isInv)}
             {renderTaxBreakoutTable(isInv)}
             {renderEOPTPrintFootnote()}
@@ -3621,7 +3766,7 @@
             {!isInv && (
               <p className="text-[10px] text-slate-600 mb-6 -mt-4 leading-relaxed">Payment via BDO Unibank · Account: Reinhard Ludwig A. Kolthoff · 0039 5019 0761 · Due within 7 business days of each billing gate invoice.</p>
             )}
-            {renderMilestoneBillingGrid()}
+            {(!isInv || !isAddendumInvoiceMode) && renderMilestoneBillingGrid()}
             
             {/* Stage-Gated Master Terms Annex */}
             <div className="text-[9.5px] text-slate-500 space-y-3 pb-6 border-b border-slate-200 mb-8 leading-relaxed font-semibold text-left font-sans font-semibold print-quote-terms">
