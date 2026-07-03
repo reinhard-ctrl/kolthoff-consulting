@@ -346,11 +346,11 @@
                 </div>
 
                 <article id="explainerCard" class="explainer-card lg:col-span-2 lg:row-span-2 order-2 w-full bg-brandNavy-900 border border-brandTeal-500/35 hover:border-brandTeal-500 rounded-xl overflow-hidden transition-all hover:bg-brandNavy-850 group premium-glow">
-                    <div class="relative aspect-video w-full bg-black border-b border-brandNavy-700/80">
+                    <div class="relative aspect-video w-full bg-brandNavy-900 border-b border-brandNavy-700/80">
                         <div id="explainerPlayerSlot" class="absolute inset-0 bg-brandNavy-955" aria-live="polite"></div>
                         <button id="playExplainerBtn" type="button" class="explainer-play-trigger absolute inset-0 w-full h-full text-left cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brandTeal-500" aria-label="Play Operational Excellence explainer video">
-                            <img id="explainerCardThumb" src="" alt="" class="explainer-card-thumb absolute inset-0 w-full h-full object-cover" width="480" height="270" decoding="async" fetchpriority="high">
-                            <div class="absolute inset-0 bg-gradient-to-t from-brandNavy-955/90 via-brandNavy-955/20 to-transparent"></div>
+                            <img id="explainerCardThumb" src="/apps/public/assets/explainer-thumbnail.jpg" alt="Operational Excellence explainer preview" class="explainer-card-thumb absolute inset-0 w-full h-full object-cover" width="1280" height="720" decoding="async" fetchpriority="high">
+                            <div class="absolute inset-0 bg-gradient-to-t from-brandNavy-955/80 via-transparent to-brandNavy-955/10"></div>
                             <div class="absolute inset-0 flex items-center justify-center">
                                 <span class="w-14 h-14 rounded-full bg-brandTeal-500/95 text-brandNavy-950 flex items-center justify-center shadow-lg shadow-brandTeal-500/30 group-hover:scale-105 transition-transform">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -361,9 +361,11 @@
                                 Explainer
                             </span>
                         </button>
-                        <div id="explainerLoadingOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-brandNavy-955/90 hidden pointer-events-none">
-                            <div class="w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
-                            <p class="text-[10px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">Starting YouTube player…</p>
+                        <div id="explainerLoadingOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 hidden pointer-events-none">
+                            <img id="explainerLoadingThumb" src="/apps/public/assets/explainer-thumbnail.jpg" alt="" class="absolute inset-0 w-full h-full object-cover" width="1280" height="720" decoding="async">
+                            <div class="absolute inset-0 bg-brandNavy-955/55"></div>
+                            <div class="relative z-10 w-10 h-10 rounded-full border-2 border-brandTeal-500/30 border-t-brandTeal-400 animate-spin"></div>
+                            <p class="relative z-10 text-[10px] font-mono uppercase tracking-wider text-brandTeal-400 font-bold">Starting YouTube player…</p>
                         </div>
                         <div id="videoFallbackCard" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-brandNavy-955/95 hidden">
                             <h4 class="font-serif font-bold text-white text-sm mb-1">Explainer Unavailable</h4>
@@ -1308,8 +1310,25 @@
             return String(EXPLAINER_YOUTUBE_ID || '').trim();
         }
 
-        function getExplainerThumbUrl(videoId) {
-            return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
+        function getExplainerThumbUrl(videoId, size) {
+            const variant = size || 'maxresdefault';
+            return `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/${variant}.jpg`;
+        }
+
+        function getExplainerThumbFallbacks(videoId) {
+            return [
+                '/apps/public/assets/explainer-thumbnail.jpg',
+                getExplainerThumbUrl(videoId, 'maxresdefault'),
+                getExplainerThumbUrl(videoId, 'sddefault'),
+                getExplainerThumbUrl(videoId, 'hqdefault'),
+            ];
+        }
+
+        function syncExplainerLoadingThumb() {
+            const loadingThumb = document.getElementById('explainerLoadingThumb');
+            if (loadingThumb && explainerCardThumb && explainerCardThumb.src) {
+                loadingThumb.src = explainerCardThumb.src;
+            }
         }
 
         function getExplainerEmbedUrl(videoId, autoplay) {
@@ -1353,9 +1372,20 @@
 
         function setupExplainerThumbnail() {
             const videoId = getExplainerVideoId();
-            if (!videoId || !explainerCardThumb || explainerCardThumb.src) return;
-            explainerCardThumb.src = getExplainerThumbUrl(videoId);
-            explainerCardThumb.alt = 'Operational Excellence explainer preview';
+            if (!videoId || !explainerCardThumb) return;
+            if (!explainerCardThumb.dataset.fallbackReady) {
+                const sources = getExplainerThumbFallbacks(videoId);
+                const currentSrc = explainerCardThumb.getAttribute('src') || sources[0];
+                let index = Math.max(0, sources.indexOf(currentSrc)) + 1;
+                explainerCardThumb.onerror = () => {
+                    if (index < sources.length) {
+                        explainerCardThumb.src = sources[index++];
+                        syncExplainerLoadingThumb();
+                    }
+                };
+                explainerCardThumb.dataset.fallbackReady = '1';
+            }
+            syncExplainerLoadingThumb();
         }
 
         function prewarmExplainerEmbed() {
@@ -1395,6 +1425,7 @@
             setupExplainerThumbnail();
             discardExplainerShell();
             markExplainerPlaying();
+            syncExplainerLoadingThumb();
             setExplainerLoading(true);
 
             const iframe = document.createElement('iframe');

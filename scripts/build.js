@@ -97,6 +97,8 @@ if (recaptchaKey) {
 }
 
 const explainerYoutubeId = process.env.EXPLAINER_YOUTUBE_ID || 'pFNqGatXJ4A';
+const explainerThumbSrc = process.env.EXPLAINER_THUMB_SRC
+  || `/apps/public/assets/explainer-thumbnail.jpg`;
 for (const relPath of ['index.html', 'apps/public/index.html']) {
   const htmlPath = path.join(dist, relPath);
   if (!fs.existsSync(htmlPath)) continue;
@@ -107,8 +109,12 @@ for (const relPath of ['index.html', 'apps/public/index.html']) {
       "const EXPLAINER_YOUTUBE_ID = '__EXPLAINER_YOUTUBE_ID__';",
       assignment,
     );
-    fs.writeFileSync(htmlPath, html);
   }
+  html = html.replace(
+    /\/apps\/public\/assets\/explainer-thumbnail\.jpg/g,
+    explainerThumbSrc,
+  );
+  fs.writeFileSync(htmlPath, html);
 }
 if (explainerYoutubeId) {
   console.log('Explainer YouTube ID injected into dist/');
