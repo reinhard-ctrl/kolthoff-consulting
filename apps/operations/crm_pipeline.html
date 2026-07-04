@@ -117,14 +117,19 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
         const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, crmSubtitle: 'Track leads, proposals, and closed deals', crmBadge: 'SALES PIPELINE' };
-        const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
-            companyName: 'Studio North',
-            tagline: PRODUCT.crmSubtitle,
-            primaryColor: '#4f46e5',
-            logoUrl: '',
-            crmBadge: PRODUCT.crmBadge,
-            crmSubtitle: PRODUCT.crmSubtitle,
-        };
+        const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || (() => {
+            const isAgencyOps = PRODUCT.id === 'agency-ops-starter' || PRODUCT.starterMode;
+            const companyName = [PRODUCT.branding?.name, PRODUCT.branding?.accent].filter(Boolean).join(' ').trim()
+                || (isAgencyOps ? 'Studio North' : 'KOLTHOFF CONSULTING');
+            return {
+                companyName,
+                tagline: PRODUCT.crmSubtitle,
+                primaryColor: isAgencyOps ? '#4f46e5' : '#14B8A6',
+                logoUrl: '',
+                crmBadge: PRODUCT.crmBadge,
+                crmSubtitle: PRODUCT.crmSubtitle,
+            };
+        })();
 
         // SEED DATA
         const initialDeals = [

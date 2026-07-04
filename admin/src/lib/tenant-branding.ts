@@ -1,4 +1,5 @@
-import type { ProductBranding } from './product-config';
+import type { ProductBranding, ProductId } from './product-config';
+import { isAgencyOpsStarter } from './product-config';
 
 /** Firestore tenant_settings/config.branding — active workspace branding */
 export interface TenantBrandingConfig {
@@ -25,12 +26,19 @@ export interface BrandingPreset {
   updatedAt: number;
 }
 
+export const KOLTHOFF_PRIMARY_COLOR = '#14B8A6';
+export const AGENCY_OPS_PRIMARY_COLOR = '#4f46e5';
+
 export const DEFAULT_TENANT_BRANDING: TenantBrandingConfig = {
   companyName: 'Studio North',
   tagline: 'Creative & Digital Services',
-  primaryColor: '#4f46e5',
+  primaryColor: AGENCY_OPS_PRIMARY_COLOR,
   logoUrl: '',
 };
+
+export function getDefaultPrimaryColor(productId?: ProductId): string {
+  return isAgencyOpsStarter(productId) ? AGENCY_OPS_PRIMARY_COLOR : KOLTHOFF_PRIMARY_COLOR;
+}
 
 export function slugifyPresetId(name: string): string {
   const base = name
@@ -108,7 +116,9 @@ export function resolveTagline(b: Partial<TenantBrandingConfig> | null | undefin
 export function mergeTenantBranding(
   firestore: Partial<TenantBrandingConfig> | null | undefined,
   productFallback?: Partial<ProductBranding>,
+  productId?: ProductId,
 ): TenantBrandingConfig {
+  const defaultColor = getDefaultPrimaryColor(productId);
   const base: TenantBrandingConfig = {
     companyName: resolveCompanyName({
       companyName: productFallback?.name
@@ -118,11 +128,11 @@ export function mergeTenantBranding(
       accent: productFallback?.accent,
       tagline: productFallback?.subtitle,
       subtitle: productFallback?.subtitle,
-      primaryColor: DEFAULT_TENANT_BRANDING.primaryColor,
+      primaryColor: defaultColor,
       logoUrl: '',
     }),
     tagline: productFallback?.subtitle ?? DEFAULT_TENANT_BRANDING.tagline,
-    primaryColor: DEFAULT_TENANT_BRANDING.primaryColor,
+    primaryColor: defaultColor,
     logoUrl: '',
   };
 

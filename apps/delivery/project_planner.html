@@ -503,13 +503,18 @@
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Project Estimates' };
-    const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
-      companyName: 'Studio North',
-      tagline: PRODUCT.plannerSubtitle || 'Project Estimates',
-      primaryColor: '#4f46e5',
-      logoUrl: '',
-      plannerSubtitle: PRODUCT.plannerSubtitle,
-    };
+    const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || (() => {
+      const isAgencyOps = PRODUCT.id === 'agency-ops-starter' || PRODUCT.starterMode;
+      const companyName = [PRODUCT.branding?.name, PRODUCT.branding?.accent].filter(Boolean).join(' ').trim()
+        || (isAgencyOps ? 'Studio North' : 'KOLTHOFF CONSULTING');
+      return {
+        companyName,
+        tagline: PRODUCT.plannerSubtitle || 'Project Estimates',
+        primaryColor: isAgencyOps ? '#4f46e5' : '#14B8A6',
+        logoUrl: '',
+        plannerSubtitle: PRODUCT.plannerSubtitle,
+      };
+    })();
     const PLANNER_TABS = PRODUCT.plannerTabs || ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'];
     const TAB_LABELS = window.ProductConfig?.getPlannerTabLabels?.() || { nda: 'NDA', packages: 'Packages', sandbox: 'Planner', package: 'Documents', addendum: 'Addendum', invoice: 'Invoice' };
     class ErrorBoundary extends Component {

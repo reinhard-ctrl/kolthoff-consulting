@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db, adminAppId } from '../lib/firebase';
-import { getProductConfig } from '../lib/product-config';
+import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
   applyTenantBrandingCss,
   listBrandingPresets,
@@ -24,15 +24,24 @@ function brandingPayload(config: TenantBrandingConfig) {
 
 export function useTenantBranding() {
   const product = getProductConfig();
+  const agencyOps = isAgencyOpsStarter(product.id);
   const [branding, setBranding] = useState<TenantBrandingConfig>(() =>
-    mergeTenantBranding(null, product.branding),
+    mergeTenantBranding(null, product.branding, product.id),
   );
   const [presets, setPresets] = useState<BrandingPreset[]>([]);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(agencyOps);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!agencyOps) {
+      setBranding(mergeTenantBranding(null, product.branding, product.id));
+      setPresets([]);
+      setActivePresetId(null);
+      setLoading(false);
+      return;
+    }
+
     const ref = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
     const unsub = onSnapshot(
       ref,
@@ -41,6 +50,7 @@ export function useTenantBranding() {
         const merged = mergeTenantBranding(
           data?.branding as Partial<TenantBrandingConfig> | undefined,
           product.branding,
+          product.id,
         );
         setBranding(merged);
         setPresets(listBrandingPresets(data?.brandingPresets as Record<string, unknown> | undefined));
@@ -53,7 +63,7 @@ export function useTenantBranding() {
       () => setLoading(false),
     );
     return () => unsub();
-  }, [product.branding]);
+  }, [agencyOps, product.branding, product.id]);
 
   const writeConfig = async (patch: Record<string, unknown>) => {
     const ref = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
