@@ -1,5 +1,5 @@
 /**
- * Light workspace theme for Agency Ops Starter HTML apps (CRM, Estimates).
+ * Agency Ops Starter light theme bootstrap for embedded HTML apps.
  */
 (function applyStarterLightTheme() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -18,6 +18,14 @@
   root.classList.remove('dark');
   root.classList.add('agency-starter-light');
 
+  if (!document.getElementById('agency-starter-inter-font')) {
+    const link = document.createElement('link');
+    link.id = 'agency-starter-inter-font';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
+  }
+
   if (document.getElementById('agency-starter-light-styles')) return;
 
   const script = document.currentScript;
@@ -25,9 +33,9 @@
     ? script.src.replace(/starter-light-theme\.js(\?.*)?$/, 'starter-light-theme.css$1')
     : '../../shared/starter-light-theme.css';
 
-  const link = document.createElement('link');
-  link.id = 'agency-starter-light-styles';
-  link.rel = 'stylesheet';
-  link.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-pro-v1`;
-  document.head.appendChild(link);
+  const styleLink = document.createElement('link');
+  styleLink.id = 'agency-starter-light-styles';
+  styleLink.rel = 'stylesheet';
+  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v2`;
+  document.head.appendChild(styleLink);
 })();
