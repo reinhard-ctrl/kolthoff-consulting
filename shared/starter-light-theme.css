@@ -1,25 +1,27 @@
 /**
- * Agency Ops Starter — balanced professional light theme (CRM + Estimates).
+ * Agency Ops Starter — premium light grey theme (CRM + Quotes).
  */
 html.agency-starter-light {
   color-scheme: light;
-  --starter-bg: #f1f5f9;
-  --starter-surface: #ffffff;
-  --starter-surface-muted: #f8fafc;
-  --starter-surface-subtle: #eef2f7;
-  --starter-border: #e2e8f0;
-  --starter-border-strong: #cbd5e1;
-  --starter-text: #0f172a;
-  --starter-text-secondary: #475569;
-  --starter-text-muted: #64748b;
-  --starter-text-faint: #94a3b8;
+  --starter-bg: #e3e6eb;
+  --starter-surface: #f6f7f9;
+  --starter-surface-elevated: #ffffff;
+  --starter-surface-muted: #eef0f3;
+  --starter-surface-subtle: #e8eaef;
+  --starter-surface-inset: #dfe3e9;
+  --starter-border: #d2d7df;
+  --starter-border-strong: #bcc3cf;
+  --starter-text: #1a1d21;
+  --starter-text-secondary: #50565e;
+  --starter-text-muted: #6e7681;
+  --starter-text-faint: #9aa0a9;
   --brand-primary: #4f46e5;
   --brand-primary-hover: #4338ca;
-  --brand-primary-soft: rgba(79, 70, 229, 0.09);
-  --brand-primary-ring: rgba(79, 70, 229, 0.2);
-  --starter-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --starter-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --starter-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.07);
+  --brand-primary-soft: rgba(79, 70, 229, 0.07);
+  --brand-primary-ring: rgba(79, 70, 229, 0.16);
+  --starter-shadow-xs: 0 1px 2px rgba(26, 29, 33, 0.04), 0 0 0 1px rgba(26, 29, 33, 0.025);
+  --starter-shadow-sm: 0 2px 8px rgba(26, 29, 33, 0.05), 0 1px 2px rgba(26, 29, 33, 0.03);
+  --starter-shadow-md: 0 6px 18px rgba(26, 29, 33, 0.07), 0 2px 6px rgba(26, 29, 33, 0.04);
   --starter-radius: 0.625rem;
   --starter-radius-lg: 0.75rem;
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
@@ -68,7 +70,7 @@ html.agency-starter-light ::-webkit-scrollbar-thumb {
 html.agency-starter-light ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary) !important; }
 
 html.agency-starter-light .glass-panel {
-  background: var(--starter-surface) !important;
+  background: var(--starter-surface-elevated) !important;
   border: 1px solid var(--starter-border) !important;
   box-shadow: var(--starter-shadow-xs) !important;
   border-radius: var(--starter-radius-lg) !important;
@@ -83,7 +85,7 @@ html.agency-starter-light .bg-\[\#09111F\],
 html.agency-starter-light .bg-\[\#061727\],
 html.agency-starter-light .bg-\[\#091f33\],
 html.agency-starter-light .bg-\[\#15233A\] {
-  background-color: var(--starter-surface) !important;
+  background-color: var(--starter-surface-elevated) !important;
 }
 
 html.agency-starter-light .bg-brandNavy-900,
@@ -194,7 +196,7 @@ html.agency-starter-light ::selection {
 
 html.agency-starter-light [data-app-chrome],
 html.agency-starter-light .planner-main-header {
-  background: var(--starter-surface) !important;
+  background: var(--starter-surface-elevated) !important;
   border-color: var(--starter-border) !important;
   box-shadow: var(--starter-shadow-xs) !important;
   backdrop-filter: none !important;
@@ -657,10 +659,14 @@ html.agency-starter-light .planner-workspace-context h2 {
   color: var(--starter-text) !important;
 }
 
-html.agency-starter-light .planner-workspace-meta,
-html.agency-starter-light .planner-workspace-label {
+html.agency-starter-light .planner-workspace-meta {
   font-size: 0.8125rem !important;
   color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .planner-workspace-label {
+  font-size: 0.8125rem !important;
+  color: var(--brand-primary) !important;
 }
 
 /* Modals — readable labels, inputs, and actions */
@@ -737,7 +743,7 @@ html.agency-starter-light .starter-kanban-col button.text-\[9px\] {
 
 /* Planner — Select Services Included in SOW */
 html.agency-starter-light .starter-sow-panel {
-  background: var(--starter-surface) !important;
+  background: var(--starter-surface-elevated) !important;
   border-color: var(--starter-border) !important;
   box-shadow: var(--starter-shadow-sm) !important;
 }
@@ -812,7 +818,7 @@ html.agency-starter-light .starter-sow-table-head th {
 }
 
 html.agency-starter-light .starter-sow-row-selected {
-  background: var(--starter-surface) !important;
+  background: var(--starter-surface-elevated) !important;
 }
 
 html.agency-starter-light .starter-sow-row-muted {
@@ -852,7 +858,7 @@ html.agency-starter-light .starter-sow-field-label {
 }
 
 html.agency-starter-light .starter-sow-input {
-  background: var(--starter-surface) !important;
+  background: var(--starter-surface-elevated) !important;
   color: var(--starter-text) !important;
   border-color: var(--starter-border) !important;
 }
@@ -879,5 +885,121 @@ html.agency-starter-light .starter-sow-panel button.text-slate-400 {
 }
 
 html.agency-starter-light .starter-sow-panel button.text-slate-400:hover {
+  color: var(--brand-primary) !important;
+}
+
+/* Tailwind utility remaps for premium grey depth */
+html.agency-starter-light .bg-white {
+  background-color: var(--starter-surface-elevated) !important;
+}
+
+html.agency-starter-light .bg-slate-50 {
+  background-color: var(--starter-surface-muted) !important;
+}
+
+html.agency-starter-light .bg-slate-100 {
+  background-color: var(--starter-surface-subtle) !important;
+}
+
+html.agency-starter-light .border-slate-200 {
+  border-color: var(--starter-border) !important;
+}
+
+html.agency-starter-light .starter-kanban-col-header {
+  background: var(--starter-surface-elevated) !important;
+}
+
+/* ── Remap legacy Kolthoff teal → tenant brand accent ── */
+html.agency-starter-light ::selection {
+  background: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  color: var(--starter-text);
+}
+
+html.agency-starter-light .text-brandTeal-500,
+html.agency-starter-light .text-brandTeal-200,
+html.agency-starter-light .text-brandTeal-700,
+html.agency-starter-light .hover\:text-brandTeal-300:hover,
+html.agency-starter-light .group-hover\:text-brandTeal-400:hover,
+html.agency-starter-light .group-hover\:text-brandTeal-300:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .bg-brandTeal-500\/15,
+html.agency-starter-light .bg-brandTeal-500\/20,
+html.agency-starter-light .bg-brandTeal-50,
+html.agency-starter-light .bg-brandTeal-50\/20,
+html.agency-starter-light .bg-brandTeal-50\/40,
+html.agency-starter-light .bg-brandTeal-100 {
+  background-color: var(--brand-primary-soft) !important;
+}
+
+html.agency-starter-light .text-brandTeal-100,
+html.agency-starter-light .text-brandTeal-700 {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .border-brandTeal-100,
+html.agency-starter-light .border-brandTeal-200,
+html.agency-starter-light .border-brandTeal-500\/20,
+html.agency-starter-light .border-b-brandTeal-500,
+html.agency-starter-light .border-b-2.border-brandTeal-500 {
+  border-color: color-mix(in srgb, var(--brand-primary) 35%, var(--starter-border)) !important;
+}
+
+html.agency-starter-light .border-l-brandTeal-500,
+html.agency-starter-light .border-l.border-l-brandTeal-500 {
+  border-left-color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .hover\:bg-brandTeal-500:hover,
+html.agency-starter-light .hover\:bg-brandTeal-600:hover {
+  background-color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .from-brandTeal-500 {
+  --tw-gradient-from: var(--brand-primary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+html.agency-starter-light .to-brandTeal-600,
+html.agency-starter-light .to-brandTeal-400,
+html.agency-starter-light .to-brandTeal-700,
+html.agency-starter-light .to-emerald-400,
+html.agency-starter-light .hover\:to-brandTeal-700:hover {
+  --tw-gradient-to: var(--brand-primary-hover) var(--tw-gradient-to-position) !important;
+}
+
+html.agency-starter-light .hover\:from-brandTeal-600:hover {
+  --tw-gradient-from: var(--brand-primary-hover) var(--tw-gradient-from-position) !important;
+}
+
+html.agency-starter-light .accent-brandTeal-500 {
+  accent-color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .focus\:border-brandTeal-500:focus,
+html.agency-starter-light .focus\:border-brandTeal-500\/70:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 2px var(--brand-primary-ring) !important;
+}
+
+html.agency-starter-light .ring-brandTeal-500,
+html.agency-starter-light .ring-brandTeal-500\/30,
+html.agency-starter-light .ring-brandTeal-500\/50,
+html.agency-starter-light .ring-1.ring-brandTeal-500\/30 {
+  --tw-ring-color: var(--brand-primary-ring) !important;
+}
+
+html.agency-starter-light .shadow-neon-teal,
+html.agency-starter-light .shadow-neon-teal-glow {
+  box-shadow: var(--starter-shadow-sm) !important;
+}
+
+html.agency-starter-light .starter-stat-accent {
+  border-left-color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .starter-stat-value-accent {
   color: var(--brand-primary) !important;
 }

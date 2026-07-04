@@ -7,6 +7,12 @@ import {
   getProductConfig,
   isStarterMode,
   getPlannerTabLabels,
+  getModLabels,
+  getModTitle,
+  getModCategory,
+  getModChipLabel,
+  AGENCY_MOD_LABELS,
+  KOLTHOFF_MOD_LABELS,
 } from '../shared/product-config.js';
 
 describe('product-config', () => {
@@ -35,5 +41,17 @@ describe('product-config', () => {
   it('planner tab labels rename sandbox to Estimate in starter mode', () => {
     const labels = getPlannerTabLabels();
     assert.equal(labels.sandbox, 'Estimate');
+  });
+
+  it('agency mod labels use agency-friendly titles', () => {
+    assert.equal(AGENCY_MOD_LABELS.mod1.title, 'Discovery & Audit');
+    assert.equal(AGENCY_MOD_LABELS.mod2.title, 'Process Design');
+    assert.equal(AGENCY_MOD_LABELS.mod3.title, 'Build & Implementation');
+    assert.equal(AGENCY_MOD_LABELS.mod4.title, 'Ongoing Support');
+  });
+
+  it('kolthoff mod labels keep legacy titles', () => {
+    assert.equal(KOLTHOFF_MOD_LABELS.mod1.title, 'Business Leak Scan');
+    assert.equal(KOLTHOFF_MOD_LABELS.mod4.title, 'Care Plan');
   });
 });

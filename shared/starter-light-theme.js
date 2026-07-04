@@ -4,6 +4,8 @@
 (function applyStarterLightTheme() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
+  const GREY_CANVAS = '#e3e6eb';
+
   function isStarterContext() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('product') === 'agency-ops-starter') return true;
@@ -24,12 +26,12 @@
     critical.textContent = `
       html.agency-starter-light,
       html.agency-starter-light body {
-        background: #f1f5f9 !important;
+        background: ${GREY_CANVAS} !important;
         background-image: none !important;
       }
       html.agency-starter-light.luxury-gradient,
       html.agency-starter-light .luxury-gradient {
-        background: #f1f5f9 !important;
+        background: ${GREY_CANVAS} !important;
         background-image: none !important;
       }
     `;
@@ -38,7 +40,7 @@
 
   function applyBodyBackground() {
     if (!document.body) return;
-    document.body.style.backgroundColor = '#f1f5f9';
+    document.body.style.backgroundColor = GREY_CANVAS;
     document.body.style.backgroundImage = 'none';
   }
 
@@ -65,6 +67,6 @@
   const styleLink = document.createElement('link');
   styleLink.id = 'agency-starter-light-styles';
   styleLink.rel = 'stylesheet';
-  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v5`;
+  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v9`;
   document.head.appendChild(styleLink);
 })();

@@ -8,6 +8,9 @@ export const MOD_DISPLAY_NAMES = {
 };
 
 export function getModDisplayName(modNum) {
+  if (typeof globalThis !== 'undefined' && globalThis.ProductConfig?.getModTitle) {
+    return globalThis.ProductConfig.getModTitle(modNum);
+  }
   return MOD_DISPLAY_NAMES[modNum] || `Module ${modNum}`;
 }
 

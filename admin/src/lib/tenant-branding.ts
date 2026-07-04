@@ -186,8 +186,11 @@ export function mergeTenantBranding(
 export function applyTenantBrandingCss(branding: TenantBrandingConfig) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  root.style.setProperty('--brand-primary', branding.primaryColor);
-  root.style.setProperty('--brand-primary-soft', `${branding.primaryColor}26`);
+  const primary = branding.primaryColor?.trim() || AGENCY_OPS_PRIMARY_COLOR;
+  root.style.setProperty('--brand-primary', primary);
+  root.style.setProperty('--brand-primary-soft', `${primary}14`);
+  root.style.setProperty('--brand-primary-ring', `${primary}28`);
+  root.style.setProperty('--brand-primary-hover', primary);
 }
 
 /** Split "Studio North" → { line1: "Studio", line2: "North" } for two-line headers */
