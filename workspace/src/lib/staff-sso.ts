@@ -14,6 +14,7 @@ import { recordGoogleAdminSession } from './google-admin-session';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
 
 const SSO_PENDING_KEY = 'kolthoff_google_sso_pending';
+const REDIRECT_RESULT_TIMEOUT_MS = 8000;
 let redirectBootPromise: Promise<User | null> | null = null;
 
 function buildGoogleProvider() {
@@ -28,6 +29,13 @@ function isGoogleStaffUser(user: User | null | undefined): user is User {
     isKolthoffStaffEmail(user.email) &&
     user.providerData.some((p) => p.providerId === 'google.com')
   );
+}
+
+function isReturningFromOAuthRedirect(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (sessionStorage.getItem(SSO_PENDING_KEY) === '1') return true;
+  const params = new URLSearchParams(window.location.search);
+  return params.has('apiKey') || params.has('authType') || window.location.hash.includes('auth');
 }
 
 function waitForSignedInUser(maxMs: number): Promise<User | null> {
@@ -53,16 +61,40 @@ function waitForSignedInUser(maxMs: number): Promise<User | null> {
   });
 }
 
-async function finalizeGoogleStaffUser(user: User): Promise<User> {
+async function getRedirectResultWithTimeout() {
+  return Promise.race([
+    getRedirectResult(auth),
+    new Promise<null>((resolve) => {
+      setTimeout(() => {
+        console.warn('getRedirectResult timed out — continuing boot');
+        resolve(null);
+      }, REDIRECT_RESULT_TIMEOUT_MS);
+    }),
+  ]);
+}
+
+async function finalizeGoogleStaffUser(
+  user: User,
+  options?: { backgroundProvision?: boolean },
+): Promise<User> {
   if (!isKolthoffStaffEmail(user.email)) {
     await signOut(auth);
     throw new Error('Use your @kolthoff-consulting.com Google Workspace account.');
   }
   await recordGoogleAdminSession(user);
-  try {
-    await provisionGoogleStaffViaFirestore(user);
-  } catch (err) {
-    console.warn('Staff claim provisioning failed; Google email staff access still applies:', err);
+  const provision = provisionGoogleStaffViaFirestore(user, {
+    timeoutMs: options?.backgroundProvision ? 8000 : undefined,
+  });
+  if (options?.backgroundProvision) {
+    provision.catch((err) => {
+      console.warn('Background staff provisioning failed:', err);
+    });
+  } else {
+    try {
+      await provision;
+    } catch (err) {
+      console.warn('Staff claim provisioning failed; Google email staff access still applies:', err);
+    }
   }
   return user;
 }
@@ -100,12 +132,21 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
   if (!redirectBootPromise) {
     redirectBootPromise = (async () => {
       await auth.authStateReady();
-      const pendingRedirect = sessionStorage.getItem(SSO_PENDING_KEY) === '1';
+      const pendingRedirect = isReturningFromOAuthRedirect();
+
+      if (!pendingRedirect) {
+        sessionStorage.removeItem(SSO_PENDING_KEY);
+        const existing = auth.currentUser;
+        if (existing && isGoogleStaffUser(existing)) {
+          return finalizeGoogleStaffUser(existing, { backgroundProvision: true });
+        }
+        return null;
+      }
 
       try {
-        const result = await getRedirectResult(auth);
+        const result = await getRedirectResultWithTimeout();
+        sessionStorage.removeItem(SSO_PENDING_KEY);
         if (result?.user) {
-          sessionStorage.removeItem(SSO_PENDING_KEY);
           return finalizeGoogleStaffUser(result.user);
         }
       } catch (err) {
@@ -114,20 +155,16 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
         throw err;
       }
 
-      const user = await waitForSignedInUser(pendingRedirect ? 12000 : 4000);
+      const user = await waitForSignedInUser(8000);
       sessionStorage.removeItem(SSO_PENDING_KEY);
 
       if (user && isGoogleStaffUser(user)) {
         return finalizeGoogleStaffUser(user);
       }
 
-      if (pendingRedirect) {
-        throw new Error(
-          'Google sign-in did not complete after redirect. Use a regular browser window (not Incognito), or use passcode at /admin/.',
-        );
-      }
-
-      return null;
+      throw new Error(
+        'Google sign-in did not complete. Add OAuth redirect URIs in Google Cloud Console (see docs/app-check-sso.md) or use passcode login.',
+      );
     })();
   }
   return redirectBootPromise;

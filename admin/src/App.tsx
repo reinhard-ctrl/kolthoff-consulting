@@ -205,11 +205,21 @@ function AppRoutes() {
   const [googleSsoError, setGoogleSsoError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+    const safetyTimer = window.setTimeout(() => {
+      if (!cancelled) {
+        setBootError('Loading timed out. Refresh the page or use passcode login below.');
+        setAuthed(false);
+      }
+    }, 12000);
+
     (async () => {
       try {
         const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
         const user = await completeGoogleStaffRedirect();
+        if (cancelled) return;
         if (user) {
+          window.clearTimeout(safetyTimer);
           const returnUrl = getReturnUrl();
           if (returnUrl) {
             window.location.href = returnUrl;
@@ -219,6 +229,7 @@ function AppRoutes() {
           return;
         }
       } catch (err) {
+        if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Google sign-in failed';
         console.error('Google SSO boot failed:', err);
         setGoogleSsoError(msg);
@@ -226,6 +237,8 @@ function AppRoutes() {
 
       try {
         const ok = await hasAdminSession();
+        if (cancelled) return;
+        window.clearTimeout(safetyTimer);
         if (!ok && auth.currentUser && !auth.currentUser.isAnonymous) {
           console.warn('Signed-in user lacks admin session:', auth.currentUser.email);
         }
@@ -236,11 +249,18 @@ function AppRoutes() {
         }
         setAuthed(ok);
       } catch (err) {
+        if (cancelled) return;
+        window.clearTimeout(safetyTimer);
         console.warn('Admin session check failed:', err);
         setBootError(err instanceof Error ? err.message : 'Could not verify admin session.');
         setAuthed(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safetyTimer);
+    };
   }, []);
 
   if (authed === null) {
