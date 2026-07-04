@@ -115,6 +115,7 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
+        const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'KOLTHOFF', accent: 'CONSULTING' }, crmSubtitle: 'Premium Sales Pipeline & Partnership Tracking Studio', crmBadge: 'PIPEDRIVE STUDIO' };
 
         // SEED DATA
         const initialDeals = [
@@ -856,13 +857,13 @@
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-sm font-extrabold tracking-tight text-white uppercase font-sans">KOLTHOFF <span className="text-brandTeal-500">CONSULTING</span></h1>
+                                        <h1 className="text-sm font-extrabold tracking-tight text-white uppercase font-sans">{PRODUCT.branding.name} {PRODUCT.branding.accent ? <span className="text-brandTeal-500">{PRODUCT.branding.accent}</span> : null}</h1>
                                         <span className="flex items-center gap-1.5 text-[8px] bg-brandTeal-500/10 text-brandTeal-400 border border-brandTeal-500/20 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
                                             <div className={`w-1.5 h-1.5 rounded-full ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? "Cloud Synced" : "Connecting..."}></div>
-                                            PIPEDRIVE STUDIO
+                                            {PRODUCT.crmBadge || 'PIPEDRIVE STUDIO'}
                                         </span>
                                     </div>
-                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">Premium Sales Pipeline & Partnership Tracking Studio</p>
+                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">{PRODUCT.crmSubtitle || 'Premium Sales Pipeline & Partnership Tracking Studio'}</p>
                                 </div>
                             </div>
 

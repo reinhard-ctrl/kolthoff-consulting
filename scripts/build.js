@@ -56,11 +56,20 @@ for (const app of ['workspace', 'admin']) {
     try {
       execSync('npm ci --silent', { cwd: appDir, stdio: 'inherit' });
       execSync('npm run build', { cwd: appDir, stdio: 'inherit' });
-      const outDir = app === 'workspace'
-        ? path.join(appDir, 'dist')
-        : path.join(appDir, 'dist');
+      const outDir = path.join(appDir, 'dist');
       if (fs.existsSync(outDir)) {
         copyDir(outDir, path.join(dist, app));
+      }
+      // Agency Ops Starter white-label admin shell
+      execSync('npm run build:agency-ops', { cwd: appDir, stdio: 'inherit' });
+      const agencyOut = path.join(appDir, 'dist-agency-ops');
+      if (fs.existsSync(agencyOut)) {
+        copyDir(agencyOut, path.join(dist, 'agency-ops'));
+        const agencyHtml = path.join(dist, 'agency-ops', 'agency-ops.html');
+        const agencyIndex = path.join(dist, 'agency-ops', 'index.html');
+        if (fs.existsSync(agencyHtml)) {
+          fs.copyFileSync(agencyHtml, agencyIndex);
+        }
       }
     } catch (e) {
       console.warn(`Warning: ${app} build skipped (${e.message})`);
@@ -83,7 +92,7 @@ if (recaptchaKey) {
     fs.writeFileSync(runtimePath, snippet);
   }
 
-  for (const app of ['admin', 'workspace']) {
+  for (const app of ['admin', 'workspace', 'agency-ops']) {
     const indexPath = path.join(dist, app, 'index.html');
     if (fs.existsSync(indexPath)) {
       let html = fs.readFileSync(indexPath, 'utf8');

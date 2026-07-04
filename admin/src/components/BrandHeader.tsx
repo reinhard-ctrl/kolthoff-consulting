@@ -1,3 +1,5 @@
+import { useProduct } from '../lib/product-context';
+
 type BrandHeaderProps = {
   subtitle?: string;
   compact?: boolean;
@@ -5,11 +7,15 @@ type BrandHeaderProps = {
 };
 
 export default function BrandHeader({
-  subtitle = 'Operations Suite',
+  subtitle,
   compact = false,
   className = '',
 }: BrandHeaderProps) {
+  const product = useProduct();
+  const { branding } = product;
+  const displaySubtitle = subtitle ?? branding.subtitle;
   const logoSize = compact ? 'w-8 h-8' : 'w-10 h-10';
+  const accentClass = product.id === 'agency-ops-starter' ? 'text-sky-400' : 'text-brandTeal-500';
 
   return (
     <div className={`flex items-center gap-3 min-w-0 ${className}`}>
@@ -48,11 +54,22 @@ export default function BrandHeader({
       </svg>
       <div className="text-left font-bold min-w-0">
         <span className={`font-extrabold tracking-wider uppercase block text-white leading-none truncate ${compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
-          KOLTHOFF <span className="text-brandTeal-500">CONSULTING</span>
+          {branding.name}
+          {branding.accent ? (
+            <>
+              {' '}
+              <span className={accentClass}>{branding.accent}</span>
+            </>
+          ) : null}
         </span>
         <span className="text-[8px] text-brandTeal-400 font-mono tracking-[0.25em] uppercase block mt-1.5 font-bold truncate">
-          {subtitle}
+          {displaySubtitle}
         </span>
+        {product.isDemo && (
+          <span className="text-[7px] text-amber-400/90 font-mono tracking-widest uppercase block mt-0.5 font-bold">
+            Demo Environment
+          </span>
+        )}
       </div>
     </div>
   );

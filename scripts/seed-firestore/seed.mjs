@@ -27,14 +27,17 @@ const COLLECTION_MAP = {
   crm_contacts: 'crm_contacts',
   crm_partners: 'crm_partners',
   tenant_settings: 'tenant_settings',
+  admin_credentials: 'admin_credentials',
   core_departments: 'core_departments',
   workbook_profiles: 'workbook_profiles',
   clients: 'clients',
+  invoices: 'invoices',
 };
 
 function parseArgs(argv) {
   const opts = {
     tenant: 'kolthoff-admin-app',
+    dataDir: '',
     only: null,
     dryRun: false,
     force: false,
@@ -44,13 +47,14 @@ function parseArgs(argv) {
     if (arg === '--dry-run') opts.dryRun = true;
     else if (arg === '--force') opts.force = true;
     else if (arg === '--tenant' && argv[i + 1]) opts.tenant = argv[++i];
+    else if (arg === '--data-dir' && argv[i + 1]) opts.dataDir = argv[++i];
     else if (arg === '--only' && argv[i + 1]) opts.only = argv[++i].split(',').map((s) => s.trim());
   }
   return opts;
 }
 
-function loadJsonCollection(name) {
-  const path = join(DATA_DIR, `${name}.json`);
+function loadJsonCollection(name, dataDir) {
+  const path = join(dataDir, `${name}.json`);
   if (!existsSync(path)) return null;
   const raw = readFileSync(path, 'utf8');
   const docs = JSON.parse(raw);
@@ -65,6 +69,7 @@ function docPath(tenantId, collection, docId) {
 async function main() {
   const opts = parseArgs(process.argv);
   const projectId = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || 'kolthoff-portal';
+  const DATA_DIR = opts.dataDir ? join(__dirname, 'data', opts.dataDir) : join(__dirname, 'data');
 
   const available = readdirSync(DATA_DIR)
     .filter((f) => f.endsWith('.json'))
@@ -74,6 +79,7 @@ async function main() {
 
   console.log(`Project:  ${projectId}`);
   console.log(`Tenant:   ${opts.tenant}`);
+  console.log(`Data dir: ${DATA_DIR}`);
   console.log(`Mode:     ${opts.dryRun ? 'DRY RUN' : 'WRITE'}${opts.force ? ' (force overwrite)' : ''}`);
   console.log(`Collections: ${toSeed.join(', ') || '(none)'}`);
   console.log('---');
@@ -91,7 +97,7 @@ async function main() {
 
   for (const fileKey of toSeed) {
     const collection = COLLECTION_MAP[fileKey];
-    const docs = loadJsonCollection(fileKey);
+    const docs = loadJsonCollection(fileKey, DATA_DIR);
     if (!docs || docs.length === 0) {
       console.log(`SKIP ${collection} — no documents in data/${fileKey}.json`);
       continue;

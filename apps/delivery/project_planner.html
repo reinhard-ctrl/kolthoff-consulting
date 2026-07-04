@@ -481,6 +481,9 @@
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
+    const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'KOLTHOFF', accent: 'CONSULTING' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Internal Project Workbook' };
+    const PLANNER_TABS = PRODUCT.plannerTabs || ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'];
+    const TAB_LABELS = window.ProductConfig?.getPlannerTabLabels?.() || { nda: 'NDA', packages: 'Packages', sandbox: 'Planner', package: 'Documents', addendum: 'Addendum', invoice: 'Invoice' };
     class ErrorBoundary extends Component {
       constructor(props) {
         super(props);
@@ -3791,16 +3794,16 @@
                 </svg>
                 <div className="text-left font-sans font-bold">
                   <span className="font-sans font-extrabold tracking-wider text-xs sm:text-sm uppercase block text-white leading-none">
-                    KOLTHoff <span className="text-brandTeal-500">CONSULTING</span>
+                    {PRODUCT.branding.name}{PRODUCT.branding.accent ? <> <span className="text-brandTeal-500">{PRODUCT.branding.accent}</span></> : null}
                   </span>
-                  <span className="text-[7px] text-brandTeal-400 font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans">Internal Project Workbook</span>
+                  <span className="text-[7px] text-brandTeal-400 font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans">{PRODUCT.plannerSubtitle || 'Internal Project Workbook'}</span>
                 </div>
               </div>
               
               <nav aria-label="Main Navigation" className="flex items-center flex-wrap gap-1.5 font-sans font-semibold">
-                {['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'].map((tab, idx) => (
+                {PLANNER_TABS.map((tab, idx) => (
                   <button key={tab} aria-pressed={view === tab} onClick={() => setView(tab)} className={`px-2 py-1 rounded font-mono text-[8px] uppercase font-bold border tracking-wider transition-all ${view === tab ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-500 font-extrabold shadow-md shadow-brandTeal-500/10' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700 hover:bg-brandNavy-800 font-bold'}`}>
-                    {idx + 1}. {tab === 'sandbox' ? 'Planner' : tab === 'packages' ? 'Packages' : tab === 'package' ? 'Documents' : tab === 'addendum' ? 'Addendum' : tab}
+                    {idx + 1}. {TAB_LABELS[tab] || tab}
                   </button>
                 ))}
               </nav>

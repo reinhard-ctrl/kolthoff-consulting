@@ -19,6 +19,7 @@ import { initializeAppCheck, ReCaptchaV3Provider } from 'https://www.gstatic.com
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js';
 import { writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { FIREBASE_CONFIG, DEFAULT_APP_ID, FUNCTIONS_REGION } from './firebase-config.js';
+import { getTenantId } from './product-config.js';
 
 const firebaseConfig = typeof __firebase_config !== 'undefined'
   ? JSON.parse(__firebase_config)
@@ -26,7 +27,7 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
     ? window.__FIREBASE_CONFIG__
     : FIREBASE_CONFIG);
 
-export const appId = typeof __app_id !== 'undefined' ? __app_id : DEFAULT_APP_ID;
+export const appId = typeof __app_id !== 'undefined' ? __app_id : getTenantId(DEFAULT_APP_ID);
 export const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
 /** When true, HTML apps must not auto-write demo data into empty Firestore collections */

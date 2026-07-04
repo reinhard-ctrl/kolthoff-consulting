@@ -1,0 +1,20 @@
+[
+  {
+    "id": "config",
+    "productId": "agency-ops-starter",
+    "clientName": "Agency Ops Demo",
+    "features": {
+      "messenger": false,
+      "approvals": false,
+      "vault": false,
+      "crm": false
+    },
+    "branding": {
+      "name": "AGENCY",
+      "accent": "OPS",
+      "subtitle": "Quote-to-Cash for Agencies"
+    },
+    "seededAt": "2026-07-04",
+    "seededBy": "scripts/seed-firestore/data/agency-ops"
+  }
+]

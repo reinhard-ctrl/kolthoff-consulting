@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:agency-ops": "VITE_PRODUCT_ID=agency-ops-starter vite --open /agency-ops.html",
     "build": "vite build",
+    "build:agency-ops": "VITE_PRODUCT_ID=agency-ops-starter vite build",
+    "build:all": "npm run build && npm run build:agency-ops",
     "preview": "vite preview"
   },
   "dependencies": {

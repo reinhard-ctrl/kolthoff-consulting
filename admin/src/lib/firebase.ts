@@ -3,6 +3,7 @@ import { getAuth, signInAnonymously, signInWithEmailAndPassword, GoogleAuthProvi
 import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { getAdminTenantId } from './product-config';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI',
@@ -17,7 +18,7 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-southeast1');
-export const adminAppId = 'kolthoff-admin-app';
+export const adminAppId = getAdminTenantId();
 
 const STAFF_DOMAIN = '@kolthoff-consulting.com';
 
