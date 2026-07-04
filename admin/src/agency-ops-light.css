@@ -464,8 +464,13 @@ html.agency-ops-light .hover\:border-brandTeal-500\/30:hover {
   border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent) !important;
 }
 
-html.agency-ops-light .hover\:text-brandTeal-400:hover {
+html.agency-ops-light .hover\:text-brandTeal-400:hover,
+html.agency-ops-light .group-hover\:text-brandTeal-400:hover {
   color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .group-hover\:border-brandTeal-500\/20:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 22%, transparent) !important;
 }
 
 html.agency-ops-light .border-brandTeal-500\/50,
@@ -508,4 +513,50 @@ html.agency-ops-light textarea::placeholder {
 
 html.agency-ops-light .ring-offset-brandNavy-950 {
   --tw-ring-offset-color: var(--surface-elevated) !important;
+}
+
+/* ── Remap legacy Kolthoff teal → tenant brand accent ── */
+html.agency-ops-light ::selection {
+  background: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  color: var(--text);
+}
+
+html.agency-ops-light .bg-brandTeal-600,
+html.agency-ops-light .hover\:bg-brandTeal-600:hover,
+html.agency-ops-light .hover\:bg-brandTeal-500:hover {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+html.agency-ops-light .text-brandTeal-500,
+html.agency-ops-light .text-brandTeal-600,
+html.agency-ops-light .text-brandTeal-700,
+html.agency-ops-light .hover\:text-brandTeal-300:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .bg-brandTeal-500\/20,
+html.agency-ops-light .border-brandTeal-500\/20,
+html.agency-ops-light .border-brandTeal-500\/40,
+html.agency-ops-light .border-brandTeal-500\/60 {
+  border-color: color-mix(in srgb, var(--brand-primary) 28%, var(--border)) !important;
+}
+
+html.agency-ops-light .sidebar-nav-item[class*='bg-brandTeal-500/15'],
+html.agency-ops-light .sidebar-nav-item[class*='bg-brandTeal-500/20'] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-primary) 12%, transparent) !important;
+}
+
+html.agency-ops-light .ring-brandTeal-500,
+html.agency-ops-light .ring-brandTeal-500\/50,
+html.agency-ops-light .focus-visible\:ring-brandTeal-500\/50:focus-visible,
+html.agency-ops-light .focus\:border-brandTeal-500:focus,
+html.agency-ops-light .focus\:border-brandTeal-500\/50:focus {
+  --tw-ring-color: var(--brand-primary-ring) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .border-brandTeal-500\/40.bg-brandTeal-500\/10 {
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, var(--border)) !important;
+  background-color: var(--brand-primary-soft) !important;
 }

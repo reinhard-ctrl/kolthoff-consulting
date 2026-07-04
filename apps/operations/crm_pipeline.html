@@ -9,8 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
     <!-- Firebase Module Initialization -->
-        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v8"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v8"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v9"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v9"></script>
     <script src="../../shared/firebase-errors.js"></script>
     <script type="module">
         import * as Financials from '../../shared/financials.js';
@@ -56,7 +56,7 @@
             }
         }
     </script>
-    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v8"></script>
+    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v9"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -967,7 +967,7 @@
                                 type="button"
                                 onClick={openShareModal}
                                 disabled={shareBusy}
-                                className={`crm-header-share ${STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}`}
+                                className={`crm-header-share ${STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}`}
                                 title="Copy a read-only link for external viewers"
                             >
                                 <span aria-hidden="true">🔗</span> Share Pipeline
@@ -1071,9 +1071,9 @@
                                 <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-400 tracking-wider"}>Active Deals</span>
                                 <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-white"}>{stats.activeCount}{STARTER_UI ? '' : <span className="text-[9px] text-slate-400 font-normal"> Act.</span>}</div>
                             </div>
-                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500"}>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card starter-stat-accent rounded-lg py-1.5 px-3 flex items-center justify-between border-l-2" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500"}>
                                 <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Pipeline Value</span>
-                                <div className={STARTER_UI ? "starter-stat-value text-brandTeal-400" : "text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5"}>
+                                <div className={STARTER_UI ? "starter-stat-value starter-stat-value-accent font-mono flex items-center gap-1.5" : "text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5"}>
                                     {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.totalValue)}
                                 </div>
                             </div>
@@ -1111,7 +1111,7 @@
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={STARTER_UI ? `Search ${activeTab}…` : `Search inside active directory (${activeTab})...`}
-                                    className={STARTER_UI ? "starter-input w-full border border-brandNavy-700/60 rounded-lg pl-8 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brandTeal-500" : "w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"}
+                                    className={STARTER_UI ? "starter-input w-full border rounded-lg pl-8 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none" : "w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"}
                                 />
                                 {searchQuery && (
                                     <button onClick={() => setSearchQuery("")} className="absolute inset-y-0 right-2 text-slate-400 hover:text-white text-[10px]">Clear</button>
@@ -1233,7 +1233,7 @@
                                                                         </div>
                                                                         
                                                                         <div className={STARTER_UI ? "starter-deal-company truncate mt-1" : "text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1"}>{deal.company || "Individual Lead"}</div>
-                                                                        <h4 className={STARTER_UI ? "starter-deal-name group-hover:text-brandTeal-400 transition-colors mt-0.5" : "font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5"}>{deal.leadName}</h4>
+                                                                        <h4 className={STARTER_UI ? "starter-deal-name transition-colors mt-0.5" : "font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5"}>{deal.leadName}</h4>
                                                                         
                                                                         {deal.titleRole && (<span className={STARTER_UI ? "text-sm text-slate-500 block leading-snug truncate" : "text-[9px] text-slate-400 block leading-tight truncate"}>{deal.titleRole}</span>)}
 

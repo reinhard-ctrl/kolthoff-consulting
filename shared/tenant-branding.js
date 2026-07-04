@@ -72,8 +72,11 @@ function splitDisplay(companyName) {
 
 function applyCss(branding) {
   if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty('--brand-primary', branding.primaryColor);
-  document.documentElement.style.setProperty('--brand-primary-soft', `${branding.primaryColor}26`);
+  const primary = branding.primaryColor?.trim() || AGENCY_OPS_PRIMARY_COLOR;
+  document.documentElement.style.setProperty('--brand-primary', primary);
+  document.documentElement.style.setProperty('--brand-primary-soft', `${primary}14`);
+  document.documentElement.style.setProperty('--brand-primary-ring', `${primary}28`);
+  document.documentElement.style.setProperty('--brand-primary-hover', primary);
 }
 
 let cached = null;
