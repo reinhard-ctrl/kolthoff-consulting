@@ -1,29 +1,29 @@
 [
   {
-    "id": "contact-brandco-maria",
+    "id": "contact-meridian-maria",
     "name": "Maria Santos",
-    "company": "BrandCo Philippines",
-    "email": "maria@brandco.ph",
+    "company": "Meridian Creative",
+    "email": "maria@meridiancreative.example",
     "mobile": "+63 917 555 0101",
     "role": "Marketing Director",
     "source": "Referral",
     "notes": "Primary decision maker for web redesign"
   },
   {
-    "id": "contact-urban-patricia",
+    "id": "contact-harbor-patricia",
     "name": "Patricia Go",
-    "company": "Urban Realty Group",
-    "email": "patricia@urbanrealty.ph",
+    "company": "Harbor Properties",
+    "email": "patricia@harborprops.example",
     "mobile": "+63 919 888 7766",
     "role": "VP Sales",
     "source": "Repeat Client",
     "notes": "Closed won — microsite project"
   },
   {
-    "id": "contact-fresh-jake",
+    "id": "contact-clear-jake",
     "name": "Jake Villanueva",
-    "company": "FreshBite Digital",
-    "email": "jake@freshbite.ph",
+    "company": "Clearwater Digital",
+    "email": "jake@clearwater.example",
     "mobile": "+63 918 222 3344",
     "role": "Founder",
     "source": "Inbound",

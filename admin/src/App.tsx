@@ -10,6 +10,7 @@ import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import Collections from './pages/Collections';
+import BrandingSettings from './pages/BrandingSettings';
 import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
@@ -141,7 +142,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         </div>
         <p className="text-sm text-slate-400 text-center mb-5">
           {product.isDemo
-            ? 'Enter the demo passcode to explore Agency Ops Starter.'
+            ? 'Enter the demo passcode to explore this workspace.'
             : 'Sign in with Google Workspace or use the break-glass passcode.'}
         </p>
         {!product.isDemo && (
@@ -322,6 +323,7 @@ function AppRoutes() {
         {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
         {!isAgencyOpsStarter() && <Route path="/contracts" element={<ContractLedger />} />}
         <Route path="/collections" element={<Collections />} />
+        {isAgencyOpsStarter() && <Route path="/settings/branding" element={<BrandingSettings />} />}
         {!isAgencyOpsStarter() && <Route path="/master" element={<Navigate to="/tenants?tab=support" replace />} />}
         <Route path="/app/:appId" element={<EmbedAppRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -54,6 +54,11 @@ export const AGENCY_OPS_STARTER_NAV: NavGroup[] = [
     label: 'Finance',
     items: [{ id: 'collections', label: 'Collections', type: 'route', path: '/collections' }],
   },
+  {
+    id: 'settings',
+    label: 'Settings',
+    items: [{ id: 'branding', label: 'Company Branding', type: 'route', path: '/settings/branding' }],
+  },
 ];
 
 const KOLTHOFF_OS: ProductConfig = {
@@ -76,9 +81,9 @@ const AGENCY_OPS_STARTER: ProductConfig = {
   id: 'agency-ops-starter',
   tenantId: 'agency-ops-demo',
   branding: {
-    name: 'AGENCY',
-    accent: 'OPS',
-    subtitle: 'Quote-to-Cash for Agencies',
+    name: 'Studio',
+    accent: 'North',
+    subtitle: 'Creative & Digital Services',
     accentColor: 'brandTeal',
   },
   basePath: '/agency-ops',

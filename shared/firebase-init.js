@@ -20,6 +20,7 @@ import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/
 import { writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { getFirebaseConfig, DEFAULT_APP_ID, FUNCTIONS_REGION } from './firebase-config.js';
 import { getTenantId } from './product-config.js';
+import { initTenantBranding } from './tenant-branding.js';
 
 const firebaseConfig = typeof __firebase_config !== 'undefined'
   ? JSON.parse(__firebase_config)
@@ -54,6 +55,10 @@ export function initAppCheck() {
 }
 
 initAppCheck();
+
+onAuthStateChanged(auth, (user) => {
+  if (user) initTenantBranding(db, appId);
+});
 
 /** Firestore tenant path helpers */
 export function tenantCollection(collectionName) {

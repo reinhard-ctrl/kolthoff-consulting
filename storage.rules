@@ -14,7 +14,8 @@ service firebase.storage {
     function isKolthoffAdmin() {
       return isAuthenticated() && (
         request.auth.token.role == 'kolthoff_admin' ||
-        firestore.exists(/databases/(default)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid))
+        firestore.exists(/databases/(default)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid)) ||
+        firestore.exists(/databases/(default)/documents/artifacts/agency-ops-demo/public/data/admin_sessions/$(request.auth.uid))
       );
     }
 

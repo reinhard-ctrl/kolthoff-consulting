@@ -1,12 +1,12 @@
 [
   {
-    "id": "ao-brandco-web",
-    "workspaceName": "BrandCo Website Redesign",
-    "clientCompany": "BrandCo Philippines",
+    "id": "q-meridian-web",
+    "workspaceName": "Meridian Website Redesign",
+    "clientCompany": "Meridian Creative",
     "clientRep": "Maria Santos",
-    "clientAddress": "BGC, Taguig City",
+    "clientAddress": "Business District, Metro Manila",
     "clientTin": "123-456-789-000",
-    "quoteId": "AO-2026-BRANDCO",
+    "quoteId": "Q-2026-101",
     "quoteDate": "2026-06-15",
     "quoteValidity": "30 days",
     "tasks": [
@@ -26,18 +26,18 @@
     "_meta": { "schemaVersion": 2, "updatedAt": 1718409600000 }
   },
   {
-    "id": "ao-urban-microsite",
-    "workspaceName": "Urban Realty Microsite",
-    "clientCompany": "Urban Realty Group",
+    "id": "q-harbor-microsite",
+    "workspaceName": "Harbor Microsite",
+    "clientCompany": "Harbor Properties",
     "clientRep": "Patricia Go",
     "clientAddress": "Ortigas Center, Pasig City",
     "clientTin": "987-654-321-000",
-    "quoteId": "AO-2026-URBAN",
+    "quoteId": "Q-2026-103",
     "quoteDate": "2026-05-20",
     "quoteValidity": "30 days",
     "tasks": [
       { "id": "u1", "selected": true, "title": "Site Architecture", "category": "Phase 1 - Discovery", "estHours": 8, "tier": "senior" },
-      { "id": "u2", "selected": true, "title": "Property Listing Templates", "category": "Phase 2 - Design", "estHours": 32, "tier": "senior" },
+      { "id": "u2", "selected": true, "title": "Listing Templates", "category": "Phase 2 - Design", "estHours": 32, "tier": "senior" },
       { "id": "u3", "selected": true, "title": "CMS Integration", "category": "Phase 3 - Build", "estHours": 48, "tier": "associate" },
       { "id": "u4", "selected": true, "title": "Lead Capture Forms", "category": "Phase 3 - Build", "estHours": 12, "tier": "associate" },
       { "id": "u5", "selected": true, "title": "Launch & Training", "category": "Phase 4 - Launch", "estHours": 8, "tier": "senior" }
@@ -53,11 +53,11 @@
     "_meta": { "schemaVersion": 2, "updatedAt": 1716249600000 }
   },
   {
-    "id": "ao-luxe-events",
-    "workspaceName": "Luxe Events Brand Package",
-    "clientCompany": "Luxe Events Co.",
+    "id": "q-vale-events",
+    "workspaceName": "Vale Events Brand Package",
+    "clientCompany": "Vale Events",
     "clientRep": "Andrea Cruz",
-    "quoteId": "AO-2026-LUXE",
+    "quoteId": "Q-2026-104",
     "quoteDate": "2026-06-28",
     "tasks": [
       { "id": "l1", "selected": true, "title": "Brand Identity Refresh", "category": "Phase 1 - Discovery", "estHours": 20, "tier": "senior" },

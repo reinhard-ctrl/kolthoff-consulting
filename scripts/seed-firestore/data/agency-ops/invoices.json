@@ -1,10 +1,10 @@
 [
   {
-    "id": "inv-ao-urban-deposit",
-    "profileId": "ao-urban-microsite",
-    "quoteId": "AO-2026-URBAN",
+    "id": "inv-harbor-deposit",
+    "profileId": "q-harbor-microsite",
+    "quoteId": "Q-2026-103",
     "invoiceNumber": "INV-2026-0042",
-    "clientCompany": "Urban Realty Group",
+    "clientCompany": "Harbor Properties",
     "portalAccessCode": null,
     "milestoneKey": "deposit",
     "milestoneLabel": "50% Deposit",
@@ -18,22 +18,22 @@
     "dueDate": "2026-06-15",
     "sentAt": "2026-06-01T08:00:00.000Z",
     "paidAt": "2026-06-10T14:30:00.000Z",
-    "paymentReference": "BPI-TRF-88421",
+    "paymentReference": "TRF-88421",
     "notes": "Deposit received via bank transfer",
     "documentLink": null,
     "createdAt": 1717228800000,
     "updatedAt": 1718033400000,
     "auditTrail": [
       { "action": "created", "timestamp": "2026-06-01T08:00:00.000Z" },
-      { "action": "payment_recorded", "timestamp": "2026-06-10T14:30:00.000Z", "detail": "Full payment ₱160,000" }
+      { "action": "payment_recorded", "timestamp": "2026-06-10T14:30:00.000Z", "detail": "Full payment" }
     ]
   },
   {
-    "id": "inv-ao-urban-balance",
-    "profileId": "ao-urban-microsite",
-    "quoteId": "AO-2026-URBAN",
+    "id": "inv-harbor-balance",
+    "profileId": "q-harbor-microsite",
+    "quoteId": "Q-2026-103",
     "invoiceNumber": "INV-2026-0058",
-    "clientCompany": "Urban Realty Group",
+    "clientCompany": "Harbor Properties",
     "portalAccessCode": null,
     "milestoneKey": "balance",
     "milestoneLabel": "50% Balance on Delivery",
@@ -47,22 +47,22 @@
     "dueDate": "2026-07-15",
     "sentAt": "2026-07-01T08:00:00.000Z",
     "paidAt": "2026-07-02T10:00:00.000Z",
-    "paymentReference": "BPI-TRF-90102",
-    "notes": "Partial payment — balance due July 15",
+    "paymentReference": "TRF-90102",
+    "notes": "Partial payment — balance due",
     "documentLink": null,
     "createdAt": 1719792000000,
     "updatedAt": 1719914400000,
     "auditTrail": [
       { "action": "created", "timestamp": "2026-07-01T08:00:00.000Z" },
-      { "action": "payment_recorded", "timestamp": "2026-07-02T10:00:00.000Z", "detail": "Partial payment ₱80,000" }
+      { "action": "payment_recorded", "timestamp": "2026-07-02T10:00:00.000Z", "detail": "Partial payment" }
     ]
   },
   {
-    "id": "inv-ao-brandco-deposit",
-    "profileId": "ao-brandco-web",
-    "quoteId": "AO-2026-BRANDCO",
+    "id": "inv-meridian-deposit",
+    "profileId": "q-meridian-web",
+    "quoteId": "Q-2026-101",
     "invoiceNumber": "INV-2026-0061",
-    "clientCompany": "BrandCo Philippines",
+    "clientCompany": "Meridian Creative",
     "portalAccessCode": null,
     "milestoneKey": "m1",
     "milestoneLabel": "30% Project Kickoff",
@@ -77,7 +77,7 @@
     "sentAt": "2026-06-20T08:00:00.000Z",
     "paidAt": null,
     "paymentReference": null,
-    "notes": "Follow up via email — client requested extension",
+    "notes": "Follow up — client requested extension",
     "documentLink": null,
     "createdAt": 1718860800000,
     "updatedAt": 1718860800000,
@@ -86,11 +86,11 @@
     ]
   },
   {
-    "id": "inv-ao-luxe-deposit",
-    "profileId": "ao-luxe-events",
-    "quoteId": "AO-2026-LUXE",
+    "id": "inv-vale-deposit",
+    "profileId": "q-vale-events",
+    "quoteId": "Q-2026-104",
     "invoiceNumber": "INV-2026-0063",
-    "clientCompany": "Luxe Events Co.",
+    "clientCompany": "Vale Events",
     "portalAccessCode": null,
     "milestoneKey": "deposit",
     "milestoneLabel": "50% Deposit",
