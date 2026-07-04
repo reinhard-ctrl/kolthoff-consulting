@@ -15,6 +15,19 @@ export interface ProductBranding {
 
 export type ProductTheme = 'light' | 'dark';
 
+/** User-facing names for the three starter workflow modules. */
+export interface ModuleLabels {
+  sales: string;
+  quotes: string;
+  invoicing: string;
+}
+
+export const AGENCY_OPS_MODULE_LABELS: ModuleLabels = {
+  sales: 'Sales',
+  quotes: 'Quotes',
+  invoicing: 'Invoicing',
+};
+
 export interface ProductConfig {
   id: ProductId;
   /** Firestore tenant for admin data */
@@ -34,9 +47,11 @@ export interface ProductConfig {
   demoPasscodeHint?: string;
   /** Query params appended to embedded legacy HTML apps */
   embedParams: Record<string, string>;
+  /** Sidebar / page titles for workflow modules */
+  moduleLabels: ModuleLabels;
 }
 
-/** Slim nav for Agency Ops Starter — CRM → Estimates → Collections */
+/** Slim nav for Agency Ops Starter — Sales → Quotes → Invoicing */
 export const AGENCY_OPS_STARTER_NAV: NavGroup[] = [
   {
     id: 'home',
@@ -46,17 +61,17 @@ export const AGENCY_OPS_STARTER_NAV: NavGroup[] = [
   {
     id: 'sales',
     label: 'Sales',
-    items: [{ id: 'crm-pipeline', label: 'CRM Pipeline', type: 'embed', href: '/apps/operations/crm_pipeline.html' }],
+    items: [{ id: 'crm-pipeline', label: AGENCY_OPS_MODULE_LABELS.sales, type: 'embed', href: '/apps/operations/crm_pipeline.html' }],
   },
   {
     id: 'quotes',
     label: 'Quotes',
-    items: [{ id: 'project-planner', label: 'Estimates', type: 'embed', href: '/apps/delivery/project_planner.html' }],
+    items: [{ id: 'project-planner', label: AGENCY_OPS_MODULE_LABELS.quotes, type: 'embed', href: '/apps/delivery/project_planner.html' }],
   },
   {
     id: 'finance',
     label: 'Finance',
-    items: [{ id: 'collections', label: 'Collections', type: 'route', path: '/collections' }],
+    items: [{ id: 'collections', label: AGENCY_OPS_MODULE_LABELS.invoicing, type: 'route', path: '/collections' }],
   },
   {
     id: 'settings',
@@ -80,6 +95,11 @@ const KOLTHOFF_OS: ProductConfig = {
   isDemo: false,
   theme: 'dark',
   embedParams: {},
+  moduleLabels: {
+    sales: 'CRM Pipeline',
+    quotes: 'Project Planner',
+    invoicing: 'Collections',
+  },
 };
 
 const AGENCY_OPS_STARTER: ProductConfig = {
@@ -101,6 +121,7 @@ const AGENCY_OPS_STARTER: ProductConfig = {
     product: 'agency-ops-starter',
     tenant: 'agency-ops-demo',
   },
+  moduleLabels: AGENCY_OPS_MODULE_LABELS,
 };
 
 const PRODUCTS: Record<ProductId, ProductConfig> = {

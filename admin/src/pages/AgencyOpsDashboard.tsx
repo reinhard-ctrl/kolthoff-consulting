@@ -4,8 +4,12 @@ import { onSnapshot } from 'firebase/firestore';
 import { adminCol } from '../lib/firebase';
 import { useTenantBranding } from '../hooks/useTenantBranding';
 
+import { useProduct } from '../lib/product-context';
+
 export default function AgencyOpsDashboard() {
   const { branding } = useTenantBranding();
+  const product = useProduct();
+  const modules = product.moduleLabels;
   const [stats, setStats] = useState({ deals: 0, profiles: 0, invoices: 0, overdue: 0 });
 
   useEffect(() => {
@@ -27,15 +31,15 @@ export default function AgencyOpsDashboard() {
 
   const cards = [
     { label: 'Active deals', value: stats.deals, to: '/app/crm-pipeline', hint: 'Pipeline overview' },
-    { label: 'Open estimates', value: stats.profiles, to: '/app/project-planner', hint: 'Quotes in progress' },
+    { label: 'Open quotes', value: stats.profiles, to: '/app/project-planner', hint: 'Quotes in progress' },
     { label: 'Invoices', value: stats.invoices, to: '/collections', hint: 'Accounts receivable' },
     { label: 'Needs follow-up', value: stats.overdue, to: '/collections', hint: 'Partial or overdue' },
   ];
 
   const workflow = [
-    { step: '1', title: 'CRM Pipeline', desc: 'Track inquiries from first contact to closed deal.', to: '/app/crm-pipeline' },
-    { step: '2', title: 'Estimates', desc: 'Build quotes with VAT and milestone billing.', to: '/app/project-planner' },
-    { step: '3', title: 'Collections', desc: 'Issue invoices, record payments, and export for your bookkeeper.', to: '/collections' },
+    { step: '1', title: modules.sales, desc: 'Track inquiries from first contact to closed deal.', to: '/app/crm-pipeline' },
+    { step: '2', title: modules.quotes, desc: 'Build quotes with VAT and milestone billing.', to: '/app/project-planner' },
+    { step: '3', title: modules.invoicing, desc: 'Issue invoices, record payments, and export for your bookkeeper.', to: '/collections' },
   ];
 
   return (

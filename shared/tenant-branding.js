@@ -12,9 +12,9 @@ const AGENCY_OPS_DEFAULTS = {
   tagline: 'Creative & Digital Services',
   primaryColor: AGENCY_OPS_PRIMARY_COLOR,
   logoUrl: '',
-  crmBadge: 'SALES PIPELINE',
-  crmSubtitle: 'Track leads, proposals, and closed deals',
-  plannerSubtitle: 'Project Estimates',
+  crmBadge: 'Sales',
+  crmSubtitle: 'Track leads from inquiry to signed deal',
+  plannerSubtitle: 'Quotes',
 };
 
 function getDefaultPrimaryColor(productConfig) {
