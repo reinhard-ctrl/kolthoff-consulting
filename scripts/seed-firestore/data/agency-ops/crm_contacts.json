@@ -1,0 +1,32 @@
+[
+  {
+    "id": "contact-brandco-maria",
+    "name": "Maria Santos",
+    "company": "BrandCo Philippines",
+    "email": "maria@brandco.ph",
+    "mobile": "+63 917 555 0101",
+    "role": "Marketing Director",
+    "source": "Referral",
+    "notes": "Primary decision maker for web redesign"
+  },
+  {
+    "id": "contact-urban-patricia",
+    "name": "Patricia Go",
+    "company": "Urban Realty Group",
+    "email": "patricia@urbanrealty.ph",
+    "mobile": "+63 919 888 7766",
+    "role": "VP Sales",
+    "source": "Repeat Client",
+    "notes": "Closed won — microsite project"
+  },
+  {
+    "id": "contact-fresh-jake",
+    "name": "Jake Villanueva",
+    "company": "FreshBite Digital",
+    "email": "jake@freshbite.ph",
+    "mobile": "+63 918 222 3344",
+    "role": "Founder",
+    "source": "Inbound",
+    "notes": "Discovery call pending"
+  }
+]

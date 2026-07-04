@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
+import { useProduct } from '../lib/product-context';
+import { isAgencyOpsStarter } from '../lib/product-config';
 import {
   addNavGroup,
   buildPreferencesFromGroups,
@@ -195,6 +197,8 @@ function NavItemCard({
 }
 
 export default function SidebarNav() {
+  const product = useProduct();
+  const starter = isAgencyOpsStarter(product.id);
   const [customizing, setCustomizing] = useState(false);
   const [groups, setGroups] = useState<NavGroup[]>(() => getEffectiveNavGroups());
   const [dragging, setDragging] = useState<DragPayload | null>(null);
@@ -308,7 +312,7 @@ export default function SidebarNav() {
         <nav
           ref={contentRef}
           className="sidebar-nav-fit space-y-2"
-          aria-label="Operations Suite navigation"
+          aria-label={starter ? 'Agency Ops navigation' : 'Operations Suite navigation'}
           {...dropHandlers}
           onDragLeave={customizing ? () => setDropTarget(null) : undefined}
         >
@@ -513,7 +517,7 @@ export default function SidebarNav() {
       </div>
 
       <div className="pt-2 border-t border-brandNavy-800 space-y-1.5 shrink-0 px-2">
-        {customizing ? (
+        {!starter && (customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
               Drag cards to reorder. Edit group and link names inline. Use × to remove a group or add one back below.
@@ -538,7 +542,7 @@ export default function SidebarNav() {
           <button type="button" onClick={() => setCustomizing(true)} className="w-full sidebar-nav-btn-secondary">
             Customize sidebar
           </button>
-        )}
+        ))}
       </div>
     </div>
   );

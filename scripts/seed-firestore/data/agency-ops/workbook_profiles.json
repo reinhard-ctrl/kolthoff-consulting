@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ao-brandco-web",
+    "workspaceName": "BrandCo Website Redesign",
+    "clientCompany": "BrandCo Philippines",
+    "clientRep": "Maria Santos",
+    "clientAddress": "BGC, Taguig City",
+    "clientTin": "123-456-789-000",
+    "quoteId": "AO-2026-BRANDCO",
+    "quoteDate": "2026-06-15",
+    "quoteValidity": "30 days",
+    "tasks": [
+      { "id": "t1", "selected": true, "title": "Discovery & Strategy", "category": "Phase 1 - Discovery", "estHours": 12, "tier": "senior" },
+      { "id": "t2", "selected": true, "title": "UI/UX Design", "category": "Phase 2 - Design", "estHours": 40, "tier": "senior" },
+      { "id": "t3", "selected": true, "title": "Front-end Development", "category": "Phase 3 - Build", "estHours": 60, "tier": "associate" },
+      { "id": "t4", "selected": true, "title": "QA & Launch Support", "category": "Phase 4 - Launch", "estHours": 16, "tier": "associate" }
+    ],
+    "frictionBuffer": 10,
+    "discountPercent": 0,
+    "includeTax": true,
+    "milestoneSplit": "30-40-30",
+    "principalRate": 3500,
+    "seniorRate": 2500,
+    "associateRate": 1500,
+    "partnerRate": 2000,
+    "_meta": { "schemaVersion": 2, "updatedAt": 1718409600000 }
+  },
+  {
+    "id": "ao-urban-microsite",
+    "workspaceName": "Urban Realty Microsite",
+    "clientCompany": "Urban Realty Group",
+    "clientRep": "Patricia Go",
+    "clientAddress": "Ortigas Center, Pasig City",
+    "clientTin": "987-654-321-000",
+    "quoteId": "AO-2026-URBAN",
+    "quoteDate": "2026-05-20",
+    "quoteValidity": "30 days",
+    "tasks": [
+      { "id": "u1", "selected": true, "title": "Site Architecture", "category": "Phase 1 - Discovery", "estHours": 8, "tier": "senior" },
+      { "id": "u2", "selected": true, "title": "Property Listing Templates", "category": "Phase 2 - Design", "estHours": 32, "tier": "senior" },
+      { "id": "u3", "selected": true, "title": "CMS Integration", "category": "Phase 3 - Build", "estHours": 48, "tier": "associate" },
+      { "id": "u4", "selected": true, "title": "Lead Capture Forms", "category": "Phase 3 - Build", "estHours": 12, "tier": "associate" },
+      { "id": "u5", "selected": true, "title": "Launch & Training", "category": "Phase 4 - Launch", "estHours": 8, "tier": "senior" }
+    ],
+    "frictionBuffer": 8,
+    "discountPercent": 5,
+    "includeTax": true,
+    "milestoneSplit": "50-50",
+    "principalRate": 3500,
+    "seniorRate": 2500,
+    "associateRate": 1500,
+    "partnerRate": 2000,
+    "_meta": { "schemaVersion": 2, "updatedAt": 1716249600000 }
+  },
+  {
+    "id": "ao-luxe-events",
+    "workspaceName": "Luxe Events Brand Package",
+    "clientCompany": "Luxe Events Co.",
+    "clientRep": "Andrea Cruz",
+    "quoteId": "AO-2026-LUXE",
+    "quoteDate": "2026-06-28",
+    "tasks": [
+      { "id": "l1", "selected": true, "title": "Brand Identity Refresh", "category": "Phase 1 - Discovery", "estHours": 20, "tier": "senior" },
+      { "id": "l2", "selected": true, "title": "Event Collateral Templates", "category": "Phase 2 - Design", "estHours": 24, "tier": "associate" }
+    ],
+    "frictionBuffer": 5,
+    "discountPercent": 0,
+    "includeTax": true,
+    "milestoneSplit": "50-50",
+    "_meta": { "schemaVersion": 2, "updatedAt": 1719532800000 }
+  }
+]

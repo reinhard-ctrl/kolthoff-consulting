@@ -1,6 +1,13 @@
 import { DEFAULT_NAV_GROUPS, type NavGroup, type NavItem } from '../config/navigation';
+import { getProductConfig } from './product-config';
 
-const STORAGE_KEY = 'kolthoff-admin-nav-preferences';
+function productNavGroups(): NavGroup[] {
+  return getProductConfig().navGroups;
+}
+
+function navStorageKey(): string {
+  return getProductConfig().navStorageKey;
+}
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
 const NAV_PREFS_VERSION = 4;
 
@@ -26,9 +33,9 @@ function dedupeIds(ids: string[]): string[] {
   });
 }
 
-function buildItemCatalog(): Map<string, NavItem> {
+function buildItemCatalog(groups: NavGroup[] = productNavGroups()): Map<string, NavItem> {
   const map = new Map<string, NavItem>();
-  for (const group of DEFAULT_NAV_GROUPS) {
+  for (const group of groups) {
     for (const item of group.items) map.set(item.id, item);
   }
   return map;
@@ -40,17 +47,18 @@ function resolveGroupLabel(groupId: string, defaultLabel: string, prefs: NavPref
 }
 
 function buildGroupLabelsFromGroups(groups: NavGroup[]): Record<string, string> | undefined {
+  const defaults = productNavGroups();
   const groupLabels: Record<string, string> = {};
   for (const group of groups) {
-    const defaultLabel = DEFAULT_NAV_GROUPS.find((g) => g.id === group.id)?.label ?? group.label;
+    const defaultLabel = defaults.find((g) => g.id === group.id)?.label ?? group.label;
     const label = group.label.trim();
     if (label && label !== defaultLabel) groupLabels[group.id] = label;
   }
   return Object.keys(groupLabels).length ? groupLabels : undefined;
 }
 
-function getDefaultItemLabel(itemId: string): string | undefined {
-  for (const group of DEFAULT_NAV_GROUPS) {
+function getDefaultItemLabel(itemId: string, groups: NavGroup[] = productNavGroups()): string | undefined {
+  for (const group of groups) {
     const item = group.items.find((i) => i.id === itemId);
     if (item) return item.label;
   }
@@ -120,11 +128,11 @@ function resolveItemAssignments(groups: NavGroup[], prefs: NavPreferences | null
 
 export function loadNavPreferences(): NavPreferences | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(navStorageKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw) as NavPreferences & { itemOrder?: Record<string, string[]> };
     if (parsed.version !== NAV_PREFS_VERSION) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(navStorageKey());
       return null;
     }
     let prefs: NavPreferences | null = null;
@@ -132,7 +140,7 @@ export function loadNavPreferences(): NavPreferences | null {
       prefs = parsed;
     } else if (parsed.itemOrder) {
       prefs = {
-        groupOrder: parsed.groupOrder ?? DEFAULT_NAV_GROUPS.map((g) => g.id),
+        groupOrder: parsed.groupOrder ?? productNavGroups().map((g) => g.id),
         assignments: parsed.itemOrder,
       };
     }
@@ -140,7 +148,7 @@ export function loadNavPreferences(): NavPreferences | null {
     const sanitized = sanitizeNavPreferences(prefs);
     const cleaned = JSON.stringify(sanitized);
     if (cleaned !== JSON.stringify(prefs)) {
-      localStorage.setItem(STORAGE_KEY, cleaned);
+      localStorage.setItem(navStorageKey(), cleaned);
     }
     return sanitized;
   } catch {
@@ -150,18 +158,19 @@ export function loadNavPreferences(): NavPreferences | null {
 
 export function saveNavPreferences(prefs: NavPreferences) {
   localStorage.setItem(
-    STORAGE_KEY,
+    navStorageKey(),
     JSON.stringify({ ...sanitizeNavPreferences(prefs), version: NAV_PREFS_VERSION }),
   );
 }
 
 export function clearNavPreferences() {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(navStorageKey());
 }
 
 export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
+  const defaults = productNavGroups();
   const visibleIds = new Set(groups.map((g) => g.id));
-  const hiddenGroups = DEFAULT_NAV_GROUPS.map((g) => g.id).filter((id) => !visibleIds.has(id));
+  const hiddenGroups = defaults.map((g) => g.id).filter((id) => !visibleIds.has(id));
   return {
     groupOrder: groups.map((g) => g.id),
     assignments: Object.fromEntries(groups.map((g) => [g.id, g.items.map((i) => i.id)])),
@@ -173,13 +182,13 @@ export function buildPreferencesFromGroups(groups: NavGroup[]): NavPreferences {
 
 export function sanitizeNavPreferences(
   prefs: NavPreferences,
-  groups: NavGroup[] = DEFAULT_NAV_GROUPS,
+  groups: NavGroup[] = productNavGroups(),
 ): NavPreferences {
   return buildPreferencesFromGroups(applyNavPreferences(groups, prefs));
 }
 
 export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | null): NavGroup[] {
-  const catalog = buildItemCatalog();
+  const catalog = buildItemCatalog(groups);
   const meta = new Map(groups.map((g) => [g.id, g]));
   const itemHome = resolveItemAssignments(groups, prefs);
   const orderedGroupIds = resolveGroupOrder(groups, prefs);
@@ -211,11 +220,11 @@ export function applyNavPreferences(groups: NavGroup[], prefs: NavPreferences | 
 }
 
 export function getDefaultNavGroups(): NavGroup[] {
-  return DEFAULT_NAV_GROUPS;
+  return productNavGroups();
 }
 
 export function getEffectiveNavGroups(): NavGroup[] {
-  return applyNavPreferences(DEFAULT_NAV_GROUPS, loadNavPreferences());
+  return applyNavPreferences(productNavGroups(), loadNavPreferences());
 }
 
 export function moveGroup(groups: NavGroup[], groupId: string, direction: -1 | 1): NavGroup[] {
@@ -317,7 +326,7 @@ export function getNavItem(id: string): (NavItem & { group: string }) | undefine
     const item = group.items.find((i) => i.id === id);
     if (item) return { ...item, group: group.label };
   }
-  for (const group of DEFAULT_NAV_GROUPS) {
+  for (const group of productNavGroups()) {
     const item = group.items.find((i) => i.id === id);
     if (item) return { ...item, group: group.label };
   }
@@ -326,7 +335,7 @@ export function getNavItem(id: string): (NavItem & { group: string }) | undefine
 
 export function getAvailableNavGroupsToAdd(groups: NavGroup[]): NavGroup[] {
   const visible = new Set(groups.map((g) => g.id));
-  return DEFAULT_NAV_GROUPS.filter((g) => !visible.has(g.id));
+  return productNavGroups().filter((g) => !visible.has(g.id));
 }
 
 /** Remove a group card; its links move into the nearest remaining group. */
@@ -350,7 +359,7 @@ export function removeNavGroup(groups: NavGroup[], groupId: string): NavGroup[] 
 /** Restore a hidden default group card (empty until links are dragged in). */
 export function addNavGroup(groups: NavGroup[], groupId: string): NavGroup[] {
   if (groups.some((g) => g.id === groupId)) return groups;
-  const meta = DEFAULT_NAV_GROUPS.find((g) => g.id === groupId);
+  const meta = productNavGroups().find((g) => g.id === groupId);
   if (!meta) return groups;
   return [...groups, { ...meta, items: [] }];
 }

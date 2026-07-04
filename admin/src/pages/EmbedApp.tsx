@@ -1,17 +1,22 @@
 import { Link } from 'react-router-dom';
 import { getNavItem } from '../lib/navPreferences';
+import { useProduct } from '../lib/product-context';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250702-embed-v32';
+const EMBED_CACHE_VERSION = '20250704-agency-ops-v1';
 
-function buildEmbedSrc(href: string): string {
+function buildEmbedSrc(href: string, embedParams: Record<string, string>): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
   url.searchParams.set('embed', '1');
   url.searchParams.set('v', EMBED_CACHE_VERSION);
+  for (const [key, value] of Object.entries(embedParams)) {
+    url.searchParams.set(key, value);
+  }
   return url.toString();
 }
 
 export default function EmbedApp({ appId }: { appId: string }) {
+  const product = useProduct();
   const item = getNavItem(appId);
 
   if (!item || item.type !== 'embed' || !item.href || item.openInNewTab) {
@@ -25,7 +30,7 @@ export default function EmbedApp({ appId }: { appId: string }) {
     );
   }
 
-  const src = buildEmbedSrc(item.href);
+  const src = buildEmbedSrc(item.href, product.embedParams);
 
   return (
     <iframe

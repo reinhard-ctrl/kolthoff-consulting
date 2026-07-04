@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-do
 import { verifyAdminPasscode, hasAdminSession, adminCol, auth } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
+import AgencyOpsDashboard from './pages/AgencyOpsDashboard';
 import Tenants from './pages/Tenants';
 import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
@@ -12,6 +13,8 @@ import Collections from './pages/Collections';
 import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
+import { useProduct } from './lib/product-context';
+import { isAgencyOpsStarter } from './lib/product-config';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -55,6 +58,7 @@ function getReturnUrl(): string | null {
 }
 
 function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
+  const product = useProduct();
   const [code, setCode] = useState('');
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
@@ -130,8 +134,11 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
           <BrandHeader />
         </div>
         <p className="text-sm text-slate-400 text-center mb-5">
-          Sign in with Google Workspace or use the break-glass passcode.
+          {product.isDemo
+            ? 'Enter the demo passcode to explore Agency Ops Starter.'
+            : 'Sign in with Google Workspace or use the break-glass passcode.'}
         </p>
+        {!product.isDemo && (
         <button
           type="button"
           onClick={signInGoogle}
@@ -140,11 +147,17 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         >
           {googleLoading ? 'Signing in…' : 'Sign in with Google'}
         </button>
+        )}
+        {!product.isDemo && (
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-brandNavy-700" />
           <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">or passcode</span>
           <div className="flex-1 h-px bg-brandNavy-700" />
         </div>
+        )}
+        {product.demoPasscodeHint && (
+          <p className="text-xs text-slate-500 text-center mb-3 font-mono">{product.demoPasscodeHint}</p>
+        )}
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
           className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
@@ -157,22 +170,29 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const product = useProduct();
   const location = useLocation();
   const isEmbed = location.pathname.startsWith('/app/');
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
 
   useEffect(() => {
-    const unsubs = ['clients', 'workbook_profiles', 'crm_deals'].map((col) =>
+    const cols = isAgencyOpsStarter(product.id)
+      ? (['workbook_profiles', 'crm_deals'] as const)
+      : (['clients', 'workbook_profiles', 'crm_deals'] as const);
+    const unsubs = cols.map((col) =>
       onSnapshot(
         adminCol(col),
         (snap) => {
-          setMetrics((m) => ({ ...m, [col === 'clients' ? 'clients' : col === 'workbook_profiles' ? 'profiles' : 'deals']: snap.size }));
+          setMetrics((m) => ({
+            ...m,
+            [col === 'workbook_profiles' ? 'profiles' : col === 'crm_deals' ? 'deals' : 'clients']: snap.size,
+          }));
         },
         (err) => console.warn(`Sidebar metrics listener failed (${col}):`, err.message)
       )
     );
     return () => unsubs.forEach((u) => u());
-  }, []);
+  }, [product.id]);
 
   return (
     <div className="h-screen flex bg-brandNavy-955 overflow-hidden">
@@ -182,7 +202,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <SidebarNav />
         <div className="sidebar-nav-hint text-slate-600 px-2 pt-2 border-t border-brandNavy-800 font-mono shrink-0 truncate">
-          {metrics.clients} clients · {metrics.profiles} SOWs · {metrics.deals} deals
+          {isAgencyOpsStarter(product.id)
+            ? `${metrics.deals} deals · ${metrics.profiles} estimates`
+            : `${metrics.clients} clients · ${metrics.profiles} SOWs · ${metrics.deals} deals`}
         </div>
       </aside>
       <main
@@ -287,14 +309,14 @@ function AppRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/tenants" element={<Tenants />} />
-        <Route path="/org-chart" element={<OrgChart />} />
-        <Route path="/intake" element={<Navigate to="/org-chart" replace />} />
-        <Route path="/portals" element={<PortalManager />} />
-        <Route path="/contracts" element={<ContractLedger />} />
+        <Route path="/" element={isAgencyOpsStarter() ? <AgencyOpsDashboard /> : <Dashboard />} />
+        {!isAgencyOpsStarter() && <Route path="/tenants" element={<Tenants />} />}
+        {!isAgencyOpsStarter() && <Route path="/org-chart" element={<OrgChart />} />}
+        {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/org-chart" replace />} />}
+        {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
+        {!isAgencyOpsStarter() && <Route path="/contracts" element={<ContractLedger />} />}
         <Route path="/collections" element={<Collections />} />
-        <Route path="/master" element={<Navigate to="/tenants?tab=support" replace />} />
+        {!isAgencyOpsStarter() && <Route path="/master" element={<Navigate to="/tenants?tab=support" replace />} />}
         <Route path="/app/:appId" element={<EmbedAppRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
