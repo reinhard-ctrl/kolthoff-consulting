@@ -214,6 +214,10 @@
       formatCurrency,
       addendumEconomics,
       renderSignaturesBlock,
+      renderPrintBrandLogo,
+      brand,
+      issuerCompanyName,
+      starterUi,
       BrandLogo,
     } = props;
     if (!addendum || !addendumEconomics) return null;
@@ -221,6 +225,10 @@
     const totalBase = addendumEconomics.finalProjectCostBase + addendumEconomics.retainerCostTotalBase;
     const vat = includeTax ? Math.round(totalBase * 0.12) : 0;
     const total = totalBase + vat;
+    const issuerName = issuerCompanyName || (starterUi && brand?.companyName) || 'Kolthoff Consulting';
+    const logoNode = renderPrintBrandLogo && brand
+      ? renderPrintBrandLogo(brand)
+      : (BrandLogo ? React.createElement(BrandLogo, { className: 'w-14 h-14 shrink-0 text-brandTeal-500' }) : null);
 
     return React.createElement(
       'div',
@@ -231,7 +239,24 @@
         React.createElement(
           'div',
           { className: 'space-y-4 print-avoid-break' },
-          BrandLogo ? React.createElement(BrandLogo, { className: 'w-14 h-14 shrink-0 text-brandTeal-500' }) : null,
+          React.createElement(
+            'div',
+            { className: 'flex items-center gap-4 pb-4 border-b border-slate-200' },
+            logoNode,
+            React.createElement(
+              'div',
+              null,
+              starterUi
+                ? [
+                    React.createElement('h2', { key: 'name', className: 'text-lg font-bold text-slate-900 leading-tight' }, issuerName),
+                    brand?.tagline && React.createElement('p', { key: 'tag', className: 'text-[10px] text-slate-500 mt-1' }, brand.tagline),
+                  ]
+                : [
+                    React.createElement('h2', { key: 'name', className: 'text-sm font-bold text-slate-900 uppercase tracking-wide' }, preparedBy),
+                    React.createElement('p', { key: 'dba', className: 'text-[10px] text-slate-500 mt-1 uppercase tracking-wider' }, 'Trade style: Kolthoff Consulting'),
+                  ],
+            ),
+          ),
           React.createElement('h1', { className: 'text-2xl font-serif font-bold text-slate-900' }, 'Statement of Work Addendum'),
           React.createElement('p', { className: 'text-sm font-mono text-slate-500' }, `${addendum.ref} · Supplements ${parentQuoteId}`),
           React.createElement(
@@ -301,7 +326,10 @@
           ),
           React.createElement('p', { className: 'text-[10px] text-slate-600 leading-relaxed border-t border-slate-200 pt-2' }, addendum.addendumTerms),
           React.createElement('p', { className: 'text-[10px] text-slate-500 italic' }, 'This addendum is billed separately from the original Statement of Work. Original engagement milestones are unchanged.'),
-          renderSignaturesBlock && renderSignaturesBlock('Accepted on behalf of Client:', 'Accepted on behalf of Kolthoff Consulting:'),
+          renderSignaturesBlock && renderSignaturesBlock(
+            'Accepted on behalf of Client:',
+            starterUi ? `Accepted on behalf of ${issuerName}:` : 'Accepted on behalf of Kolthoff Consulting:',
+          ),
         ),
       ),
     );

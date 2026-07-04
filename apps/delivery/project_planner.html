@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase Module Initialization -->
-      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v9"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v9"></script>
+      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v12"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v12"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
       }
     }
   </script>
-  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v9"></script>
+  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v12"></script>
   
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -493,7 +493,7 @@
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
   <script src="project_planner_helpers.js?v=20250704-mod-labels-v1"></script>
-  <script src="project_planner_addendum.js?v=20250703-addendum-v6"></script>
+  <script src="project_planner_addendum.js?v=20250704-brand-pdf-v1"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
@@ -1024,6 +1024,22 @@
       return <>{d.line1}{d.line2 ? <> <span style={{ color: brand.primaryColor }}>{d.line2}</span></> : null}</>;
     };
 
+    const renderPrintBrandLogo = (brand, sizeClass = 'h-14 w-auto max-w-[160px]') => {
+      if (!STARTER_UI) return <BrandLogo className="w-14 h-14 shrink-0 text-brandTeal-500" />;
+      if (brand.logoUrl) {
+        return <img src={brand.logoUrl} alt="" className={`${sizeClass} object-contain shrink-0`} />;
+      }
+      return (
+        <div
+          className="w-14 h-14 shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+          style={{ backgroundColor: brand.primaryColor }}
+          aria-hidden="true"
+        >
+          {(brand.companyName || 'A').charAt(0)}
+        </div>
+      );
+    };
+
     const renderConsultantBadge = (tier) => {
       const labelMap = { principal: 'Strategist', senior: 'Architect', associate: 'Specialist', partner: 'IT Partner' };
       const styleMap = {
@@ -1196,6 +1212,9 @@
       const [preparedBy] = useState('Reinhard Ludwig A. Kolthoff'); 
       const [preparerTitle, setPreparerTitle] = useState(activeProfile.preparerTitle || 'Chief Operations Strategist');
       const [preparerTin] = useState('337-945-806-000');
+      const issuerCompanyName = STARTER_UI ? (brand.companyName || 'Studio North') : 'Kolthoff Consulting';
+      const issuerLegalName = STARTER_UI ? (brand.companyName || 'Studio North') : preparedBy;
+      const issuerTagline = STARTER_UI ? (brand.tagline || '') : 'Operational Excellence & Strategy';
       const [targetStartDate, setTargetStartDate] = useState(activeProfile.targetStartDate);
       const [proposalObjectives, setProposalObjectives] = useState(activeProfile.proposalObjectives);
       const [proposalSponsor, setProposalSponsor] = useState(activeProfile.proposalSponsor);
@@ -2404,7 +2423,7 @@
       const renderPrintFooter = (sectionLabel, sectionIndex, totalSections) => (
         <div className="print-page-footer font-mono uppercase tracking-wider">
           <span>{quoteId} · {sectionLabel}</span>
-          <span>Section {sectionIndex} of {totalSections} · Kolthoff Consulting · Confidential</span>
+          <span>Section {sectionIndex} of {totalSections} · {issuerCompanyName} · Confidential</span>
         </div>
       );
 
@@ -2412,10 +2431,13 @@
         <div className="text-left font-sans space-y-8 min-h-[70vh] flex flex-col justify-between">
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <BrandLogo />
+              {renderPrintBrandLogo(brand)}
               <div>
                 <h1 className="text-2xl font-serif font-bold text-slate-900">Statement of Work Package</h1>
                 <p className="text-sm text-slate-500 font-mono mt-1">{quoteId} · Valid until {quoteValidity}</p>
+                {STARTER_UI && issuerTagline ? (
+                  <p className="text-xs text-slate-500 mt-1">{issuerTagline}</p>
+                ) : null}
               </div>
             </div>
             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 print-pill space-y-2">
@@ -2464,8 +2486,8 @@
             <div>
               <p className="font-bold text-slate-700 mb-8">Prepared by</p>
               <div className="border-t border-slate-300 pt-2">
-                <div className="font-bold text-slate-900">{preparedBy}</div>
-                <div className="text-slate-500">{preparerTitle}, Kolthoff Consulting</div>
+                <div className="font-bold text-slate-900">{issuerLegalName}</div>
+                <div className="text-slate-500">{STARTER_UI ? preparerTitle : `${preparerTitle}, Kolthoff Consulting`}</div>
                 <div className="text-slate-400 mt-1">Date: {quoteDate}</div>
               </div>
             </div>
@@ -2509,7 +2531,10 @@
 
       const renderEOPTPrintFootnote = () => (
         <p className="print-only text-[9px] text-slate-500 mt-2 leading-relaxed">
-          Tax note: {includeTax ? 'This quotation is subject to 12% Philippine VAT on taxable sales.' : 'Non-VAT quotation — seller is not VAT-registered for this engagement.'} Legal taxpayer: Reinhard Ludwig A. Kolthoff · Trade style: Kolthoff Consulting.
+          Tax note: {includeTax ? 'This quotation is subject to 12% Philippine VAT on taxable sales.' : 'Non-VAT quotation — seller is not VAT-registered for this engagement.'}
+          {STARTER_UI
+            ? ` Issued by ${issuerCompanyName}.`
+            : ' Legal taxpayer: Reinhard Ludwig A. Kolthoff · Trade style: Kolthoff Consulting.'}
         </p>
       );
 
@@ -2597,15 +2622,26 @@
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
           <div className="flex items-center gap-4">
-            <BrandLogo />
+            {renderPrintBrandLogo(brand)}
             <div>
-              <h1 className="font-sans font-black tracking-wider text-lg uppercase text-slate-900 leading-none">{preparedBy}</h1>
-              <span className="text-[10px] text-brandTeal-600 print-accent font-extrabold tracking-widest uppercase block mt-1 font-sans">TRADE STYLE / DBA: KOLTHOFF CONSULTING</span>
-              <span className="text-[9px] text-slate-500 tracking-widest uppercase block mt-1.5 font-mono font-bold leading-relaxed font-sans">Operational Excellence &amp; Strategy</span>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono text-slate-500 mt-2 font-semibold font-sans">
-                <span className="flex items-center gap-1"><IconMail className="w-3.5 h-3.5 text-brandTeal-600 print-accent" /> contact@kolthoff-consulting.com</span>
-                <span className="flex items-center gap-1"><IconGlobe className="w-3.5 h-3.5 text-brandTeal-600 print-accent" /> www.kolthoff-consulting.com</span>
-              </div>
+              {STARTER_UI ? (
+                <>
+                  <h1 className="font-sans font-black tracking-tight text-lg text-slate-900 leading-tight">{issuerCompanyName}</h1>
+                  {issuerTagline ? (
+                    <span className="text-[10px] print-accent font-semibold tracking-wide block mt-1 font-sans" style={{ color: brand.primaryColor }}>{issuerTagline}</span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <h1 className="font-sans font-black tracking-wider text-lg uppercase text-slate-900 leading-none">{preparedBy}</h1>
+                  <span className="text-[10px] text-brandTeal-600 print-accent font-extrabold tracking-widest uppercase block mt-1 font-sans">TRADE STYLE / DBA: KOLTHOFF CONSULTING</span>
+                  <span className="text-[9px] text-slate-500 tracking-widest uppercase block mt-1.5 font-mono font-bold leading-relaxed font-sans">{issuerTagline}</span>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-mono text-slate-500 mt-2 font-semibold font-sans">
+                    <span className="flex items-center gap-1"><IconMail className="w-3.5 h-3.5 text-brandTeal-600 print-accent" /> contact@kolthoff-consulting.com</span>
+                    <span className="flex items-center gap-1"><IconGlobe className="w-3.5 h-3.5 text-brandTeal-600 print-accent" /> www.kolthoff-consulting.com</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="text-left sm:text-right font-mono text-[11px] text-slate-600 space-y-1">
@@ -2654,8 +2690,8 @@
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
               {isInvoice ? "ISSUED BY (Sellers Information):" : "PREPARED BY:"}
             </span>
-            <div className="font-bold text-slate-900 text-base">{preparedBy}</div>
-            <div className="text-slate-700 font-bold text-xs">{preparerTitle}, Kolthoff Consulting</div>
+            <div className="font-bold text-slate-900 text-base">{issuerLegalName}</div>
+            <div className="text-slate-700 font-bold text-xs">{STARTER_UI ? (issuerTagline || preparerTitle) : `${preparerTitle}, Kolthoff Consulting`}</div>
             {isInvoice && <div className="text-xs text-slate-500 font-mono">TIN: {preparerTin}</div>}
             {isInvoice && <div className="text-xs text-slate-500 font-sans">Taytay, Rizal, Calabarzon, Philippines</div>}
             {!isRoadmap && !isInvoice && <div className="text-xs text-slate-400 font-sans">Proposal Date: {quoteDate}</div>}
@@ -2683,8 +2719,8 @@
               <div className="space-y-12 flex flex-col justify-between font-sans text-left">
                 <p className="text-slate-700 font-bold font-sans text-left font-sans">{titleRight}</p>
                 <div className="border-t border-slate-300 pt-2 text-[10px] space-y-0.5">
-                  <div className="font-bold text-slate-900">{preparedBy}</div>
-                  <div className="text-slate-500 font-sans">{preparerTitle}, Kolthoff Consulting</div>
+                  <div className="font-bold text-slate-900">{issuerLegalName}</div>
+                  <div className="text-slate-500 font-sans">{STARTER_UI ? preparerTitle : `${preparerTitle}, Kolthoff Consulting`}</div>
                   <div className="text-slate-400 font-sans">Date: {quoteDate}</div>
                 </div>
               </div>
@@ -3385,7 +3421,7 @@
                   {isNda && (
                     <>
                       <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Effective Date</label><input type="text" value={ndaEffectiveDate} onChange={(e) => setNdaEffectiveDate(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
-                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans">Disclosing Party (Party A)</label><input type="text" value={preparedBy} disabled className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-400 cursor-not-allowed" /></div>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans">Disclosing Party (Party A)</label><input type="text" value={issuerLegalName} disabled className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-400 cursor-not-allowed" /></div>
                     </>
                   )}
                   <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Company Legal Name</label><input type="text" value={clientCompany} onChange={(e) => setClientCompany(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
@@ -3451,7 +3487,7 @@
 
               {(view !== 'nda' && view !== 'roadmap') && (
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Prepared By</label><input type="text" value={preparedBy} disabled className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-400 cursor-not-allowed font-sans font-semibold" /></div>
+                  <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Prepared By</label><input type="text" value={issuerLegalName} disabled className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-400 cursor-not-allowed font-sans font-semibold" /></div>
                   <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left">Strategist Title</label><input type="text" value={preparerTitle} onChange={(e) => setPreparerTitle(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
                 </div>
               )}
@@ -3537,6 +3573,10 @@
               formatCurrency,
               addendumEconomics,
               renderSignaturesBlock,
+              renderPrintBrandLogo,
+              brand,
+              issuerCompanyName,
+              starterUi: STARTER_UI,
               BrandLogo,
             })}
           </div>
@@ -3559,7 +3599,7 @@
             </div>
             <p className="text-sm text-slate-700 leading-relaxed text-left font-sans font-sans">This Mutual Non-Disclosure Agreement (the "Agreement") is entered into and made effective as of the date written above (the "Effective Date") by and between:</p>
             <div className="pl-6 space-y-3 text-slate-800 font-sans font-semibold border-l-2 border-brandTeal-500 bg-slate-50 p-4 rounded text-left text-sm font-sans">
-              <div><strong>Party A (Disclosing/Receiving):</strong> {preparedBy}, representing <strong>Kolthoff Consulting</strong>.</div>
+              <div><strong>Party A (Disclosing/Receiving):</strong> {issuerLegalName}, representing <strong>{issuerCompanyName}</strong>.</div>
               <div><strong>Party B (Disclosing/Receiving):</strong> {clientRep || "________________________"}, representing <strong>{clientCompany || "________________________"}</strong>.</div>
             </div>
             <div className="space-y-4 pt-2 text-sm leading-relaxed text-slate-700 text-left font-sans">
@@ -3749,7 +3789,7 @@
         const SlaBody = (
           <div className="space-y-6 text-slate-800 font-sans text-left">
             <p className="text-xs leading-relaxed font-medium text-left text-slate-700 font-sans">
-              This Service Level Agreement (SLA) outlines the performance, support, and maintenance standards provided by <strong>Kolthoff Consulting</strong> ("Service Provider") to <strong>{clientCompany || "the Client"}</strong> ("Client") for the continuous operation of the deployed software infrastructure and automated workflows.
+              This Service Level Agreement (SLA) outlines the performance, support, and maintenance standards provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{clientCompany || "the Client"}</strong> ("Client") for the continuous operation of the deployed software infrastructure and automated workflows.
             </p>
 
             <div className="space-y-5 font-medium text-left text-slate-700 font-sans">
