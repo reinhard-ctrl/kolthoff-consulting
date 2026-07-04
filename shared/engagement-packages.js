@@ -19,7 +19,7 @@
       },
       defaults: {
         proposalObjectives: 'Find where your team loses time and money through scattered chats, duplicate software, and manual rework — and leave with a prioritized 90-day fix list.',
-        frictionBuffer: 10,
+        frictionBuffer: 9,
         discountPercent: 0,
         milestoneSplit: 'auto'
       },
