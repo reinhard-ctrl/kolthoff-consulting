@@ -1,6 +1,6 @@
 import type { ProductBranding } from './product-config';
 
-/** Firestore tenant_settings/config.branding */
+/** Firestore tenant_settings/config.branding — active workspace branding */
 export interface TenantBrandingConfig {
   companyName: string;
   tagline?: string;
@@ -14,12 +14,84 @@ export interface TenantBrandingConfig {
   subtitle?: string;
 }
 
+/** Saved branding profile under tenant_settings/config.brandingPresets */
+export interface BrandingPreset {
+  id: string;
+  name: string;
+  companyName: string;
+  tagline?: string;
+  primaryColor: string;
+  logoUrl?: string;
+  updatedAt: number;
+}
+
 export const DEFAULT_TENANT_BRANDING: TenantBrandingConfig = {
   companyName: 'Studio North',
   tagline: 'Creative & Digital Services',
-  primaryColor: '#6366f1',
+  primaryColor: '#4f46e5',
   logoUrl: '',
 };
+
+export function slugifyPresetId(name: string): string {
+  const base = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+  return base || `brand-${Date.now()}`;
+}
+
+export function uniquePresetId(name: string, existingIds: string[]): string {
+  const base = slugifyPresetId(name);
+  if (!existingIds.includes(base)) return base;
+  let n = 2;
+  while (existingIds.includes(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+export function presetFromConfig(id: string, name: string, config: TenantBrandingConfig): BrandingPreset {
+  return {
+    id,
+    name: name.trim() || config.companyName.trim() || 'Untitled brand',
+    companyName: config.companyName.trim(),
+    tagline: config.tagline?.trim() || '',
+    primaryColor: config.primaryColor.trim() || DEFAULT_TENANT_BRANDING.primaryColor,
+    logoUrl: config.logoUrl?.trim() || '',
+    updatedAt: Date.now(),
+  };
+}
+
+export function presetToConfig(preset: BrandingPreset): TenantBrandingConfig {
+  return {
+    companyName: preset.companyName,
+    tagline: preset.tagline,
+    primaryColor: preset.primaryColor,
+    logoUrl: preset.logoUrl,
+  };
+}
+
+export function normalizeBrandingPreset(raw: unknown): BrandingPreset | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw as Partial<BrandingPreset>;
+  if (!p.id?.trim() || !p.name?.trim()) return null;
+  return presetFromConfig(p.id, p.name, {
+    companyName: p.companyName ?? p.name,
+    tagline: p.tagline,
+    primaryColor: p.primaryColor ?? DEFAULT_TENANT_BRANDING.primaryColor,
+    logoUrl: p.logoUrl,
+  });
+}
+
+export function listBrandingPresets(
+  map: Record<string, unknown> | null | undefined,
+): BrandingPreset[] {
+  if (!map || typeof map !== 'object') return [];
+  return Object.values(map)
+    .map(normalizeBrandingPreset)
+    .filter((p): p is BrandingPreset => Boolean(p))
+    .sort((a, b) => b.updatedAt - a.updatedAt || a.name.localeCompare(b.name));
+}
 
 export function resolveCompanyName(b: Partial<TenantBrandingConfig> | null | undefined): string {
   if (!b) return DEFAULT_TENANT_BRANDING.companyName;

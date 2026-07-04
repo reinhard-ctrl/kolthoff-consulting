@@ -15,7 +15,7 @@ import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
 import { useProduct } from './lib/product-context';
-import { isAgencyOpsStarter } from './lib/product-config';
+import { isAgencyOpsStarter, isLightProductTheme } from './lib/product-config';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -60,6 +60,7 @@ function getReturnUrl(): string | null {
 
 function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
   const product = useProduct();
+  const light = isLightProductTheme(product.id);
   const [code, setCode] = useState('');
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
@@ -135,14 +136,14 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brandNavy-955 p-4">
-      <form onSubmit={submit} className="glass-panel p-8 w-full max-w-sm">
-        <div className="flex justify-center mb-6">
+    <div className={`min-h-screen flex items-center justify-center p-4 ${light ? 'ops-login bg-brandNavy-955' : 'bg-brandNavy-955'}`}>
+      <form onSubmit={submit} className={`${light ? 'ops-login-card' : 'glass-panel'} p-8 w-full max-w-[22rem]`}>
+        <div className={`flex mb-6 ${light ? 'justify-start' : 'justify-center'}`}>
           <BrandHeader />
         </div>
-        <p className="text-sm text-slate-400 text-center mb-5">
+        <p className="text-sm text-slate-400 mb-5 leading-relaxed">
           {product.isDemo
-            ? 'Enter the demo passcode to explore this workspace.'
+            ? 'Sign in with the demo passcode to explore this workspace.'
             : 'Sign in with Google Workspace or use the break-glass passcode.'}
         </p>
         {!product.isDemo && (
@@ -163,13 +164,13 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         </div>
         )}
         {product.demoPasscodeHint && (
-          <p className="text-xs text-slate-500 text-center mb-3 font-mono">{product.demoPasscodeHint}</p>
+          <p className="text-xs text-slate-500 mb-3">{product.demoPasscodeHint}</p>
         )}
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
-          className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
-        {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-        <button disabled={loading} className="w-full py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold">
-          {loading ? 'Verifying...' : 'Enter Console'}
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Passcode"
+          className={`w-full p-3 rounded mb-4 ${light ? '' : 'bg-brandNavy-800 border border-brandNavy-700'}`} />
+        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+        <button disabled={loading} className="w-full py-2.5 brand-primary-bg rounded-lg font-semibold text-white">
+          {loading ? 'Verifying…' : 'Continue'}
         </button>
       </form>
     </div>
@@ -178,6 +179,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
 
 function Layout({ children }: { children: React.ReactNode }) {
   const product = useProduct();
+  const light = isLightProductTheme(product.id);
   const location = useLocation();
   const isEmbed = location.pathname.startsWith('/app/');
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
@@ -202,20 +204,20 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, [product.id]);
 
   return (
-    <div className="h-screen flex bg-brandNavy-955 overflow-hidden">
-      <aside className="admin-sidebar w-[clamp(14rem,17vw,18rem)] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 overflow-hidden min-h-0 pl-0 pr-2 py-2">
-        <div className="px-2 pb-2 border-b border-brandNavy-800 shrink-0">
+    <div className={`h-screen flex overflow-hidden ${light ? 'ops-shell bg-brandNavy-955' : 'bg-brandNavy-955'}`}>
+      <aside className={`admin-sidebar w-[clamp(14rem,17vw,18rem)] flex flex-col shrink-0 overflow-hidden min-h-0 pl-0 pr-2 py-3 ${light ? 'ops-sidebar bg-brandNavy-900 border-r border-brandNavy-800' : 'bg-brandNavy-900 border-r border-brandNavy-800'}`}>
+        <div className={`px-3 pb-3 shrink-0 ${light ? 'ops-sidebar-header border-b border-brandNavy-800' : 'px-2 pb-2 border-b border-brandNavy-800'}`}>
           <BrandHeader compact />
         </div>
         <SidebarNav />
-        <div className="sidebar-nav-hint text-slate-600 px-2 pt-2 border-t border-brandNavy-800 font-mono shrink-0 truncate">
+        <div className={`sidebar-nav-hint px-3 pt-2 shrink-0 truncate ${light ? 'ops-sidebar-footer border-t border-brandNavy-800 text-slate-600' : 'text-slate-600 px-2 border-t border-brandNavy-800 font-mono'}`}>
           {isAgencyOpsStarter(product.id)
             ? `${metrics.deals} deals · ${metrics.profiles} estimates`
             : `${metrics.clients} clients · ${metrics.profiles} SOWs · ${metrics.deals} deals`}
         </div>
       </aside>
       <main
-        className={`flex-1 min-w-0 min-h-0 ${isEmbed ? 'overflow-hidden' : 'p-4 sm:p-6 overflow-auto'}`}
+        className={`ops-main flex-1 min-w-0 min-h-0 ${isEmbed ? 'overflow-hidden bg-white' : 'p-5 sm:p-8 overflow-auto'}`}
       >
         {children}
       </main>

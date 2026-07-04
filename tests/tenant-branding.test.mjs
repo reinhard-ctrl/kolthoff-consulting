@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 // Inline merge logic mirror for unit test (admin/src/lib/tenant-branding.ts)
 function mergeTenantBranding(firestore, productFallback) {
-  const DEFAULT = { companyName: 'Studio North', tagline: 'Creative & Digital Services', primaryColor: '#6366f1', logoUrl: '' };
+  const DEFAULT = { companyName: 'Studio North', tagline: 'Creative & Digital Services', primaryColor: '#4f46e5', logoUrl: '' };
   const base = {
     companyName: productFallback?.name ? `${productFallback.name} ${productFallback.accent || ''}`.trim() : DEFAULT.companyName,
     tagline: productFallback?.subtitle || DEFAULT.tagline,
@@ -34,5 +34,35 @@ describe('tenant branding merge', () => {
     const merged = mergeTenantBranding(null, { name: 'Studio', accent: 'North', subtitle: 'Creative' });
     assert.equal(merged.companyName, 'Studio North');
     assert.equal(merged.tagline, 'Creative');
+  });
+});
+
+function uniquePresetId(name, existingIds) {
+  const base = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'brand';
+  if (!existingIds.includes(base)) return base;
+  let n = 2;
+  while (existingIds.includes(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
+function listBrandingPresets(map) {
+  if (!map || typeof map !== 'object') return [];
+  return Object.values(map)
+    .filter((p) => p && p.id && p.name)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+describe('branding presets', () => {
+  it('creates unique preset ids', () => {
+    assert.equal(uniquePresetId('Studio North', []), 'studio-north');
+    assert.equal(uniquePresetId('Studio North', ['studio-north']), 'studio-north-2');
+  });
+
+  it('lists presets by updatedAt desc', () => {
+    const list = listBrandingPresets({
+      a: { id: 'a', name: 'A', updatedAt: 1 },
+      b: { id: 'b', name: 'B', updatedAt: 3 },
+    });
+    assert.equal(list[0].id, 'b');
   });
 });

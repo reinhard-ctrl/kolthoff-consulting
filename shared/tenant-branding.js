@@ -7,7 +7,7 @@ import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/fireb
 const DEFAULTS = {
   companyName: 'Studio North',
   tagline: 'Creative & Digital Services',
-  primaryColor: '#6366f1',
+  primaryColor: '#4f46e5',
   logoUrl: '',
   crmBadge: 'SALES PIPELINE',
   crmSubtitle: 'Track leads, proposals, and closed deals',

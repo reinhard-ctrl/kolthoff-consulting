@@ -1,0 +1,284 @@
+/**
+ * Professional light theme for Agency Ops Starter embedded apps.
+ */
+html.agency-starter-light {
+  color-scheme: light;
+  --brand-primary: #4f46e5;
+  --brand-primary-soft: rgba(79, 70, 229, 0.08);
+  --brand-primary-ring: rgba(79, 70, 229, 0.18);
+  font-family: 'Inter', 'Montserrat', system-ui, sans-serif;
+}
+
+html.agency-starter-light body {
+  background: #f8fafc !important;
+  background-image: none !important;
+  color: #334155 !important;
+}
+
+html.agency-starter-light .luxury-gradient {
+  background: #f8fafc !important;
+}
+
+html.agency-starter-light ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.agency-starter-light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+html.agency-starter-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 4px;
+}
+
+html.agency-starter-light ::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary, #4f46e5) !important;
+}
+
+html.agency-starter-light .glass-panel {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Surfaces */
+html.agency-starter-light .bg-brandNavy-955,
+html.agency-starter-light .bg-brandNavy-950,
+html.agency-starter-light .bg-\[\#020613\],
+html.agency-starter-light .bg-\[\#02050e\],
+html.agency-starter-light .bg-\[\#09111F\] {
+  background-color: #ffffff !important;
+}
+
+html.agency-starter-light .bg-brandNavy-900,
+html.agency-starter-light .bg-brandNavy-900\/30,
+html.agency-starter-light .bg-brandNavy-900\/50,
+html.agency-starter-light .bg-brandNavy-900\/80,
+html.agency-starter-light .bg-\[\#09111F\]\/30,
+html.agency-starter-light .bg-\[\#09111F\]\/50,
+html.agency-starter-light .bg-\[\#02050e\]\/80,
+html.agency-starter-light .bg-\[\#020613\]\/60 {
+  background-color: #f8fafc !important;
+}
+
+html.agency-starter-light .bg-brandNavy-800,
+html.agency-starter-light .bg-brandNavy-800\/40,
+html.agency-starter-light .bg-brandNavy-955\/70,
+html.agency-starter-light .bg-\[\#1B2C46\]\/50 {
+  background-color: #f1f5f9 !important;
+}
+
+html.agency-starter-light .border-brandNavy-700,
+html.agency-starter-light .border-brandNavy-700\/30,
+html.agency-starter-light .border-brandNavy-700\/40,
+html.agency-starter-light .border-brandNavy-700\/50,
+html.agency-starter-light .border-brandNavy-700\/60,
+html.agency-starter-light .border-brandNavy-800,
+html.agency-starter-light .border-brandNavy-800\/30 {
+  border-color: #e2e8f0 !important;
+}
+
+html.agency-starter-light .text-white {
+  color: #0f172a !important;
+}
+
+html.agency-starter-light .text-slate-200,
+html.agency-starter-light .text-slate-300,
+html.agency-starter-light .text-brandNavy-300 {
+  color: #475569 !important;
+}
+
+html.agency-starter-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Brand accents */
+html.agency-starter-light .bg-brandTeal-500,
+html.agency-starter-light .hover\:bg-brandTeal-600:hover,
+html.agency-starter-light .from-brandTeal-500,
+html.agency-starter-light .to-brandTeal-600 {
+  background-color: var(--brand-primary, #4f46e5) !important;
+  --tw-gradient-from: var(--brand-primary, #4f46e5) !important;
+  --tw-gradient-to: var(--brand-primary-hover, #4338ca) !important;
+  color: #ffffff !important;
+}
+
+html.agency-starter-light .text-brandTeal-400,
+html.agency-starter-light .text-brandTeal-300,
+html.agency-starter-light .text-brandTeal-600,
+html.agency-starter-light .hover\:text-brandTeal-400:hover {
+  color: var(--brand-primary, #4f46e5) !important;
+}
+
+html.agency-starter-light .border-brandTeal-500,
+html.agency-starter-light .border-brandTeal-500\/30,
+html.agency-starter-light .border-brandTeal-500\/40,
+html.agency-starter-light .border-brandTeal-500\/50,
+html.agency-starter-light .hover\:border-brandTeal-500:hover {
+  border-color: color-mix(in srgb, var(--brand-primary, #4f46e5) 35%, transparent) !important;
+}
+
+html.agency-starter-light .shadow-brandTeal-500\/10,
+html.agency-starter-light .shadow-brandTeal-500\/20 {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--brand-primary, #4f46e5) 15%, transparent) !important;
+}
+
+html.agency-starter-light .text-brandNavy-955 {
+  color: #ffffff !important;
+}
+
+html.agency-starter-light ::selection {
+  background-color: var(--brand-primary-soft);
+  color: #0f172a;
+}
+
+/* App chrome */
+html.agency-starter-light [data-app-chrome] {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  backdrop-filter: blur(8px);
+}
+
+html.agency-starter-light [data-app-chrome] h1 {
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+
+html.agency-starter-light .planner-main-header {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+html.agency-starter-light .planner-workspace-toolbar {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Tab navigation — segmented control */
+html.agency-starter-light [data-app-chrome] nav .flex.bg-\[\#09111F\],
+html.agency-starter-light nav .flex.bg-\[\#09111F\] {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.1875rem !important;
+}
+
+html.agency-starter-light nav button.bg-brandTeal-500 {
+  border-radius: 0.375rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html.agency-starter-light nav button:not(.bg-brandTeal-500) {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+html.agency-starter-light nav button:not(.bg-brandTeal-500):hover {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Kanban & cards */
+html.agency-starter-light .bg-\[\#02050e\]\/30 {
+  background-color: #f1f5f9 !important;
+  border-radius: 0.75rem !important;
+}
+
+html.agency-starter-light .deal-card-frame,
+html.agency-starter-light .glass-panel.deal-card-frame {
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+}
+
+html.agency-starter-light .divide-brandNavy-700\/30 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0 !important;
+}
+
+html.agency-starter-light .hover\:bg-brandNavy-900:hover,
+html.agency-starter-light .hover\:bg-brandNavy-900\/20:hover,
+html.agency-starter-light .group:hover .hover\:bg-brandNavy-900 {
+  background-color: #f8fafc !important;
+}
+
+html.agency-starter-light tbody tr:hover,
+html.agency-starter-light .hover\:bg-brandNavy-900\/20 {
+  background-color: #f8fafc !important;
+}
+
+/* Forms */
+html.agency-starter-light input,
+html.agency-starter-light select,
+html.agency-starter-light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+}
+
+html.agency-starter-light input:focus,
+html.agency-starter-light select:focus,
+html.agency-starter-light textarea:focus {
+  border-color: var(--brand-primary, #4f46e5) !important;
+  box-shadow: 0 0 0 3px var(--brand-primary-ring) !important;
+  outline: none;
+}
+
+/* Toolbar controls */
+html.agency-starter-light .flex.bg-\[\#020613\] {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Hide decorative blurs */
+html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[130px\],
+html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[120px\],
+html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[100px\] {
+  display: none !important;
+}
+
+/* Status badges in header */
+html.agency-starter-light [data-app-chrome] .font-mono.font-bold.uppercase {
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  font-size: 0.625rem !important;
+}
+
+/* Primary action buttons */
+html.agency-starter-light button.bg-brandTeal-500,
+html.agency-starter-light a.bg-brandTeal-500 {
+  border-radius: 0.375rem !important;
+  font-weight: 600 !important;
+}
+
+/* Modals */
+html.agency-starter-light .shadow-2xl.bg-brandNavy-900,
+html.agency-starter-light .bg-gradient-to-br.from-brandNavy-900 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12) !important;
+}
+
+html.agency-starter-light .shadow-brandTeal-500\/20 {
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Planner sidebar panels */
+html.agency-starter-light aside[aria-label="Settings"],
+html.agency-starter-light fieldset.bg-brandNavy-955 {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+
+html.agency-starter-light .bg-brandTeal-500\/10,
+html.agency-starter-light .border-brandTeal-500\/50 {
+  background-color: var(--brand-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--brand-primary, #4f46e5) 25%, transparent) !important;
+}
