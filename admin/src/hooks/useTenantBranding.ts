@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { deleteField, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { db, adminAppId } from '../lib/firebase';
 import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
@@ -24,9 +24,19 @@ function brandingPayload(config: TenantBrandingConfig) {
   };
 }
 
+function tenantConfigRef() {
+  return doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
+}
+
+/** updateDoc replaces top-level map fields; setDoc merge leaves removed nested keys behind. */
 async function writeTenantConfig(patch: Record<string, unknown>) {
-  const ref = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
-  await setDoc(ref, patch, { merge: true });
+  const ref = tenantConfigRef();
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    await updateDoc(ref, patch);
+  } else {
+    await setDoc(ref, patch);
+  }
 }
 
 export function useTenantBranding() {
@@ -39,6 +49,7 @@ export function useTenantBranding() {
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(agencyOps);
   const [saving, setSaving] = useState(false);
+  const [presetsFieldPresent, setPresetsFieldPresent] = useState(false);
   const demoPresetsRestoreAttempted = useRef(false);
 
   useEffect(() => {
@@ -62,6 +73,9 @@ export function useTenantBranding() {
         );
         setBranding(merged);
         setPresets(listBrandingPresets(data?.brandingPresets as Record<string, unknown> | undefined));
+        setPresetsFieldPresent(
+          Boolean(data && typeof data.brandingPresets === 'object' && data.brandingPresets !== null),
+        );
         setActivePresetId(
           typeof data?.activeBrandingPresetId === 'string' ? data.activeBrandingPresetId : null,
         );
@@ -75,7 +89,7 @@ export function useTenantBranding() {
 
   useEffect(() => {
     if (loading || !isAgencyOpsStarter(product.id)) return;
-    if (presets.length > 0 || demoPresetsRestoreAttempted.current) return;
+    if (presetsFieldPresent || demoPresetsRestoreAttempted.current) return;
     demoPresetsRestoreAttempted.current = true;
 
     void (async () => {
@@ -90,7 +104,7 @@ export function useTenantBranding() {
         setSaving(false);
       }
     })();
-  }, [loading, presets.length, product.id]);
+  }, [loading, presetsFieldPresent, product.id]);
 
   const saveBranding = async (next: TenantBrandingConfig, presetId?: string | null) => {
     setSaving(true);
@@ -141,14 +155,19 @@ export function useTenantBranding() {
   const deletePreset = async (presetId: string) => {
     setSaving(true);
     try {
-      const nextPresets = presets.filter((p) => p.id !== presetId);
+      const ref = tenantConfigRef();
       const patch: Record<string, unknown> = {
-        brandingPresets: brandingPresetsToMap(nextPresets),
+        [`brandingPresets.${presetId}`]: deleteField(),
       };
       if (activePresetId === presetId) {
-        patch.activeBrandingPresetId = null;
+        patch.activeBrandingPresetId = deleteField();
       }
-      await writeTenantConfig(patch);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        await updateDoc(ref, patch);
+      } else {
+        await setDoc(ref, { brandingPresets: {} });
+      }
     } finally {
       setSaving(false);
     }

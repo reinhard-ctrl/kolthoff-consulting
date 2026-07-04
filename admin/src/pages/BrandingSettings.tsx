@@ -120,14 +120,19 @@ export default function BrandingSettings() {
     if (!preset) return;
     if (!window.confirm(`Delete saved profile “${preset.name}”?`)) return;
     setMessage('');
-    await deletePreset(presetId);
-    if (editorPresetId === presetId) {
-      setEditorPresetId(null);
-      setDraft(null);
-      setProfileName(branding.companyName);
+    try {
+      await deletePreset(presetId);
+      if (editorPresetId === presetId) {
+        setEditorPresetId(null);
+        setDraft(null);
+        setProfileName(branding.companyName);
+      }
+      setMessageOk(true);
+      setMessage(`Deleted profile “${preset.name}”.`);
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Could not delete profile. Try again.');
     }
-    setMessageOk(true);
-    setMessage(`Deleted profile “${preset.name}”.`);
   };
 
   const handleLogoUpload = async (file: File) => {
