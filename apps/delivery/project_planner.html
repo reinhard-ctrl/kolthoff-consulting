@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase Module Initialization -->
-      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v3"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v3"></script>
+      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v5"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v5"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
       }
     }
   </script>
-  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v3"></script>
+  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v5"></script>
   
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -3985,6 +3985,35 @@
         </div>
       );
 
+      if (!isAuthed) {
+        return (
+          <div className={STARTER_UI ? "starter-app-root starter-loading-screen font-sans h-full min-h-screen flex flex-col items-center justify-center px-6 bg-slate-100 text-slate-500" : "font-sans h-full min-h-screen flex flex-col items-center justify-center px-6 text-slate-300 bg-brandNavy-955"}>
+            <div className={`flex items-center gap-3 ${STARTER_UI ? 'text-sm font-medium' : ''}`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${STARTER_UI ? 'starter-loading-dot' : 'bg-brandTeal-500'}`} />
+              {STARTER_UI ? 'Connecting…' : 'Connecting to cloud…'}
+            </div>
+            {authErrorDetails && (() => {
+              const help = window.FirebaseErrors?.getFirebaseConnectionHelp(authErrorDetails) || {
+                title: 'Firebase Connection Error',
+                summary: authErrorDetails,
+                steps: [],
+              };
+              return (
+                <div className={`text-xs font-medium p-4 rounded mt-4 max-w-lg text-left leading-relaxed ${STARTER_UI ? 'text-amber-700 bg-amber-50 border border-amber-200' : 'text-amber-400 bg-amber-500/10'}`}>
+                  <strong className={`block font-bold mb-1 ${STARTER_UI ? 'text-amber-800' : 'text-amber-300'}`}>{help.title}</strong>
+                  <span className={`block ${STARTER_UI ? 'text-slate-600' : 'text-slate-300'}`}>{help.summary}</span>
+                  {help.steps.length > 0 && (
+                    <ul className={`mt-2 space-y-1 list-disc pl-4 ${STARTER_UI ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {help.steps.map((step, i) => <li key={i}>{step}</li>)}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        );
+      }
+
       return (
         <div className={STARTER_UI ? "font-sans h-full min-h-0 overflow-hidden text-slate-600 bg-slate-100 flex flex-col animate-fade-in starter-app-root" : "font-sans h-full min-h-0 overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans"}>
           <header className="planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0">
@@ -4277,18 +4306,24 @@
 
                   <section className="xl:col-span-9 planner-split-panel space-y-6 text-left">
 
-                    <div className="bg-brandNavy-900/30 border border-brandNavy-700/80 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm text-left">
-                      <div className="p-5 bg-brandNavy-950/80 border-b border-brandNavy-700/80 flex flex-col gap-4 text-left">
-                        <div className="flex justify-between items-center border-b border-brandNavy-700/50 pb-3 text-left">
-                          <div className="flex items-center gap-2 text-left font-sans font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-brandTeal-500 animate-pulse text-left"></span><span className="text-xs font-mono tracking-wider text-slate-300 uppercase font-semibold text-left font-sans">Select Services Included in SOW</span></div>
-                          <div className="flex gap-2 font-sans font-semibold"><button onClick={handleSelectAllPresets} className="px-3 py-1 text-[10px] font-bold rounded bg-brandTeal-500 text-white uppercase tracking-wider">Select All</button><button onClick={handleClearAllPresets} className="px-3 py-1 text-[10px] font-bold rounded bg-brandNavy-900 text-slate-400 border border-brandNavy-700 uppercase tracking-wider">Clear All</button></div>
+                    <div className={STARTER_UI ? "starter-sow-panel bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm text-left" : "bg-brandNavy-900/30 border border-brandNavy-700/80 rounded-xl overflow-hidden shadow-2xl backdrop-blur-sm text-left"}>
+                      <div className={STARTER_UI ? "starter-sow-panel-header p-5 bg-slate-50 border-b border-slate-200 flex flex-col gap-4 text-left" : "p-5 bg-brandNavy-950/80 border-b border-brandNavy-700/80 flex flex-col gap-4 text-left"}>
+                        <div className={`flex justify-between items-center pb-3 text-left ${STARTER_UI ? 'border-b border-slate-200' : 'border-b border-brandNavy-700/50'}`}>
+                          <div className="flex items-center gap-2 text-left font-sans font-semibold">
+                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${STARTER_UI ? 'starter-sow-pulse-dot' : 'bg-brandTeal-500'}`} />
+                            <span className={STARTER_UI ? "starter-sow-panel-title text-sm font-semibold text-slate-800" : "text-xs font-mono tracking-wider text-slate-300 uppercase font-semibold text-left font-sans"}>Select Services Included in SOW</span>
+                          </div>
+                          <div className="flex gap-2 font-sans font-semibold">
+                            <button onClick={handleSelectAllPresets} className={STARTER_UI ? "starter-sow-btn-primary px-3 py-1.5 text-xs font-semibold rounded-lg" : "px-3 py-1 text-[10px] font-bold rounded bg-brandTeal-500 text-white uppercase tracking-wider"}>Select All</button>
+                            <button onClick={handleClearAllPresets} className={STARTER_UI ? "starter-sow-btn-secondary px-3 py-1.5 text-xs font-semibold rounded-lg border" : "px-3 py-1 text-[10px] font-bold rounded bg-brandNavy-900 text-slate-400 border border-brandNavy-700 uppercase tracking-wider"}>Clear All</button>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 text-left font-sans">
+                        <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>
                           {[{ name: 'mod1', label: 'MOD 1 · Leak Scan' }, { name: 'mod2', label: 'MOD 2 · Playbooks' }, { name: 'mod3', label: 'MOD 3 · Workspace' }, { name: 'mod4', label: 'MOD 4 · Care Plan' }].map(preset => {
                             const isActive = activePresets.includes(preset.name);
                             return (
-                              <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={`px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
-                                {isActive ? <IconCheck className="w-3 h-3 text-white" /> : <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />}{preset.label}
+                              <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={STARTER_UI ? `starter-sow-preset px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 ${isActive ? 'starter-sow-preset-active' : 'starter-sow-preset-inactive'}` : `px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
+                                {isActive ? <IconCheck className={`w-3 h-3 ${STARTER_UI ? 'text-white' : 'text-white'}`} /> : <span className={`w-1.5 h-1.5 rounded-full ${STARTER_UI ? 'bg-slate-400' : 'bg-slate-500'}`} />}{preset.label}
                               </button>
                             );
                           })}
@@ -4297,17 +4332,17 @@
                       <div className="overflow-x-auto text-left font-sans font-semibold">
                         <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1050px] font-sans">
                           <thead>
-                            <tr className="bg-brandNavy-950/80 text-[10px] uppercase font-mono tracking-wider text-slate-400 border-b border-brandNavy-700 font-sans font-bold">
+                            <tr className={STARTER_UI ? "starter-sow-table-head bg-slate-100 text-xs font-semibold text-slate-600 border-b border-slate-200" : "bg-brandNavy-950/80 text-[10px] uppercase font-mono tracking-wider text-slate-400 border-b border-brandNavy-700 font-sans font-bold"}>
                               <th className="py-4 px-2 text-center w-[4%]" scope="col" aria-label="Reorder">Order</th>
                               <th className="py-4 px-5 text-center w-[6%]" scope="col">Incl</th>
                               <th className="py-3 px-3 w-[15%] text-left font-sans" scope="col">Category</th>
                               <th className="py-3 px-3 w-[34%] text-left font-sans font-bold" scope="col">Deliverable Details</th>
                               <th className="py-4 px-4 text-center w-[8%]" scope="col">Hours</th>
                               <th className="py-4 px-4 text-center w-[14%] text-left" scope="col">Expert · Rate</th>
-                              <th className="py-4 px-5 text-right w-[12%] font-bold text-brandTeal-400 font-sans" scope="col">Base Price</th>
+                              <th className={`py-4 px-5 text-right w-[12%] font-bold font-sans ${STARTER_UI ? 'text-indigo-600' : 'text-brandTeal-400'}`} scope="col">Base Price</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-brandNavy-700/50 font-medium font-sans">
+                          <tbody className={`font-medium font-sans ${STARTER_UI ? 'starter-sow-table-body divide-y divide-slate-200' : 'divide-y divide-brandNavy-700/50'}`}>
                             {tasks.map((task, taskIndex) => {
                               const rate = getRateForTier(task.tier);
                               const isDragging = dragTaskId === task.id;
@@ -4316,7 +4351,7 @@
                                   key={task.id}
                                   onDragOver={handleTaskDragOver}
                                   onDrop={() => handleTaskDrop(task.id)}
-                                  className={`transition-all duration-150 ${task.selected ? 'bg-brandNavy-900/40' : 'bg-brandNavy-955/10 opacity-30 font-medium'} ${isDragging ? 'opacity-50 ring-1 ring-brandTeal-500/40' : ''}`}
+                                  className={`transition-all duration-150 ${task.selected ? (STARTER_UI ? 'starter-sow-row-selected bg-white' : 'bg-brandNavy-900/40') : (STARTER_UI ? 'starter-sow-row-muted bg-slate-50/80' : 'bg-brandNavy-955/10 opacity-30 font-medium')} ${isDragging ? (STARTER_UI ? 'opacity-70 ring-1 ring-indigo-300' : 'opacity-50 ring-1 ring-brandTeal-500/40') : ''}`}
                                 >
                                   <td className="py-4 px-2 text-center align-middle">
                                     <div className="flex flex-col items-center gap-1">
@@ -4337,9 +4372,9 @@
                                     </div>
                                   </td>
                                   <td className="py-4 px-5 text-center"><button type="button" onClick={() => toggleTask(task.id)} className="p-1 rounded text-slate-400 hover:text-brandTeal-500 inline-flex font-sans" aria-pressed={task.selected}>{task.selected ? <IconCheckSquare /> : <IconSquare />}</button>{task.id.startsWith('custom-') && <button type="button" onClick={() => removeTask(task.id)} className="p-1 text-rose-500 hover:text-rose-400 rounded" aria-label="Remove task"><IconTrash className="w-3.5 h-3.5" /></button>}</td>
-                                  <td className="py-2 px-3 text-left align-top"><span className="text-[9px] font-mono bg-brandNavy-950 px-2 py-1 rounded border border-brandNavy-700/80 text-brandTeal-400 font-bold block text-center leading-snug uppercase">{task.category.replace('MOD ', 'M').replace(' - ', ' · ')}</span></td>
+                                  <td className="py-2 px-3 text-left align-top"><span className={STARTER_UI ? "starter-sow-category-badge text-[10px] font-semibold px-2 py-1 rounded-md border block text-center leading-snug" : "text-[9px] font-mono bg-brandNavy-950 px-2 py-1 rounded border border-brandNavy-700/80 text-brandTeal-400 font-bold block text-center leading-snug uppercase"}>{task.category.replace('MOD ', 'M').replace(' - ', ' · ')}</span></td>
                                   <td className="py-2 px-3 text-left align-top space-y-1">
-                                    <span className="text-[8px] font-mono uppercase text-slate-500 tracking-wider">Title</span>
+                                    <span className={STARTER_UI ? "starter-sow-field-label text-[10px] font-medium text-slate-500" : "text-[8px] font-mono uppercase text-slate-500 tracking-wider"}>Title</span>
                                     <textarea
                                       rows={1}
                                       ref={(el) => { if (el) autoResizeField(el, 56); }}
@@ -4348,10 +4383,10 @@
                                       onInput={(e) => autoResizeField(e.target, 56)}
                                       onFocus={(e) => autoResizeField(e.target, 96)}
                                       disabled={!task.selected}
-                                      className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-[12px] font-semibold text-slate-100 leading-snug focus:outline-none focus:border-brandTeal-500 disabled:opacity-50 resize-none overflow-hidden min-h-[1.4rem] max-h-[3.5rem]"
+                                      className={STARTER_UI ? "starter-sow-input w-full border border-slate-200 rounded-md px-2 py-1 text-[13px] font-medium text-slate-800 leading-snug focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 resize-none overflow-hidden min-h-[1.4rem] max-h-[3.5rem]" : "w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-[12px] font-semibold text-slate-100 leading-snug focus:outline-none focus:border-brandTeal-500 disabled:opacity-50 resize-none overflow-hidden min-h-[1.4rem] max-h-[3.5rem]"}
                                       aria-label={`Deliverable name for ${task.category}`}
                                     />
-                                    <span className="text-[8px] font-mono uppercase text-slate-500 tracking-wider">Description</span>
+                                    <span className={STARTER_UI ? "starter-sow-field-label text-[10px] font-medium text-slate-500" : "text-[8px] font-mono uppercase text-slate-500 tracking-wider"}>Description</span>
                                     <textarea
                                       rows={1}
                                       ref={(el) => { if (el) autoResizeField(el, 96); }}
@@ -4360,22 +4395,22 @@
                                       onInput={(e) => autoResizeField(e.target, 96)}
                                       onFocus={(e) => autoResizeField(e.target, 120)}
                                       disabled={!task.selected}
-                                      className="w-full bg-brandNavy-950/80 border border-brandNavy-800 rounded px-2 py-1 text-[11px] text-slate-400 leading-snug focus:outline-none focus:border-brandTeal-500/70 disabled:opacity-50 resize-none overflow-hidden min-h-[1.4rem] max-h-[6rem]"
+                                      className={STARTER_UI ? "starter-sow-input w-full border border-slate-200 rounded-md px-2 py-1 text-[12px] text-slate-600 leading-snug focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 resize-none overflow-hidden min-h-[1.4rem] max-h-[6rem]" : "w-full bg-brandNavy-950/80 border border-brandNavy-800 rounded px-2 py-1 text-[11px] text-slate-400 leading-snug focus:outline-none focus:border-brandTeal-500/70 disabled:opacity-50 resize-none overflow-hidden min-h-[1.4rem] max-h-[6rem]"}
                                       aria-label={`Deliverable description for ${task.deliverable}`}
                                     />
                                     {task.highRisk && <span className="text-rose-500 text-[9px] font-sans" title="High Risk Custom Build">⚠ High Risk Build</span>}
                                   </td>
                                   <td className="py-4 px-4 text-center align-top">
-                                    <input type="number" min="0" step="1" value={task.estHours} onChange={(e) => updateTaskHours(task.id, e.target.value)} onBlur={() => validateTaskHoursOnBlur(task.id, task.selected)} className="w-16 bg-brandNavy-950 border border-brandNavy-700 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-slate-200 focus:outline-none focus:border-brandTeal-500" disabled={!task.selected} />
+                                    <input type="number" min="0" step="1" value={task.estHours} onChange={(e) => updateTaskHours(task.id, e.target.value)} onBlur={() => validateTaskHoursOnBlur(task.id, task.selected)} className={STARTER_UI ? "starter-sow-input w-16 border border-slate-200 rounded-md px-1.5 py-1 text-xs text-center font-mono font-semibold text-slate-800 focus:outline-none focus:border-indigo-400 disabled:bg-slate-100 disabled:text-slate-400" : "w-16 bg-brandNavy-950 border border-brandNavy-700 rounded px-1.5 py-1 text-xs text-center font-mono font-bold text-slate-200 focus:outline-none focus:border-brandTeal-500"} disabled={!task.selected} />
                                     {task.selected && frictionBuffer > 0 && (
-                                      <div className="text-[9px] font-mono text-slate-500 mt-1">{task.estHours}→{Math.round(task.estHours * (1 + frictionBuffer / 100))}h</div>
+                                      <div className={`text-[10px] font-mono mt-1 ${STARTER_UI ? 'text-slate-500' : 'text-slate-500'}`}>{task.estHours}→{Math.round(task.estHours * (1 + frictionBuffer / 100))}h</div>
                                     )}
                                   </td>
                                   <td className="py-4 px-4 text-center align-top">
-                                    <select value={task.tier} onChange={(e) => updateTaskTier(task.id, e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded py-1 px-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-brandTeal-500 mb-1" disabled={!task.selected} title={`${TIER_LABELS[task.tier] || task.tier} · ₱${rate}/hr`}><option value="associate">Specialist</option><option value="senior">Architect</option><option value="principal">Strategist</option><option value="partner">IT Partner</option></select>
-                                    <div className="font-mono text-[10px] text-slate-400 font-bold">₱{rate}/hr</div>
+                                    <select value={task.tier} onChange={(e) => updateTaskTier(task.id, e.target.value)} className={STARTER_UI ? "starter-sow-input w-full border border-slate-200 rounded-md py-1 px-1.5 text-[11px] text-slate-700 focus:outline-none focus:border-indigo-400 mb-1 disabled:bg-slate-100 disabled:text-slate-400" : "w-full bg-brandNavy-955 border border-brandNavy-700 rounded py-1 px-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-brandTeal-500 mb-1"} disabled={!task.selected} title={`${TIER_LABELS[task.tier] || task.tier} · ₱${rate}/hr`}><option value="associate">Specialist</option><option value="senior">Architect</option><option value="principal">Strategist</option><option value="partner">IT Partner</option></select>
+                                    <div className={`font-mono text-[10px] font-semibold ${STARTER_UI ? 'text-slate-500' : 'text-slate-400 font-bold'}`}>₱{rate}/hr</div>
                                   </td>
-                                  <td className="py-4 px-5 text-right font-mono text-xs text-slate-100 whitespace-nowrap align-top">{formatCurrency(task.estHours * rate)}</td>
+                                  <td className={`py-4 px-5 text-right font-mono text-xs whitespace-nowrap align-top ${STARTER_UI ? 'text-slate-800 font-semibold' : 'text-slate-100'}`}>{formatCurrency(task.estHours * rate)}</td>
                                 </tr>
                               );
                             })}

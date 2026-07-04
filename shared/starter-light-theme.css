@@ -32,6 +32,23 @@ html.agency-starter-light body {
   color: var(--starter-text-secondary) !important;
 }
 
+html.agency-starter-light.kolthoff-auth-pending::after {
+  background: var(--starter-bg) !important;
+  color: var(--starter-text-muted) !important;
+  font-family: Inter, system-ui, sans-serif !important;
+}
+
+html.agency-starter-light .starter-loading-screen {
+  background: var(--starter-bg) !important;
+  background-image: none !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-loading-dot {
+  background-color: var(--brand-primary) !important;
+  box-shadow: 0 0 8px var(--brand-primary-ring);
+}
+
 html.agency-starter-light .starter-app-root {
   background: var(--starter-bg) !important;
 }
@@ -716,4 +733,151 @@ html.agency-starter-light .starter-kanban-col button.text-\[9px\] {
   letter-spacing: 0 !important;
   font-weight: 600 !important;
   padding: 0.5rem !important;
+}
+
+/* Planner — Select Services Included in SOW */
+html.agency-starter-light .starter-sow-panel {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
+  box-shadow: var(--starter-shadow-sm) !important;
+}
+
+html.agency-starter-light .starter-sow-panel-header {
+  background: var(--starter-surface-muted) !important;
+  border-color: var(--starter-border) !important;
+}
+
+html.agency-starter-light .starter-sow-panel-title {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .starter-sow-pulse-dot {
+  background-color: var(--brand-primary) !important;
+  box-shadow: 0 0 6px var(--brand-primary-ring);
+}
+
+html.agency-starter-light .starter-sow-btn-primary {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  box-shadow: var(--starter-shadow-xs);
+}
+
+html.agency-starter-light .starter-sow-btn-primary:hover {
+  background: var(--brand-primary-hover) !important;
+}
+
+html.agency-starter-light .starter-sow-btn-secondary {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border-strong) !important;
+  color: var(--starter-text-secondary) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+html.agency-starter-light .starter-sow-btn-secondary:hover {
+  background: var(--starter-surface-subtle) !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .starter-sow-preset-active {
+  background: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+  box-shadow: var(--starter-shadow-xs);
+}
+
+html.agency-starter-light .starter-sow-preset-inactive {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border-strong) !important;
+  color: var(--starter-text-secondary) !important;
+}
+
+html.agency-starter-light .starter-sow-preset-inactive:hover {
+  background: var(--starter-surface-subtle) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, var(--starter-border)) !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .starter-sow-table-head th {
+  color: var(--starter-text-secondary) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+html.agency-starter-light .starter-sow-row-selected {
+  background: var(--starter-surface) !important;
+}
+
+html.agency-starter-light .starter-sow-row-muted {
+  background: var(--starter-surface-muted) !important;
+  opacity: 1 !important;
+}
+
+html.agency-starter-light .starter-sow-row-muted .starter-sow-input:disabled,
+html.agency-starter-light .starter-sow-row-muted select:disabled,
+html.agency-starter-light .starter-sow-row-muted input:disabled {
+  opacity: 1 !important;
+  color: var(--starter-text-faint) !important;
+  background: var(--starter-surface-subtle) !important;
+}
+
+html.agency-starter-light .starter-sow-row-selected .starter-sow-input,
+html.agency-starter-light .starter-sow-row-selected select,
+html.agency-starter-light .starter-sow-row-selected input {
+  background: var(--starter-surface) !important;
+  color: var(--starter-text) !important;
+  border-color: var(--starter-border) !important;
+}
+
+html.agency-starter-light .starter-sow-category-badge {
+  background: var(--brand-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 20%, var(--starter-border)) !important;
+  color: var(--brand-primary) !important;
+  text-transform: none !important;
+  font-family: inherit !important;
+}
+
+html.agency-starter-light .starter-sow-field-label {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: inherit !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-sow-input {
+  background: var(--starter-surface) !important;
+  color: var(--starter-text) !important;
+  border-color: var(--starter-border) !important;
+}
+
+html.agency-starter-light .starter-sow-input:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 2px var(--brand-primary-ring) !important;
+}
+
+html.agency-starter-light .starter-sow-table-body .text-slate-800 {
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .starter-sow-panel .cursor-grab {
+  color: var(--starter-text-faint) !important;
+}
+
+html.agency-starter-light .starter-sow-panel .cursor-grab:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .starter-sow-panel button.text-slate-400 {
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-sow-panel button.text-slate-400:hover {
+  color: var(--brand-primary) !important;
 }
