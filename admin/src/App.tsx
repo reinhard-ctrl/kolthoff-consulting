@@ -168,7 +168,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Admin passcode"
           className="w-full p-3 rounded bg-brandNavy-800 border border-brandNavy-700 mb-4" />
         {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-        <button disabled={loading} className="w-full py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold">
+        <button disabled={loading} className="w-full py-2 brand-primary-bg rounded font-bold text-white">
           {loading ? 'Verifying...' : 'Enter Console'}
         </button>
       </form>

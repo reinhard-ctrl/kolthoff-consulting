@@ -1,6 +1,7 @@
 import { useProduct } from '../lib/product-context';
 import { useTenantBranding } from '../hooks/useTenantBranding';
 import { splitCompanyDisplay } from '../lib/tenant-branding';
+import { isLightProductTheme } from '../lib/product-config';
 
 type BrandHeaderProps = {
   subtitle?: string;
@@ -15,6 +16,7 @@ export default function BrandHeader({
 }: BrandHeaderProps) {
   const product = useProduct();
   const { branding } = useTenantBranding();
+  const light = isLightProductTheme(product.id);
   const displaySubtitle = subtitle ?? branding.tagline ?? product.branding.subtitle;
   const logoSize = compact ? 'w-8 h-8' : 'w-10 h-10';
   const display = splitCompanyDisplay(branding.companyName);
@@ -38,7 +40,7 @@ export default function BrandHeader({
         </div>
       )}
       <div className="text-left font-bold min-w-0">
-        <span className={`font-extrabold tracking-wider uppercase block text-white leading-none truncate ${compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
+        <span className={`font-extrabold tracking-wider uppercase block leading-none truncate ${light ? 'text-slate-900' : 'text-white'} ${compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
           {display.line1}
           {display.line2 ? (
             <>
@@ -54,7 +56,7 @@ export default function BrandHeader({
           {displaySubtitle}
         </span>
         {product.isDemo && (
-          <span className="text-[7px] text-slate-500 font-mono tracking-widest uppercase block mt-0.5 font-bold">
+          <span className={`text-[7px] font-mono tracking-widest uppercase block mt-0.5 font-bold ${light ? 'text-slate-400' : 'text-slate-500'}`}>
             Demo workspace
           </span>
         )}

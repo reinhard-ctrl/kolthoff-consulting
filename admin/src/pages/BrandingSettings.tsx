@@ -146,7 +146,7 @@ export default function BrandingSettings() {
         </div>
 
         <div
-          className="rounded-xl border p-5"
+          className="brand-preview-panel rounded-xl border p-5"
           style={{ borderColor: active.primaryColor, backgroundColor: `${active.primaryColor}12` }}
         >
           <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-3 font-mono">Preview</p>
@@ -162,7 +162,7 @@ export default function BrandingSettings() {
               </div>
             )}
             <div>
-              <div className="font-extrabold uppercase tracking-wide text-white text-sm">
+              <div className="font-extrabold uppercase tracking-wide text-slate-900 text-sm">
                 {display.line1}
                 {display.line2 ? (
                   <span style={{ color: active.primaryColor }}> {display.line2}</span>
@@ -182,7 +182,7 @@ export default function BrandingSettings() {
             type="button"
             disabled={saving}
             onClick={handleSave}
-            className="px-5 py-2.5 rounded font-bold text-sm text-brandNavy-955 disabled:opacity-50 brand-primary-bg"
+            className="px-5 py-2.5 rounded font-bold text-sm text-white disabled:opacity-50 brand-primary-bg"
           >
             {saving ? 'Saving…' : 'Save branding'}
           </button>

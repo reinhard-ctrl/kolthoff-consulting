@@ -1,0 +1,189 @@
+/**
+ * Light workspace theme for Agency Ops Starter only.
+ * Scoped to html.agency-ops-light — Kolthoff OS (/admin) is unchanged.
+ */
+html.agency-ops-light {
+  color-scheme: light;
+  --brand-primary: #6366f1;
+  --brand-primary-soft: rgba(99, 102, 241, 0.12);
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-subtle: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+}
+
+html.agency-ops-light body {
+  background-color: var(--surface-muted) !important;
+  color: var(--text) !important;
+}
+
+/* Surfaces */
+html.agency-ops-light .bg-brandNavy-955,
+html.agency-ops-light .bg-brandNavy-950 {
+  background-color: var(--surface-muted) !important;
+}
+
+html.agency-ops-light .bg-brandNavy-900,
+html.agency-ops-light .bg-brandNavy-900\/50,
+html.agency-ops-light .bg-brandNavy-900\/60,
+html.agency-ops-light .bg-brandNavy-900\/80,
+html.agency-ops-light .bg-brandNavy-900\/40 {
+  background-color: var(--surface) !important;
+}
+
+html.agency-ops-light .bg-brandNavy-800,
+html.agency-ops-light .bg-brandNavy-800\/40,
+html.agency-ops-light .bg-brandNavy-800\/50 {
+  background-color: var(--surface-subtle) !important;
+}
+
+html.agency-ops-light .glass-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+html.agency-ops-light .border-brandNavy-700,
+html.agency-ops-light .border-brandNavy-700\/40,
+html.agency-ops-light .border-brandNavy-700\/50,
+html.agency-ops-light .border-brandNavy-700\/60,
+html.agency-ops-light .border-brandNavy-800,
+html.agency-ops-light .border-brandNavy-800\/80 {
+  border-color: var(--border) !important;
+}
+
+/* Typography */
+html.agency-ops-light .text-white {
+  color: var(--text) !important;
+}
+
+html.agency-ops-light .text-slate-200,
+html.agency-ops-light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.agency-ops-light .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-light .text-slate-500,
+html.agency-ops-light .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Primary accent — tenant brand color, not Kolthoff teal */
+html.agency-ops-light .brand-primary-text {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .bg-brandTeal-500,
+html.agency-ops-light .brand-primary-bg {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+html.agency-ops-light .text-brandTeal-400,
+html.agency-ops-light .text-brandTeal-300,
+html.agency-ops-light .text-brandTeal-200 {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .hover\:border-brandTeal-500\/50:hover,
+html.agency-ops-light .hover\:border-brandTeal-500\/40:hover,
+html.agency-ops-light .hover\:border-brandTeal-500\/30:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 45%, transparent) !important;
+}
+
+html.agency-ops-light .hover\:text-brandTeal-400:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-light .border-brandTeal-500\/50,
+html.agency-ops-light .border-brandTeal-500\/40,
+html.agency-ops-light .border-brandTeal-500\/30 {
+  border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent) !important;
+}
+
+html.agency-ops-light .bg-brandTeal-500\/15,
+html.agency-ops-light .bg-brandTeal-500\/20,
+html.agency-ops-light .bg-brandTeal-500\/10 {
+  background-color: var(--brand-primary-soft) !important;
+}
+
+html.agency-ops-light .text-brandTeal-400.hover\:underline,
+html.agency-ops-light a.text-brandTeal-400 {
+  color: var(--brand-primary) !important;
+}
+
+/* Form controls */
+html.agency-ops-light input,
+html.agency-ops-light select,
+html.agency-ops-light textarea {
+  color: var(--text);
+}
+
+html.agency-ops-light input::placeholder,
+html.agency-ops-light textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Sidebar */
+html.agency-ops-light .sidebar-nav-btn-primary {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+html.agency-ops-light .sidebar-nav-btn-secondary {
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-light .sidebar-nav-btn-secondary:hover {
+  color: var(--brand-primary) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent) !important;
+}
+
+html.agency-ops-light .sidebar-drop-zone-active {
+  background-color: color-mix(in srgb, var(--brand-primary) 40%, transparent) !important;
+}
+
+html.agency-ops-light .sidebar-group-drop-before {
+  box-shadow: inset 0 2px 0 0 color-mix(in srgb, var(--brand-primary) 55%, transparent);
+}
+
+html.agency-ops-light .sidebar-group-drop-after {
+  box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--brand-primary) 55%, transparent);
+}
+
+html.agency-ops-light .sidebar-nav-external-btn:hover {
+  background-color: var(--surface-subtle) !important;
+  color: var(--brand-primary) !important;
+}
+
+/* Tables (Collections) */
+html.agency-ops-light .divide-brandNavy-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+html.agency-ops-light thead.bg-brandNavy-950 {
+  background-color: var(--surface-subtle) !important;
+}
+
+/* Login button text on primary */
+html.agency-ops-light button.bg-brandTeal-500,
+html.agency-ops-light button.brand-primary-bg {
+  color: #ffffff !important;
+}
+
+html.agency-ops-light .text-brandNavy-955 {
+  color: #ffffff !important;
+}
+
+/* Primary buttons with explicit white text */
+html.agency-ops-light button.brand-primary-bg,
+html.agency-ops-light .brand-primary-bg.text-white {
+  color: #ffffff !important;
+}

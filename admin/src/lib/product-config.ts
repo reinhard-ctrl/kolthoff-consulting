@@ -13,11 +13,15 @@ export interface ProductBranding {
   accentColor: 'brandTeal' | 'brandAmber' | 'brandSky';
 }
 
+export type ProductTheme = 'light' | 'dark';
+
 export interface ProductConfig {
   id: ProductId;
   /** Firestore tenant for admin data */
   tenantId: string;
   branding: ProductBranding;
+  /** Shell color scheme */
+  theme: ProductTheme;
   /** Browser router basename, e.g. /admin or /agency-ops */
   basePath: string;
   /** Sidebar navigation groups for this product */
@@ -74,6 +78,7 @@ const KOLTHOFF_OS: ProductConfig = {
   navGroups: DEFAULT_NAV_GROUPS,
   navStorageKey: 'kolthoff-admin-nav-preferences',
   isDemo: false,
+  theme: 'dark',
   embedParams: {},
 };
 
@@ -90,6 +95,7 @@ const AGENCY_OPS_STARTER: ProductConfig = {
   navGroups: AGENCY_OPS_STARTER_NAV,
   navStorageKey: 'agency-ops-starter-nav-preferences',
   isDemo: true,
+  theme: 'light',
   demoPasscodeHint: 'Demo passcode: demostart2026',
   embedParams: {
     product: 'agency-ops-starter',
@@ -120,4 +126,8 @@ export function getAdminTenantId(productId?: ProductId): string {
 
 export function isAgencyOpsStarter(productId?: ProductId): boolean {
   return getProductConfig(productId).id === 'agency-ops-starter';
+}
+
+export function isLightProductTheme(productId?: ProductId): boolean {
+  return getProductConfig(productId).theme === 'light';
 }

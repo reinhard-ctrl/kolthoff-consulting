@@ -3,7 +3,7 @@ import { getNavItem } from '../lib/navPreferences';
 import { useProduct } from '../lib/product-context';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250704-brand-v1';
+const EMBED_CACHE_VERSION = '20250704-light-v1';
 
 function buildEmbedSrc(href: string, embedParams: Record<string, string>): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
@@ -36,7 +36,7 @@ export default function EmbedApp({ appId }: { appId: string }) {
     <iframe
       title={item.label}
       src={src}
-      className="w-full h-full border-0 bg-brandNavy-950 block"
+      className={`w-full h-full border-0 block ${product.theme === 'light' ? 'bg-white' : 'bg-brandNavy-950'}`}
     />
   );
 }
