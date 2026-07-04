@@ -2,10 +2,13 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PRODUCTS,
+  AGENCY_MOD_LABELS,
   getProductId,
   getTenantId,
   getProductConfig,
   isStarterMode,
+  getModLabels,
+  getModLabel,
   getPlannerTabLabels,
 } from '../shared/product-config.js';
 
@@ -30,6 +33,17 @@ describe('product-config', () => {
     assert.equal(cfg.moduleLabels.invoicing, 'Invoicing');
     assert.equal(cfg.plannerSubtitle, 'Quotes');
     assert.equal(cfg.crmBadge, 'Sales');
+  });
+
+  it('agency-ops-starter uses agency-friendly MOD phase labels', () => {
+    assert.equal(AGENCY_MOD_LABELS.mod1.chip, 'Discovery');
+    assert.equal(AGENCY_MOD_LABELS.mod2.title, 'Process Design');
+    assert.equal(AGENCY_MOD_LABELS.mod3.chip, 'Implementation');
+    assert.equal(AGENCY_MOD_LABELS.mod4.title, 'Ongoing Support');
+    assert.equal(getModLabel('mod1', 'chip'), 'MOD 1 · Leak Scan');
+    globalThis.__PRODUCT_ID__ = 'agency-ops-starter';
+    assert.equal(getModLabel('mod2', 'chip'), 'Process Design');
+    delete globalThis.__PRODUCT_ID__;
   });
 
   it('planner tab labels rename sandbox to Estimate in starter mode', () => {

@@ -881,3 +881,17 @@ html.agency-starter-light .starter-sow-panel button.text-slate-400 {
 html.agency-starter-light .starter-sow-panel button.text-slate-400:hover {
   color: var(--brand-primary) !important;
 }
+
+html.agency-starter-light .starter-mod-badge {
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  padding: 0.125rem 0.5rem !important;
+}
+
+html.agency-starter-light .starter-mod-badge.bg-brandTeal-500\/15 {
+  background: var(--brand-primary-soft) !important;
+  color: var(--brand-primary) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--starter-border)) !important;
+}

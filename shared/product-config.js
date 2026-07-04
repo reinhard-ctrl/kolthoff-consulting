@@ -2,6 +2,71 @@
  * Runtime product + tenant resolution for legacy HTML apps and embeds.
  * Admin React shell passes ?product= & ?tenant= on iframe src URLs.
  */
+
+/** Default Kolthoff OS service phase labels (display only; task categories unchanged). */
+export const KOLTHOFF_MOD_LABELS = {
+  mod1: {
+    chip: 'MOD 1 · Leak Scan',
+    title: 'Business Leak Scan',
+    short: 'Leak Scan',
+    phase: 'Phase 1: Business Leak Scan',
+    description: 'Find where time and money leak before you spend on tools or training.',
+  },
+  mod2: {
+    chip: 'MOD 2 · Playbooks',
+    title: 'How Your Business Runs',
+    short: 'Playbooks',
+    phase: 'Phase 2: How Your Business Runs',
+    description: 'Plain playbooks and charts so everyone knows the steps and who signs off.',
+  },
+  mod3: {
+    chip: 'MOD 3 · Workspace',
+    title: 'Your Team Workspace',
+    short: 'Workspace',
+    phase: 'Phase 3: Your Team Workspace',
+    description: 'Launch a shared workspace, digitize forms, and train your team to use it daily.',
+  },
+  mod4: {
+    chip: 'MOD 4 · Care Plan',
+    title: 'Care Plan',
+    short: 'Care Plan',
+    phase: 'Phase 4: Care Plan',
+    description: 'Hosting, bi-weekly check-ins, and periodic health checks after go-live.',
+  },
+};
+
+/** Agency Ops Starter — generic agency-friendly phase names. */
+export const AGENCY_MOD_LABELS = {
+  mod1: {
+    chip: 'Discovery',
+    title: 'Discovery & Audit',
+    short: 'Discovery',
+    phase: 'Phase 1: Discovery & Audit',
+    description: 'Review current workflows and pinpoint gaps before you invest in tools or training.',
+  },
+  mod2: {
+    chip: 'Process Design',
+    title: 'Process Design',
+    short: 'Process Design',
+    phase: 'Phase 2: Process Design',
+    description: 'Document playbooks and roles so everyone knows the steps and who signs off.',
+  },
+  mod3: {
+    chip: 'Implementation',
+    title: 'Build & Implementation',
+    short: 'Implementation',
+    phase: 'Phase 3: Build & Implementation',
+    description: 'Launch shared tools, digitize forms, and train your team for daily use.',
+  },
+  mod4: {
+    chip: 'Ongoing Support',
+    title: 'Ongoing Support',
+    short: 'Support',
+    phase: 'Phase 4: Ongoing Support',
+    description: 'Hosting, regular check-ins, and periodic health checks after go-live.',
+  },
+};
+
 export const PRODUCTS = {
   'kolthoff-os': {
     id: 'kolthoff-os',
@@ -40,6 +105,7 @@ export const PRODUCTS = {
       quotes: 'Quotes',
       invoicing: 'Invoicing',
     },
+    modLabels: AGENCY_MOD_LABELS,
   },
 };
 
@@ -72,6 +138,15 @@ export function isStarterMode() {
   return Boolean(getProductConfig().starterMode);
 }
 
+export function getModLabels() {
+  const cfg = getProductConfig();
+  return cfg.modLabels || KOLTHOFF_MOD_LABELS;
+}
+
+export function getModLabel(modId, field = 'chip') {
+  return getModLabels()[modId]?.[field] ?? modId;
+}
+
 export function getPlannerTabLabels() {
   return {
     nda: 'NDA',
@@ -86,10 +161,14 @@ export function getPlannerTabLabels() {
 if (typeof window !== 'undefined') {
   window.ProductConfig = {
     PRODUCTS,
+    KOLTHOFF_MOD_LABELS,
+    AGENCY_MOD_LABELS,
     getProductId,
     getTenantId,
     getProductConfig,
     isStarterMode,
+    getModLabels,
+    getModLabel,
     getPlannerTabLabels,
   };
 }

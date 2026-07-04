@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase Module Initialization -->
-      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v5"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v5"></script>
+      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v6"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v6"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
       }
     }
   </script>
-  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v5"></script>
+  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v6"></script>
   
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -507,6 +507,29 @@
     if (STARTER_UI && PRODUCT.moduleLabels?.quotes) {
       document.title = `${PRODUCT.moduleLabels.quotes} | Cloud Synced`;
     }
+    const MOD_LABELS = window.ProductConfig?.getModLabels?.() || {};
+    const MOD_PRESET_IDS = ['mod1', 'mod2', 'mod3', 'mod4'];
+    const modLabel = (modId, field) => MOD_LABELS[modId]?.[field] ?? '';
+    const modChipLabel = (modId) => modLabel(modId, 'chip') || `MOD ${String(modId).replace('mod', '')}`;
+    const modTitleLabel = (modId) => modLabel(modId, 'title') || modChipLabel(modId);
+    const modShortLabel = (modId) => modLabel(modId, 'short') || modTitleLabel(modId);
+    const modPhaseLabel = (modNum) => {
+      const id = `mod${modNum}`;
+      return modLabel(id, 'phase') || `Phase ${modNum}: ${H?.getModDisplayName?.(modNum) ?? `Module ${modNum}`}`;
+    };
+    const categoryDisplayLabel = (category) => {
+      const preset = H?.presetForCategory?.(category);
+      if (preset && MOD_LABELS[preset]?.short) return MOD_LABELS[preset].short;
+      if (preset && MOD_LABELS[preset]?.title) return MOD_LABELS[preset].title;
+      return category.replace('MOD ', 'M').replace(' - ', ' · ');
+    };
+    const mod4RetainerLabel = () => (STARTER_UI ? modTitleLabel('mod4') : 'MOD 4 Care Plan');
+    const MOD_CARD_DEFS = [
+      { modId: 'mod1', key: 'MOD 1' },
+      { modId: 'mod2', key: 'MOD 2' },
+      { modId: 'mod3', key: 'MOD 3' },
+      { modId: 'mod4', key: 'MOD 4' },
+    ];
     const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || (() => {
       const isAgencyOps = PRODUCT.id === 'agency-ops-starter' || PRODUCT.starterMode;
       const companyName = [PRODUCT.branding?.name, PRODUCT.branding?.accent].filter(Boolean).join(' ').trim()
@@ -1836,7 +1859,7 @@
         }
 
         if (!isAddendumInvoice && invoiceMilestone === 'retainer_monthly' && retainerCostBase <= 0) {
-          showIssueToast('Select MOD 4 Care Plan retainer tasks in the Planner tab before issuing a monthly invoice.');
+          showIssueToast(`Select ${modTitleLabel('mod4')} retainer tasks in the Planner tab before issuing a monthly invoice.`);
           return;
         }
 
@@ -2169,7 +2192,7 @@
           else timelineStr = `${ceilingWeeks - 1} - ${ceilingWeeks} Weeks`;
         }
         const retainerTasks = selectedTasks.filter(t => t.isMonthlyRetainer);
-        return retainerTasks.length > 0 ? (projectTasks.length > 0 ? `${timelineStr} + Care Plan` : "Care Plan") : timelineStr;
+        return retainerTasks.length > 0 ? (projectTasks.length > 0 ? `${timelineStr} + ${modTitleLabel('mod4')}` : modTitleLabel('mod4')) : timelineStr;
       }, [tasks, scheduledTasks]);
 
       const displayTimeline = useMemo(() => overrideTimeline || calculatedTimeline, [overrideTimeline, calculatedTimeline]);
@@ -2503,11 +2526,11 @@
           if (billingMilestones[idx]) return `Stage-Gated Milestone Payment: ${billingMilestones[idx].label} under SOW-${quoteId}`;
         }
         if (invoiceMilestone === 'retainer') {
-          return `MOD 4 Care Plan — full ${subscriptionMonths}-month subscription${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total commitment)`;
+          return `${mod4RetainerLabel()} — full ${subscriptionMonths}-month subscription${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total commitment)`;
         }
         if (invoiceMilestone === 'retainer_monthly') {
           const periodLabel = window.InvoiceHelpers?.formatBillingPeriodLabel?.(retainerBillingPeriod) || 'monthly period';
-          return `MOD 4 Care Plan — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
+          return `${mod4RetainerLabel()} — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
       }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
@@ -2854,9 +2877,9 @@
           )}
 
           {retainerCostBase > 0 && (
-            <article className="p-4 bg-slate-50 rounded-xl border border-slate-200 print-pill mb-4 font-sans text-left font-sans font-semibold" aria-label="Module 4 Care Plan retainer">
+            <article className="p-4 bg-slate-50 rounded-xl border border-slate-200 print-pill mb-4 font-sans text-left font-sans font-semibold" aria-label={`${modTitleLabel('mod4')} retainer`}>
               <div className="flex justify-between items-center font-bold text-slate-800 text-sm">
-                <span>MOD 4 Care Plan ({subscriptionMonths} months)</span>
+                <span>{modTitleLabel('mod4')} ({subscriptionMonths} months)</span>
                 <span className="text-brandTeal-600 print-accent font-mono font-bold">{formatCurrency(retainerCostPart)} / Month{includeTax ? " (inc. VAT)" : ""}</span>
               </div>
               <p className="text-[11px] text-slate-500 mt-2 leading-relaxed text-left font-sans">
@@ -3168,14 +3191,14 @@
                             }
                           }} className="mt-0.5 accent-brandTeal-500 shrink-0" />
                           <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                            <span className="block font-sans">MOD 4 Care Plan — Monthly Invoice</span>
+                            <span className="block font-sans">{mod4RetainerLabel()} — Monthly Invoice</span>
                             <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostPart)} / month{includeTax ? ' inc. VAT' : ''}</span>
                           </span>
                         </label>
                         <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
                           <input type="radio" name="invoiceMilestone" value="retainer" checked={invoiceMilestone === 'retainer'} onChange={() => setInvoiceMilestone('retainer')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
                           <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                            <span className="block font-sans">MOD 4 Care Plan — Full Subscription ({subscriptionMonths} mo)</span>
+                            <span className="block font-sans">{mod4RetainerLabel()} — Full Subscription ({subscriptionMonths} mo)</span>
                             <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostTotalPart)} upfront</span>
                           </span>
                         </label>
@@ -3532,28 +3555,29 @@
             {renderEngagementPackageCallout()}
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans print-avoid-break" role="list" aria-label="Project modules">
-              {[
-                { id: 'MOD 1', title: 'Business Leak Scan', isActive: activeDiag, desc: 'Find where time and money leak before you spend on tools or training.' },
-                { id: 'MOD 2', title: 'How Your Business Runs', isActive: activeSOP, desc: 'Plain playbooks and charts so everyone knows the steps and who signs off.' },
-                { id: 'MOD 3', title: 'Your Team Workspace', isActive: activePMO, desc: 'Launch a shared workspace, digitize forms, and train your team to use it daily.' },
-                { id: 'MOD 4', title: 'Care Plan', isActive: activeGov, desc: 'Hosting, bi-weekly check-ins, and periodic health checks after go-live.' }
-              ].map(mod => (
-                <article key={mod.id} role="listitem" className={`print-module-card border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans ${mod.isActive ? 'border-brandTeal-500 bg-brandTeal-50/20 font-bold' : 'border-dashed bg-slate-50 opacity-50'}`}>
+              {MOD_CARD_DEFS.map(({ modId, key }) => {
+                const isActive = modId === 'mod1' ? activeDiag : modId === 'mod2' ? activeSOP : modId === 'mod3' ? activePMO : activeGov;
+                const badge = STARTER_UI ? modChipLabel(modId) : key;
+                const title = modTitleLabel(modId);
+                const desc = modLabel(modId, 'description') || '';
+                return (
+                <article key={key} role="listitem" className={`print-module-card border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans ${isActive ? 'border-brandTeal-500 bg-brandTeal-50/20 font-bold' : 'border-dashed bg-slate-50 opacity-50'}`}>
                   <div className="space-y-3 text-left font-sans">
-                    <div className="flex justify-between items-center text-left font-sans"><div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${mod.isActive ? 'bg-brandTeal-100 text-brandTeal-700' : 'bg-slate-200 text-slate-500'}`}>{mod.id}</div><span className="text-[8px] font-mono font-bold uppercase text-slate-400 text-left font-sans font-bold">{mod.isActive ? 'ACTIVE IN SOW' : 'ROADMAP'}</span></div>
-                    <h3 className="text-xs font-bold text-slate-900 text-left font-sans">{mod.title}</h3>
-                    <p className="text-[10px] font-semibold text-slate-500 text-left leading-normal font-sans">{mod.desc}</p>
+                    <div className="flex justify-between items-center text-left font-sans"><div className={`${STARTER_UI ? 'min-w-[4.5rem] px-2' : 'w-14'} h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${isActive ? 'bg-brandTeal-100 text-brandTeal-700' : 'bg-slate-200 text-slate-500'}`}>{badge}</div><span className="text-[8px] font-mono font-bold uppercase text-slate-400 text-left font-sans font-bold">{isActive ? 'ACTIVE IN SOW' : 'ROADMAP'}</span></div>
+                    <h3 className="text-xs font-bold text-slate-900 text-left font-sans">{title}</h3>
+                    <p className="text-[10px] font-semibold text-slate-500 text-left leading-normal font-sans">{desc}</p>
                     <ul className="text-[10px] space-y-1.5 pt-1 overflow-y-auto font-medium text-left font-sans font-semibold">
-                      {tasks.filter(t => t.category.startsWith(mod.id)).map(t => (
+                      {tasks.filter(t => t.category.startsWith(key)).map(t => (
                         <li key={t.id} className="flex items-start gap-2 text-left font-sans">
                           <ShieldIndicator active={t.selected} aria-hidden="true" />
-                          <span className={t.selected && mod.isActive ? 'text-slate-800 font-bold' : 'text-slate-400 font-medium font-sans'}>{getShortDeliverableName(t.deliverable)}</span>
+                          <span className={t.selected && isActive ? 'text-slate-800 font-bold' : 'text-slate-400 font-medium font-sans'}>{getShortDeliverableName(t.deliverable)}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
             <div className="mb-8 text-left font-sans"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans font-bold">3. What we need from you</h4><div className="text-xs bg-slate-50 p-5 rounded border border-slate-200 whitespace-pre-wrap font-semibold text-slate-800 text-left font-sans">{preDiagnosticList}</div></div>
             <div className="mb-8 text-left font-sans print-avoid-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
@@ -3598,7 +3622,7 @@
                     {['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].map((modPrefix) => {
                       const phaseTasks = scheduledTasks.filter(t => t.category.startsWith(modPrefix));
                       if (phaseTasks.length === 0) return null;
-                      const phaseName = modPrefix === 'MOD 1' ? 'Phase 1: Business Leak Scan' : modPrefix === 'MOD 2' ? 'Phase 2: How Your Business Runs' : modPrefix === 'MOD 3' ? 'Phase 3: Your Team Workspace' : 'Phase 4: Care Plan';
+                      const phaseName = modPhaseLabel(parseInt(modPrefix.replace('MOD ', ''), 10));
                       
                       const isSubsequentPhase = modPrefix === 'MOD 2' || modPrefix === 'MOD 3';
                       let previousPhaseTasks = [];
@@ -3638,7 +3662,7 @@
                                 {task.isRetainer ? (
                                   <div className="h-6 roadmap-gantt-bar" style={{ gridColumn: `${task.startWeek} / span ${maxWeek - task.startWeek + 1}` }} title="Continuous Care Plan">
                                     <div className="roadmap-gantt-bar-fill bg-indigo-50 border border-indigo-200 shadow-sm" aria-hidden="true" />
-                                    <span className="roadmap-gantt-bar-label text-indigo-700 font-bold font-mono text-[9px] uppercase tracking-wider">Continuous Care Plan</span>
+                                    <span className="roadmap-gantt-bar-label text-indigo-700 font-bold font-mono text-[9px] uppercase tracking-wider">{STARTER_UI ? modTitleLabel('mod4') : 'Continuous Care Plan'}</span>
                                   </div>
                                 ) : (
                                   <div className="h-6 roadmap-gantt-bar" style={{ gridColumnStart: task.startWeek, gridColumnEnd: task.endWeek + 1 }} title={`Wk ${task.startWeek} - ${task.endWeek}`}>
@@ -3670,8 +3694,8 @@
                 <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold">1. Purpose and Covered Modules</h4>
                 <p className="text-xs mb-2 leading-relaxed text-left font-sans">This SLA specifically covers the following active deliverables in this Statement of Work:</p>
                 <ul className="list-disc pl-5 text-xs space-y-1.5 text-slate-700 leading-relaxed text-left font-sans">
-                  {activePMO && <li><strong>MOD 3 (Your Team Workspace):</strong> Workspace hosting, digital approval forms, and user access.</li>}
-                  {activeGov && <li><strong>MOD 4 (Care Plan):</strong> Platform hosting, bi-weekly operations check-ins, and semi-annual system health checks.</li>}
+                  {activePMO && <li><strong>{modTitleLabel('mod3')}:</strong> Workspace hosting, digital approval forms, and user access.</li>}
+                  {activeGov && <li><strong>{modTitleLabel('mod4')}:</strong> Platform hosting, bi-weekly operations check-ins, and semi-annual system health checks.</li>}
                 </ul>
               </div>
 
@@ -3920,10 +3944,11 @@
               </div>
               <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                 <div className="flex flex-wrap gap-0.5">
-                  {['mod1', 'mod2', 'mod3', 'mod4'].map((mod) => {
+                  {MOD_PRESET_IDS.map((mod) => {
                     const active = activePresets.includes(mod);
+                    const badgeLabel = STARTER_UI ? modShortLabel(mod) : mod.replace('mod', 'MOD ');
                     return (
-                      <span key={mod} className={`px-1.5 py-px rounded text-[8px] font-mono font-bold uppercase border ${active ? 'bg-brandTeal-500/15 text-brandTeal-300 border-brandTeal-500/30' : 'bg-brandNavy-950 text-slate-600 border-brandNavy-800'}`}>{mod.replace('mod', 'MOD ')}</span>
+                      <span key={mod} className={`px-1.5 py-px rounded text-[8px] font-bold border ${STARTER_UI ? 'starter-mod-badge normal-case tracking-normal font-sans' : 'font-mono uppercase'} ${active ? 'bg-brandTeal-500/15 text-brandTeal-300 border-brandTeal-500/30' : 'bg-brandNavy-950 text-slate-600 border-brandNavy-800'}`}>{badgeLabel}</span>
                     );
                   })}
                 </div>
@@ -4319,11 +4344,12 @@
                           </div>
                         </div>
                         <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>
-                          {[{ name: 'mod1', label: 'MOD 1 · Leak Scan' }, { name: 'mod2', label: 'MOD 2 · Playbooks' }, { name: 'mod3', label: 'MOD 3 · Workspace' }, { name: 'mod4', label: 'MOD 4 · Care Plan' }].map(preset => {
-                            const isActive = activePresets.includes(preset.name);
+                          {MOD_PRESET_IDS.map((preset) => {
+                            const isActive = activePresets.includes(preset);
+                            const label = modChipLabel(preset);
                             return (
-                              <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={STARTER_UI ? `starter-sow-preset px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 ${isActive ? 'starter-sow-preset-active' : 'starter-sow-preset-inactive'}` : `px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
-                                {isActive ? <IconCheck className={`w-3 h-3 ${STARTER_UI ? 'text-white' : 'text-white'}`} /> : <span className={`w-1.5 h-1.5 rounded-full ${STARTER_UI ? 'bg-slate-400' : 'bg-slate-500'}`} />}{preset.label}
+                              <button key={preset} onClick={() => handleTogglePreset(preset)} className={STARTER_UI ? `starter-sow-preset px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 ${isActive ? 'starter-sow-preset-active' : 'starter-sow-preset-inactive'}` : `px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
+                                {isActive ? <IconCheck className={`w-3 h-3 ${STARTER_UI ? 'text-white' : 'text-white'}`} /> : <span className={`w-1.5 h-1.5 rounded-full ${STARTER_UI ? 'bg-slate-400' : 'bg-slate-500'}`} />}{label}
                               </button>
                             );
                           })}
@@ -4372,7 +4398,7 @@
                                     </div>
                                   </td>
                                   <td className="py-4 px-5 text-center"><button type="button" onClick={() => toggleTask(task.id)} className="p-1 rounded text-slate-400 hover:text-brandTeal-500 inline-flex font-sans" aria-pressed={task.selected}>{task.selected ? <IconCheckSquare /> : <IconSquare />}</button>{task.id.startsWith('custom-') && <button type="button" onClick={() => removeTask(task.id)} className="p-1 text-rose-500 hover:text-rose-400 rounded" aria-label="Remove task"><IconTrash className="w-3.5 h-3.5" /></button>}</td>
-                                  <td className="py-2 px-3 text-left align-top"><span className={STARTER_UI ? "starter-sow-category-badge text-[10px] font-semibold px-2 py-1 rounded-md border block text-center leading-snug" : "text-[9px] font-mono bg-brandNavy-950 px-2 py-1 rounded border border-brandNavy-700/80 text-brandTeal-400 font-bold block text-center leading-snug uppercase"}>{task.category.replace('MOD ', 'M').replace(' - ', ' · ')}</span></td>
+                                  <td className="py-2 px-3 text-left align-top"><span className={STARTER_UI ? "starter-sow-category-badge text-[10px] font-semibold px-2 py-1 rounded-md border block text-center leading-snug" : "text-[9px] font-mono bg-brandNavy-950 px-2 py-1 rounded border border-brandNavy-700/80 text-brandTeal-400 font-bold block text-center leading-snug uppercase"}>{categoryDisplayLabel(task.category)}</span></td>
                                   <td className="py-2 px-3 text-left align-top space-y-1">
                                     <span className={STARTER_UI ? "starter-sow-field-label text-[10px] font-medium text-slate-500" : "text-[8px] font-mono uppercase text-slate-500 tracking-wider"}>Title</span>
                                     <textarea
@@ -4426,10 +4452,10 @@
                         <div className="col-span-12 md:col-span-2 text-left">
                           <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Target Phase</label>
                           <select value={newTaskCategory} onChange={e => setNewTaskCategory(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-xs text-slate-200 focus:outline-none font-sans font-medium">
-                            <option value={MOD_1}>MOD 1 - Business Leak Scan</option>
-                            <option value={MOD_2}>MOD 2 - How Your Business Runs</option>
-                            <option value={MOD_3}>MOD 3 - Your Team Workspace</option>
-                            <option value={MOD_4}>MOD 4 - Care Plan</option>
+                            <option value={MOD_1}>{modTitleLabel('mod1')}</option>
+                            <option value={MOD_2}>{modTitleLabel('mod2')}</option>
+                            <option value={MOD_3}>{modTitleLabel('mod3')}</option>
+                            <option value={MOD_4}>{modTitleLabel('mod4')}</option>
                           </select>
                         </div>
                         <div className="col-span-12 md:col-span-3 text-left font-sans font-medium">
