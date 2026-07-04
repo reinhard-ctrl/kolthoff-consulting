@@ -31,16 +31,25 @@ async function writeTenantConfig(patch: Record<string, unknown>) {
 
 export function useTenantBranding() {
   const product = getProductConfig();
+  const agencyOps = isAgencyOpsStarter(product.id);
   const [branding, setBranding] = useState<TenantBrandingConfig>(() =>
-    mergeTenantBranding(null, product.branding),
+    mergeTenantBranding(null, product.branding, product.id),
   );
   const [presets, setPresets] = useState<BrandingPreset[]>([]);
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(agencyOps);
   const [saving, setSaving] = useState(false);
   const demoPresetsRestoreAttempted = useRef(false);
 
   useEffect(() => {
+    if (!agencyOps) {
+      setBranding(mergeTenantBranding(null, product.branding, product.id));
+      setPresets([]);
+      setActivePresetId(null);
+      setLoading(false);
+      return;
+    }
+
     const ref = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
     const unsub = onSnapshot(
       ref,
@@ -49,6 +58,7 @@ export function useTenantBranding() {
         const merged = mergeTenantBranding(
           data?.branding as Partial<TenantBrandingConfig> | undefined,
           product.branding,
+          product.id,
         );
         setBranding(merged);
         setPresets(listBrandingPresets(data?.brandingPresets as Record<string, unknown> | undefined));
@@ -61,7 +71,7 @@ export function useTenantBranding() {
       () => setLoading(false),
     );
     return () => unsub();
-  }, [product.branding]);
+  }, [agencyOps, product.branding, product.id]);
 
   useEffect(() => {
     if (loading || !isAgencyOpsStarter(product.id)) return;

@@ -4,46 +4,61 @@
  */
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-const DEFAULTS = {
+const KOLTHOFF_PRIMARY_COLOR = '#14B8A6';
+const AGENCY_OPS_PRIMARY_COLOR = '#4f46e5';
+
+const AGENCY_OPS_DEFAULTS = {
   companyName: 'Studio North',
   tagline: 'Creative & Digital Services',
-  primaryColor: '#4f46e5',
+  primaryColor: AGENCY_OPS_PRIMARY_COLOR,
   logoUrl: '',
   crmBadge: 'Sales',
   crmSubtitle: 'Track leads from inquiry to signed deal',
   plannerSubtitle: 'Quotes',
 };
 
-function resolveCompanyName(b) {
-  if (b?.companyName?.trim()) return b.companyName.trim();
-  const legacy = [b?.name, b?.accent].filter(Boolean).join(' ').trim();
-  return legacy || DEFAULTS.companyName;
+function getDefaultPrimaryColor(productConfig) {
+  return productConfig?.id === 'agency-ops-starter' || productConfig?.starterMode
+    ? AGENCY_OPS_PRIMARY_COLOR
+    : KOLTHOFF_PRIMARY_COLOR;
 }
 
-function resolveTagline(b) {
-  return (b?.tagline ?? b?.subtitle ?? DEFAULTS.tagline).trim();
+function resolveCompanyName(b, productConfig) {
+  if (b?.companyName?.trim()) return b.companyName.trim();
+  const legacy = [b?.name, b?.accent].filter(Boolean).join(' ').trim();
+  if (legacy) return legacy;
+  const product = productConfig?.branding || {};
+  const fromProduct = [product.name, product.accent].filter(Boolean).join(' ').trim();
+  return fromProduct || AGENCY_OPS_DEFAULTS.companyName;
+}
+
+function resolveTagline(b, productConfig) {
+  if (b?.tagline?.trim()) return b.tagline.trim();
+  if (b?.subtitle?.trim()) return b.subtitle.trim();
+  return productConfig?.branding?.subtitle || AGENCY_OPS_DEFAULTS.tagline;
 }
 
 function mergeBranding(firestoreBranding, productConfig) {
   const product = productConfig?.branding || {};
+  const defaultColor = getDefaultPrimaryColor(productConfig);
   const base = {
     companyName: resolveCompanyName({
       name: product.name,
       accent: product.accent,
       tagline: product.subtitle,
-    }),
-    tagline: product.subtitle || DEFAULTS.tagline,
-    primaryColor: DEFAULTS.primaryColor,
+    }, productConfig),
+    tagline: resolveTagline({ subtitle: product.subtitle }, productConfig),
+    primaryColor: defaultColor,
     logoUrl: '',
-    crmBadge: productConfig?.crmBadge || DEFAULTS.crmBadge,
-    crmSubtitle: productConfig?.crmSubtitle || DEFAULTS.crmSubtitle,
-    plannerSubtitle: productConfig?.plannerSubtitle || DEFAULTS.plannerSubtitle,
+    crmBadge: productConfig?.crmBadge || AGENCY_OPS_DEFAULTS.crmBadge,
+    crmSubtitle: productConfig?.crmSubtitle || AGENCY_OPS_DEFAULTS.crmSubtitle,
+    plannerSubtitle: productConfig?.plannerSubtitle || AGENCY_OPS_DEFAULTS.plannerSubtitle,
   };
   if (!firestoreBranding) return base;
   return {
     ...base,
-    companyName: resolveCompanyName({ ...base, ...firestoreBranding }),
-    tagline: resolveTagline({ ...base, ...firestoreBranding }),
+    companyName: resolveCompanyName({ ...base, ...firestoreBranding }, productConfig),
+    tagline: resolveTagline({ ...base, ...firestoreBranding }, productConfig),
     primaryColor: firestoreBranding.primaryColor?.trim() || base.primaryColor,
     logoUrl: firestoreBranding.logoUrl?.trim() || '',
   };
@@ -85,6 +100,10 @@ export function subscribe(fn) {
 
 let unsubscribeFirestore = null;
 
+function isAgencyOpsStarter(productConfig) {
+  return productConfig?.id === 'agency-ops-starter' || Boolean(productConfig?.starterMode);
+}
+
 /** Call after firebase-init (needs db + appId + auth). */
 export function initTenantBranding(db, appId) {
   if (!db || !appId) return;
@@ -92,8 +111,12 @@ export function initTenantBranding(db, appId) {
 
   const product = globalThis.ProductConfig?.getProductConfig?.() || {};
   cached = mergeBranding(null, product);
-  applyCss(cached);
+  if (isAgencyOpsStarter(product)) {
+    applyCss(cached);
+  }
   notify();
+
+  if (!isAgencyOpsStarter(product)) return;
 
   const ref = doc(db, 'artifacts', appId, 'public', 'data', 'tenant_settings', 'config');
   unsubscribeFirestore = onSnapshot(
@@ -110,7 +133,7 @@ export function initTenantBranding(db, appId) {
 
 if (typeof window !== 'undefined') {
   window.TenantBranding = {
-    DEFAULTS,
+    DEFAULTS: AGENCY_OPS_DEFAULTS,
     getEffectiveBranding,
     subscribe,
     initTenantBranding,
