@@ -61,7 +61,7 @@ function getReturnUrl(): string | null {
 function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
   const product = useProduct();
   const light = isLightProductTheme(product.id);
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(product.isDemo ? (product.demoPasscode ?? '') : '');
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -143,7 +143,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         </div>
         <p className="text-sm text-slate-400 mb-5 leading-relaxed">
           {product.isDemo
-            ? 'Sign in with the demo passcode to explore this workspace.'
+            ? 'Log in as the demo admin to explore Sales, Quotes, and Invoicing.'
             : 'Sign in with Google Workspace or use the break-glass passcode.'}
         </p>
         {!product.isDemo && (
@@ -166,11 +166,18 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         {product.demoPasscodeHint && (
           <p className="text-xs text-slate-500 mb-3">{product.demoPasscodeHint}</p>
         )}
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Passcode"
-          className={`w-full p-3 rounded mb-4 ${light ? '' : 'bg-brandNavy-800 border border-brandNavy-700'}`} />
+        <label htmlFor="admin-passcode" className="sr-only">Passcode</label>
+        <input
+          id="admin-passcode"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="Passcode"
+          autoComplete="off"
+          className={`w-full p-3 rounded mb-4 ${light ? '' : 'bg-brandNavy-800 border border-brandNavy-700'}`}
+        />
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <button disabled={loading} className="w-full py-2.5 brand-primary-bg rounded-lg font-semibold text-white">
-          {loading ? 'Verifying…' : 'Continue'}
+          {loading ? 'Signing in…' : product.isDemo ? 'Log in as demo admin' : 'Continue'}
         </button>
       </form>
     </div>

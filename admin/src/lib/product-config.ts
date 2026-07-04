@@ -45,6 +45,8 @@ export interface ProductConfig {
   isDemo: boolean;
   /** Shown on login screen for demo tenants */
   demoPasscodeHint?: string;
+  /** Prefilled passcode for demo login (Agency Ops Starter) */
+  demoPasscode?: string;
   /** Query params appended to embedded legacy HTML apps */
   embedParams: Record<string, string>;
   /** Sidebar / page titles for workflow modules */
@@ -116,6 +118,7 @@ const AGENCY_OPS_STARTER: ProductConfig = {
   navStorageKey: 'agency-ops-starter-nav-preferences',
   isDemo: true,
   theme: 'light',
+  demoPasscode: 'demostart2026',
   demoPasscodeHint: 'Demo passcode: demostart2026',
   embedParams: {
     product: 'agency-ops-starter',

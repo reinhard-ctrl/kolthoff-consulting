@@ -47,8 +47,15 @@ function uniquePresetId(name, existingIds) {
 
 function listBrandingPresets(map) {
   if (!map || typeof map !== 'object') return [];
-  return Object.values(map)
-    .filter((p) => p && p.id && p.name)
+  return Object.entries(map)
+    .map(([key, raw]) => {
+      if (!raw || typeof raw !== 'object') return null;
+      const id = (raw.id ?? key)?.trim();
+      const name = raw.name?.trim();
+      if (!id || !name) return null;
+      return { ...raw, id, name };
+    })
+    .filter(Boolean)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
@@ -64,5 +71,13 @@ describe('branding presets', () => {
       b: { id: 'b', name: 'B', updatedAt: 3 },
     });
     assert.equal(list[0].id, 'b');
+  });
+
+  it('accepts preset id from map key when nested id is missing', () => {
+    const list = listBrandingPresets({
+      'studio-north': { name: 'Studio North', companyName: 'Studio North', updatedAt: 1 },
+    });
+    assert.equal(list.length, 1);
+    assert.equal(list[0].id, 'studio-north');
   });
 });

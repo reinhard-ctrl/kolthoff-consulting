@@ -36,6 +36,41 @@ export const DEFAULT_TENANT_BRANDING: TenantBrandingConfig = {
   logoUrl: '',
 };
 
+/** Demo tenant seed profiles — restored when Firestore has none saved yet. */
+export const DEMO_AGENCY_OPS_BRANDING_PRESETS: BrandingPreset[] = [
+  {
+    id: 'studio-north',
+    name: 'Studio North',
+    companyName: 'Studio North',
+    tagline: 'Creative & Digital Services',
+    primaryColor: AGENCY_OPS_PRIMARY_COLOR,
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+  {
+    id: 'meridian-creative',
+    name: 'Meridian Creative',
+    companyName: 'Meridian Creative Co.',
+    tagline: 'Brand & Campaign Studio',
+    primaryColor: '#0d9488',
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+  {
+    id: 'harbor-digital',
+    name: 'Harbor Digital',
+    companyName: 'Harbor Digital Agency',
+    tagline: 'Web & Performance Marketing',
+    primaryColor: '#e11d48',
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+];
+
+export function brandingPresetsToMap(presets: BrandingPreset[]): Record<string, BrandingPreset> {
+  return Object.fromEntries(presets.map((preset) => [preset.id, preset]));
+}
+
 export function getDefaultPrimaryColor(productId?: ProductId): string {
   return isAgencyOpsStarter(productId) ? AGENCY_OPS_PRIMARY_COLOR : KOLTHOFF_PRIMARY_COLOR;
 }
@@ -79,12 +114,14 @@ export function presetToConfig(preset: BrandingPreset): TenantBrandingConfig {
   };
 }
 
-export function normalizeBrandingPreset(raw: unknown): BrandingPreset | null {
+export function normalizeBrandingPreset(raw: unknown, mapKey?: string): BrandingPreset | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Partial<BrandingPreset>;
-  if (!p.id?.trim() || !p.name?.trim()) return null;
-  return presetFromConfig(p.id, p.name, {
-    companyName: p.companyName ?? p.name,
+  const id = (p.id ?? mapKey)?.trim();
+  const name = p.name?.trim();
+  if (!id || !name) return null;
+  return presetFromConfig(id, name, {
+    companyName: p.companyName ?? name,
     tagline: p.tagline,
     primaryColor: p.primaryColor ?? DEFAULT_TENANT_BRANDING.primaryColor,
     logoUrl: p.logoUrl,
@@ -95,8 +132,8 @@ export function listBrandingPresets(
   map: Record<string, unknown> | null | undefined,
 ): BrandingPreset[] {
   if (!map || typeof map !== 'object') return [];
-  return Object.values(map)
-    .map(normalizeBrandingPreset)
+  return Object.entries(map)
+    .map(([key, raw]) => normalizeBrandingPreset(raw, key))
     .filter((p): p is BrandingPreset => Boolean(p))
     .sort((a, b) => b.updatedAt - a.updatedAt || a.name.localeCompare(b.name));
 }
