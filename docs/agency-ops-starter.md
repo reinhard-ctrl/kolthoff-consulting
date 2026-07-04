@@ -16,8 +16,21 @@ White-label **quote-to-cash** product for small PH agencies, shipped as a separa
 |-------|-------|
 | Passcode | `demostart2026` |
 | Tenant ID | `agency-ops-demo` |
+| Firestore path | `artifacts/agency-ops-demo/public/data/admin_credentials/demostart2026` |
 
 Google SSO is hidden on the demo shell — passcode only.
+
+**First-time setup (required):** the passcode document does not exist until you seed it. In [Cloud Shell](https://shell.cloud.google.com/?project=kolthoff-portal):
+
+```bash
+# Passcode only (fastest — ~10 seconds)
+bash scripts/seed-agency-ops-passcode.sh
+
+# Full demo data (CRM, estimates, invoices)
+bash scripts/seed-agency-ops-demo.sh
+```
+
+If login shows *Invalid passcode* with a path mentioning `kolthoff-admin-app`, you are on `/admin/` (Kolthoff OS), not `/agency-ops/` (Agency Ops Starter).
 
 ## What's included (Starter tier)
 
