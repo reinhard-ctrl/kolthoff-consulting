@@ -57,7 +57,7 @@ function applyAgencyStarterLightBody() {
   if (!isAgencyStarterContext() || typeof document === 'undefined') return;
   document.documentElement.classList.add('agency-starter-light');
   if (document.body) {
-    document.body.style.backgroundColor = '#f1f5f9';
+    document.body.style.backgroundColor = '#e3e6eb';
     document.body.style.backgroundImage = 'none';
   }
 }
@@ -142,7 +142,7 @@ function showEmbedAuthRequired() {
   const openUrl = url.pathname + url.search + url.hash;
   const light = isAgencyStarterContext();
   document.body.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:${light ? '#f1f5f9' : '#02050e'};color:${light ? '#64748b' : '#94a3b8'};font-family:${light ? 'Inter' : 'Montserrat'},system-ui,sans-serif;text-align:center;">
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:${light ? '#e3e6eb' : '#02050e'};color:${light ? '#6e7681' : '#94a3b8'};font-family:${light ? 'Inter' : 'Montserrat'},system-ui,sans-serif;text-align:center;">
       <div style="max-width:22rem;">
         <p style="margin:0 0 1rem;font-size:0.875rem;line-height:1.5;">Staff session required. Ensure you are logged into the admin console, then reload this panel.</p>
         <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:0.625rem 1rem;background:${light ? '#4f46e5' : '#14B8A6'};color:#ffffff;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open in new tab</a>
@@ -226,12 +226,12 @@ if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientC
         z-index: 99999;
       }
       html.agency-starter-light.kolthoff-auth-pending::after {
-        background: #f1f5f9;
-        color: #64748b;
+        background: #e3e6eb;
+        color: #6e7681;
         font-family: Inter, system-ui, sans-serif;
       }
       html.agency-starter-light.kolthoff-auth-pending body {
-        background: #f1f5f9 !important;
+        background: #e3e6eb !important;
         background-image: none !important;
       }
     `;

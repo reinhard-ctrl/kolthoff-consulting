@@ -1,43 +1,48 @@
 /**
- * Professional light theme — Agency Ops Starter only.
+ * Premium light grey theme — Agency Ops Starter only.
  * Kolthoff OS (/admin) keeps the dark navy/teal scheme.
  */
 html.agency-ops-light {
   color-scheme: light;
   --brand-primary: #4f46e5;
   --brand-primary-hover: #4338ca;
-  --brand-primary-soft: rgba(79, 70, 229, 0.08);
-  --brand-primary-ring: rgba(79, 70, 229, 0.22);
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --surface-subtle: #f1f5f9;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --brand-primary-soft: rgba(79, 70, 229, 0.07);
+  --brand-primary-ring: rgba(79, 70, 229, 0.16);
+  --surface-canvas: #e3e6eb;
+  --surface-sidebar: #eceef2;
+  --surface: #f6f7f9;
+  --surface-elevated: #ffffff;
+  --surface-muted: #eef0f3;
+  --surface-subtle: #e8eaef;
+  --surface-inset: #dfe3e9;
+  --border: #d2d7df;
+  --border-strong: #bcc3cf;
+  --text: #1a1d21;
+  --text-secondary: #50565e;
+  --text-muted: #6e7681;
+  --text-faint: #9aa0a9;
+  --shadow-sm: 0 1px 2px rgba(26, 29, 33, 0.04), 0 0 0 1px rgba(26, 29, 33, 0.025);
+  --shadow-md: 0 4px 14px rgba(26, 29, 33, 0.06), 0 1px 3px rgba(26, 29, 33, 0.04);
+  --shadow-lg: 0 16px 40px rgba(26, 29, 33, 0.08), 0 2px 8px rgba(26, 29, 33, 0.04);
   --radius: 0.75rem;
 }
 
 html.agency-ops-light body {
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif !important;
-  background-color: var(--surface-muted) !important;
+  background-color: var(--surface-canvas) !important;
   color: var(--text) !important;
   -webkit-font-smoothing: antialiased;
 }
 
 /* ── Shell layout ── */
 html.agency-ops-light .ops-shell {
-  background: var(--surface-muted) !important;
+  background: var(--surface-canvas) !important;
 }
 
 html.agency-ops-light .ops-sidebar {
-  background: var(--surface) !important;
+  background: var(--surface-sidebar) !important;
   border-right: 1px solid var(--border) !important;
-  box-shadow: 1px 0 0 rgba(15, 23, 42, 0.03);
+  box-shadow: 1px 0 0 rgba(26, 29, 33, 0.04);
 }
 
 html.agency-ops-light .ops-sidebar-header {
@@ -47,14 +52,14 @@ html.agency-ops-light .ops-sidebar-header {
 
 html.agency-ops-light .ops-sidebar-footer {
   border-top: 1px solid var(--border) !important;
-  color: var(--text-muted) !important;
+  color: var(--text-faint) !important;
   font-size: 0.6875rem;
   letter-spacing: 0.01em;
   font-family: inherit;
 }
 
 html.agency-ops-light .ops-main {
-  background: var(--surface-muted);
+  background: var(--surface-canvas);
 }
 
 html.agency-ops-light .ops-main-inner {
@@ -63,11 +68,11 @@ html.agency-ops-light .ops-main-inner {
 
 /* ── Login ── */
 html.agency-ops-light .ops-login {
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%) !important;
+  background: linear-gradient(165deg, #eceef2 0%, #e3e6eb 48%, #dde1e8 100%) !important;
 }
 
 html.agency-ops-light .ops-login-card {
-  background: var(--surface) !important;
+  background: var(--surface-elevated) !important;
   border: 1px solid var(--border) !important;
   border-radius: 1rem !important;
   box-shadow: var(--shadow-lg) !important;
@@ -132,7 +137,7 @@ html.agency-ops-light .ops-callout a:hover {
 /* ── Cards ── */
 html.agency-ops-light .ops-card,
 html.agency-ops-light .glass-panel {
-  background: var(--surface) !important;
+  background: var(--surface-elevated) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -179,7 +184,7 @@ html.agency-ops-light .ops-stat-value {
 
 html.agency-ops-light .ops-stat-hint {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 html.agency-ops-light .ops-section-title {
@@ -227,7 +232,7 @@ html.agency-ops-light select,
 html.agency-ops-light textarea {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  background: var(--surface) !important;
+  background: var(--surface-elevated) !important;
   border: 1px solid var(--border) !important;
   border-radius: 0.5rem !important;
   color: var(--text) !important;
@@ -268,13 +273,13 @@ html.agency-ops-light .ops-btn-secondary {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-secondary) !important;
-  background: var(--surface) !important;
+  background: var(--surface-elevated) !important;
   border: 1px solid var(--border) !important;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
 html.agency-ops-light .ops-btn-secondary:hover {
-  background: var(--surface-subtle) !important;
+  background: var(--surface-muted) !important;
   border-color: var(--border-strong) !important;
 }
 
@@ -332,7 +337,7 @@ html.agency-ops-light .sidebar-group-card {
 }
 
 html.agency-ops-light .sidebar-nav-group-label {
-  color: #94a3b8 !important;
+  color: var(--text-faint) !important;
   font-weight: 600 !important;
   letter-spacing: 0.06em !important;
   font-family: inherit !important;
@@ -375,15 +380,24 @@ html.agency-ops-light .sidebar-nav-item[class*='bg-brandTeal'] .sidebar-nav-icon
 }
 
 html.agency-ops-light .sidebar-nav-item:not([class*='bg-brandTeal']) .sidebar-nav-icon-wrap {
-  background: var(--surface-subtle) !important;
+  background: var(--surface-muted) !important;
   border-color: var(--border) !important;
   color: var(--text-muted) !important;
+}
+
+html.agency-ops-light .ops-embed-frame {
+  background: var(--surface-canvas) !important;
+}
+
+html.agency-ops-light .brand-preview-panel {
+  background: var(--surface-muted) !important;
+  border-color: var(--border) !important;
 }
 
 /* ── Legacy Tailwind remaps ── */
 html.agency-ops-light .bg-brandNavy-955,
 html.agency-ops-light .bg-brandNavy-950 {
-  background-color: var(--surface-muted) !important;
+  background-color: var(--surface-canvas) !important;
 }
 
 html.agency-ops-light .bg-brandNavy-900,
@@ -391,13 +405,13 @@ html.agency-ops-light .bg-brandNavy-900\/50,
 html.agency-ops-light .bg-brandNavy-900\/60,
 html.agency-ops-light .bg-brandNavy-900\/80,
 html.agency-ops-light .bg-brandNavy-900\/40 {
-  background-color: var(--surface) !important;
+  background-color: var(--surface-elevated) !important;
 }
 
 html.agency-ops-light .bg-brandNavy-800,
 html.agency-ops-light .bg-brandNavy-800\/40,
 html.agency-ops-light .bg-brandNavy-800\/50 {
-  background-color: var(--surface-subtle) !important;
+  background-color: var(--surface-muted) !important;
 }
 
 html.agency-ops-light .border-brandNavy-700,
@@ -424,7 +438,7 @@ html.agency-ops-light .text-slate-400 {
 
 html.agency-ops-light .text-slate-500,
 html.agency-ops-light .text-slate-600 {
-  color: #94a3b8 !important;
+  color: var(--text-faint) !important;
 }
 
 html.agency-ops-light .brand-primary-text {
@@ -489,9 +503,9 @@ html.agency-ops-light .text-brandNavy-955 {
 
 html.agency-ops-light input::placeholder,
 html.agency-ops-light textarea::placeholder {
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 html.agency-ops-light .ring-offset-brandNavy-950 {
-  --tw-ring-offset-color: #ffffff !important;
+  --tw-ring-offset-color: var(--surface-elevated) !important;
 }
