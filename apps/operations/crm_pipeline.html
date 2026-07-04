@@ -9,8 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
     <!-- Firebase Module Initialization -->
-        <script type="module" src="../../shared/firebase-init.js?v=20250704-pro-v1"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-pro-v1"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v3"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v3"></script>
     <script src="../../shared/firebase-errors.js"></script>
     <script type="module">
         import * as Financials from '../../shared/financials.js';
@@ -56,7 +56,7 @@
             }
         }
     </script>
-    <script src="../../shared/starter-light-theme.js?v=20250704-pro-v1"></script>
+    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v3"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -116,7 +116,11 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
-        const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, crmSubtitle: 'Track leads, proposals, and closed deals', crmBadge: 'SALES PIPELINE' };
+        const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, crmSubtitle: 'Track leads from inquiry to signed deal', crmBadge: 'Sales' };
+        const STARTER_UI = Boolean(PRODUCT.starterMode || window.ProductConfig?.isStarterMode?.());
+        if (STARTER_UI && PRODUCT.moduleLabels?.sales) {
+            document.title = `${PRODUCT.moduleLabels.sales} | Cloud Synced`;
+        }
         const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
             companyName: 'Studio North',
             tagline: PRODUCT.crmSubtitle,
@@ -803,7 +807,7 @@
             }
 
             return (
-                <div className="min-h-screen flex flex-col pb-12 bg-gradient-to-b from-[#061727] via-[#091f33] to-[#02050e]">
+                <div className={STARTER_UI ? "starter-app-root min-h-screen flex flex-col pb-12 bg-slate-100" : "min-h-screen flex flex-col pb-12 bg-gradient-to-b from-[#061727] via-[#091f33] to-[#02050e]"}>
                     
                     {/* CONFETTI & NOTIFICATION POPUP ON DEAL WON */}
                     {showCelebration && (
@@ -873,31 +877,31 @@
                                 )}
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-sm font-extrabold tracking-tight text-white uppercase font-sans">
+                                        <h1 className={STARTER_UI ? "starter-page-title text-sm font-sans" : "text-sm font-extrabold tracking-tight text-white uppercase font-sans"}>
                                             {(() => {
                                                 const d = window.TenantBranding?.splitDisplay?.(brand.companyName) || { line1: brand.companyName, line2: '' };
                                                 return <>{d.line1}{d.line2 ? <span style={{ color: brand.primaryColor }}> {d.line2}</span> : null}</>;
                                             })()}
                                         </h1>
-                                        <span className="flex items-center gap-1.5 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider border" style={{ color: brand.primaryColor, borderColor: `${brand.primaryColor}44`, backgroundColor: `${brand.primaryColor}18` }}>
+                                        <span className={`flex items-center gap-1.5 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider border ${STARTER_UI ? 'starter-badge' : ''}`} style={{ color: brand.primaryColor, borderColor: `${brand.primaryColor}44`, backgroundColor: `${brand.primaryColor}18` }}>
                                             <div className={`w-1.5 h-1.5 rounded-full ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? "Cloud Synced" : "Connecting..."}></div>
                                             {brand.crmBadge || 'SALES PIPELINE'}
                                         </span>
                                     </div>
-                                    <p className="text-[9px] text-brandNavy-300 font-semibold tracking-wide">{brand.crmSubtitle || brand.tagline}</p>
+                                    <p className={STARTER_UI ? "starter-page-subtitle text-[11px] font-sans" : "text-[9px] text-brandNavy-300 font-semibold tracking-wide"}>{brand.crmSubtitle || brand.tagline}</p>
                                 </div>
                             </div>
 
                             <nav aria-label="Main Navigation">
-                                <div className="flex bg-[#09111F] border border-brandNavy-700/60 p-1 rounded-xl">
-                                    <button onClick={() => setActiveTab("deals")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "deals" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
-                                        <span aria-hidden="true">💼</span> Deals Board
+                                <div className={STARTER_UI ? "starter-segment flex p-1 rounded-xl" : "flex bg-[#09111F] border border-brandNavy-700/60 p-1 rounded-xl"}>
+                                    <button onClick={() => setActiveTab("deals")} className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${STARTER_UI ? `starter-segment-btn ${activeTab === "deals" ? "starter-segment-btn-active" : ""}` : `text-[10px] font-bold uppercase tracking-wider ${activeTab === "deals" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}`}>
+                                        <span aria-hidden="true">💼</span> {STARTER_UI ? 'Deals' : 'Deals Board'}
                                     </button>
-                                    <button onClick={() => setActiveTab("contacts")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "contacts" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
+                                    <button onClick={() => setActiveTab("contacts")} className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${STARTER_UI ? `starter-segment-btn ${activeTab === "contacts" ? "starter-segment-btn-active" : ""}` : `text-[10px] font-bold uppercase tracking-wider ${activeTab === "contacts" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}`}>
                                         <span aria-hidden="true">👤</span> Contacts
                                     </button>
-                                    <button onClick={() => setActiveTab("partners")} className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${activeTab === "partners" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}>
-                                        <span aria-hidden="true">🤝</span> Partner Hub
+                                    <button onClick={() => setActiveTab("partners")} className={`px-3 py-1 rounded-lg transition-all flex items-center gap-1.5 ${STARTER_UI ? `starter-segment-btn ${activeTab === "partners" ? "starter-segment-btn-active" : ""}` : `text-[10px] font-bold uppercase tracking-wider ${activeTab === "partners" ? "bg-brandTeal-500 text-brandNavy-955 shadow-md shadow-brandTeal-500/10" : "text-brandNavy-300 hover:text-white"}`}`}>
+                                        <span aria-hidden="true">🤝</span> {STARTER_UI ? 'Partners' : 'Partner Hub'}
                                     </button>
                                 </div>
                             </nav>
@@ -906,7 +910,7 @@
                                 type="button"
                                 onClick={openShareModal}
                                 disabled={shareBusy}
-                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"
+                                className={STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}
                                 title="Copy a read-only link for external viewers"
                             >
                                 <span aria-hidden="true">🔗</span> Share Pipeline
@@ -1006,32 +1010,32 @@
                     {/* DYNAMIC COMPRESSED PIPEDRIVE STATS BAR */}
                     <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 pt-3" aria-label="Pipeline Statistics">
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Active Deals</span>
-                                <div className="text-sm font-extrabold text-white">{stats.activeCount} <span className="text-[9px] text-slate-400 font-normal">Act.</span></div>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-400 tracking-wider"}>Active Deals</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-white"}>{stats.activeCount}{STARTER_UI ? '' : <span className="text-[9px] text-slate-400 font-normal"> Act.</span>}</div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Pipeline Value</span>
-                                <div className="text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5">
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Pipeline Value</span>
+                                <div className={STARTER_UI ? "starter-stat-value text-brandTeal-400" : "text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5"}>
                                     {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.totalValue)}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Avg Size</span>
-                                <div className="text-sm font-extrabold text-slate-100 font-mono">
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Avg Size</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-slate-100 font-mono"}>
                                     {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.avgSize)}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Win Rate</span>
-                                <div className="text-sm font-extrabold text-white font-mono">
-                                    {stats.winRate}% <span className="text-[9px] text-emerald-400">Won</span>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Win Rate</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-white font-mono"}>
+                                    {stats.winRate}%{STARTER_UI ? '' : <span className="text-[9px] text-emerald-400"> Won</span>}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Attention</span>
-                                <div className="text-sm font-extrabold text-rose-400">
-                                    {stats.overdueCount} <span className="text-[9px] text-rose-500 font-normal animate-pulse">● Overdue</span>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60" : "glass-panel rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Attention</span>
+                                <div className={STARTER_UI ? "starter-stat-value text-rose-500" : "text-sm font-extrabold text-rose-400"}>
+                                    {stats.overdueCount}{STARTER_UI ? ' overdue' : <span className="text-[9px] text-rose-500 font-normal animate-pulse"> ● Overdue</span>}
                                 </div>
                             </div>
                         </div>
@@ -1039,7 +1043,7 @@
 
                     {/* INTERACTIVE CONTROLS PANEL */}
                     <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 mt-3" aria-label="Filters and Controls">
-                        <div className="glass-panel rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between">
+                        <div className={STARTER_UI ? "glass-panel starter-toolbar rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between" : "glass-panel rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between"}>
                             
                             <div className="relative w-full lg:w-80">
                                 <label htmlFor="global-search" className="sr-only">Search</label>
@@ -1049,8 +1053,8 @@
                                     type="text" 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={`Search inside active directory (${activeTab})...`}
-                                    className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"
+                                    placeholder={STARTER_UI ? `Search ${activeTab}…` : `Search inside active directory (${activeTab})...`}
+                                    className={STARTER_UI ? "starter-input w-full border border-brandNavy-700/60 rounded-lg pl-8 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brandTeal-500" : "w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"}
                                 />
                                 {searchQuery && (
                                     <button onClick={() => setSearchQuery("")} className="absolute inset-y-0 right-2 text-slate-400 hover:text-white text-[10px]">Clear</button>
@@ -1059,14 +1063,14 @@
 
                             {activeTab === "deals" && (
                                 <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                                    <div className="flex bg-[#020613] border border-brandNavy-700/60 p-0.5 rounded-lg mr-1 font-mono">
-                                        <button onClick={() => setViewMode("board")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "board" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                    <div className={STARTER_UI ? "starter-segment flex p-0.5 rounded-lg mr-1" : "flex bg-[#020613] border border-brandNavy-700/60 p-0.5 rounded-lg mr-1 font-mono"}>
+                                        <button onClick={() => setViewMode("board")} className={`px-2.5 py-0.5 rounded transition-all flex items-center gap-1 ${STARTER_UI ? `starter-segment-btn ${viewMode === "board" ? "starter-segment-btn-active" : ""}` : `text-[9px] font-bold uppercase tracking-wider ${viewMode === "board" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}`}>
                                             <span aria-hidden="true">📊</span> Board
                                         </button>
-                                        <button onClick={() => setViewMode("list")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "list" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                        <button onClick={() => setViewMode("list")} className={`px-2.5 py-0.5 rounded transition-all flex items-center gap-1 ${STARTER_UI ? `starter-segment-btn ${viewMode === "list" ? "starter-segment-btn-active" : ""}` : `text-[9px] font-bold uppercase tracking-wider ${viewMode === "list" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}`}>
                                             <span aria-hidden="true">📋</span> List
                                         </button>
-                                        <button onClick={() => setViewMode("calendar")} className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${viewMode === "calendar" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}>
+                                        <button onClick={() => setViewMode("calendar")} className={`px-2.5 py-0.5 rounded transition-all flex items-center gap-1 ${STARTER_UI ? `starter-segment-btn ${viewMode === "calendar" ? "starter-segment-btn-active" : ""}` : `text-[9px] font-bold uppercase tracking-wider ${viewMode === "calendar" ? "bg-brandTeal-500 text-brandNavy-955 shadow font-extrabold" : "text-slate-400 hover:text-white"}`}`}>
                                             <span aria-hidden="true">📅</span> Calendar
                                         </button>
                                     </div>
@@ -1086,7 +1090,7 @@
                                         <option value="All">All Pipelines</option>
                                     </select>
 
-                                    <button onClick={() => { setEditingItem(null); setIsDealModalOpen(true); }} className="px-3 py-1 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-extrabold text-[9px] uppercase tracking-wider rounded-md transition-all ml-auto lg:ml-0">
+                                    <button onClick={() => { setEditingItem(null); setIsDealModalOpen(true); }} className={STARTER_UI ? "starter-btn-primary px-3 py-1.5 text-xs ml-auto lg:ml-0" : "px-3 py-1 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 font-extrabold text-[9px] uppercase tracking-wider rounded-md transition-all ml-auto lg:ml-0"}>
                                         + New Deal
                                     </button>
                                 </div>
@@ -1123,11 +1127,11 @@
                                             }, 0);
 
                                             return (
-                                                <div key={stage} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, stage)} className="bg-[#02050e]/30 rounded-xl border border-brandNavy-700/30 flex flex-col h-[850px] transition-all hover:border-brandNavy-700/50">
+                                                <div key={stage} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, stage)} className={STARTER_UI ? "starter-kanban-col rounded-xl border flex flex-col h-[850px] transition-all" : "bg-[#02050e]/30 rounded-xl border border-brandNavy-700/30 flex flex-col h-[850px] transition-all hover:border-brandNavy-700/50"}>
                                                     
-                                                    <div className="p-2.5 border-b border-brandNavy-700/40 bg-[#09111F]/30 rounded-t-xl flex flex-col gap-0.5">
+                                                    <div className={STARTER_UI ? "starter-kanban-col-header p-2.5 border-b rounded-t-xl flex flex-col gap-0.5" : "p-2.5 border-b border-brandNavy-700/40 bg-[#09111F]/30 rounded-t-xl flex flex-col gap-0.5"}>
                                                         <div className="flex items-center justify-between">
-                                                            <h3 className="font-extrabold text-[10px] text-white tracking-wide uppercase">{stage}</h3>
+                                                            <h3 className={STARTER_UI ? "font-semibold text-xs text-slate-800" : "font-extrabold text-[10px] text-white tracking-wide uppercase"}>{stage}</h3>
                                                             <span className="text-[9px] px-1.5 py-0.5 bg-brandNavy-900 border border-brandNavy-700/40 rounded-full font-bold text-brandTeal-300">{stageDeals.length}</span>
                                                         </div>
                                                         <div className="text-brandTeal-500 font-mono text-[10px] font-bold mt-0.5 flex items-center gap-1.5">
@@ -1156,7 +1160,7 @@
                                                                         onDragStart={(e) => handleDragStart(e, deal.id)}
                                                                         onDragEnd={handleDragEnd}
                                                                         onClick={() => openDealDetails(deal)}
-                                                                        className={`p-2.5 pl-2 rounded-lg hover:brightness-110 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.frame} ${health.glow || ''}`}
+                                                                        className={`${STARTER_UI ? 'starter-deal-card ' : ''}p-2.5 pl-2 rounded-lg hover:brightness-110 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.frame} ${health.glow || ''}`}
                                                                         role="button"
                                                                         tabIndex={0}
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDealDetails(deal); } }}
@@ -1164,20 +1168,20 @@
                                                                     >
                                                                         
                                                                         <div className="flex justify-between items-start gap-1.5">
-                                                                            <div className="text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate" title="SOW Reference / Deal ID">{deal.id}</div>
+                                                                            <div className={STARTER_UI ? "starter-deal-meta truncate" : "text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate"} title="Deal reference">{deal.id}</div>
                                                                             <span className="flex items-center gap-1 shrink-0" title={health.text}>
                                                                                 <span className={`w-2 h-2 rounded-full ${health.dot}`} aria-hidden="true"></span>
-                                                                                <span className="text-[7px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">{health.text}</span>
+                                                                                <span className={STARTER_UI ? "starter-deal-meta sm:inline hidden" : "text-[7px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline"}>{health.text}</span>
                                                                             </span>
                                                                         </div>
                                                                         
-                                                                        <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1">{deal.company || "Individual Lead"}</div>
-                                                                        <h4 className="font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5">{deal.leadName}</h4>
+                                                                        <div className={STARTER_UI ? "starter-deal-company truncate mt-1" : "text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1"}>{deal.company || "Individual Lead"}</div>
+                                                                        <h4 className={STARTER_UI ? "starter-deal-name group-hover:text-brandTeal-400 transition-colors mt-0.5" : "font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5"}>{deal.leadName}</h4>
                                                                         
-                                                                        {deal.titleRole && (<span className="text-[9px] text-slate-400 block leading-tight truncate">{deal.titleRole}</span>)}
+                                                                        {deal.titleRole && (<span className={STARTER_UI ? "text-sm text-slate-500 block leading-snug truncate" : "text-[9px] text-slate-400 block leading-tight truncate"}>{deal.titleRole}</span>)}
 
-                                                                        <div className="mt-1.5 flex items-center justify-between border-t border-white/5 pt-1">
-                                                                            <div className="text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
+                                                                        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-1.5">
+                                                                            <div className={STARTER_UI ? "starter-deal-amount flex items-center gap-1.5" : "text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5"}>
                                                                                 {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)}
                                                                                 {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[11px] leading-none">🔄</span>}
                                                                             </div>

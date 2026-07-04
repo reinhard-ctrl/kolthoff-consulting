@@ -16,6 +16,11 @@ export const PRODUCTS = {
     plannerSubtitle: 'Internal Project Workbook',
     crmSubtitle: 'Premium Sales Pipeline & Partnership Tracking Studio',
     crmBadge: 'PIPEDRIVE STUDIO',
+    moduleLabels: {
+      sales: 'CRM Pipeline',
+      quotes: 'Project Planner',
+      invoicing: 'Collections',
+    },
   },
   'agency-ops-starter': {
     id: 'agency-ops-starter',
@@ -27,9 +32,14 @@ export const PRODUCTS = {
     },
     starterMode: true,
     plannerTabs: ['sandbox', 'package', 'invoice'],
-    plannerSubtitle: 'Project Estimates',
-    crmSubtitle: 'Track leads, proposals, and closed deals',
-    crmBadge: 'SALES PIPELINE',
+    plannerSubtitle: 'Quotes',
+    crmSubtitle: 'Track leads from inquiry to signed deal',
+    crmBadge: 'Sales',
+    moduleLabels: {
+      sales: 'Sales',
+      quotes: 'Quotes',
+      invoicing: 'Invoicing',
+    },
   },
 };
 

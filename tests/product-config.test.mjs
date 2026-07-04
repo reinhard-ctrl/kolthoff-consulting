@@ -23,6 +23,15 @@ describe('product-config', () => {
     assert.equal(cfg.starterMode, true);
   });
 
+  it('agency-ops-starter uses friendly module labels', () => {
+    const cfg = PRODUCTS['agency-ops-starter'];
+    assert.equal(cfg.moduleLabels.sales, 'Sales');
+    assert.equal(cfg.moduleLabels.quotes, 'Quotes');
+    assert.equal(cfg.moduleLabels.invoicing, 'Invoicing');
+    assert.equal(cfg.plannerSubtitle, 'Quotes');
+    assert.equal(cfg.crmBadge, 'Sales');
+  });
+
   it('planner tab labels rename sandbox to Estimate in starter mode', () => {
     const labels = getPlannerTabLabels();
     assert.equal(labels.sandbox, 'Estimate');

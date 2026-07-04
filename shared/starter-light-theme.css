@@ -1,74 +1,97 @@
 /**
- * Professional light theme for Agency Ops Starter embedded apps.
+ * Agency Ops Starter — balanced professional light theme (CRM + Estimates).
  */
 html.agency-starter-light {
   color-scheme: light;
+  --starter-bg: #f1f5f9;
+  --starter-surface: #ffffff;
+  --starter-surface-muted: #f8fafc;
+  --starter-surface-subtle: #eef2f7;
+  --starter-border: #e2e8f0;
+  --starter-border-strong: #cbd5e1;
+  --starter-text: #0f172a;
+  --starter-text-secondary: #475569;
+  --starter-text-muted: #64748b;
+  --starter-text-faint: #94a3b8;
   --brand-primary: #4f46e5;
-  --brand-primary-soft: rgba(79, 70, 229, 0.08);
-  --brand-primary-ring: rgba(79, 70, 229, 0.18);
-  font-family: 'Inter', 'Montserrat', system-ui, sans-serif;
+  --brand-primary-hover: #4338ca;
+  --brand-primary-soft: rgba(79, 70, 229, 0.09);
+  --brand-primary-ring: rgba(79, 70, 229, 0.2);
+  --starter-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --starter-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --starter-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.07);
+  --starter-radius: 0.625rem;
+  --starter-radius-lg: 0.75rem;
+  font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 html.agency-starter-light body {
-  background: #f8fafc !important;
+  background: var(--starter-bg) !important;
   background-image: none !important;
-  color: #334155 !important;
+  color: var(--starter-text-secondary) !important;
 }
 
-html.agency-starter-light .luxury-gradient {
-  background: #f8fafc !important;
+html.agency-starter-light .starter-app-root {
+  background: var(--starter-bg) !important;
 }
 
-html.agency-starter-light ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+html.agency-starter-light .luxury-gradient,
+html.agency-starter-light .bg-gradient-to-b {
+  background: var(--starter-bg) !important;
+  background-image: none !important;
 }
 
-html.agency-starter-light ::-webkit-scrollbar-track {
-  background: #f1f5f9 !important;
-}
-
+html.agency-starter-light ::-webkit-scrollbar { width: 6px; height: 6px; }
+html.agency-starter-light ::-webkit-scrollbar-track { background: var(--starter-surface-subtle) !important; }
 html.agency-starter-light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1 !important;
+  background: var(--starter-border-strong) !important;
   border-radius: 4px;
 }
-
-html.agency-starter-light ::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-primary, #4f46e5) !important;
-}
+html.agency-starter-light ::-webkit-scrollbar-thumb:hover { background: var(--brand-primary) !important; }
 
 html.agency-starter-light .glass-panel {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
-  border-radius: 0.75rem !important;
+  background: var(--starter-surface) !important;
+  border: 1px solid var(--starter-border) !important;
+  box-shadow: var(--starter-shadow-xs) !important;
+  border-radius: var(--starter-radius-lg) !important;
+  backdrop-filter: none !important;
 }
 
-/* Surfaces */
 html.agency-starter-light .bg-brandNavy-955,
 html.agency-starter-light .bg-brandNavy-950,
 html.agency-starter-light .bg-\[\#020613\],
 html.agency-starter-light .bg-\[\#02050e\],
-html.agency-starter-light .bg-\[\#09111F\] {
-  background-color: #ffffff !important;
+html.agency-starter-light .bg-\[\#09111F\],
+html.agency-starter-light .bg-\[\#061727\],
+html.agency-starter-light .bg-\[\#091f33\],
+html.agency-starter-light .bg-\[\#15233A\] {
+  background-color: var(--starter-surface) !important;
 }
 
 html.agency-starter-light .bg-brandNavy-900,
 html.agency-starter-light .bg-brandNavy-900\/30,
 html.agency-starter-light .bg-brandNavy-900\/50,
 html.agency-starter-light .bg-brandNavy-900\/80,
+html.agency-starter-light .bg-brandNavy-900\/95,
+html.agency-starter-light .bg-brandNavy-950\/95,
+html.agency-starter-light .bg-brandNavy-955\/80,
 html.agency-starter-light .bg-\[\#09111F\]\/30,
 html.agency-starter-light .bg-\[\#09111F\]\/50,
+html.agency-starter-light .bg-\[\#02050e\]\/30,
 html.agency-starter-light .bg-\[\#02050e\]\/80,
-html.agency-starter-light .bg-\[\#020613\]\/60 {
-  background-color: #f8fafc !important;
+html.agency-starter-light .bg-\[\#020613\]\/60,
+html.agency-starter-light .bg-\[\#0C1626\],
+html.agency-starter-light .bg-\[\#1B2C46\]\/50 {
+  background-color: var(--starter-surface-muted) !important;
 }
 
 html.agency-starter-light .bg-brandNavy-800,
 html.agency-starter-light .bg-brandNavy-800\/40,
-html.agency-starter-light .bg-brandNavy-955\/70,
-html.agency-starter-light .bg-\[\#1B2C46\]\/50 {
-  background-color: #f1f5f9 !important;
+html.agency-starter-light .bg-brandNavy-750,
+html.agency-starter-light .hover\:bg-brandNavy-750:hover,
+html.agency-starter-light .bg-brandNavy-955\/70 {
+  background-color: var(--starter-surface-subtle) !important;
 }
 
 html.agency-starter-light .border-brandNavy-700,
@@ -77,40 +100,55 @@ html.agency-starter-light .border-brandNavy-700\/40,
 html.agency-starter-light .border-brandNavy-700\/50,
 html.agency-starter-light .border-brandNavy-700\/60,
 html.agency-starter-light .border-brandNavy-800,
-html.agency-starter-light .border-brandNavy-800\/30 {
-  border-color: #e2e8f0 !important;
+html.agency-starter-light .border-brandNavy-800\/30,
+html.agency-starter-light .border-brandNavy-750 {
+  border-color: var(--starter-border) !important;
 }
 
-html.agency-starter-light .text-white {
-  color: #0f172a !important;
-}
-
+html.agency-starter-light .text-white { color: var(--starter-text) !important; }
+html.agency-starter-light .text-slate-100,
 html.agency-starter-light .text-slate-200,
 html.agency-starter-light .text-slate-300,
-html.agency-starter-light .text-brandNavy-300 {
-  color: #475569 !important;
+html.agency-starter-light .text-brandNavy-300 { color: var(--starter-text-secondary) !important; }
+html.agency-starter-light .text-slate-400,
+html.agency-starter-light .text-slate-404 { color: var(--starter-text-muted) !important; }
+html.agency-starter-light .text-slate-500,
+html.agency-starter-light .text-slate-600 { color: var(--starter-text-faint) !important; }
+
+html.agency-starter-light .starter-page-title {
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  text-transform: none !important;
+  color: var(--starter-text) !important;
 }
 
-html.agency-starter-light .text-slate-400 {
-  color: #64748b !important;
+html.agency-starter-light .starter-page-subtitle {
+  color: var(--starter-text-muted) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
 }
 
-/* Brand accents */
+html.agency-starter-light .starter-badge {
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  font-size: 0.625rem !important;
+}
+
 html.agency-starter-light .bg-brandTeal-500,
 html.agency-starter-light .hover\:bg-brandTeal-600:hover,
-html.agency-starter-light .from-brandTeal-500,
-html.agency-starter-light .to-brandTeal-600 {
-  background-color: var(--brand-primary, #4f46e5) !important;
-  --tw-gradient-from: var(--brand-primary, #4f46e5) !important;
-  --tw-gradient-to: var(--brand-primary-hover, #4338ca) !important;
+html.agency-starter-light .bg-brandTeal-600 {
+  background-color: var(--brand-primary) !important;
   color: #ffffff !important;
 }
 
 html.agency-starter-light .text-brandTeal-400,
 html.agency-starter-light .text-brandTeal-300,
 html.agency-starter-light .text-brandTeal-600,
-html.agency-starter-light .hover\:text-brandTeal-400:hover {
-  color: var(--brand-primary, #4f46e5) !important;
+html.agency-starter-light .hover\:text-brandTeal-400:hover,
+html.agency-starter-light .group-hover\:text-brandTeal-300 {
+  color: var(--brand-primary) !important;
 }
 
 html.agency-starter-light .border-brandTeal-500,
@@ -118,167 +156,564 @@ html.agency-starter-light .border-brandTeal-500\/30,
 html.agency-starter-light .border-brandTeal-500\/40,
 html.agency-starter-light .border-brandTeal-500\/50,
 html.agency-starter-light .hover\:border-brandTeal-500:hover {
-  border-color: color-mix(in srgb, var(--brand-primary, #4f46e5) 35%, transparent) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 32%, transparent) !important;
+}
+
+html.agency-starter-light .bg-brandTeal-500\/10,
+html.agency-starter-light .hover\:bg-brandTeal-500\/10:hover {
+  background-color: var(--brand-primary-soft) !important;
 }
 
 html.agency-starter-light .shadow-brandTeal-500\/10,
 html.agency-starter-light .shadow-brandTeal-500\/20 {
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--brand-primary, #4f46e5) 15%, transparent) !important;
+  box-shadow: var(--starter-shadow-sm) !important;
 }
 
-html.agency-starter-light .text-brandNavy-955 {
-  color: #ffffff !important;
-}
-
+html.agency-starter-light .text-brandNavy-955 { color: #ffffff !important; }
 html.agency-starter-light ::selection {
-  background-color: var(--brand-primary-soft);
-  color: #0f172a;
+  background: var(--brand-primary-soft);
+  color: var(--starter-text);
 }
 
-/* App chrome */
-html.agency-starter-light [data-app-chrome] {
-  background: rgba(255, 255, 255, 0.98) !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
-  backdrop-filter: blur(8px);
-}
-
-html.agency-starter-light [data-app-chrome] h1 {
-  font-weight: 600 !important;
-  letter-spacing: -0.01em !important;
-  text-transform: none !important;
-}
-
+html.agency-starter-light [data-app-chrome],
 html.agency-starter-light .planner-main-header {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
+  box-shadow: var(--starter-shadow-xs) !important;
+  backdrop-filter: none !important;
 }
 
 html.agency-starter-light .planner-workspace-toolbar {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
 }
 
-/* Tab navigation — segmented control */
-html.agency-starter-light [data-app-chrome] nav .flex.bg-\[\#09111F\],
-html.agency-starter-light nav .flex.bg-\[\#09111F\] {
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
-  border-radius: 0.5rem !important;
-  padding: 0.1875rem !important;
-}
-
-html.agency-starter-light nav button.bg-brandTeal-500 {
-  border-radius: 0.375rem !important;
+html.agency-starter-light [data-app-chrome] h1,
+html.agency-starter-light .planner-main-header span.uppercase.block {
+  text-transform: none !important;
   font-weight: 600 !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+  letter-spacing: -0.01em !important;
+}
+
+html.agency-starter-light .starter-segment {
+  background: var(--starter-surface-subtle) !important;
+  border: 1px solid var(--starter-border) !important;
+  border-radius: var(--starter-radius) !important;
+  padding: 0.2rem !important;
+}
+
+html.agency-starter-light .starter-segment-btn {
+  border-radius: 0.4rem !important;
+  font-weight: 500 !important;
+  font-size: 0.6875rem !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-segment-btn:hover {
+  color: var(--starter-text) !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+}
+
+html.agency-starter-light .starter-segment-btn-active,
+html.agency-starter-light nav button.bg-brandTeal-500,
+html.agency-starter-light .starter-segment .bg-brandTeal-500 {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: var(--starter-shadow-xs) !important;
+}
+
+html.agency-starter-light nav .flex.bg-\[\#09111F\],
+html.agency-starter-light .flex.bg-\[\#020613\] {
+  background: var(--starter-surface-subtle) !important;
+  border-color: var(--starter-border) !important;
+  border-radius: var(--starter-radius) !important;
 }
 
 html.agency-starter-light nav button:not(.bg-brandTeal-500) {
-  color: #64748b !important;
+  color: var(--starter-text-muted) !important;
   font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
 }
 
 html.agency-starter-light nav button:not(.bg-brandTeal-500):hover {
-  color: #0f172a !important;
-  background: rgba(255, 255, 255, 0.6) !important;
+  color: var(--starter-text) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
 }
 
-/* Kanban & cards */
-html.agency-starter-light .bg-\[\#02050e\]\/30 {
-  background-color: #f1f5f9 !important;
-  border-radius: 0.75rem !important;
+html.agency-starter-light .planner-main-header nav button {
+  font-family: inherit !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500 !important;
+  border-radius: 0.4rem !important;
 }
 
-html.agency-starter-light .deal-card-frame,
-html.agency-starter-light .glass-panel.deal-card-frame {
-  background: #ffffff !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+html.agency-starter-light .planner-main-header nav button.bg-brandTeal-500 { font-weight: 600 !important; }
+
+html.agency-starter-light .planner-main-header nav button:not(.bg-brandTeal-500) {
+  background: transparent !important;
+  color: var(--starter-text-muted) !important;
+  border-color: transparent !important;
 }
 
-html.agency-starter-light .divide-brandNavy-700\/30 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #e2e8f0 !important;
+html.agency-starter-light .planner-main-header nav button:not(.bg-brandTeal-500):hover {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--starter-text) !important;
 }
 
-html.agency-starter-light .hover\:bg-brandNavy-900:hover,
-html.agency-starter-light .hover\:bg-brandNavy-900\/20:hover,
-html.agency-starter-light .group:hover .hover\:bg-brandNavy-900 {
-  background-color: #f8fafc !important;
+html.agency-starter-light .starter-kanban-col {
+  background: var(--starter-surface-subtle) !important;
+  border-color: var(--starter-border) !important;
+  border-radius: var(--starter-radius-lg) !important;
+}
+
+html.agency-starter-light .starter-kanban-col-header {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
+}
+
+html.agency-starter-light .starter-kanban-col-header h3 {
+  color: var(--starter-text) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0 !important;
+}
+
+html.agency-starter-light .deal-card-frame {
+  background: var(--starter-surface) !important;
+  box-shadow: var(--starter-shadow-xs) !important;
+  border-radius: var(--starter-radius) !important;
+  transition: box-shadow 0.15s, transform 0.15s !important;
+}
+
+html.agency-starter-light .deal-card-frame:hover,
+html.agency-starter-light .hover\:brightness-110:hover {
+  filter: none !important;
+  box-shadow: var(--starter-shadow-md) !important;
+  transform: translateY(-1px);
+}
+
+html.agency-starter-light .won-card-active {
+  animation: none !important;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35), var(--starter-shadow-sm) !important;
+}
+
+html.agency-starter-light .bg-emerald-950\/15,
+html.agency-starter-light .bg-emerald-950\/20,
+html.agency-starter-light .bg-emerald-950\/25,
+html.agency-starter-light .bg-emerald-950\/30 { background-color: #ecfdf5 !important; }
+
+html.agency-starter-light .bg-amber-950\/20,
+html.agency-starter-light .bg-amber-950\/25 { background-color: #fffbeb !important; }
+
+html.agency-starter-light .bg-rose-950\/15,
+html.agency-starter-light .bg-rose-950\/25 { background-color: #fff1f2 !important; }
+
+html.agency-starter-light .bg-slate-900\/35,
+html.agency-starter-light .bg-slate-900\/40,
+html.agency-starter-light .bg-slate-900\/45 { background-color: var(--starter-surface) !important; }
+
+html.agency-starter-light .bg-black\/25 {
+  background-color: var(--starter-surface-subtle) !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .border-white\/5 { border-color: var(--starter-border) !important; }
+
+html.agency-starter-light .divide-brandNavy-700\/30 > :not([hidden]) ~ :not([hidden]),
+html.agency-starter-light .divide-brandNavy-700\/50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--starter-border) !important;
 }
 
 html.agency-starter-light tbody tr:hover,
-html.agency-starter-light .hover\:bg-brandNavy-900\/20 {
-  background-color: #f8fafc !important;
+html.agency-starter-light .hover\:bg-brandNavy-900\/20:hover {
+  background-color: var(--starter-surface-muted) !important;
 }
 
-/* Forms */
+html.agency-starter-light thead tr,
+html.agency-starter-light .bg-\[\#020613\]\/60 {
+  background-color: var(--starter-surface-subtle) !important;
+}
+
 html.agency-starter-light input,
 html.agency-starter-light select,
 html.agency-starter-light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #e2e8f0 !important;
+  background-color: var(--starter-surface) !important;
+  color: var(--starter-text) !important;
+  border: 1px solid var(--starter-border) !important;
   border-radius: 0.5rem !important;
 }
+
+html.agency-starter-light input::placeholder,
+html.agency-starter-light textarea::placeholder { color: var(--starter-text-faint) !important; }
 
 html.agency-starter-light input:focus,
 html.agency-starter-light select:focus,
 html.agency-starter-light textarea:focus {
-  border-color: var(--brand-primary, #4f46e5) !important;
+  border-color: var(--brand-primary) !important;
   box-shadow: 0 0 0 3px var(--brand-primary-ring) !important;
   outline: none;
 }
 
-/* Toolbar controls */
-html.agency-starter-light .flex.bg-\[\#020613\] {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
+html.agency-starter-light .starter-btn-primary {
+  background: var(--brand-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 0.5rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  box-shadow: var(--starter-shadow-xs);
 }
 
-/* Hide decorative blurs */
+html.agency-starter-light .starter-btn-ghost {
+  background: var(--starter-surface) !important;
+  border: 1px solid var(--starter-border) !important;
+  color: var(--starter-text-secondary) !important;
+  font-weight: 500 !important;
+  border-radius: 0.5rem !important;
+  text-transform: none !important;
+}
+
+html.agency-starter-light button.bg-brandTeal-500,
+html.agency-starter-light a.bg-brandTeal-500 {
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+html.agency-starter-light .bg-black\/80,
+html.agency-starter-light .bg-brandNavy-955\/80 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+html.agency-starter-light .shadow-2xl.bg-brandNavy-900,
+html.agency-starter-light .bg-gradient-to-br.from-brandNavy-900,
+html.agency-starter-light .bg-gradient-to-br.from-\[\#0C1626\],
+html.agency-starter-light .fixed .bg-brandNavy-900 {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
+  box-shadow: var(--starter-shadow-md) !important;
+  border-radius: var(--starter-radius-lg) !important;
+}
+
+html.agency-starter-light .bg-amber-500\/10 { background: #fffbeb !important; border-color: #fde68a !important; }
+html.agency-starter-light .text-amber-300,
+html.agency-starter-light .text-amber-400 { color: #b45309 !important; }
+html.agency-starter-light .bg-rose-500\/10 { background: #fff1f2 !important; }
+html.agency-starter-light .text-rose-300,
+html.agency-starter-light .text-rose-400 { color: #be123c !important; }
+html.agency-starter-light .border-amber-500\/30 { border-color: #fde68a !important; }
+html.agency-starter-light .border-rose-500\/30 { border-color: #fecdd3 !important; }
+
+html.agency-starter-light aside[aria-label="Settings"],
+html.agency-starter-light fieldset.bg-brandNavy-955,
+html.agency-starter-light .planner-split-panel {
+  background: var(--starter-surface) !important;
+  border-color: var(--starter-border) !important;
+  box-shadow: var(--starter-shadow-xs) !important;
+  border-radius: var(--starter-radius-lg) !important;
+}
+
+html.agency-starter-light .bg-brandTeal-500\/10,
+html.agency-starter-light label.border-brandTeal-500\/50 {
+  background-color: var(--brand-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 28%, transparent) !important;
+}
+
+html.agency-starter-light .print-card,
+html.agency-starter-light .print-only { background: #ffffff !important; }
+
 html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[130px\],
 html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[120px\],
 html.agency-starter-light .pointer-events-none.absolute.rounded-full.blur-\[100px\] {
   display: none !important;
 }
 
-/* Status badges in header */
-html.agency-starter-light [data-app-chrome] .font-mono.font-bold.uppercase {
+html.agency-starter-light section .glass-panel .text-sm.font-extrabold.text-white {
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .border-l-rose-500\/60 { border-left-color: #fda4af !important; }
+
+html.agency-starter-light .starter-btn-ghost.border-brandTeal-500\/30 {
+  border-color: color-mix(in srgb, var(--brand-primary) 25%, var(--starter-border)) !important;
+  color: var(--brand-primary) !important;
+}
+
+html.agency-starter-light .starter-btn-ghost.border-brandTeal-500\/30:hover {
+  background: var(--brand-primary-soft) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   READABILITY — minimum sizes, contrast, comfortable spacing
+   ═══════════════════════════════════════════════════════════ */
+html.agency-starter-light .starter-app-root {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  letter-spacing: -0.008em;
+}
+
+html.agency-starter-light .starter-app-root .text-\[7px\] { font-size: 0.6875rem !important; line-height: 1.35 !important; }
+html.agency-starter-light .starter-app-root .text-\[8px\] { font-size: 0.75rem !important; line-height: 1.35 !important; }
+html.agency-starter-light .starter-app-root .text-\[9px\] { font-size: 0.8125rem !important; line-height: 1.4 !important; }
+html.agency-starter-light .starter-app-root .text-\[10px\] { font-size: 0.8125rem !important; line-height: 1.45 !important; }
+html.agency-starter-light .starter-app-root .text-\[11px\] { font-size: 0.875rem !important; line-height: 1.45 !important; }
+
+html.agency-starter-light .starter-stat-label {
+  font-size: 0.75rem !important;
   font-weight: 600 !important;
-  letter-spacing: 0.03em !important;
-  font-size: 0.625rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--starter-text-muted) !important;
 }
 
-/* Primary action buttons */
-html.agency-starter-light button.bg-brandTeal-500,
-html.agency-starter-light a.bg-brandTeal-500 {
-  border-radius: 0.375rem !important;
+html.agency-starter-light .starter-stat-value {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: var(--starter-text) !important;
+  letter-spacing: -0.02em;
+}
+
+html.agency-starter-light .starter-stat-card {
+  padding: 0.75rem 1rem !important;
+}
+
+html.agency-starter-light .starter-page-title {
+  font-size: 1rem !important;
+}
+
+html.agency-starter-light .starter-page-subtitle {
+  font-size: 0.8125rem !important;
+  line-height: 1.4 !important;
+}
+
+html.agency-starter-light .starter-segment-btn {
+  font-size: 0.8125rem !important;
+  padding: 0.375rem 0.75rem !important;
+  line-height: 1.3 !important;
+}
+
+html.agency-starter-light .starter-segment-btn-active {
+  font-size: 0.8125rem !important;
+}
+
+html.agency-starter-light .starter-input {
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.75rem 0.5rem 2rem !important;
+  line-height: 1.4 !important;
+  min-height: 2.25rem;
+}
+
+html.agency-starter-light .starter-deal-card {
+  padding: 0.875rem !important;
+  line-height: 1.45;
+}
+
+html.agency-starter-light .starter-deal-name {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  color: var(--starter-text) !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+}
+
+html.agency-starter-light .starter-deal-company {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-deal-meta {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--starter-text-faint) !important;
+}
+
+html.agency-starter-light .starter-deal-amount {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: var(--starter-text) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+html.agency-starter-light .starter-kanban-col-header h3 {
+  font-size: 0.875rem !important;
+}
+
+html.agency-starter-light .starter-kanban-col-header .text-\[9px\] {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 0.125rem 0.5rem !important;
+}
+
+html.agency-starter-light .starter-kanban-col-header .font-mono {
+  font-size: 0.8125rem !important;
+  font-family: inherit !important;
   font-weight: 600 !important;
 }
 
-/* Modals */
-html.agency-starter-light .shadow-2xl.bg-brandNavy-900,
-html.agency-starter-light .bg-gradient-to-br.from-brandNavy-900 {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12) !important;
+html.agency-starter-light aside[aria-label="Settings"] label,
+html.agency-starter-light aside[aria-label="Settings"] .text-\[10px\],
+html.agency-starter-light fieldset .text-\[10px\].uppercase {
+  font-size: 0.8125rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  color: var(--starter-text-secondary) !important;
 }
 
-html.agency-starter-light .shadow-brandTeal-500\/20 {
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1) !important;
+html.agency-starter-light aside[aria-label="Settings"] input,
+html.agency-starter-light aside[aria-label="Settings"] select,
+html.agency-starter-light aside[aria-label="Settings"] textarea,
+html.agency-starter-light fieldset input,
+html.agency-starter-light fieldset select,
+html.agency-starter-light fieldset textarea {
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.625rem !important;
+  line-height: 1.45 !important;
 }
 
-/* Planner sidebar panels */
-html.agency-starter-light aside[aria-label="Settings"],
-html.agency-starter-light fieldset.bg-brandNavy-955 {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+html.agency-starter-light .planner-main-header nav button {
+  font-size: 0.8125rem !important;
+  padding: 0.375rem 0.625rem !important;
 }
 
-html.agency-starter-light .bg-brandTeal-500\/10,
-html.agency-starter-light .border-brandTeal-500\/50 {
-  background-color: var(--brand-primary-soft) !important;
-  border-color: color-mix(in srgb, var(--brand-primary, #4f46e5) 25%, transparent) !important;
+html.agency-starter-light table.text-xs,
+html.agency-starter-light .text-xs {
+  font-size: 0.8125rem !important;
+  line-height: 1.45 !important;
+}
+
+html.agency-starter-light thead.text-\[9px\],
+html.agency-starter-light tr.text-\[9px\] {
+  font-size: 0.75rem !important;
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  font-weight: 600 !important;
+}
+
+html.agency-starter-light .text-slate-404,
+html.agency-starter-light .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.agency-starter-light .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.agency-starter-light .deal-card-frame .text-slate-300,
+html.agency-starter-light .deal-card-frame .text-slate-100 {
+  color: var(--starter-text-secondary) !important;
+}
+
+html.agency-starter-light .deal-card-frame h4.text-white {
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .starter-toolbar {
+  padding: 0.75rem 1rem !important;
+}
+
+html.agency-starter-light .planner-workspace-toolbar button,
+html.agency-starter-light .planner-workspace-toolbar select {
+  font-size: 0.8125rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+html.agency-starter-light .planner-workspace-context h2 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .planner-workspace-meta,
+html.agency-starter-light .planner-workspace-label {
+  font-size: 0.8125rem !important;
+  color: var(--starter-text-muted) !important;
+}
+
+/* Modals — readable labels, inputs, and actions */
+html.agency-starter-light [role="dialog"] h3 {
+  font-size: 1.0625rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light [role="dialog"] label,
+html.agency-starter-light [role="dialog"] .text-\[9px\],
+html.agency-starter-light [role="dialog"] .text-\[8\.5px\] {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: var(--starter-text-secondary) !important;
+}
+
+html.agency-starter-light [role="dialog"] input,
+html.agency-starter-light [role="dialog"] select,
+html.agency-starter-light [role="dialog"] textarea {
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.625rem !important;
+  line-height: 1.45 !important;
+}
+
+html.agency-starter-light [role="dialog"] button.text-\[10px\],
+html.agency-starter-light [role="dialog"] button.text-\[8px\] {
+  font-size: 0.8125rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
+}
+
+html.agency-starter-light [role="dialog"] .text-xs {
+  font-size: 0.875rem !important;
+}
+
+/* List & calendar section headers */
+html.agency-starter-light .glass-panel h3.text-sm,
+html.agency-starter-light .glass-panel h3.font-extrabold {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+  color: var(--starter-text) !important;
+}
+
+html.agency-starter-light .glass-panel .text-\[10px\].text-slate-400 {
+  font-size: 0.8125rem !important;
+  line-height: 1.45 !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-deal-card button.text-\[8px\] {
+  font-size: 0.75rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  padding: 0.25rem 0.5rem !important;
+}
+
+html.agency-starter-light .starter-kanban-col button.text-\[9px\] {
+  font-size: 0.8125rem !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+  padding: 0.5rem !important;
 }

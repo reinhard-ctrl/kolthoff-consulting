@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useProduct } from '../lib/product-context';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app, adminAppId } from '../lib/firebase';
 import { useTenantBranding } from '../hooks/useTenantBranding';
@@ -11,6 +11,8 @@ import {
 const storage = getStorage(app);
 
 export default function BrandingSettings() {
+  const product = useProduct();
+  const modules = product.moduleLabels;
   const {
     branding,
     presets,
@@ -76,7 +78,7 @@ export default function BrandingSettings() {
     await saveBranding(active, editorPresetId);
     setDraft(null);
     setMessageOk(true);
-    setMessage('Active workspace branding updated. Refresh CRM and Estimates tabs.');
+    setMessage(`Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`);
   };
 
   const handleSaveProfile = async () => {
