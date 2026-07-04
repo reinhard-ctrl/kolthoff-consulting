@@ -39,6 +39,9 @@
   };
 
   function getModDisplayName(modNum) {
+    if (global.ProductConfig?.getModTitle) {
+      return global.ProductConfig.getModTitle(modNum);
+    }
     return MOD_DISPLAY_NAMES[modNum] || `Module ${modNum}`;
   }
 
