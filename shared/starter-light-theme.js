@@ -65,6 +65,6 @@
   const styleLink = document.createElement('link');
   styleLink.id = 'agency-starter-light-styles';
   styleLink.rel = 'stylesheet';
-  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v4`;
+  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v5`;
   document.head.appendChild(styleLink);
 })();
