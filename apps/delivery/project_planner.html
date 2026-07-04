@@ -499,24 +499,67 @@
     const H = window.PlannerHelpers;
     const EP = window.EngagementPackages;
     const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Quotes' };
-    const STARTER_UI = Boolean(PRODUCT.starterMode || window.ProductConfig?.isStarterMode?.());
-    const PC = window.ProductConfig || {};
-    const modTitle = (n) => (PC.getModTitle ? PC.getModTitle(n) : H?.getModDisplayName?.(n) || `Module ${n}`);
-    const modCategory = (n) => (PC.getModCategory ? PC.getModCategory(n) : H?.MOD_CATEGORIES?.[`mod${n}`] || `MOD ${n} - ${modTitle(n)}`);
-    const modChip = (n) => (PC.getModChipLabel ? PC.getModChipLabel(n) : `MOD ${n} · ${modTitle(n)}`);
-    const modPhase = (n) => (PC.getModPhase ? PC.getModPhase(n) : `Phase ${n}: ${modTitle(n)}`);
-    const modDesc = (n) => (PC.getModDescription ? PC.getModDescription(n) : '');
-    const formatCategoryDisplay = (category) => (PC.formatModCategoryDisplay ? PC.formatModCategoryDisplay(category, STARTER_UI) : (category || '').replace('MOD ', 'M').replace(' - ', ' · '));
-    const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
-    const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
-    const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
-    const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
-    const MOD_PRESETS = [
+    const AGENCY_MOD_FALLBACK = {
+      mod1: { title: 'Discovery & Audit', shortTitle: 'Discovery', description: 'Map current workflows, tools, and bottlenecks before scoping the engagement.' },
+      mod2: { title: 'Process Design', shortTitle: 'Process', description: 'Design streamlined playbooks, roles, and approval paths for your team.' },
+      mod3: { title: 'Build & Implementation', shortTitle: 'Build', description: 'Configure deliverables, integrations, and workspace with hands-on setup.' },
+      mod4: { title: 'Ongoing Support', shortTitle: 'Support', description: 'Hosting, check-ins, and continuous improvements after launch.' },
+    };
+    const isAgencyStarterContext = () => Boolean(
+      PRODUCT.starterMode ||
+      PRODUCT.id === 'agency-ops-starter' ||
+      window.ProductConfig?.isStarterMode?.() ||
+      new URLSearchParams(window.location.search).get('product') === 'agency-ops-starter'
+    );
+    const getAgencyModMeta = (n) => {
+      const key = `mod${n}`;
+      return window.ProductConfig?.AGENCY_MOD_LABELS?.[key] || AGENCY_MOD_FALLBACK[key];
+    };
+    const modTitle = (n) => {
+      if (isAgencyStarterContext()) return getAgencyModMeta(n)?.title || `Module ${n}`;
+      return window.ProductConfig?.getModTitle?.(n) || H?.getModDisplayName?.(n) || `Module ${n}`;
+    };
+    const modShortTitle = (n) => {
+      if (isAgencyStarterContext()) return getAgencyModMeta(n)?.shortTitle || modTitle(n);
+      return modTitle(n);
+    };
+    const modCategory = (n) => {
+      if (isAgencyStarterContext()) return `MOD ${n} - ${modTitle(n)}`;
+      return window.ProductConfig?.getModCategory?.(n) || H?.MOD_CATEGORIES?.[`mod${n}`] || `MOD ${n} - ${modTitle(n)}`;
+    };
+    const modChip = (n) => {
+      if (isAgencyStarterContext()) return `MOD ${n} · ${modShortTitle(n)}`;
+      return window.ProductConfig?.getModChipLabel?.(n) || `MOD ${n} · ${modTitle(n)}`;
+    };
+    const modPhase = (n) => {
+      if (isAgencyStarterContext()) return `Phase ${n}: ${modTitle(n)}`;
+      return window.ProductConfig?.getModPhase?.(n) || `Phase ${n}: ${modTitle(n)}`;
+    };
+    const modDesc = (n) => {
+      if (isAgencyStarterContext()) return getAgencyModMeta(n)?.description || '';
+      return window.ProductConfig?.getModDescription?.(n) || '';
+    };
+    const formatCategoryDisplay = (category) => {
+      if (window.ProductConfig?.formatModCategoryDisplay) {
+        return window.ProductConfig.formatModCategoryDisplay(category, isAgencyStarterContext());
+      }
+      if (isAgencyStarterContext()) {
+        const match = String(category || '').match(/^MOD (\d)/);
+        if (match) return modChip(Number(match[1]));
+      }
+      return (category || '').replace('MOD ', 'M').replace(' - ', ' · ');
+    };
+    const getModPresets = () => [
       { name: 'mod1', label: modChip(1) },
       { name: 'mod2', label: modChip(2) },
       { name: 'mod3', label: modChip(3) },
       { name: 'mod4', label: modChip(4) },
     ];
+    const STARTER_UI = isAgencyStarterContext();
+    const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
+    const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
+    const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
+    const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     if (STARTER_UI && PRODUCT.moduleLabels?.quotes) {
       document.title = `${PRODUCT.moduleLabels.quotes} | Cloud Synced`;
@@ -2480,7 +2523,7 @@
       const renderEngagementPackageCallout = () => {
         if (!activePackageMeta) return null;
         const packageModLabels = (activePackageMeta.modules || []).map((mod) =>
-          `MOD ${String(mod).replace(/^mod/i, '')}`
+          modChip(Number(String(mod).replace(/^mod/i, '')))
         );
         return (
           <div className="mb-4 border border-brandTeal-200 bg-brandTeal-50/40 rounded-xl p-4 print-pill print-avoid-break text-left font-sans" aria-label="Selected engagement package">
@@ -3579,7 +3622,12 @@
               ].map(mod => (
                 <article key={mod.id} role="listitem" className={`print-module-card border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans ${mod.isActive ? 'border-brandTeal-500 bg-brandTeal-50/20 font-bold' : 'border-dashed bg-slate-50 opacity-50'}`}>
                   <div className="space-y-3 text-left font-sans">
-                    <div className="flex justify-between items-center text-left font-sans"><div className={`w-14 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${mod.isActive ? 'bg-brandTeal-100 text-brandTeal-700' : 'bg-slate-200 text-slate-500'}`}>{mod.id}</div><span className="text-[8px] font-mono font-bold uppercase text-slate-400 text-left font-sans font-bold">{mod.isActive ? 'ACTIVE IN SOW' : 'ROADMAP'}</span></div>
+                    <div className="flex justify-between items-center text-left font-sans">
+                      <div className={`${STARTER_UI ? 'min-w-[3.5rem] px-2' : 'w-14'} h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${mod.isActive ? 'bg-brandTeal-100 text-brandTeal-700' : 'bg-slate-200 text-slate-500'}`}>
+                        {STARTER_UI ? modChip(mod.num) : mod.id}
+                      </div>
+                      <span className="text-[8px] font-mono font-bold uppercase text-slate-400 text-left font-sans font-bold">{mod.isActive ? 'ACTIVE IN SOW' : 'ROADMAP'}</span>
+                    </div>
                     <h3 className="text-xs font-bold text-slate-900 text-left font-sans">{modTitle(mod.num)}</h3>
                     <p className="text-[10px] font-semibold text-slate-500 text-left leading-normal font-sans">{modDesc(mod.num)}</p>
                     <ul className="text-[10px] space-y-1.5 pt-1 overflow-y-auto font-medium text-left font-sans font-semibold">
@@ -3600,7 +3648,7 @@
               <div className="space-y-4 font-medium text-left font-sans">
                 {tasks.filter(t => t.selected).map(task => (
                   <div key={task.id} className="border border-slate-200 rounded-lg p-5 bg-slate-50/40 text-left font-sans font-semibold print-avoid-break">
-                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{H.getModDisplayName(Number(task.category.match(/^MOD (\d)/)?.[1]) || 1)}</span></div>
+                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{modTitle(Number(task.category.match(/^MOD (\d)/)?.[1]) || 1)}</span></div>
                     <p className="text-xs text-slate-600 mb-4 font-semibold text-left leading-relaxed font-sans">{task.description}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px] text-slate-800 leading-relaxed text-left font-semibold font-sans">
                       <div><span className="text-[9px] font-mono uppercase text-slate-400 block font-bold mb-1 text-left font-sans">What we do:</span>{task.scopeDetails?.activities || "Custom action"}</div>
@@ -4349,7 +4397,7 @@
                           </div>
                         </div>
                         <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>
-                          {MOD_PRESETS.map(preset => {
+                          {getModPresets().map(preset => {
                             const isActive = activePresets.includes(preset.name);
                             return (
                               <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={STARTER_UI ? `starter-sow-preset px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 ${isActive ? 'starter-sow-preset-active' : 'starter-sow-preset-inactive'}` : `px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
