@@ -24,6 +24,7 @@ export default function BrandingSettings() {
     savePreset,
     applyPreset,
     deletePreset,
+    restoreDemoPresets,
   } = useTenantBranding();
 
   const [draft, setDraft] = useState<TenantBrandingConfig | null>(null);
@@ -107,6 +108,13 @@ export default function BrandingSettings() {
     setMessage('Profile applied to your workspace.');
   };
 
+  const handleRestoreDemoPresets = async () => {
+    setMessage('');
+    await restoreDemoPresets();
+    setMessageOk(true);
+    setMessage('Demo brand profiles restored.');
+  };
+
   const handleDeletePreset = async (presetId: string) => {
     const preset = presets.find((p) => p.id === presetId);
     if (!preset) return;
@@ -176,9 +184,19 @@ export default function BrandingSettings() {
           </div>
 
           {presets.length === 0 ? (
-            <p className="text-sm text-slate-400 leading-relaxed">
-              No saved profiles yet. Edit the form and click Save profile.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-400 leading-relaxed">
+                No saved profiles yet. Edit the form and click Save profile, or restore the demo set.
+              </p>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleRestoreDemoPresets}
+                className="ops-btn-secondary w-full text-sm disabled:opacity-50"
+              >
+                {saving ? 'Restoring…' : 'Restore demo profiles'}
+              </button>
+            </div>
           ) : (
             <ul className="space-y-2">
               {presets.map((preset) => {
