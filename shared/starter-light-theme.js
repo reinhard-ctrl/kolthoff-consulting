@@ -28,6 +28,6 @@
   const link = document.createElement('link');
   link.id = 'agency-starter-light-styles';
   link.rel = 'stylesheet';
-  link.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-light-v1`;
+  link.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-pro-v1`;
   document.head.appendChild(link);
 })();

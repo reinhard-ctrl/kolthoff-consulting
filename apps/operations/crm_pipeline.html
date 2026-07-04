@@ -9,8 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
     <!-- Firebase Module Initialization -->
-        <script type="module" src="../../shared/firebase-init.js?v=20250704-light-v1"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-light-v1"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250704-pro-v1"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-pro-v1"></script>
     <script src="../../shared/firebase-errors.js"></script>
     <script type="module">
         import * as Financials from '../../shared/financials.js';
@@ -56,7 +56,7 @@
             }
         }
     </script>
-    <script src="../../shared/starter-light-theme.js?v=20250704-light-v1"></script>
+    <script src="../../shared/starter-light-theme.js?v=20250704-pro-v1"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -120,7 +120,7 @@
         const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
             companyName: 'Studio North',
             tagline: PRODUCT.crmSubtitle,
-            primaryColor: '#6366f1',
+            primaryColor: '#4f46e5',
             logoUrl: '',
             crmBadge: PRODUCT.crmBadge,
             crmSubtitle: PRODUCT.crmSubtitle,

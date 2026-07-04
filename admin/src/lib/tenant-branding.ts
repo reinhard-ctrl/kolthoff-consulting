@@ -17,7 +17,7 @@ export interface TenantBrandingConfig {
 export const DEFAULT_TENANT_BRANDING: TenantBrandingConfig = {
   companyName: 'Studio North',
   tagline: 'Creative & Digital Services',
-  primaryColor: '#6366f1',
+  primaryColor: '#4f46e5',
   logoUrl: '',
 };
 

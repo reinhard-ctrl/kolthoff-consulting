@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 // Inline merge logic mirror for unit test (admin/src/lib/tenant-branding.ts)
 function mergeTenantBranding(firestore, productFallback) {
-  const DEFAULT = { companyName: 'Studio North', tagline: 'Creative & Digital Services', primaryColor: '#6366f1', logoUrl: '' };
+  const DEFAULT = { companyName: 'Studio North', tagline: 'Creative & Digital Services', primaryColor: '#4f46e5', logoUrl: '' };
   const base = {
     companyName: productFallback?.name ? `${productFallback.name} ${productFallback.accent || ''}`.trim() : DEFAULT.companyName,
     tagline: productFallback?.subtitle || DEFAULT.tagline,
