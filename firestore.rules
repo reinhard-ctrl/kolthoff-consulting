@@ -12,13 +12,28 @@ service cloud.firestore {
         request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
-    /** Kolthoff admin passcode session, Google SSO session, or custom claim */
-    function isKolthoffAdmin() {
+    /** Passcode session exists for a product tenant (e.g. kolthoff-admin-app, agency-ops-demo) */
+    function hasAdminSession(tenantId) {
+      return exists(/databases/$(database)/documents/artifacts/$(tenantId)/public/data/admin_sessions/$(request.auth.uid));
+    }
+
+    /** Full Kolthoff firm admin — kolthoff-admin-app only */
+    function isKolthoffFirmAdmin() {
       return isAuthenticated() && (
         request.auth.token.role == 'kolthoff_admin' ||
-        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid)) ||
+        hasAdminSession('kolthoff-admin-app') ||
         exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/google_admin_sessions/$(request.auth.uid))
       );
+    }
+
+    /** Agency Ops Starter demo admin — agency-ops-demo tenant only */
+    function isAgencyOpsAdmin() {
+      return isAuthenticated() && hasAdminSession('agency-ops-demo');
+    }
+
+    /** Either product admin shell (firm or agency ops demo) */
+    function isKolthoffAdmin() {
+      return isKolthoffFirmAdmin() || isAgencyOpsAdmin();
     }
 
     /** Staff: kolthoff admin session, Workspace SSO/claims, or tenant members — not anonymous */
@@ -35,12 +50,13 @@ service cloud.firestore {
     }
 
     function isStaffMember() {
-      return isKolthoffAdmin() || isKolthoffStaffEmail() || hasTenantStaffClaim();
+      return isKolthoffFirmAdmin() || isKolthoffStaffEmail() || hasTenantStaffClaim();
     }
 
     function isTenantMember(tenantId) {
       return isAuthenticated() && (
-        isKolthoffAdmin() ||
+        isKolthoffFirmAdmin() ||
+        (tenantId == 'agency-ops-demo' && isAgencyOpsAdmin()) ||
         request.auth.token.tenantId == tenantId
       );
     }
@@ -88,7 +104,7 @@ service cloud.firestore {
     match /artifacts/{tenantId}/public/data/admin_credentials/{code} {
       allow get: if isAuthenticated();
       allow list: if false;
-      allow write: if isKolthoffAdmin();
+      allow write: if isKolthoffFirmAdmin();
     }
 
     function isGoogleStaffSignIn() {
@@ -128,20 +144,20 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
-    // Admin console session after passcode verify (no public Cloud Function required)
-    match /artifacts/kolthoff-admin-app/public/data/admin_sessions/{uid} {
+    // Admin console session after passcode verify — per product tenant
+    match /artifacts/{tenantId}/public/data/admin_sessions/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
       allow create, update: if isAuthenticated() && request.auth.uid == uid &&
         request.resource.data.role == 'kolthoff_admin' &&
         request.resource.data.passcodeVerified is string &&
-        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_credentials/$(request.resource.data.passcodeVerified));
+        exists(/databases/$(database)/documents/artifacts/$(tenantId)/public/data/admin_credentials/$(request.resource.data.passcodeVerified));
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
     // Workspace login directory — staff only
     match /artifacts/kolthoff-admin-app/public/data/core_users/{userId} {
       allow read: if isStaffMember();
-      allow write: if isKolthoffAdmin();
+      allow write: if isKolthoffFirmAdmin();
     }
 
     // Firm internal data — staff only (blocks anonymous CRM/planner scraping)
@@ -187,7 +203,7 @@ service cloud.firestore {
     match /artifacts/{tenantId}/public/data/clients/{clientId} {
       allow get: if isStaffMember() || isPortalClientFor(clientId) || isAuthenticated();
       allow list: if isStaffMember();
-      allow write: if isKolthoffAdmin();
+      allow write: if isKolthoffFirmAdmin();
     }
   }
 }
