@@ -20,7 +20,7 @@
         import * as CrmShare from '../../shared/crm-share.js';
         window.CrmShare = CrmShare;
     </script>
-    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
+    <script src="../../shared/embed-mode.js?v=20250704-embed-v4"></script>
     <script src="../../shared/crm-planner-sync.js?v=20250702-crm-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
@@ -98,6 +98,30 @@
 
         .deal-card-frame {
             border-left-width: 3px;
+        }
+
+        html.kolthoff-embed .crm-main-header {
+            display: block !important;
+        }
+
+        html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
+        html.kolthoff-embed .crm-main-header .crm-header-share {
+            display: flex !important;
+            visibility: visible !important;
+        }
+
+        .crm-main-header .crm-header-inner {
+            min-height: 0;
+        }
+
+        html.kolthoff-embed .crm-main-header .crm-header-inner {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+
+        html.kolthoff-embed .crm-main-header .crm-header-inner nav {
+            width: 100%;
+            justify-content: flex-start;
         }
     </style>
 </head>
@@ -903,10 +927,10 @@
                     )}
 
                     {/* TOP BRAND BAR */}
-                    <header data-app-chrome className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
-                        <div className="max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <header className="crm-main-header border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
+                        <div className="crm-header-inner max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                             
-                            <div className="flex items-center gap-3">
+                            <div data-app-chrome className="flex items-center gap-3">
                                 {renderHeaderLogo(brand)}
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -943,7 +967,7 @@
                                 type="button"
                                 onClick={openShareModal}
                                 disabled={shareBusy}
-                                className={STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}
+                                className={`crm-header-share ${STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}`}
                                 title="Copy a read-only link for external viewers"
                             >
                                 <span aria-hidden="true">🔗</span> Share Pipeline
