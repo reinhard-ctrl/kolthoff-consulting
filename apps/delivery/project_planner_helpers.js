@@ -488,6 +488,45 @@
     return slices;
   }
 
+  /** Firestore rejects undefined field values — omit them recursively before setDoc. */
+  function stripUndefinedDeep(value) {
+    if (Array.isArray(value)) {
+      let changed = false;
+      const mapped = value.map((item) => {
+        const cleaned = stripUndefinedDeep(item);
+        if (cleaned !== item) changed = true;
+        return cleaned;
+      });
+      return changed ? mapped : value;
+    }
+    if (value !== null && typeof value === 'object') {
+      let hasUndefined = false;
+      for (const nested of Object.values(value)) {
+        if (nested === undefined) {
+          hasUndefined = true;
+          break;
+        }
+      }
+      if (!hasUndefined) {
+        let nestedChanged = false;
+        for (const nested of Object.values(value)) {
+          if (stripUndefinedDeep(nested) !== nested) {
+            nestedChanged = true;
+            break;
+          }
+        }
+        if (!nestedChanged) return value;
+      }
+      const out = {};
+      for (const [key, nested] of Object.entries(value)) {
+        if (nested === undefined) continue;
+        out[key] = stripUndefinedDeep(nested);
+      }
+      return out;
+    }
+    return value;
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage, preservedSource) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -496,19 +535,19 @@
     const base = {
       id: activeProfileId,
       workspaceName: workspaceName || '',
-      clientCompany: state.clientCompany,
-      clientRep: state.clientRep,
-      clientAddress: state.clientAddress,
-      clientTin: state.clientTin,
-      quoteId: state.quoteId,
-      quoteDate: state.quoteDate,
-      quoteValidity: state.quoteValidity,
-      includeTax: state.includeTax,
-      preparerTitle: state.preparerTitle,
-      targetStartDate: state.targetStartDate,
-      proposalObjectives: state.proposalObjectives,
-      proposalSponsor: state.proposalSponsor,
-      preDiagnosticList: state.preDiagnosticList,
+      clientCompany: state.clientCompany ?? '',
+      clientRep: state.clientRep ?? '',
+      clientAddress: state.clientAddress ?? '',
+      clientTin: state.clientTin ?? '',
+      quoteId: state.quoteId ?? '',
+      quoteDate: state.quoteDate ?? '',
+      quoteValidity: state.quoteValidity ?? '',
+      includeTax: Boolean(state.includeTax),
+      preparerTitle: state.preparerTitle ?? '',
+      targetStartDate: state.targetStartDate ?? '',
+      proposalObjectives: state.proposalObjectives ?? '',
+      proposalSponsor: state.proposalSponsor ?? '',
+      preDiagnosticList: state.preDiagnosticList ?? '',
       frictionBuffer: state.frictionBuffer,
       principalToSeniorDelegate: state.principalToSeniorDelegate,
       seniorToAssociateDelegate: state.seniorToAssociateDelegate,
@@ -574,7 +613,7 @@
         portalClientId: state.links?.portalClientId || state.quoteId || null,
         contractId: state.links?.contractId || (state.quoteId ? `contract-${activeProfileId}` : null)
       };
-    return { ...base, ...pickPreservedProfileSlices(preservedSource) };
+    return stripUndefinedDeep({ ...base, ...pickPreservedProfileSlices(preservedSource) });
   }
 
   function validatePrintReadiness(view, ctx) {

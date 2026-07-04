@@ -182,4 +182,11 @@ const addendumInvoiceValidation = H.validatePrintReadiness('invoice', {
 assert.equal(addendumInvoiceValidation.ok, false);
 assert.ok(addendumInvoiceValidation.issues.some((i) => i.includes('due date')));
 
+const sparseState = { ...plannerState, targetStartDate: undefined, proposalObjectives: undefined };
+const sparsePayload = H.buildProfilePayload('ao-brandco-web', 'Brand Co Web', sparseState, 1125000);
+assert.equal(sparsePayload.targetStartDate, '');
+assert.equal(sparsePayload.proposalObjectives, '');
+assert.equal('targetStartDate' in sparsePayload, true);
+assert.equal(Object.values(sparsePayload).includes(undefined), false);
+
 console.log('planner-preserved-slices.test.mjs passed');
