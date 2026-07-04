@@ -11,6 +11,18 @@ body {
   @apply bg-brandNavy-900/60 backdrop-blur border border-brandNavy-700/40 rounded-xl;
 }
 
+.brand-primary-text {
+  color: var(--brand-primary, #14b8a6);
+}
+
+.brand-primary-bg {
+  background-color: var(--brand-primary, #14b8a6);
+}
+
+.brand-primary-border {
+  border-color: var(--brand-primary, #14b8a6);
+}
+
 /* Sidebar: scale type to viewport height and width */
 .sidebar-nav-label {
   font-size: clamp(0.62rem, 0.45rem + 0.28vw, 0.8rem);

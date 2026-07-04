@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase Module Initialization -->
-      <script type="module" src="../../shared/firebase-init.js?v=20250702-firebase-v2"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250702-firebase-v2"></script>
+      <script type="module" src="../../shared/firebase-init.js?v=20250704-brand-v1"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-brand-v1"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -501,7 +501,14 @@
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
-    const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'KOLTHOFF', accent: 'CONSULTING' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Internal Project Workbook' };
+    const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Project Estimates' };
+    const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
+      companyName: 'Studio North',
+      tagline: PRODUCT.plannerSubtitle || 'Project Estimates',
+      primaryColor: '#6366f1',
+      logoUrl: '',
+      plannerSubtitle: PRODUCT.plannerSubtitle,
+    };
     const PLANNER_TABS = PRODUCT.plannerTabs || ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'];
     const TAB_LABELS = window.ProductConfig?.getPlannerTabLabels?.() || { nda: 'NDA', packages: 'Packages', sandbox: 'Planner', package: 'Documents', addendum: 'Addendum', invoice: 'Invoice' };
     class ErrorBoundary extends Component {
@@ -954,6 +961,13 @@
       const [crmDeals, setCrmDeals] = useState([]);
       const [isSaving, setIsSaving] = useState(false);
       const [view, setView] = useState('sandbox');
+      const [brand, setBrand] = useState(defaultBrand);
+
+      useEffect(() => {
+        if (!window.TenantBranding?.subscribe) return undefined;
+        return window.TenantBranding.subscribe(setBrand);
+      }, []);
+
       const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
       const [showRenameWorkspace, setShowRenameWorkspace] = useState(false);
       const [renameWorkspaceValue, setRenameWorkspaceValue] = useState('');
@@ -3966,15 +3980,21 @@
           <header className="planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0">
             <div className="planner-header-inner max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
               <div data-app-chrome className="flex items-center gap-2">
-                <svg aria-hidden="true" className="w-8 h-8 text-brandTeal-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" fill="#14B8A6" fillOpacity="0.08" stroke="url(#hdr-shield-grad)" strokeWidth="4.5" strokeLinejoin="round" />
-                  <path d="M36 50 L46 60 L66 36" stroke="url(#hdr-check-grad)" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                {brand.logoUrl ? (
+                  <img src={brand.logoUrl} alt="" className="h-8 w-auto max-w-[100px] object-contain" />
+                ) : (
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs" style={{ backgroundColor: brand.primaryColor }}>
+                    {(brand.companyName || 'A').charAt(0)}
+                  </div>
+                )}
                 <div className="text-left font-sans font-bold">
                   <span className="font-sans font-extrabold tracking-wider text-xs sm:text-sm uppercase block text-white leading-none">
-                    {PRODUCT.branding.name}{PRODUCT.branding.accent ? <> <span className="text-brandTeal-500">{PRODUCT.branding.accent}</span></> : null}
+                    {(() => {
+                      const d = window.TenantBranding?.splitDisplay?.(brand.companyName) || { line1: brand.companyName, line2: '' };
+                      return <>{d.line1}{d.line2 ? <> <span style={{ color: brand.primaryColor }}>{d.line2}</span></> : null}</>;
+                    })()}
                   </span>
-                  <span className="text-[7px] text-brandTeal-400 font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans">{PRODUCT.plannerSubtitle || 'Internal Project Workbook'}</span>
+                  <span className="text-[7px] font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans" style={{ color: `${brand.primaryColor}cc` }}>{brand.plannerSubtitle || brand.tagline || 'Project Estimates'}</span>
                 </div>
               </div>
               

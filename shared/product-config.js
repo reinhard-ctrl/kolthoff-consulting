@@ -21,9 +21,9 @@ export const PRODUCTS = {
     id: 'agency-ops-starter',
     tenantId: 'agency-ops-demo',
     branding: {
-      name: 'AGENCY',
-      accent: 'OPS',
-      subtitle: 'Quote-to-Cash for Agencies',
+      name: 'Studio',
+      accent: 'North',
+      subtitle: 'Creative & Digital Services',
     },
     starterMode: true,
     plannerTabs: ['sandbox', 'package', 'invoice'],

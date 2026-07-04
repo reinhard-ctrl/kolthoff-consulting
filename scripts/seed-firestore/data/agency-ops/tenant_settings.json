@@ -2,7 +2,7 @@
   {
     "id": "config",
     "productId": "agency-ops-starter",
-    "clientName": "Agency Ops Demo",
+    "clientName": "Demo Workspace",
     "features": {
       "messenger": false,
       "approvals": false,
@@ -10,9 +10,10 @@
       "crm": false
     },
     "branding": {
-      "name": "AGENCY",
-      "accent": "OPS",
-      "subtitle": "Quote-to-Cash for Agencies"
+      "companyName": "Studio North",
+      "tagline": "Creative & Digital Services",
+      "primaryColor": "#6366f1",
+      "logoUrl": ""
     },
     "seededAt": "2026-07-04",
     "seededBy": "scripts/seed-firestore/data/agency-ops"
