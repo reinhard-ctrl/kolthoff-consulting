@@ -75,11 +75,17 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
     try {
       const result = await verifyAdminPasscode(code);
       if (!result.valid) {
-        setError(
-          'Invalid passcode. Create a Firestore document at ' +
-          'artifacts/kolthoff-admin-app/public/data/admin_credentials/YOUR_CODE ' +
-          'with field role = kolthoff_admin (see docs/admin-login.md).'
-        );
+        const credPath = `artifacts/${product.tenantId}/public/data/admin_credentials/YOUR_CODE`;
+        if (product.isDemo) {
+          setError(
+            `Invalid passcode for Agency Ops demo. Use demostart2026 at /agency-ops/ (not /admin/). ` +
+            `Credential path: ${credPath.replace('YOUR_CODE', 'demostart2026')}`
+          );
+        } else {
+          setError(
+            `Invalid passcode. Create a Firestore document at ${credPath} with field role = kolthoff_admin (see docs/admin-login.md).`
+          );
+        }
         return;
       }
       const returnUrl = getReturnUrl();
