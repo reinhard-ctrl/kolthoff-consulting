@@ -12,11 +12,12 @@ service cloud.firestore {
         request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
-    /** Kolthoff admin passcode session or custom claim */
+    /** Kolthoff admin passcode session, Google SSO session, or custom claim */
     function isKolthoffAdmin() {
       return isAuthenticated() && (
         request.auth.token.role == 'kolthoff_admin' ||
-        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid))
+        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/admin_sessions/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/google_admin_sessions/$(request.auth.uid))
       );
     }
 
@@ -101,11 +102,29 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == uid &&
         isGoogleStaffSignIn() &&
         request.resource.data.status == 'pending' &&
-        request.resource.data.email == request.auth.token.email;
+        request.resource.data.email.lower() == request.auth.token.email.lower();
       allow update: if isAuthenticated() && request.auth.uid == uid &&
         isGoogleStaffSignIn() &&
-        resource.data.status == 'error' &&
-        request.resource.data.status == 'pending';
+        request.resource.data.status == 'pending' &&
+        request.resource.data.email.lower() == request.auth.token.email.lower() &&
+        (
+          resource.data.status == 'error' ||
+          resource.data.status == 'complete' ||
+          (resource.data.status == 'pending' &&
+            request.resource.data.requestedAt is int &&
+            resource.data.requestedAt is int &&
+            request.resource.data.requestedAt > resource.data.requestedAt)
+        );
+      allow delete: if isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Google SSO admin session (client-written after Google sign-in — no Cloud Function required)
+    match /artifacts/kolthoff-admin-app/public/data/google_admin_sessions/{uid} {
+      allow read: if isAuthenticated() && request.auth.uid == uid;
+      allow create, update: if isAuthenticated() && request.auth.uid == uid &&
+        isGoogleStaffSignIn() &&
+        request.resource.data.role == 'kolthoff_admin' &&
+        request.resource.data.email.lower() == request.auth.token.email.lower();
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 

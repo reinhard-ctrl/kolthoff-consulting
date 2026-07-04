@@ -12,7 +12,8 @@ Staff can sign in with **@kolthoff-consulting.com** Google accounts on:
 1. [Authentication → Sign-in method](https://console.firebase.google.com/project/kolthoff-portal/authentication/providers)
 2. Enable **Google** provider
 3. Add authorized domains: `kolthoff-portal.web.app`, `kolthoff-consulting.com`, `www.kolthoff-consulting.com`
-4. Deploy Cloud Function `provisionGoogleStaff` (sets custom claims + `core_users`). If CI deploy fails on IAM for a new function, re-run the **Firebase Deploy** workflow on `main` after merge — the workflow sets Cloud Run invoker bindings and retries functions deploy.
+4. **Auth domain must match your URL** — the app sets `authDomain` to `kolthoff-portal.web.app` or `kolthoff-consulting.com` automatically (not `firebaseapp.com`). Chrome 115+ blocks Google redirect sign-in when those differ. See [Firebase redirect best practices](https://firebase.google.com/docs/auth/web/redirect-best-practices).
+5. Deploy functions + rules (Firestore `staff_sso_requests` trigger provisions claims)
 
 ### How it works
 

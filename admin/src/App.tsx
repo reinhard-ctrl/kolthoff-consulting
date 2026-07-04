@@ -1,7 +1,7 @@
 import { Component, useState, useEffect, type ReactNode } from 'react';
 import { FirebaseError } from 'firebase/app';
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
-import { verifyAdminPasscode, hasAdminSession, adminCol } from './lib/firebase';
+import { verifyAdminPasscode, hasAdminSession, adminCol, auth } from './lib/firebase';
 import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import AgencyOpsDashboard from './pages/AgencyOpsDashboard';
@@ -64,6 +64,10 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -106,11 +110,19 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
     setGoogleLoading(true);
     setError('');
     try {
-      const { startGoogleStaffSignIn } = await import('./lib/staff-sso');
-      await startGoogleStaffSignIn();
+      const { signInWithGoogleStaff } = await import('./lib/staff-sso');
+      await signInWithGoogleStaff();
+      const returnUrl = getReturnUrl();
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        onAuth();
+      }
     } catch (err) {
+      if (err instanceof Error && err.message === 'REDIRECT_STARTED') return;
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
       setError(msg);
+    } finally {
       setGoogleLoading(false);
     }
   };
@@ -215,11 +227,21 @@ function AppRoutes() {
   const [googleSsoError, setGoogleSsoError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+    const safetyTimer = window.setTimeout(() => {
+      if (!cancelled) {
+        setBootError('Loading timed out. Refresh the page or use passcode login below.');
+        setAuthed(false);
+      }
+    }, 12000);
+
     (async () => {
       try {
         const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
         const user = await completeGoogleStaffRedirect();
+        if (cancelled) return;
         if (user) {
+          window.clearTimeout(safetyTimer);
           const returnUrl = getReturnUrl();
           if (returnUrl) {
             window.location.href = returnUrl;
@@ -229,12 +251,19 @@ function AppRoutes() {
           return;
         }
       } catch (err) {
+        if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+        console.error('Google SSO boot failed:', err);
         setGoogleSsoError(msg);
       }
 
       try {
         const ok = await hasAdminSession();
+        if (cancelled) return;
+        window.clearTimeout(safetyTimer);
+        if (!ok && auth.currentUser && !auth.currentUser.isAnonymous) {
+          console.warn('Signed-in user lacks admin session:', auth.currentUser.email);
+        }
         const returnUrl = getReturnUrl();
         if (ok && returnUrl) {
           window.location.href = returnUrl;
@@ -242,11 +271,18 @@ function AppRoutes() {
         }
         setAuthed(ok);
       } catch (err) {
+        if (cancelled) return;
+        window.clearTimeout(safetyTimer);
         console.warn('Admin session check failed:', err);
         setBootError(err instanceof Error ? err.message : 'Could not verify admin session.');
         setAuthed(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safetyTimer);
+    };
   }, []);
 
   if (authed === null) {

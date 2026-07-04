@@ -5,9 +5,11 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getAdminTenantId } from './product-config';
 
+import { resolveAuthDomain } from './auth-domain';
+
 const firebaseConfig = {
   apiKey: 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI',
-  authDomain: 'kolthoff-portal.firebaseapp.com',
+  authDomain: resolveAuthDomain(),
   projectId: 'kolthoff-portal',
   storageBucket: 'kolthoff-portal.firebasestorage.app',
   messagingSenderId: '413958125034',
@@ -37,6 +39,7 @@ export function adminDoc(col: string, id: string) {
 }
 
 export async function bootstrapAuth() {
+  await auth.authStateReady();
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
   if (token) {
     const { signInWithCustomToken } = await import('firebase/auth');
@@ -51,9 +54,18 @@ export async function bootstrapAuth() {
   }
 }
 
+/** Passcode flow only — do not call before Google redirect handling on app boot */
+export async function bootstrapAnonymousForPasscode() {
+  await auth.authStateReady();
+  if (auth.currentUser && !auth.currentUser.isAnonymous) return;
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+}
+
 /** Verify passcode via Firestore — works when org policy blocks public Cloud Functions */
 export async function verifyAdminPasscode(code: string) {
-  await bootstrapAuth();
+  await bootstrapAnonymousForPasscode();
   const trimmed = code.trim();
   if (!trimmed) return { valid: false as const };
 
@@ -85,11 +97,15 @@ export async function verifyAdminPasscode(code: string) {
 
 export async function hasAdminSession(): Promise<boolean> {
   try {
-    if (!auth.currentUser) {
-      await bootstrapAuth();
-    }
+    await auth.authStateReady();
     const user = auth.currentUser;
     if (!user) return false;
+
+    if (user.isAnonymous) {
+      const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
+      const snap = await getDoc(sessionRef);
+      return snap.exists();
+    }
 
     const token = await user.getIdTokenResult();
     if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
@@ -100,10 +116,15 @@ export async function hasAdminSession(): Promise<boolean> {
       return true;
     }
 
+    const googleSessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'google_admin_sessions', user.uid);
+    const googleSnap = await getDoc(googleSessionRef);
+    if (googleSnap.exists()) return true;
+
     const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
     const snap = await getDoc(sessionRef);
     return snap.exists();
-  } catch {
+  } catch (err) {
+    console.warn('hasAdminSession failed:', err);
     return false;
   }
 }

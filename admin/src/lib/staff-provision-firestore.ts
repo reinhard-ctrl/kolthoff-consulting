@@ -1,4 +1,4 @@
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db, adminAppId } from './firebase';
 
@@ -8,14 +8,14 @@ function staffSsoRequestRef(uid: string) {
   return doc(db, 'artifacts', adminAppId, 'public', 'data', 'staff_sso_requests', uid);
 }
 
-async function waitForStaffProvision(uid: string): Promise<void> {
+async function waitForStaffProvision(uid: string, timeoutMs: number): Promise<void> {
   const ref = staffSsoRequestRef(uid);
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
       reject(new Error('Staff provisioning timed out. Try again or use passcode login.'));
-    }, PROVISION_TIMEOUT_MS);
+    }, timeoutMs);
 
     const unsub = onSnapshot(
       ref,
@@ -40,8 +40,35 @@ async function waitForStaffProvision(uid: string): Promise<void> {
   });
 }
 
+async function enqueueStaffProvisionRequest(user: User): Promise<void> {
+  const ref = staffSsoRequestRef(user.uid);
+  const payload = {
+    status: 'pending' as const,
+    email: user.email?.trim().toLowerCase() || null,
+    displayName: user.displayName || null,
+    requestedAt: Date.now(),
+  };
+
+  const existing = await getDoc(ref);
+  if (!existing.exists()) {
+    await setDoc(ref, payload);
+    return;
+  }
+
+  const priorRequestedAt =
+    typeof existing.data()?.requestedAt === 'number' ? existing.data()!.requestedAt : 0;
+  await updateDoc(ref, {
+    ...payload,
+    requestedAt: Math.max(payload.requestedAt, priorRequestedAt + 1),
+  });
+}
+
 /** Provision staff claims via Firestore — works when Cloud Functions are not publicly invokable */
-export async function provisionGoogleStaffViaFirestore(user: User): Promise<void> {
+export async function provisionGoogleStaffViaFirestore(
+  user: User,
+  options?: { timeoutMs?: number },
+): Promise<void> {
+  const provisionTimeout = options?.timeoutMs ?? PROVISION_TIMEOUT_MS;
   const token = await user.getIdTokenResult();
   if (
     (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') &&
@@ -58,21 +85,7 @@ export async function provisionGoogleStaffViaFirestore(user: User): Promise<void
     if (refreshed.claims.tenantId === adminAppId) return;
   }
 
-  const payload = {
-    status: 'pending',
-    email: user.email,
-    displayName: user.displayName || null,
-    requestedAt: Date.now(),
-  };
-
-  if (!existing.exists() || existing.data()?.status === 'error') {
-    await setDoc(ref, payload);
-  } else if (existing.data()?.status === 'pending') {
-    // Another tab may have already requested — just wait
-  } else {
-    await setDoc(ref, payload);
-  }
-
-  await waitForStaffProvision(user.uid);
+  await enqueueStaffProvisionRequest(user);
+  await waitForStaffProvision(user.uid, provisionTimeout);
   await user.getIdToken(true);
 }

@@ -5,9 +5,11 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
+import { resolveAuthDomain } from './auth-domain';
+
 const firebaseConfig = {
   apiKey: 'AIzaSyDtWOj19Pw0n7NGo4JQZ7sbLcazu_XZzNI',
-  authDomain: 'kolthoff-portal.firebaseapp.com',
+  authDomain: resolveAuthDomain(),
   projectId: 'kolthoff-portal',
   storageBucket: 'kolthoff-portal.firebasestorage.app',
   messagingSenderId: '413958125034',
@@ -31,6 +33,7 @@ export function tenantDoc(name: string, id: string) {
 }
 
 export async function bootstrapAuth() {
+  await auth.authStateReady();
   const token = (window as unknown as { __initial_auth_token?: string }).__initial_auth_token;
   if (token) await signInWithCustomToken(auth, token);
   else if (!auth.currentUser) {
@@ -56,9 +59,7 @@ const ADMIN_APP = 'kolthoff-admin-app';
 
 export async function hasAdminStaffSession(): Promise<boolean> {
   try {
-    if (!auth.currentUser) {
-      await bootstrapAuth();
-    }
+    await auth.authStateReady();
   } catch {
     return false;
   }

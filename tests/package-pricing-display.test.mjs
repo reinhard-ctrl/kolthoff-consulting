@@ -26,11 +26,11 @@ const { EP, H } = loadScripts();
 
 const MOD_4 = 'MOD 4 - Care Plan';
 const catalog = [
-  { id: 'm1-01', category: 'MOD 1 - Business Leak Scan', estHours: 3, tier: 'associate', selected: false },
-  { id: 'm1-02', category: 'MOD 1 - Business Leak Scan', estHours: 3, tier: 'associate', selected: false },
-  { id: 'm1-03', category: 'MOD 1 - Business Leak Scan', estHours: 6, tier: 'senior', selected: false },
-  { id: 'm1-04', category: 'MOD 1 - Business Leak Scan', estHours: 4, tier: 'associate', selected: false },
-  { id: 'm1-05', category: 'MOD 1 - Business Leak Scan', estHours: 5, tier: 'senior', selected: false },
+  { id: 'm1-01', category: 'MOD 1 - Business Leak Scan', estHours: 2, tier: 'associate', selected: false },
+  { id: 'm1-02', category: 'MOD 1 - Business Leak Scan', estHours: 1, tier: 'associate', selected: false },
+  { id: 'm1-03', category: 'MOD 1 - Business Leak Scan', estHours: 5, tier: 'senior', selected: false },
+  { id: 'm1-04', category: 'MOD 1 - Business Leak Scan', estHours: 2, tier: 'associate', selected: false },
+  { id: 'm1-05', category: 'MOD 1 - Business Leak Scan', estHours: 3, tier: 'senior', selected: false },
   { id: 'm1-06', category: 'MOD 1 - Business Leak Scan', estHours: 2, tier: 'principal', selected: false },
   { id: 'm2-01', category: 'MOD 2 - How Your Business Runs', estHours: 6, tier: 'senior', selected: false },
   { id: 'm2-02', category: 'MOD 2 - How Your Business Runs', estHours: 6, tier: 'senior', selected: false },
@@ -106,8 +106,9 @@ assert.equal(fullLabel, formatCurrency(sowSubtotal(fullStack)));
 assert.ok(auditCost(fullStack) > 0);
 assert.ok(fullStack.retainerCostTotalBase > 0);
 
-// Leak Scan — project-only unchanged
+// Leak Scan — SME entry pricing (13h MOD 1, 9% friction buffer → ₱29,975)
 const leakScan = economicsForPackage('leak-scan');
+assert.equal(leakScan.finalProjectCostBase, 29975);
 assert.equal(H.formatPackagePriceLabel(leakScan, formatCurrency), formatCurrency(leakScan.finalProjectCostBase));
 
 console.log('package-pricing-display.test.mjs: all assertions passed');

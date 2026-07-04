@@ -118,6 +118,7 @@ const addendumRecord = H.createAddendumRecord({
   catalogTasks: [{ id: 'm3-05', deliverable: 'Training', category: 'MOD 3', selected: false, estHours: 8, tier: 'senior' }],
   quoteDate: '2026-07-01',
 });
+addendumRecord.id = 'addendum-test-a1';
 assert.equal(addendumRecord.suffix, 'A1');
 assert.equal(addendumRecord.ref, 'KC-2026-APARRI-A1');
 assert.equal(addendumRecord.templateId, 'training-day');
@@ -129,6 +130,7 @@ const secondAddendum = H.createAddendumRecord({
   templateId: 'custom',
   catalogTasks: [],
 });
+secondAddendum.id = 'addendum-test-a2';
 assert.equal(secondAddendum.suffix, 'A2');
 
 const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
@@ -140,6 +142,14 @@ assert.equal(payloadWithAddenda.addenda.length, 1);
 assert.equal(payloadWithAddenda.activeAddendumId, addendumRecord.id);
 assert.equal(payloadWithAddenda.branding.primaryColor, '#112233');
 
+const afterDelete = H.removeAddendumFromList([addendumRecord, secondAddendum], addendumRecord.id);
+assert.equal(afterDelete.length, 1);
+assert.equal(afterDelete[0].suffix, 'A2');
+
+assert.equal(H.canDeleteAddendum({ status: 'draft' }), true);
+assert.equal(H.canDeleteAddendum({ status: 'issued' }), true);
+assert.equal(H.canDeleteAddendum({ status: 'invoiced' }), false);
+
 const addendumValidation = H.validatePrintReadiness('addendum', {
   clientCompany: 'Acme Corp',
   clientRep: 'John Smith',
@@ -149,5 +159,27 @@ const addendumValidation = H.validatePrintReadiness('addendum', {
 });
 assert.equal(addendumValidation.ok, false);
 assert.ok(addendumValidation.issues.some((i) => i.includes('due date')));
+
+const payloadWithInvoiceAddendum = H.buildProfilePayload('client-1', 'Acme Workspace', {
+  ...plannerState,
+  addenda: [addendumRecord],
+  activeAddendumId: addendumRecord.id,
+  invoiceAddendumId: addendumRecord.id,
+}, 1125000, preservedProfile);
+assert.equal(payloadWithInvoiceAddendum.invoiceAddendumId, addendumRecord.id);
+
+const addendumInvoiceValidation = H.validatePrintReadiness('invoice', {
+  clientCompany: 'Acme Corp',
+  clientRep: 'John Smith',
+  clientAddress: '123 Main',
+  clientTin: '123-456-789-000',
+  invoiceTargetAddendum: addendumRecord,
+  issueInvoice: true,
+  invoiceDueDate: '',
+  validateTIN: () => true,
+  tasks: [],
+});
+assert.equal(addendumInvoiceValidation.ok, false);
+assert.ok(addendumInvoiceValidation.issues.some((i) => i.includes('due date')));
 
 console.log('planner-preserved-slices.test.mjs passed');
