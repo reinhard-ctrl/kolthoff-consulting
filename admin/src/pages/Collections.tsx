@@ -15,6 +15,8 @@ import {
   type Withholding2307Record,
 } from '../lib/invoices';
 import { syncPortalBillingForAccessCode } from '../lib/portal-billing-sync';
+import { useProduct } from '../lib/product-context';
+import { isAgencyOpsStarter } from '../lib/product-config';
 
 interface WorkbookProfile {
   id: string;
@@ -44,6 +46,10 @@ function downloadCsv(filename: string, content: string) {
 }
 
 export default function Collections() {
+  const product = useProduct();
+  const agencyOps = isAgencyOpsStarter(product.id);
+  const invoicingLabel = product.moduleLabels.invoicing;
+  const quotesLabel = product.moduleLabels.quotes;
   const [tab, setTab] = useState<TabId>('collections');
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [withholding, setWithholding] = useState<Withholding2307Record[]>([]);
@@ -266,10 +272,11 @@ export default function Collections() {
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-2">Collections</h1>
+          <h1 className="text-2xl font-bold mb-2">{invoicingLabel}</h1>
           <p className="text-sm text-slate-400 max-w-2xl">
-            Track invoices issued from Project Planner, record BDO payments, and export for your bookkeeper.
-            Issue new invoices from the Planner invoice tab.
+            {agencyOps
+              ? `Track invoices issued from ${quotesLabel}, record payments, and export for your bookkeeper. Issue new invoices from the ${quotesLabel} invoice tab.`
+              : 'Track invoices issued from Project Planner, record BDO payments, and export for your bookkeeper. Issue new invoices from the Planner invoice tab.'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -372,7 +379,9 @@ export default function Collections() {
           </table>
           {filtered.length === 0 && (
             <p className="p-6 text-slate-500 italic">
-              No invoices yet. Open Project Planner → Invoice tab → Issue Invoice to create one.
+              {agencyOps
+                ? `No invoices yet. Open ${quotesLabel} → Invoice tab → Issue Invoice to create one.`
+                : 'No invoices yet. Open Project Planner → Invoice tab → Issue Invoice to create one.'}
             </p>
           )}
         </div>

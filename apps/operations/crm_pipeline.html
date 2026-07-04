@@ -116,8 +116,11 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
-        const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, crmSubtitle: 'Track leads, proposals, and closed deals', crmBadge: 'SALES PIPELINE' };
+        const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, crmSubtitle: 'Track leads from inquiry to signed deal', crmBadge: 'Sales' };
         const STARTER_UI = Boolean(PRODUCT.starterMode || window.ProductConfig?.isStarterMode?.());
+        if (STARTER_UI && PRODUCT.moduleLabels?.sales) {
+            document.title = `${PRODUCT.moduleLabels.sales} | Cloud Synced`;
+        }
         const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
             companyName: 'Studio North',
             tagline: PRODUCT.crmSubtitle,

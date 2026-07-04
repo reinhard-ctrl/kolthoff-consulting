@@ -9,9 +9,9 @@ const DEFAULTS = {
   tagline: 'Creative & Digital Services',
   primaryColor: '#4f46e5',
   logoUrl: '',
-  crmBadge: 'SALES PIPELINE',
-  crmSubtitle: 'Track leads, proposals, and closed deals',
-  plannerSubtitle: 'Project Estimates',
+  crmBadge: 'Sales',
+  crmSubtitle: 'Track leads from inquiry to signed deal',
+  plannerSubtitle: 'Quotes',
 };
 
 function resolveCompanyName(b) {

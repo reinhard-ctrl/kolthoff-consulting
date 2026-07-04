@@ -502,11 +502,14 @@
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
-    const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Project Estimates' };
+    const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Quotes' };
     const STARTER_UI = Boolean(PRODUCT.starterMode || window.ProductConfig?.isStarterMode?.());
+    if (STARTER_UI && PRODUCT.moduleLabels?.quotes) {
+      document.title = `${PRODUCT.moduleLabels.quotes} | Cloud Synced`;
+    }
     const defaultBrand = () => window.TenantBranding?.getEffectiveBranding?.() || {
       companyName: 'Studio North',
-      tagline: PRODUCT.plannerSubtitle || 'Project Estimates',
+      tagline: PRODUCT.plannerSubtitle || 'Quotes',
       primaryColor: '#4f46e5',
       logoUrl: '',
       plannerSubtitle: PRODUCT.plannerSubtitle,
@@ -3996,7 +3999,7 @@
                       return <>{d.line1}{d.line2 ? <> <span style={{ color: brand.primaryColor }}>{d.line2}</span></> : null}</>;
                     })()}
                   </span>
-                  <span className={STARTER_UI ? "starter-page-subtitle text-[10px] block mt-1 font-sans" : "text-[7px] font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans"} style={STARTER_UI ? { color: 'var(--starter-text-muted)' } : { color: `${brand.primaryColor}cc` }}>{brand.plannerSubtitle || brand.tagline || 'Project Estimates'}</span>
+                  <span className={STARTER_UI ? "starter-page-subtitle text-[10px] block mt-1 font-sans" : "text-[7px] font-mono tracking-[0.2em] uppercase block mt-1 font-bold font-sans"} style={STARTER_UI ? { color: 'var(--starter-text-muted)' } : { color: `${brand.primaryColor}cc` }}>{brand.plannerSubtitle || brand.tagline || 'Quotes'}</span>
                 </div>
               </div>
               
