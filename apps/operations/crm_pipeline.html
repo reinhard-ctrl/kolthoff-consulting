@@ -20,7 +20,7 @@
         import * as CrmShare from '../../shared/crm-share.js';
         window.CrmShare = CrmShare;
     </script>
-    <script src="../../shared/embed-mode.js?v=20250702-embed-v1"></script>
+    <script src="../../shared/embed-mode.js?v=20250704-embed-v4"></script>
     <script src="../../shared/crm-planner-sync.js?v=20250702-crm-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
@@ -99,6 +99,30 @@
         .deal-card-frame {
             border-left-width: 3px;
         }
+
+        html.kolthoff-embed .crm-main-header {
+            display: block !important;
+        }
+
+        html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
+        html.kolthoff-embed .crm-main-header .crm-header-share {
+            display: flex !important;
+            visibility: visible !important;
+        }
+
+        .crm-main-header .crm-header-inner {
+            min-height: 0;
+        }
+
+        html.kolthoff-embed .crm-main-header .crm-header-inner {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+
+        html.kolthoff-embed .crm-main-header .crm-header-inner nav {
+            width: 100%;
+            justify-content: flex-start;
+        }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen selection:bg-brandTeal-500 selection:text-brandNavy-955">
@@ -134,6 +158,40 @@
                 crmSubtitle: PRODUCT.crmSubtitle,
             };
         })();
+
+        const KolthoffHeaderLogo = () => (
+            <div className="w-9 h-9 rounded-xl bg-brandTeal-500/10 border border-brandTeal-500/30 flex items-center justify-center text-brandTeal-400 font-bold shadow-neon-teal">
+                <svg className="w-5 h-5 stroke-current text-brandTeal-500" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <path d="M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z" strokeWidth="6" strokeLinejoin="round" />
+                    <path d="M36 50 L46 60 L66 36" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </div>
+        );
+
+        const renderHeaderLogo = (brand) => {
+            if (!STARTER_UI) return <KolthoffHeaderLogo />;
+            if (brand.logoUrl) {
+                return <img src={brand.logoUrl} alt="" className="h-9 w-auto max-w-[120px] object-contain" />;
+            }
+            return (
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm border" style={{ backgroundColor: brand.primaryColor, borderColor: `${brand.primaryColor}66` }}>
+                    {(brand.companyName || 'A').charAt(0)}
+                </div>
+            );
+        };
+
+        const renderHeaderTitle = (brand) => {
+            if (!STARTER_UI) {
+                return (
+                    <>
+                        {PRODUCT.branding?.name}
+                        {PRODUCT.branding?.accent ? <span className="text-brandTeal-500"> {PRODUCT.branding.accent}</span> : null}
+                    </>
+                );
+            }
+            const d = window.TenantBranding?.splitDisplay?.(brand.companyName) || { line1: brand.companyName, line2: '' };
+            return <>{d.line1}{d.line2 ? <span style={{ color: brand.primaryColor }}> {d.line2}</span> : null}</>;
+        };
 
         // SEED DATA
         const initialDeals = [
@@ -869,31 +927,25 @@
                     )}
 
                     {/* TOP BRAND BAR */}
-                    <header data-app-chrome className="border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
-                        <div className="max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <header className="crm-main-header border-b border-brandNavy-700/50 bg-brandNavy-955/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 xl:px-12 py-3">
+                        <div className="crm-header-inner max-w-full mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                             
-                            <div className="flex items-center gap-3">
-                                {brand.logoUrl ? (
-                                    <img src={brand.logoUrl} alt="" className="h-9 w-auto max-w-[120px] object-contain" />
-                                ) : (
-                                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm border" style={{ backgroundColor: brand.primaryColor, borderColor: `${brand.primaryColor}66` }}>
-                                        {(brand.companyName || 'A').charAt(0)}
-                                    </div>
-                                )}
+                            <div data-app-chrome className="flex items-center gap-3">
+                                {renderHeaderLogo(brand)}
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h1 className={STARTER_UI ? "starter-page-title text-sm font-sans" : "text-sm font-extrabold tracking-tight text-white uppercase font-sans"}>
-                                            {(() => {
-                                                const d = window.TenantBranding?.splitDisplay?.(brand.companyName) || { line1: brand.companyName, line2: '' };
-                                                return <>{d.line1}{d.line2 ? <span style={{ color: brand.primaryColor }}> {d.line2}</span> : null}</>;
-                                            })()}
+                                            {renderHeaderTitle(brand)}
                                         </h1>
-                                        <span className={`flex items-center gap-1.5 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider border ${STARTER_UI ? 'starter-badge' : ''}`} style={{ color: brand.primaryColor, borderColor: `${brand.primaryColor}44`, backgroundColor: `${brand.primaryColor}18` }}>
+                                        <span className={STARTER_UI
+                                            ? `flex items-center gap-1.5 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider border starter-badge`
+                                            : `flex items-center gap-1.5 text-[8px] bg-brandTeal-500/10 text-brandTeal-400 border border-brandTeal-500/20 px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider`}
+                                            style={STARTER_UI ? { color: brand.primaryColor, borderColor: `${brand.primaryColor}44`, backgroundColor: `${brand.primaryColor}18` } : undefined}>
                                             <div className={`w-1.5 h-1.5 rounded-full ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-amber-500 animate-pulse'}`} title={isAuthed ? "Cloud Synced" : "Connecting..."}></div>
-                                            {brand.crmBadge || 'SALES PIPELINE'}
+                                            {STARTER_UI ? (brand.crmBadge || 'SALES PIPELINE') : (PRODUCT.crmBadge || brand.crmBadge || 'PIPEDRIVE STUDIO')}
                                         </span>
                                     </div>
-                                    <p className={STARTER_UI ? "starter-page-subtitle text-[11px] font-sans" : "text-[9px] text-brandNavy-300 font-semibold tracking-wide"}>{brand.crmSubtitle || brand.tagline}</p>
+                                    <p className={STARTER_UI ? "starter-page-subtitle text-[11px] font-sans" : "text-[9px] text-brandNavy-300 font-semibold tracking-wide"}>{STARTER_UI ? (brand.crmSubtitle || brand.tagline) : (PRODUCT.crmSubtitle || brand.crmSubtitle || brand.tagline)}</p>
                                 </div>
                             </div>
 
@@ -915,7 +967,7 @@
                                 type="button"
                                 onClick={openShareModal}
                                 disabled={shareBusy}
-                                className={STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}
+                                className={`crm-header-share ${STARTER_UI ? "starter-btn-ghost px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all flex items-center gap-1.5 border border-brandTeal-500/30 hover:bg-brandTeal-500/10 disabled:opacity-50" : "px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 bg-[#09111F] border border-brandTeal-500/30 text-brandTeal-400 hover:bg-brandTeal-500/10 disabled:opacity-50"}`}
                                 title="Copy a read-only link for external viewers"
                             >
                                 <span aria-hidden="true">🔗</span> Share Pipeline

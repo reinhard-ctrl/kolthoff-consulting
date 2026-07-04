@@ -35,6 +35,15 @@
       display: flex !important;
       visibility: visible !important;
     }
+    /* CRM Pipeline: keep tab nav + share action when embed chrome is stripped */
+    html.kolthoff-embed .crm-main-header {
+      display: block !important;
+    }
+    html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
+    html.kolthoff-embed .crm-main-header .crm-header-share {
+      display: flex !important;
+      visibility: visible !important;
+    }
     html.kolthoff-embed main,
     html.kolthoff-embed .flex.h-screen {
       height: 100% !important;
