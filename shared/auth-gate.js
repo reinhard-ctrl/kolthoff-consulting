@@ -43,6 +43,25 @@ function isCrmPipelineShareView() {
   );
 }
 
+/** Agency Ops starter embeds use the light theme during auth bootstrap. */
+function isAgencyStarterContext() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('product') === 'agency-ops-starter') return true;
+  if (params.get('tenant') === 'agency-ops-demo') return true;
+  const cfg = window.ProductConfig?.getProductConfig?.();
+  return Boolean(cfg?.starterMode);
+}
+
+function applyAgencyStarterLightBody() {
+  if (!isAgencyStarterContext() || typeof document === 'undefined') return;
+  document.documentElement.classList.add('agency-starter-light');
+  if (document.body) {
+    document.body.style.backgroundColor = '#f1f5f9';
+    document.body.style.backgroundImage = 'none';
+  }
+}
+
 /** Embedded in admin console iframe — never redirect to /admin/ (it blocks framing). */
 function isEmbeddedView() {
   if (typeof window === 'undefined') return false;
@@ -121,11 +140,12 @@ function showEmbedAuthRequired() {
   const url = new URL(window.location.href);
   url.searchParams.delete('embed');
   const openUrl = url.pathname + url.search + url.hash;
+  const light = isAgencyStarterContext();
   document.body.innerHTML = `
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:#02050e;color:#94a3b8;font-family:Montserrat,sans-serif;text-align:center;">
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:${light ? '#f1f5f9' : '#02050e'};color:${light ? '#64748b' : '#94a3b8'};font-family:${light ? 'Inter' : 'Montserrat'},system-ui,sans-serif;text-align:center;">
       <div style="max-width:22rem;">
         <p style="margin:0 0 1rem;font-size:0.875rem;line-height:1.5;">Staff session required. Ensure you are logged into the admin console, then reload this panel.</p>
-        <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:0.625rem 1rem;background:#14B8A6;color:#02050e;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open in new tab</a>
+        <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:0.625rem 1rem;background:${light ? '#4f46e5' : '#14B8A6'};color:#ffffff;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open in new tab</a>
       </div>
     </div>
   `;
@@ -183,6 +203,10 @@ export async function requireStaffAuth() {
 
 if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientContractLedgerView() && !isCrmPipelineShareView()) {
   document.documentElement.classList.add('kolthoff-auth-pending');
+  applyAgencyStarterLightBody();
+  if (!document.body) {
+    document.addEventListener('DOMContentLoaded', applyAgencyStarterLightBody, { once: true });
+  }
   if (!document.getElementById('kolthoff-auth-gate-style')) {
     const style = document.createElement('style');
     style.id = 'kolthoff-auth-gate-style';
@@ -200,6 +224,15 @@ if (typeof document !== 'undefined' && !isStandalonePolicyStudio() && !isClientC
         font-family: Montserrat, system-ui, sans-serif;
         font-size: 14px;
         z-index: 99999;
+      }
+      html.agency-starter-light.kolthoff-auth-pending::after {
+        background: #f1f5f9;
+        color: #64748b;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      html.agency-starter-light.kolthoff-auth-pending body {
+        background: #f1f5f9 !important;
+        background-image: none !important;
       }
     `;
     document.head.appendChild(style);

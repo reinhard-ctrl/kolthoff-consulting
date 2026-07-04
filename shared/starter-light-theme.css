@@ -32,6 +32,23 @@ html.agency-starter-light body {
   color: var(--starter-text-secondary) !important;
 }
 
+html.agency-starter-light.kolthoff-auth-pending::after {
+  background: var(--starter-bg) !important;
+  color: var(--starter-text-muted) !important;
+  font-family: Inter, system-ui, sans-serif !important;
+}
+
+html.agency-starter-light .starter-loading-screen {
+  background: var(--starter-bg) !important;
+  background-image: none !important;
+  color: var(--starter-text-muted) !important;
+}
+
+html.agency-starter-light .starter-loading-dot {
+  background-color: var(--brand-primary) !important;
+  box-shadow: 0 0 8px var(--brand-primary-ring);
+}
+
 html.agency-starter-light .starter-app-root {
   background: var(--starter-bg) !important;
 }

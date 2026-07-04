@@ -9,8 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
     <!-- Firebase Module Initialization -->
-        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v3"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v3"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v4"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v4"></script>
     <script src="../../shared/firebase-errors.js"></script>
     <script type="module">
         import * as Financials from '../../shared/financials.js';
@@ -56,7 +56,7 @@
             }
         }
     </script>
-    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v3"></script>
+    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v4"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -784,9 +784,9 @@
 
             if (!isAuthed) {
                 return (
-                    <div className="min-h-screen flex flex-col items-center justify-center text-slate-400 px-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-brandTeal-500 animate-pulse" />
+                    <div className={STARTER_UI ? "starter-app-root starter-loading-screen min-h-screen flex flex-col items-center justify-center px-6 bg-slate-100" : "min-h-screen flex flex-col items-center justify-center text-slate-400 px-6"}>
+                        <div className={`flex items-center gap-3 ${STARTER_UI ? 'text-sm font-medium text-slate-500' : ''}`}>
+                            <div className={`w-2 h-2 rounded-full animate-pulse ${STARTER_UI ? 'starter-loading-dot' : 'bg-brandTeal-500'}`} />
                             Loading...
                         </div>
                         {authErrorDetails && (() => {
@@ -796,11 +796,11 @@
                                 steps: [],
                             };
                             return (
-                                <div className="text-xs text-amber-400 font-medium bg-amber-500/10 p-4 rounded mt-4 max-w-lg text-left leading-relaxed">
-                                    <strong className="block font-bold text-amber-300 mb-1">{help.title}</strong>
-                                    <span className="text-slate-300 block">{help.summary}</span>
+                                <div className={`text-xs font-medium p-4 rounded mt-4 max-w-lg text-left leading-relaxed ${STARTER_UI ? 'text-amber-700 bg-amber-50 border border-amber-200' : 'text-amber-400 bg-amber-500/10'}`}>
+                                    <strong className={`block font-bold mb-1 ${STARTER_UI ? 'text-amber-800' : 'text-amber-300'}`}>{help.title}</strong>
+                                    <span className={`block ${STARTER_UI ? 'text-slate-600' : 'text-slate-300'}`}>{help.summary}</span>
                                     {help.steps.length > 0 && (
-                                        <ul className="text-slate-400 mt-2 space-y-1 list-disc pl-4">
+                                        <ul className={`mt-2 space-y-1 list-disc pl-4 ${STARTER_UI ? 'text-slate-500' : 'text-slate-400'}`}>
                                             {help.steps.map((step, i) => <li key={i}>{step}</li>)}
                                         </ul>
                                     )}
