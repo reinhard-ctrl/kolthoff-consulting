@@ -9,8 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='%2314B8A6' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='%2314B8A6' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /></svg>">
     
     <!-- Firebase Module Initialization -->
-        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v2"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v2"></script>
+        <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v3"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v3"></script>
     <script src="../../shared/firebase-errors.js"></script>
     <script type="module">
         import * as Financials from '../../shared/financials.js';
@@ -56,7 +56,7 @@
             }
         }
     </script>
-    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v2"></script>
+    <script src="../../shared/starter-light-theme.js?v=20250704-ui-v3"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1007,32 +1007,32 @@
                     {/* DYNAMIC COMPRESSED PIPEDRIVE STATS BAR */}
                     <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 pt-3" aria-label="Pipeline Statistics">
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Active Deals</span>
-                                <div className="text-sm font-extrabold text-white">{stats.activeCount} <span className="text-[9px] text-slate-400 font-normal">Act.</span></div>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-400 tracking-wider"}>Active Deals</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-white"}>{stats.activeCount}{STARTER_UI ? '' : <span className="text-[9px] text-slate-400 font-normal"> Act.</span>}</div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Pipeline Value</span>
-                                <div className="text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5">
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between border-l border-l-brandTeal-500"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Pipeline Value</span>
+                                <div className={STARTER_UI ? "starter-stat-value text-brandTeal-400" : "text-sm font-extrabold text-brandTeal-400 font-mono flex items-center gap-1.5"}>
                                     {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.totalValue)}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Avg Size</span>
-                                <div className="text-sm font-extrabold text-slate-100 font-mono">
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Avg Size</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-slate-100 font-mono"}>
                                     {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(stats.avgSize)}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Win Rate</span>
-                                <div className="text-sm font-extrabold text-white font-mono">
-                                    {stats.winRate}% <span className="text-[9px] text-emerald-400">Won</span>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 flex items-center justify-between" : "glass-panel rounded-lg py-1.5 px-3 flex items-center justify-between"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Win Rate</span>
+                                <div className={STARTER_UI ? "starter-stat-value" : "text-sm font-extrabold text-white font-mono"}>
+                                    {stats.winRate}%{STARTER_UI ? '' : <span className="text-[9px] text-emerald-400"> Won</span>}
                                 </div>
                             </div>
-                            <div className="glass-panel rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60">
-                                <span className="text-[9px] uppercase font-bold text-slate-404 tracking-wider">Attention</span>
-                                <div className="text-sm font-extrabold text-rose-400">
-                                    {stats.overdueCount} <span className="text-[9px] text-rose-500 font-normal animate-pulse">● Overdue</span>
+                            <div className={STARTER_UI ? "glass-panel starter-stat-card rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60" : "glass-panel rounded-lg py-1.5 px-3 col-span-2 lg:col-span-1 flex items-center justify-between border-l border-l-rose-500/60"}>
+                                <span className={STARTER_UI ? "starter-stat-label" : "text-[9px] uppercase font-bold text-slate-404 tracking-wider"}>Attention</span>
+                                <div className={STARTER_UI ? "starter-stat-value text-rose-500" : "text-sm font-extrabold text-rose-400"}>
+                                    {stats.overdueCount}{STARTER_UI ? ' overdue' : <span className="text-[9px] text-rose-500 font-normal animate-pulse"> ● Overdue</span>}
                                 </div>
                             </div>
                         </div>
@@ -1040,7 +1040,7 @@
 
                     {/* INTERACTIVE CONTROLS PANEL */}
                     <section className="max-w-full mx-auto w-full px-4 md:px-8 xl:px-12 mt-3" aria-label="Filters and Controls">
-                        <div className="glass-panel rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between">
+                        <div className={STARTER_UI ? "glass-panel starter-toolbar rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between" : "glass-panel rounded-xl p-2.5 flex flex-col lg:flex-row gap-3 items-center justify-between"}>
                             
                             <div className="relative w-full lg:w-80">
                                 <label htmlFor="global-search" className="sr-only">Search</label>
@@ -1050,8 +1050,8 @@
                                     type="text" 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={`Search inside active directory (${activeTab})...`}
-                                    className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"
+                                    placeholder={STARTER_UI ? `Search ${activeTab}…` : `Search inside active directory (${activeTab})...`}
+                                    className={STARTER_UI ? "starter-input w-full border border-brandNavy-700/60 rounded-lg pl-8 pr-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brandTeal-500" : "w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg py-1 pl-8 pr-4 text-[11px] font-semibold text-white placeholder-slate-400 focus:outline-none focus:border-brandTeal-500"}
                                 />
                                 {searchQuery && (
                                     <button onClick={() => setSearchQuery("")} className="absolute inset-y-0 right-2 text-slate-400 hover:text-white text-[10px]">Clear</button>
@@ -1157,7 +1157,7 @@
                                                                         onDragStart={(e) => handleDragStart(e, deal.id)}
                                                                         onDragEnd={handleDragEnd}
                                                                         onClick={() => openDealDetails(deal)}
-                                                                        className={`p-2.5 pl-2 rounded-lg hover:brightness-110 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.frame} ${health.glow || ''}`}
+                                                                        className={`${STARTER_UI ? 'starter-deal-card ' : ''}p-2.5 pl-2 rounded-lg hover:brightness-110 transition-all duration-200 cursor-grab active:cursor-grabbing relative group ${health.frame} ${health.glow || ''}`}
                                                                         role="button"
                                                                         tabIndex={0}
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDealDetails(deal); } }}
@@ -1165,20 +1165,20 @@
                                                                     >
                                                                         
                                                                         <div className="flex justify-between items-start gap-1.5">
-                                                                            <div className="text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate" title="SOW Reference / Deal ID">{deal.id}</div>
+                                                                            <div className={STARTER_UI ? "starter-deal-meta truncate" : "text-[9px] font-mono font-bold text-brandTeal-400 tracking-wider uppercase truncate"} title="Deal reference">{deal.id}</div>
                                                                             <span className="flex items-center gap-1 shrink-0" title={health.text}>
                                                                                 <span className={`w-2 h-2 rounded-full ${health.dot}`} aria-hidden="true"></span>
-                                                                                <span className="text-[7px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">{health.text}</span>
+                                                                                <span className={STARTER_UI ? "starter-deal-meta sm:inline hidden" : "text-[7px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline"}>{health.text}</span>
                                                                             </span>
                                                                         </div>
                                                                         
-                                                                        <div className="text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1">{deal.company || "Individual Lead"}</div>
-                                                                        <h4 className="font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5">{deal.leadName}</h4>
+                                                                        <div className={STARTER_UI ? "starter-deal-company truncate mt-1" : "text-[10px] font-bold tracking-wide text-slate-300 uppercase truncate mt-1"}>{deal.company || "Individual Lead"}</div>
+                                                                        <h4 className={STARTER_UI ? "starter-deal-name group-hover:text-brandTeal-400 transition-colors mt-0.5" : "font-extrabold text-[11px] text-white group-hover:text-brandTeal-300 transition-colors leading-tight mt-0.5"}>{deal.leadName}</h4>
                                                                         
-                                                                        {deal.titleRole && (<span className="text-[9px] text-slate-400 block leading-tight truncate">{deal.titleRole}</span>)}
+                                                                        {deal.titleRole && (<span className={STARTER_UI ? "text-sm text-slate-500 block leading-snug truncate" : "text-[9px] text-slate-400 block leading-tight truncate"}>{deal.titleRole}</span>)}
 
-                                                                        <div className="mt-1.5 flex items-center justify-between border-t border-white/5 pt-1">
-                                                                            <div className="text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5">
+                                                                        <div className="mt-2 flex items-center justify-between border-t border-white/5 pt-1.5">
+                                                                            <div className={STARTER_UI ? "starter-deal-amount flex items-center gap-1.5" : "text-[10px] font-bold text-slate-100 font-mono flex items-center gap-1.5"}>
                                                                                 {new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(displayValue)}
                                                                                 {isSynced && <span title="Live synced with SOW Planner" className="text-emerald-400 text-[11px] leading-none">🔄</span>}
                                                                             </div>
