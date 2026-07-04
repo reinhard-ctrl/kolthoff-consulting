@@ -1,4 +1,4 @@
-import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db, adminAppId } from './firebase';
 
@@ -40,6 +40,29 @@ async function waitForStaffProvision(uid: string, timeoutMs: number): Promise<vo
   });
 }
 
+async function enqueueStaffProvisionRequest(user: User): Promise<void> {
+  const ref = staffSsoRequestRef(user.uid);
+  const payload = {
+    status: 'pending' as const,
+    email: user.email?.trim().toLowerCase() || null,
+    displayName: user.displayName || null,
+    requestedAt: Date.now(),
+  };
+
+  const existing = await getDoc(ref);
+  if (!existing.exists()) {
+    await setDoc(ref, payload);
+    return;
+  }
+
+  const priorRequestedAt =
+    typeof existing.data()?.requestedAt === 'number' ? existing.data()!.requestedAt : 0;
+  await updateDoc(ref, {
+    ...payload,
+    requestedAt: Math.max(payload.requestedAt, priorRequestedAt + 1),
+  });
+}
+
 /** Provision staff claims via Firestore — works when Cloud Functions are not publicly invokable */
 export async function provisionGoogleStaffViaFirestore(
   user: User,
@@ -62,21 +85,7 @@ export async function provisionGoogleStaffViaFirestore(
     if (refreshed.claims.tenantId === adminAppId) return;
   }
 
-  const payload = {
-    status: 'pending',
-    email: user.email?.trim().toLowerCase() || null,
-    displayName: user.displayName || null,
-    requestedAt: Date.now(),
-  };
-
-  if (!existing.exists() || existing.data()?.status === 'error') {
-    await setDoc(ref, payload);
-  } else if (existing.data()?.status === 'pending') {
-    // Another tab may have already requested — just wait
-  } else {
-    await setDoc(ref, payload);
-  }
-
+  await enqueueStaffProvisionRequest(user);
   await waitForStaffProvision(user.uid, provisionTimeout);
   await user.getIdToken(true);
 }

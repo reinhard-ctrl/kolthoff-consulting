@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import type { Request, Response } from 'express';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
-import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { setGlobalOptions } from 'firebase-functions/v2';
 
 setGlobalOptions({ region: 'asia-southeast1' });
@@ -825,14 +825,20 @@ export const provisionGoogleStaff = onCall({ invoker: 'public' }, async (request
 });
 
 /** Firestore path for Google SSO when org policy blocks public Cloud Function invoke */
-export const onStaffSsoProvisionRequest = onDocumentCreated(
+export const onStaffSsoProvisionRequest = onDocumentWritten(
   'artifacts/kolthoff-admin-app/public/data/staff_sso_requests/{uid}',
   async (event) => {
-    const uid = event.params.uid;
-    const data = event.data?.data();
+    const afterSnap = event.data?.after;
+    if (!afterSnap?.exists) return;
+
+    const data = afterSnap.data();
     if (!data || data.status !== 'pending') return;
 
-    const ref = event.data!.ref;
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    if (before?.status === 'pending' && before.requestedAt === data.requestedAt) return;
+
+    const uid = event.params.uid;
+    const ref = afterSnap.ref;
     try {
       const result = await provisionKolthoffGoogleStaffUser(
         uid,
