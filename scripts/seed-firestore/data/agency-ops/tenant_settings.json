@@ -15,6 +15,36 @@
       "primaryColor": "#4f46e5",
       "logoUrl": ""
     },
+    "activeBrandingPresetId": "studio-north",
+    "brandingPresets": {
+      "studio-north": {
+        "id": "studio-north",
+        "name": "Studio North",
+        "companyName": "Studio North",
+        "tagline": "Creative & Digital Services",
+        "primaryColor": "#4f46e5",
+        "logoUrl": "",
+        "updatedAt": 1751606400000
+      },
+      "meridian-creative": {
+        "id": "meridian-creative",
+        "name": "Meridian Creative",
+        "companyName": "Meridian Creative Co.",
+        "tagline": "Brand & Campaign Studio",
+        "primaryColor": "#0d9488",
+        "logoUrl": "",
+        "updatedAt": 1751606400000
+      },
+      "harbor-digital": {
+        "id": "harbor-digital",
+        "name": "Harbor Digital",
+        "companyName": "Harbor Digital Agency",
+        "tagline": "Web & Performance Marketing",
+        "primaryColor": "#e11d48",
+        "logoUrl": "",
+        "updatedAt": 1751606400000
+      }
+    },
     "seededAt": "2026-07-04",
     "seededBy": "scripts/seed-firestore/data/agency-ops"
   }
