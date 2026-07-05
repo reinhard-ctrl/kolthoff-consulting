@@ -19,17 +19,18 @@ const DEFAULT_NAV_GROUPS = [
   },
   {
     id: 'operations',
-    label: 'Operations',
+    label: 'Project Management',
     items: [
       { id: 'crm-pipeline' },
       { id: 'project-planner' },
       { id: 'contracts' },
+      { id: 'collections' },
       { id: 'portals' },
     ],
   },
   {
     id: 'delivery',
-    label: 'Delivery Suite',
+    label: 'Deliverables',
     items: [
       { id: 'org-chart' },
       { id: 'diagnosis-reports' },
@@ -38,9 +39,9 @@ const DEFAULT_NAV_GROUPS = [
     ],
   },
   {
-    id: 'workspace',
-    label: 'Workspace',
-    items: [{ id: 'core-workspace' }, { id: 'tenants' }],
+    id: 'product',
+    label: 'Product',
+    items: [{ id: 'core-workspace' }, { id: 'tenants' }, { id: 'agency-ops-manager' }],
   },
   {
     id: 'analytics',
@@ -149,25 +150,25 @@ function assertNoDuplicates(groups) {
 
 assert.equal(
   DEFAULT_NAV_GROUPS.map((g) => g.id).join(','),
-  'command,operations,delivery,workspace,analytics,client',
+  'command,operations,delivery,product,analytics,client',
 );
 assert.equal(DEFAULT_NAV_GROUPS.find((g) => g.id === 'command')?.items.map((i) => i.id).join(','), 'dashboard');
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'operations')?.items.map((i) => i.id).join(','),
-  'crm-pipeline,project-planner,contracts,portals',
+  'crm-pipeline,project-planner,contracts,collections,portals',
 );
 assert.equal(
-  DEFAULT_NAV_GROUPS.find((g) => g.id === 'workspace')?.items.map((i) => i.id).join(','),
-  'core-workspace,tenants',
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'product')?.items.map((i) => i.id).join(','),
+  'core-workspace,tenants,agency-ops-manager',
 );
 
 const movedPrefs = {
-  groupOrder: ['command', 'operations', 'delivery', 'workspace', 'analytics', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'product', 'analytics', 'client'],
   assignments: {
     command: ['dashboard'],
-    operations: ['crm-pipeline', 'project-planner', 'contracts', 'portals'],
+    operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections', 'portals'],
     delivery: ['org-chart', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
-    workspace: ['core-workspace', 'tenants'],
+    product: ['core-workspace', 'tenants', 'agency-ops-manager'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
     client: ['client-portal', 'marketing'],
   },
@@ -197,7 +198,7 @@ assertNoDuplicates(cleaned);
 assert.equal(allItemIds(cleaned).filter((id) => id === 'project-planner').length, 1);
 
 const hiddenPrefs = {
-  groupOrder: ['command', 'operations', 'delivery', 'workspace', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'product', 'client'],
   hiddenGroups: ['analytics'],
   assignments: movedPrefs.assignments,
 };

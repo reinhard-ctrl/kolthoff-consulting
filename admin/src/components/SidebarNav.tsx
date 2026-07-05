@@ -1,10 +1,11 @@
-import { useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import { useProduct } from '../lib/product-context';
 import { isAgencyOpsStarter } from '../lib/product-config';
+import { loadOrgNavLayout, navGroupsFromPreferences, saveOrgNavLayout } from '../lib/nav-layout-store';
 import {
   addNavGroup,
   buildPreferencesFromGroups,
@@ -200,16 +201,39 @@ export default function SidebarNav() {
   const product = useProduct();
   const starter = isAgencyOpsStarter(product.id);
   const [customizing, setCustomizing] = useState(false);
+  const [baselineGroups, setBaselineGroups] = useState<NavGroup[]>(() => getDefaultNavGroups());
   const [groups, setGroups] = useState<NavGroup[]>(() => getEffectiveNavGroups());
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [savingDefault, setSavingDefault] = useState(false);
   const dragPayloadRef = useRef<DragPayload | null>(null);
+
+  useEffect(() => {
+    if (starter) return;
+    let cancelled = false;
+    void loadOrgNavLayout().then((prefs) => {
+      if (cancelled || !prefs) return;
+      const orgBaseline = navGroupsFromPreferences(prefs);
+      setBaselineGroups(orgBaseline);
+      setGroups(getEffectiveNavGroups(orgBaseline));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [starter]);
 
   const { shellRef, contentRef } = useSidebarFit(groups, customizing);
 
-  const persist = (next: NavGroup[]) => {
+  const persist = (next: NavGroup[], options?: { saveDefault?: boolean }) => {
     setGroups(next);
     saveNavPreferences(buildPreferencesFromGroups(next));
+    if (options?.saveDefault && !starter) {
+      setSavingDefault(true);
+      void saveOrgNavLayout(next)
+        .then(() => setBaselineGroups(next))
+        .catch((err) => console.warn('Could not save org nav default:', err))
+        .finally(() => setSavingDefault(false));
+    }
   };
 
   const commitGroupLabel = (groupId: string, label: string) => {
@@ -230,7 +254,7 @@ export default function SidebarNav() {
 
   const reset = () => {
     clearNavPreferences();
-    setGroups(getDefaultNavGroups());
+    setGroups(baselineGroups);
     setCustomizing(false);
     dragPayloadRef.current = null;
   };
@@ -520,18 +544,19 @@ export default function SidebarNav() {
         {!starter && (customizing ? (
           <>
             <p className="sidebar-nav-hint text-slate-500 leading-snug">
-              Drag cards to reorder. Edit group and link names inline. Use × to remove a group or add one back below.
+              Drag cards to reorder. Edit group and link names inline. Done saves the layout as the new default for all admin users.
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  persist(groups);
+                  persist(groups, { saveDefault: true });
                   setCustomizing(false);
                 }}
+                disabled={savingDefault}
                 className="flex-1 sidebar-nav-btn-primary"
               >
-                Done
+                {savingDefault ? 'Saving…' : 'Done'}
               </button>
               <button type="button" onClick={reset} className="sidebar-nav-btn-secondary">
                 Reset

@@ -9,7 +9,36 @@ function navStorageKey(): string {
   return getProductConfig().navStorageKey;
 }
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-const NAV_PREFS_VERSION = 4;
+export const NAV_PREFS_VERSION = 5;
+
+/** Map legacy group ids from older saved layouts. */
+export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
+  const next: NavPreferences = {
+    ...prefs,
+    groupOrder: [...(prefs.groupOrder ?? [])],
+    assignments: { ...(prefs.assignments ?? {}) },
+    groupLabels: prefs.groupLabels ? { ...prefs.groupLabels } : undefined,
+    itemLabels: prefs.itemLabels ? { ...prefs.itemLabels } : undefined,
+    hiddenGroups: prefs.hiddenGroups ? [...prefs.hiddenGroups] : undefined,
+  };
+
+  if (next.assignments.workspace && !next.assignments.product) {
+    next.assignments.product = next.assignments.workspace;
+    delete next.assignments.workspace;
+  }
+  if (next.groupLabels?.workspace && !next.groupLabels.product) {
+    next.groupLabels.product = next.groupLabels.workspace;
+    delete next.groupLabels.workspace;
+  }
+  if (next.groupOrder?.includes('workspace')) {
+    next.groupOrder = next.groupOrder.map((id) => (id === 'workspace' ? 'product' : id));
+  }
+  if (next.hiddenGroups?.includes('workspace')) {
+    next.hiddenGroups = next.hiddenGroups.map((id) => (id === 'workspace' ? 'product' : id));
+  }
+
+  return next;
+}
 
 export type NavPreferences = {
   version?: number;
@@ -145,7 +174,8 @@ export function loadNavPreferences(): NavPreferences | null {
       };
     }
     if (!prefs) return null;
-    const sanitized = sanitizeNavPreferences(prefs);
+    const migrated = migrateNavPreferences(prefs);
+    const sanitized = sanitizeNavPreferences(migrated);
     const cleaned = JSON.stringify(sanitized);
     if (cleaned !== JSON.stringify(prefs)) {
       localStorage.setItem(navStorageKey(), cleaned);
@@ -223,8 +253,14 @@ export function getDefaultNavGroups(): NavGroup[] {
   return productNavGroups();
 }
 
-export function getEffectiveNavGroups(): NavGroup[] {
-  return applyNavPreferences(productNavGroups(), loadNavPreferences());
+export function getEffectiveNavGroups(baselineGroups?: NavGroup[] | null): NavGroup[] {
+  const catalog = productNavGroups();
+  const baseline = baselineGroups ?? catalog;
+  const prefs = loadNavPreferences();
+  if (!prefs) {
+    return baselineGroups ? baseline : catalog;
+  }
+  return applyNavPreferences(baseline, prefs);
 }
 
 export function moveGroup(groups: NavGroup[], groupId: string, direction: -1 | 1): NavGroup[] {
