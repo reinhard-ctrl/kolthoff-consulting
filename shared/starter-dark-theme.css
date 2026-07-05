@@ -1013,11 +1013,192 @@ html.agency-starter-dark .starter-docs-sidebar-title {
   color: var(--starter-text) !important;
 }
 
+/* ── PDF / document template preview — always light paper (screen + print) ── */
+html.agency-starter-dark .print-card,
+html.agency-starter-dark .print-section,
+html.agency-starter-dark section.print-card,
+html.agency-starter-dark #package-print-area > section,
+html.agency-starter-dark [id$="-print-area"].print-card,
+html.agency-starter-dark [id$="-print-area"] > .print-card,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.agency-starter-dark #package-print-area,
+html.agency-starter-dark [id$="-print-area"] {
+  background: transparent !important;
+}
+
+html.agency-starter-dark .print-card .bg-white,
+html.agency-starter-dark .print-section .bg-white,
+html.agency-starter-dark [id$="-print-area"] .bg-white,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .bg-white,
+html.agency-starter-dark .print-card.bg-white,
+html.agency-starter-dark section.print-card.bg-white {
+  background-color: #ffffff !important;
+}
+
+html.agency-starter-dark .print-card .bg-slate-50,
+html.agency-starter-dark .print-card .bg-slate-50\/20,
+html.agency-starter-dark .print-card .bg-slate-50\/40,
+html.agency-starter-dark .print-card .bg-slate-50\/50,
+html.agency-starter-dark .print-section .bg-slate-50,
+html.agency-starter-dark [id$="-print-area"] .bg-slate-50 {
+  background-color: #f8fafc !important;
+}
+
+html.agency-starter-dark .print-card .bg-slate-100,
+html.agency-starter-dark .print-card .bg-slate-200,
+html.agency-starter-dark .print-section .bg-slate-100,
+html.agency-starter-dark [id$="-print-area"] .bg-slate-100,
+html.agency-starter-dark [id$="-print-area"] .bg-slate-200 {
+  background-color: #f1f5f9 !important;
+}
+
+html.agency-starter-dark .print-card .bg-brandTeal-50,
+html.agency-starter-dark .print-card .bg-brandTeal-50\/20,
+html.agency-starter-dark .print-card .bg-brandTeal-50\/40,
+html.agency-starter-dark .print-card .bg-brandTeal-50\/50,
+html.agency-starter-dark .print-card .bg-brandTeal-100,
+html.agency-starter-dark .print-section .bg-brandTeal-50,
+html.agency-starter-dark [id$="-print-area"] .bg-brandTeal-50 {
+  background-color: #f0fdfa !important;
+}
+
+html.agency-starter-dark .print-card .bg-rose-50,
+html.agency-starter-dark .print-card .bg-rose-50\/50,
+html.agency-starter-dark .print-section .bg-rose-50,
+html.agency-starter-dark [id$="-print-area"] .bg-rose-50 {
+  background-color: #fff1f2 !important;
+}
+
+html.agency-starter-dark .print-card .bg-emerald-50,
+html.agency-starter-dark .print-card .bg-emerald-50\/50,
+html.agency-starter-dark .print-section .bg-emerald-50,
+html.agency-starter-dark [id$="-print-area"] .bg-emerald-50 {
+  background-color: #ecfdf5 !important;
+}
+
+html.agency-starter-dark .print-card .bg-amber-50,
+html.agency-starter-dark .print-card .bg-amber-50\/50,
+html.agency-starter-dark .print-section .bg-amber-50,
+html.agency-starter-dark [id$="-print-area"] .bg-amber-50 {
+  background-color: #fffbeb !important;
+}
+
+html.agency-starter-dark .print-card .bg-indigo-50,
+html.agency-starter-dark .print-section .bg-indigo-50,
+html.agency-starter-dark [id$="-print-area"] .bg-indigo-50 {
+  background-color: #eef2ff !important;
+}
+
+html.agency-starter-dark .print-card .text-slate-900,
+html.agency-starter-dark .print-card .text-slate-800,
+html.agency-starter-dark .print-card .text-slate-700,
+html.agency-starter-dark .print-section .text-slate-900,
+html.agency-starter-dark .print-section .text-slate-800,
+html.agency-starter-dark .print-section .text-slate-700,
+html.agency-starter-dark [id$="-print-area"] .text-slate-900,
+html.agency-starter-dark [id$="-print-area"] .text-slate-800,
+html.agency-starter-dark [id$="-print-area"] .text-slate-700,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-900,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-800,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-700 {
+  color: #0f172a !important;
+}
+
+html.agency-starter-dark .print-card .text-slate-600,
+html.agency-starter-dark .print-card .text-slate-500,
+html.agency-starter-dark .print-card .text-slate-400,
+html.agency-starter-dark .print-section .text-slate-600,
+html.agency-starter-dark .print-section .text-slate-500,
+html.agency-starter-dark .print-section .text-slate-400,
+html.agency-starter-dark [id$="-print-area"] .text-slate-600,
+html.agency-starter-dark [id$="-print-area"] .text-slate-500,
+html.agency-starter-dark [id$="-print-area"] .text-slate-400,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-600,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-500,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.agency-starter-dark .print-card .text-brandTeal-600,
+html.agency-starter-dark .print-card .text-brandTeal-700,
+html.agency-starter-dark .print-card .text-brandTeal-800,
+html.agency-starter-dark .print-section .text-brandTeal-600,
+html.agency-starter-dark [id$="-print-area"] .text-brandTeal-600,
+html.agency-starter-dark [id$="-print-area"] .text-brandTeal-700 {
+  color: #0f766e !important;
+}
+
+html.agency-starter-dark .print-card .text-rose-900,
+html.agency-starter-dark .print-card .text-rose-700,
+html.agency-starter-dark .print-card .text-rose-500,
+html.agency-starter-dark [id$="-print-area"] .text-rose-900,
+html.agency-starter-dark [id$="-print-area"] .text-rose-700,
+html.agency-starter-dark [id$="-print-area"] .text-rose-500 {
+  color: #881337 !important;
+}
+
+html.agency-starter-dark .print-card .text-emerald-900,
+html.agency-starter-dark .print-card .text-emerald-700,
+html.agency-starter-dark .print-card .text-emerald-500,
+html.agency-starter-dark [id$="-print-area"] .text-emerald-900,
+html.agency-starter-dark [id$="-print-area"] .text-emerald-700,
+html.agency-starter-dark [id$="-print-area"] .text-emerald-500 {
+  color: #064e3b !important;
+}
+
+html.agency-starter-dark .print-card .text-amber-700,
+html.agency-starter-dark [id$="-print-area"] .text-amber-700 {
+  color: #b45309 !important;
+}
+
+html.agency-starter-dark .print-card .text-indigo-700,
+html.agency-starter-dark [id$="-print-area"] .text-indigo-700 {
+  color: #4338ca !important;
+}
+
+html.agency-starter-dark .print-card .border-slate-200,
+html.agency-starter-dark .print-card .border-slate-100,
+html.agency-starter-dark .print-section .border-slate-200,
+html.agency-starter-dark [id$="-print-area"] .border-slate-200,
+html.agency-starter-dark [id$="-print-area"] .border-slate-100,
+html.agency-starter-dark main[aria-label="Editor Canvas Container"] .border-slate-200 {
+  border-color: #e2e8f0 !important;
+}
+
+html.agency-starter-dark .print-card .border-brandTeal-200,
+html.agency-starter-dark .print-card .border-brandTeal-500,
+html.agency-starter-dark .print-section .border-brandTeal-200,
+html.agency-starter-dark [id$="-print-area"] .border-brandTeal-200,
+html.agency-starter-dark [id$="-print-area"] .border-brandTeal-500 {
+  border-color: #99f6e4 !important;
+}
+
+html.agency-starter-dark .print-card .border-rose-100,
+html.agency-starter-dark .print-card .border-rose-200,
+html.agency-starter-dark .print-card .border-emerald-100,
+html.agency-starter-dark .print-card .border-emerald-200,
+html.agency-starter-dark .print-card .border-amber-200,
+html.agency-starter-dark .print-card .border-indigo-200,
+html.agency-starter-dark [id$="-print-area"] .border-rose-100,
+html.agency-starter-dark [id$="-print-area"] .border-emerald-100,
+html.agency-starter-dark [id$="-print-area"] .border-amber-200 {
+  border-color: #e2e8f0 !important;
+}
+
 @media print {
   html.agency-starter-dark .print-card,
   html.agency-starter-dark .print-section,
-  html.agency-starter-dark section.print-card {
+  html.agency-starter-dark section.print-card,
+  html.agency-starter-dark #package-print-area > section,
+  html.agency-starter-dark [id$="-print-area"].print-card,
+  html.agency-starter-dark [id$="-print-area"] > .print-card {
     background: #ffffff !important;
-    color: #1a1d21 !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
   }
 }
