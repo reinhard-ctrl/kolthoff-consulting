@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail as firebaseSendPasswordResetEmail, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
 import { FirebaseError } from 'firebase/app';
+import EmbedAuthPrompt from './EmbedAuthPrompt';
 
 interface CoreUser {
   id: string;
@@ -11,7 +12,15 @@ interface CoreUser {
 
 type ViewMode = 'login' | 'reset';
 
-export default function LoginPage({ onLogin, googleSsoError = '' }: { onLogin: (user: CoreUser) => void; googleSsoError?: string }) {
+export default function LoginPage({
+  onLogin,
+  googleSsoError = '',
+  embedded = false,
+}: {
+  onLogin: (user: CoreUser) => void;
+  googleSsoError?: string;
+  embedded?: boolean;
+}) {
   const [view, setView] = useState<ViewMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -153,6 +162,10 @@ export default function LoginPage({ onLogin, googleSsoError = '' }: { onLogin: (
       setLoading(false);
     }
   };
+
+  if (embedded) {
+    return <EmbedAuthPrompt />;
+  }
 
   if (view === 'reset') {
     return (
