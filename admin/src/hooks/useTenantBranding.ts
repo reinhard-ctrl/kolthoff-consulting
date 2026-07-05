@@ -3,11 +3,11 @@ import { deleteField, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebas
 import { db, adminAppId } from '../lib/firebase';
 import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
-  loadPrivateBrandingPresets,
-  mergePrivateBrandingPresets,
-  removePrivateBrandingPreset,
-  upsertPrivateBrandingPreset,
-} from '../lib/private-branding-presets';
+  loadClientDemoBrandingPresets,
+  mergeClientDemoBrandingPresets,
+  removeClientDemoBrandingPreset,
+  upsertClientDemoBrandingPreset,
+} from '../lib/client-demo-branding';
 import {
   applyTenantBrandingCss,
   brandingPresetsToMap,
@@ -55,8 +55,8 @@ export function useTenantBranding() {
     mergeTenantBranding(null, product.branding, product.id),
   );
   const [demoPresets, setDemoPresets] = useState<BrandingPreset[]>([]);
-  const [privatePresets, setPrivatePresets] = useState<BrandingPreset[]>(() =>
-    agencyOps ? loadPrivateBrandingPresets() : [],
+  const [clientDemoPresets, setClientDemoPresets] = useState<BrandingPreset[]>(() =>
+    agencyOps ? loadClientDemoBrandingPresets() : [],
   );
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [loading, setLoading] = useState(agencyOps);
@@ -65,19 +65,19 @@ export function useTenantBranding() {
   const demoPresetsRestoreAttempted = useRef(false);
   const customPresetMigrationAttempted = useRef(false);
 
-  const presets = [...demoPresets, ...privatePresets];
+  const presets = [...demoPresets, ...clientDemoPresets];
 
   useEffect(() => {
     if (!agencyOps) {
       setBranding(mergeTenantBranding(null, product.branding, product.id));
       setDemoPresets([]);
-      setPrivatePresets([]);
+      setClientDemoPresets([]);
       setActivePresetId(null);
       setLoading(false);
       return;
     }
 
-    setPrivatePresets(loadPrivateBrandingPresets());
+    setClientDemoPresets(loadClientDemoBrandingPresets());
 
     const ref = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
     const unsub = onSnapshot(
@@ -110,8 +110,8 @@ export function useTenantBranding() {
 
         if (leakedCustom.length > 0 && !customPresetMigrationAttempted.current) {
           customPresetMigrationAttempted.current = true;
-          const migrated = mergePrivateBrandingPresets(leakedCustom);
-          setPrivatePresets(migrated);
+          const migrated = mergeClientDemoBrandingPresets(leakedCustom);
+          setClientDemoPresets(migrated);
           void (async () => {
             try {
               const patch: Record<string, unknown> = {};
@@ -155,15 +155,20 @@ export function useTenantBranding() {
   }, [loading, demoPresets, presetsFieldPresent, product.id]);
 
   const saveBranding = async (next: TenantBrandingConfig, presetId?: string | null) => {
+    const resolvedPresetId = presetId ?? activePresetId;
+    if (resolvedPresetId && !isBundledDemoBrandingPresetId(resolvedPresetId)) {
+      return false;
+    }
+
     setSaving(true);
     try {
-      const resolvedPresetId = presetId ?? activePresetId;
       await writeTenantConfig({
         branding: brandingPayload(next),
         activeBrandingPresetId: isBundledDemoBrandingPresetId(resolvedPresetId)
           ? resolvedPresetId
           : deleteField(),
       });
+      return true;
     } finally {
       setSaving(false);
     }
@@ -186,8 +191,8 @@ export function useTenantBranding() {
           brandingPresets: brandingPresetsToMap(mergeDemoBrandingPresets(nextDemoPresets)),
         });
       } else {
-        const nextPrivate = upsertPrivateBrandingPreset(preset);
-        setPrivatePresets(nextPrivate);
+        const nextClientDemos = upsertClientDemoBrandingPreset(preset);
+        setClientDemoPresets(nextClientDemos);
       }
       return id;
     } finally {
@@ -195,16 +200,23 @@ export function useTenantBranding() {
     }
   };
 
-  /** Apply a saved preset as the active workspace branding. */
-  const applyPreset = async (presetId: string) => {
+  /** Apply a saved preset. Demo profiles update shared workspace; client demos preview locally only. */
+  const applyPreset = async (presetId: string): Promise<'workspace' | 'client-demo'> => {
     const preset = presets.find((item) => item.id === presetId);
-    if (!preset) return;
+    if (!preset) return 'client-demo';
+
+    if (!isBundledDemoBrandingPresetId(presetId)) {
+      applyTenantBrandingCss(presetToConfig(preset));
+      return 'client-demo';
+    }
+
     setSaving(true);
     try {
       await writeTenantConfig({
         branding: brandingPayload(presetToConfig(preset)),
-        activeBrandingPresetId: isBundledDemoBrandingPresetId(presetId) ? presetId : deleteField(),
+        activeBrandingPresetId: presetId,
       });
+      return 'workspace';
     } finally {
       setSaving(false);
     }
@@ -230,11 +242,8 @@ export function useTenantBranding() {
         return;
       }
 
-      const nextPrivate = removePrivateBrandingPreset(presetId);
-      setPrivatePresets(nextPrivate);
-      if (activePresetId === presetId) {
-        await writeTenantConfig({ activeBrandingPresetId: deleteField() });
-      }
+      const nextClientDemos = removeClientDemoBrandingPreset(presetId);
+      setClientDemoPresets(nextClientDemos);
     } finally {
       setSaving(false);
     }
@@ -255,7 +264,7 @@ export function useTenantBranding() {
     branding,
     presets,
     demoPresets,
-    privatePresets,
+    clientDemoPresets,
     activePresetId,
     loading,
     saving,
