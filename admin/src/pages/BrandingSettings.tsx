@@ -89,7 +89,7 @@ export default function BrandingSettings() {
       const isClientDemo = editorPresetId && !isBundledDemoBrandingPresetId(editorPresetId);
       setMessage(
         isClientDemo
-          ? `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs. Profile list stays local only.`
+          ? `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs.`
           : `Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
       );
     } catch (err) {
@@ -317,7 +317,7 @@ export default function BrandingSettings() {
               </button>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Rehearse client brands in this browser. Applying updates CRM and Quotes; the saved profile list stays local only.
+              Rehearse client brands for your demos. Saved profiles persist in your workspace; applying updates CRM and Quotes branding.
             </p>
             {renderPresetList(
               clientDemoPresets,
@@ -349,8 +349,8 @@ export default function BrandingSettings() {
               {editorPresetId
                 ? isBundledDemoBrandingPresetId(editorPresetId)
                   ? 'Shared demo profile — can apply to workspace.'
-                  : 'Client demo — apply to workspace for CRM/Quotes; profile list stays local.'
-                : 'New client demo — saved locally, then apply to workspace for your demo.'}
+                  : 'Client demo — apply to workspace for CRM/Quotes; saved in your demo workspace.'
+                : 'New client demo — saved to your workspace, then apply for your demo.'}
             </p>
           </div>
 
