@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { deleteDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
-import { adminCol, adminDoc, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
+import { adminCol, adminDoc, bootstrapAuth } from '../lib/firebase';
+import { provisionAgencyOpsViaFirestore } from '../lib/agency-ops-provision-firestore';
 import {
   formatCurrency,
   getBillingSchedule,
@@ -282,13 +283,11 @@ export default function ContractLedger() {
     setProvisionResult(null);
     try {
       await bootstrapAuth();
-      const fn = httpsCallable(functions, 'prepareAgencyOpsTenant');
-      const response = await fn({
+      const data = await provisionAgencyOpsViaFirestore({
         profileId: profile.id,
         clientName: getClientDisplayName(profile),
         repEmail: '',
       });
-      const data = response.data as { consoleUrl: string; passcode: string; message: string };
       setProvisionResult(data);
       showToast('Agency Ops tenant provisioned.');
     } catch (err) {

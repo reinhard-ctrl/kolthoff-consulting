@@ -142,6 +142,29 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Agency Ops provisioning — Firestore trigger (no public Cloud Function required)
+    match /artifacts/kolthoff-admin-app/public/data/agency_ops_provision_requests/{requestId} {
+      allow read: if isKolthoffFirmAdmin();
+      allow create: if isKolthoffFirmAdmin() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.clientName is string &&
+        request.resource.data.clientName.size() > 0 &&
+        request.resource.data.requestedAt is int &&
+        request.resource.data.requestedBy == request.auth.uid;
+      allow update: if isKolthoffFirmAdmin() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.requestedBy == request.auth.uid &&
+        (
+          resource.data.status == 'error' ||
+          resource.data.status == 'complete' ||
+          (resource.data.status == 'pending' &&
+            request.resource.data.requestedAt is int &&
+            resource.data.requestedAt is int &&
+            request.resource.data.requestedAt > resource.data.requestedAt)
+        );
+      allow delete: if isKolthoffFirmAdmin();
+    }
+
     // Google SSO admin session (client-written after Google sign-in — no Cloud Function required)
     match /artifacts/kolthoff-admin-app/public/data/google_admin_sessions/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;

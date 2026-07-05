@@ -21,6 +21,7 @@
       { "source": "/admin/intake", "destination": "/admin/index.html" },
       { "source": "/admin/portals", "destination": "/admin/index.html" },
       { "source": "/admin/contracts", "destination": "/admin/index.html" },
+      { "source": "/admin/agency-ops-manager", "destination": "/admin/index.html" },
       { "source": "/admin/collections", "destination": "/admin/index.html" },
       { "source": "/admin/master", "destination": "/admin/index.html" },
       { "source": "/agency-ops", "destination": "/agency-ops/index.html" },

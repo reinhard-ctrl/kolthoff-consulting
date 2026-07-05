@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot, collection } from 'firebase/firestore';
-import { db, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
+import { db, bootstrapAuth } from '../lib/firebase';
+import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
 
 interface AgencyOpsTenant {
   tenantId: string;
@@ -15,17 +16,7 @@ interface AgencyOpsTenant {
   createdAt?: number;
 }
 
-interface PrepareResult {
-  tenantId: string;
-  clientName: string;
-  consoleUrl: string;
-  passcode: string;
-  profileId?: string | null;
-  quoteId?: string | null;
-  mailtoUrl?: string;
-  message: string;
-  created: boolean;
-}
+interface PrepareResult extends AgencyOpsProvisionResult {}
 
 interface WorkbookProfileOption {
   id: string;
@@ -109,15 +100,14 @@ export default function AgencyOpsManager() {
     setPreparing(true);
     try {
       await bootstrapAuth();
-      const fn = httpsCallable(functions, 'prepareAgencyOpsTenant');
-      const response = await fn({
+      const data = await provisionAgencyOpsViaFirestore({
         clientName: clientName.trim(),
         tenantId: tenantId.trim() || undefined,
         profileId: profileId.trim() || undefined,
         repEmail: repEmail.trim() || undefined,
         passcode: customPasscode.trim() || undefined,
       });
-      setResult(response.data as PrepareResult);
+      setResult(data);
       showToast('Agency Ops tenant provisioned.');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Provisioning failed');
