@@ -144,7 +144,7 @@ export default function AgencyOpsManager() {
         <button
           type="button"
           onClick={() => openProvision()}
-          className="px-4 py-2 bg-brandAmber-500 hover:bg-brandAmber-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase"
+          className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase shadow-sm"
         >
           Provision Tenant
         </button>
@@ -165,7 +165,7 @@ export default function AgencyOpsManager() {
                 <button
                   type="button"
                   onClick={() => openProvision(p)}
-                  className="px-3 py-1 bg-brandNavy-800 hover:bg-brandNavy-750 border border-brandNavy-700 rounded text-xs font-bold"
+                  className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
                 >
                   Provision
                 </button>
@@ -309,7 +309,7 @@ export default function AgencyOpsManager() {
                     type="button"
                     onClick={runProvision}
                     disabled={preparing || !clientName.trim()}
-                    className="px-4 py-2 bg-brandAmber-500 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50"
+                    className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50 shadow-sm"
                   >
                     {preparing ? 'Provisioning…' : 'Provision'}
                   </button>
@@ -328,7 +328,7 @@ export default function AgencyOpsManager() {
                   {result.mailtoUrl && (
                     <a href={result.mailtoUrl} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded text-sm font-bold">Email client</a>
                   )}
-                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-brandAmber-500 text-brandNavy-955 rounded text-sm font-bold">Done</button>
+                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-sm font-bold shadow-sm">Done</button>
                 </div>
               </>
             )}
