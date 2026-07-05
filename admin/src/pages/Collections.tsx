@@ -252,11 +252,13 @@ export default function Collections() {
               </div>
             )}
             <div className="mb-4">
-              <label className="text-[10px] uppercase text-slate-500 block mb-1">BDO transfer reference</label>
+              <label className="text-[10px] uppercase text-slate-500 block mb-1">
+                {agencyOps ? 'Payment transfer reference' : 'BDO transfer reference'}
+              </label>
               <input
                 value={paymentRef}
                 onChange={(e) => setPaymentRef(e.target.value)}
-                placeholder="e.g. BDO ref or client name"
+                placeholder={agencyOps ? 'e.g. bank ref or client name' : 'e.g. BDO ref or client name'}
                 className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
               />
             </div>

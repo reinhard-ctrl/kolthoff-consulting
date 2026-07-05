@@ -483,7 +483,8 @@
   <script src="../../shared/embed-mode.js?v=20250702-embed-v3"></script>
   <script type="module" src="../../shared/product-config.js"></script>
   <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
-  <script src="../../shared/engagement-packages.js?v=20250701-packages-v1"></script>
+  <script src="../../shared/product-catalog.js?v=20250705-pro-v1"></script>
+  <script src="../../shared/engagement-packages.js?v=20250705-pro-v1"></script>
   <script src="../../shared/engagement-addendum-templates.js?v=20250703-addendum-v1"></script>
   <script src="../../shared/portal-sync.js?v=20250702-collections-v1"></script>
   <script type="module">
@@ -498,6 +499,7 @@
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
     const H = window.PlannerHelpers;
     const EP = window.EngagementPackages;
+    const PC = window.ProductCatalog;
     const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Quotes' };
     const AGENCY_MOD_FALLBACK = {
       mod1: { title: 'Discovery & Audit', shortTitle: 'Discovery', description: 'Map current workflows, tools, and bottlenecks before scoping the engagement.' },
@@ -539,6 +541,13 @@
       if (isAgencyStarterContext()) return getAgencyModMeta(n)?.description || '';
       return window.ProductConfig?.getModDescription?.(n) || '';
     };
+    const packageModuleLabel = (mod) => {
+      if (String(mod).startsWith('pro')) {
+        const p = PC?.getProductById?.(mod);
+        return p?.skuLabel || String(mod).toUpperCase().replace('pro', 'PRO ');
+      }
+      return String(mod).replace('mod', 'MOD ');
+    };
     const formatCategoryDisplay = (category) => {
       if (window.ProductConfig?.formatModCategoryDisplay) {
         return window.ProductConfig.formatModCategoryDisplay(category, isAgencyStarterContext());
@@ -570,6 +579,7 @@
     const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
+    const PRO_1 = PC?.getProductById?.('pro1')?.category ?? 'PRO 1 - Agency Ops Platform';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     if (STARTER_UI && PRODUCT.moduleLabels?.quotes) {
       document.title = `${PRODUCT.moduleLabels.quotes} | Cloud Synced`;
@@ -836,6 +846,39 @@
         description: 'Twice per year: we audit usage, permissions, and outdated forms, then apply or schedule fixes from the findings.',
         estHours: 6, tier: 'senior', selected: false,
         scopeDetails: { activities: 'Half-day audit of usage, permissions, broken/outdated forms; schedule or apply fixes.', expectations: 'Manager access for review session; twice per year on calendar.', output: 'Audit report + fixes applied or scheduled.' }
+      },
+      {
+        id: 'pro1-01', category: PRO_1,
+        deliverable: 'Platform Setup & White-Label Configuration',
+        description: 'We provision your branded Agency Ops tenant — logo, colors, CRM pipeline, quote templates, and collections flow.',
+        estHours: 16, tier: 'senior', selected: false,
+        scopeDetails: {
+          activities: 'Create tenant workspace, apply agency branding, configure CRM stages, and wire quote-to-invoice defaults.',
+          expectations: 'Provide logo assets, brand colors, and sample quote/invoice copy for white-label setup.',
+          output: 'Live Agency Ops tenant with your branding and starter CRM/quote templates.'
+        }
+      },
+      {
+        id: 'pro1-02', category: PRO_1,
+        deliverable: 'Agency Team Onboarding & Training',
+        description: 'Two live sessions (90 minutes each) covering CRM, quotes, invoicing, and your branded client-facing documents.',
+        estHours: 4, tier: 'senior', selected: false,
+        scopeDetails: {
+          activities: 'Run two onboarding sessions and publish quick-start guides for sales and finance workflows.',
+          expectations: 'Ensure sales and ops leads attend both sessions.',
+          output: 'Trained team and a help folder they can revisit for daily Agency Ops tasks.'
+        }
+      },
+      {
+        id: 'pro1-03', category: PRO_1,
+        deliverable: 'Agency Ops Platform Subscription',
+        description: 'Monthly access to your white-label quote-to-cash workspace — hosting, updates, and standard user support.',
+        estHours: 4, tier: 'partner', selected: false, isMonthlyRetainer: true,
+        scopeDetails: {
+          activities: 'Maintain platform hosting, tenant updates, and standard support during business hours.',
+          expectations: 'Submit support requests through the agreed channel; designate one admin contact.',
+          output: 'Continuous access to your branded Agency Ops platform.'
+        }
       }
     ];
 
@@ -1403,6 +1446,8 @@
       const [selectedPackageId, setSelectedPackageId] = useState('leak-scan');
       const [packageCustomized, setPackageCustomized] = useState(false);
       const [packageAppliedAt, setPackageAppliedAt] = useState(null);
+      const [engagementType, setEngagementType] = useState('service');
+      const [productId, setProductId] = useState(null);
       const [showPackageApplyConfirm, setShowPackageApplyConfirm] = useState(false);
       const [pendingPackageId, setPendingPackageId] = useState(null);
       const catalogTasksRef = useRef(PRODUCT_TASK_CATALOG.map(t => ({ ...t })));
@@ -1581,6 +1626,8 @@
           selectedPackageId: p.selectedPackageId ?? 'leak-scan',
           packageCustomized: p.packageCustomized ?? false,
           packageAppliedAt: p.packageAppliedAt ?? null,
+          engagementType: p.engagementType ?? 'service',
+          productId: p.productId ?? null,
           addenda: p.addenda || [],
           activeAddendumId: p.activeAddendumId || null,
           invoiceAddendumId: p.invoiceAddendumId || null,
@@ -1650,6 +1697,8 @@
         setSelectedPackageId(profileState.selectedPackageId);
         setPackageCustomized(profileState.packageCustomized);
         setPackageAppliedAt(profileState.packageAppliedAt);
+        setEngagementType(profileState.engagementType || 'service');
+        setProductId(profileState.productId || null);
         setAddenda(profileState.addenda || []);
         setActiveAddendumId(profileState.activeAddendumId || (profileState.addenda?.[0]?.id ?? null));
         setInvoiceAddendumId(profileState.invoiceAddendumId || null);
@@ -1690,9 +1739,9 @@
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
-        selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId,
+        selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId,
         moduleBundleNames,
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -1812,6 +1861,8 @@
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
         setSelectedPackageId(d.selectedPackageId ?? 'leak-scan'); setPackageCustomized(d.packageCustomized ?? false);
         setPackageAppliedAt(d.packageAppliedAt ?? null);
+        setEngagementType(d.engagementType ?? 'service');
+        setProductId(d.productId ?? null);
         setAddenda(d.addenda || []);
         setActiveAddendumId(d.activeAddendumId || (d.addenda?.[0]?.id ?? null));
         setInvoiceAddendumId(d.invoiceAddendumId || null);
@@ -1864,9 +1915,10 @@
       const createWorkspaceFromCrmDeal = async (deal) => {
         const newId = `client-crm-${deal.id || Date.now()}`;
         const base = buildCurrentPayload();
-        const suggestedPackage = EP?.suggestPackageFromText?.(deal.notes || '') || 'leak-scan';
+        const suggestedPackage = EP?.resolvePackageFromCrmDeal?.(deal) || EP?.suggestPackageFromText?.(deal.notes || '') || 'leak-scan';
         const packageResult = H.applyPackageToTasks(suggestedPackage, INITIAL_TASKS.map(t => ({ ...t })), catalogTasksRef.current);
         const defs = packageResult.defaults || {};
+        const isProductPkg = EP?.isProductPackage?.(packageResult.package);
         const payload = {
           ...base,
           id: newId,
@@ -1879,7 +1931,11 @@
           selectedPackageId: suggestedPackage,
           packageCustomized: false,
           packageAppliedAt: Date.now(),
+          engagementType: isProductPkg ? 'product' : 'service',
+          productId: isProductPkg ? (packageResult.package?.productId || defs.productId || null) : null,
           proposalObjectives: defs.proposalObjectives || base.proposalObjectives,
+          printTimeline: defs.printTimeline ?? !isProductPkg,
+          printSla: defs.printSla ?? (isProductPkg || false),
           links: {
             crmDealId: deal.id,
             portalClientId: deal.id,
@@ -1982,6 +2038,8 @@
       const activeSOP = useMemo(() => tasks.some(t => H.isModCategory(t, 2) && t.selected), [tasks]);
       const activePMO = useMemo(() => tasks.some(t => H.isModCategory(t, 3) && t.selected), [tasks]);
       const activeGov = useMemo(() => tasks.some(t => H.isModCategory(t, 4) && t.selected), [tasks]);
+      const isProEngagement = useMemo(() => engagementType === 'product' && Boolean(productId), [engagementType, productId]);
+      const proProductMeta = useMemo(() => (isProEngagement ? PC?.getProductById?.(productId) : null), [isProEngagement, productId]);
       
       const handlePrint = () => {
         const validation = H.validatePrintReadiness(view, {
@@ -2274,6 +2332,11 @@
         if (defs.discountPercent !== undefined) setDiscountPercent(defs.discountPercent);
         if (defs.milestoneSplit) setMilestoneSplit(defs.milestoneSplit);
         if (defs.subscriptionMonths !== undefined) setSubscriptionMonths(defs.subscriptionMonths);
+        if (defs.printTimeline !== undefined) setPrintTimeline(defs.printTimeline);
+        if (defs.printSla !== undefined) setPrintSla(defs.printSla);
+        const isProductPkg = EP?.isProductPackage?.(result.package);
+        setEngagementType(isProductPkg ? 'product' : 'service');
+        setProductId(isProductPkg ? (result.package?.productId || defs.productId || null) : null);
         setView('sandbox');
       }, [tasks]);
 
@@ -2499,7 +2562,7 @@
         if (printSla) count += 1;
         if (printQuote) count += 1;
         return count;
-      }, [printCover, printSow, printTimeline, printSla, printQuote, activePMO, activeGov]);
+      }, [printCover, printSow, printTimeline, printSla, printQuote, activePMO, activeGov, isProEngagement]);
 
       const setPrintDocumentTitle = () => {
         const slug = (clientCompany || 'Proposal').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 40);
@@ -2573,8 +2636,8 @@
         setPrintCover(true);
         setPrintSow(true);
         setPrintQuote(true);
-        setPrintTimeline(tasks.some(t => H.isModCategory(t, 2) && t.selected) || tasks.some(t => H.isModCategory(t, 3) && t.selected));
-        setPrintSla(activePMO || activeGov);
+        setPrintTimeline(isProEngagement ? false : (tasks.some(t => H.isModCategory(t, 2) && t.selected) || tasks.some(t => H.isModCategory(t, 3) && t.selected)));
+        setPrintSla(activePMO || activeGov || isProEngagement);
         setPrintRoadmapGantt(true);
         setPrintRoadmapTable(true);
         setPrintRoadmapScale(true);
@@ -2583,9 +2646,9 @@
       const applyFullPdfPreset = () => {
         setPrintCover(false);
         setPrintSow(true);
-        setPrintTimeline(true);
+        setPrintTimeline(isProEngagement ? false : true);
         setPrintQuote(true);
-        setPrintSla(activePMO || activeGov);
+        setPrintSla(activePMO || activeGov || isProEngagement);
         setPrintRoadmapGantt(true);
         setPrintRoadmapTable(true);
         setPrintRoadmapScale(true);
@@ -3616,7 +3679,7 @@
               )}
 
               {/* Dynamic Compliance & SLA Configuration Controls */}
-              {(activePMO || activeGov) && (isPackage || isQuoteOrInvoice) && (
+              {(activePMO || activeGov || isProEngagement) && (isPackage || isQuoteOrInvoice) && (
                 <div className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-4 text-left font-sans font-semibold">
                   <span className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold block text-left font-sans font-semibold">Compliance &amp; SLA Configuration</span>
                   
@@ -4143,6 +4206,90 @@
           </div>
         );
 
+        const ProPlatformSlaBody = (
+          <div className="space-y-6 text-slate-800 font-sans text-left">
+            <p className="text-xs leading-relaxed font-medium text-left text-slate-700 font-sans">
+              This Platform Service Level Agreement (SLA) outlines availability, support, and subscription standards for <strong>{proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'}</strong> provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{clientCompany || "the Client"}</strong> ("Client").
+            </p>
+
+            <div className="space-y-5 font-medium text-left text-slate-700 font-sans">
+              <div>
+                <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold">1. Covered Platform Services</h4>
+                <ul className="list-disc pl-5 text-xs space-y-1.5 text-slate-700 leading-relaxed text-left font-sans">
+                  <li><strong>White-label tenant:</strong> Branded Agency Ops workspace (CRM, quotes, invoicing) hosted under the Client agency identity.</li>
+                  <li><strong>Platform subscription:</strong> Continuous access, hosting, and standard updates for the subscription term selected in this SOW.</li>
+                  <li><strong>Onboarding deliverables:</strong> Setup configuration and team training as listed in the active scope of work.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans">2. Platform Availability</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700 text-left font-sans">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 print-pill text-left leading-relaxed font-sans">
+                    <span className="block font-bold text-brandTeal-600 uppercase font-mono text-[10px] mb-1 text-left font-sans font-semibold">Target Uptime</span>
+                    <strong>99.5% availability</strong> for the Agency Ops platform during regular business hours (Mon–Fri, 9AM–6PM PHT).
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 print-pill text-left leading-relaxed font-sans">
+                    <span className="block font-bold text-brandTeal-600 uppercase font-mono text-[10px] mb-1 text-left font-sans font-semibold">Maintenance Windows</span>
+                    Planned updates scheduled outside business hours with at least 48-hour notice when downtime is expected.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold font-sans font-bold">3. Support Response Matrix</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left font-sans">
+                  <div className="bg-rose-50/50 p-4 rounded-lg border border-rose-200 print-pill text-left font-sans">
+                    <div className="font-bold text-rose-700 text-[10px] uppercase font-mono mb-1.5 text-left font-sans font-semibold">Severity 1 (Critical)</div>
+                    <div className="text-[10px] text-slate-700 leading-relaxed mb-3 text-left font-sans font-semibold"><strong>Condition:</strong> Platform unavailable to all agency users.</div>
+                    <div className="text-[10px] border-t border-rose-200/50 pt-2 space-y-1 text-left font-sans font-semibold">
+                      <div className="flex justify-between"><span>Response:</span><strong className="text-slate-900 font-sans">Within 4 hours</strong></div>
+                      <div className="flex justify-between font-sans"><span>Resolution:</span><strong className="text-slate-900 font-sans">Within 24 hours</strong></div>
+                    </div>
+                  </div>
+                  <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-200 print-pill text-left font-sans">
+                    <div className="font-bold text-amber-700 text-[10px] uppercase font-mono mb-1.5 text-left font-sans font-semibold">Severity 2 (High)</div>
+                    <div className="text-[10px] text-slate-700 leading-relaxed mb-3 text-left font-sans font-semibold"><strong>Condition:</strong> Core workflow broken (CRM, quotes, or invoicing) blocking daily sales ops.</div>
+                    <div className="text-[10px] border-t border-amber-200/50 pt-2 space-y-1 text-left font-sans font-semibold">
+                      <div className="flex justify-between font-sans"><span>Response:</span><strong className="text-slate-900 font-sans">Within 8 hours</strong></div>
+                      <div className="flex justify-between font-sans"><span>Resolution:</span><strong className="text-slate-900 font-sans">Within 48 hours</strong></div>
+                    </div>
+                  </div>
+                  <div className="bg-brandTeal-50/50 p-4 rounded-lg border border-brandTeal-200 print-pill text-left font-sans">
+                    <div className="font-bold text-brandTeal-700 text-[10px] uppercase font-mono mb-1.5 text-left font-sans font-semibold">Severity 3 (Normal)</div>
+                    <div className="text-[10px] text-slate-700 leading-relaxed mb-3 text-left font-sans font-semibold"><strong>Condition:</strong> How-to questions, minor UI issues, or template edits.</div>
+                    <div className="text-[10px] border-t border-brandTeal-200/50 pt-2 space-y-1 text-left font-sans font-semibold">
+                      <div className="flex justify-between font-sans"><span>Response:</span><strong className="text-slate-900 font-sans">Within 24 hours</strong></div>
+                      <div className="flex justify-between font-sans"><span>Resolution:</span><strong className="text-slate-900 font-bold text-teal-800">2–5 bus. days</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-left font-sans font-semibold font-sans">
+                <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold">4. Subscription Term & Exclusions</h4>
+                <p className="text-xs mb-2 leading-relaxed text-left text-slate-700 font-sans font-semibold">Platform subscription fees cover hosting, standard support, and product updates. Custom development, third-party integrations, and consulting MOD services are quoted separately.</p>
+                <p className="text-[11px] text-slate-500 bg-slate-50 p-3 rounded border border-slate-100 leading-relaxed text-left font-sans font-semibold">
+                  <strong className="text-slate-700 font-sans">Exclusions:</strong> Downtime caused by Client-side network issues, unauthorized admin changes, or third-party service outages outside the Agency Ops platform.
+                </p>
+              </div>
+
+              <div className="text-left font-sans text-sm">
+                <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-2 border-b border-slate-200 pb-1.5 text-left font-sans font-bold">5. Breach Remedies & Termination</h4>
+                <ul className="list-disc pl-5 text-[11px] space-y-1.5 text-slate-700 leading-relaxed text-left font-sans font-semibold">
+                  <li><strong>Right to Cure:</strong> For uncured Severity 1 breaches, Client issues written notice. Service Provider receives a <strong>{slaCureDays}-day</strong> cure period.</li>
+                  <li><strong>Termination Right:</strong> If Severity 1 breaches repeat for <strong>{slaRecurrenceMonths} consecutive months</strong>, Client may terminate the active subscription without exit penalties beyond outstanding subscription fees.</li>
+                  <li><strong>Data export:</strong> Upon termination, Client data is exported and tenant access ends within <strong>{dpaRetentionDays} days</strong> per the data retention policy in this SOW.</li>
+                </ul>
+              </div>
+
+              <div className="mt-8 text-[9px] text-slate-400 italic text-left font-sans">
+                * This Platform SLA is governed by the signatures on the Official Price Quotation within this master Statement of Work (SOW). It is separate from MOD 3/4 consulting SLAs.
+              </div>
+            </div>
+          </div>
+        );
+
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
             {(!isInv || !isAddendumInvoiceMode) && renderModuleInvestmentSummary()}
@@ -4160,7 +4307,7 @@
             
             {/* Stage-Gated Master Terms Annex */}
             <div className="text-[9.5px] text-slate-500 space-y-3 pb-6 border-b border-slate-200 mb-8 leading-relaxed font-semibold text-left font-sans font-semibold print-quote-terms">
-              <strong className="text-slate-700 block text-[10px] uppercase font-mono font-bold tracking-wider border-b border-slate-200 pb-1.5 text-left font-sans">Master Consulting Service Agreement (Terms of Service)</strong>
+              <strong className="text-slate-700 block text-[10px] uppercase font-mono font-bold tracking-wider border-b border-slate-200 pb-1.5 text-left font-sans">{isProEngagement ? 'Master Platform Subscription Agreement (Terms of Service)' : 'Master Consulting Service Agreement (Terms of Service)'}</strong>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-left font-sans font-medium">
                 <p>
@@ -4221,8 +4368,8 @@
 
               {printSla && (
                 <section aria-label="Service level agreement" className="bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
-                  {renderPrintHeader("SERVICE LEVEL AGREEMENT (SLA)", false, false, false)}
-                  {SlaBody}
+                  {renderPrintHeader(isProEngagement ? "PLATFORM SERVICE LEVEL AGREEMENT (SLA)" : "SERVICE LEVEL AGREEMENT (SLA)", false, false, false)}
+                  {isProEngagement ? ProPlatformSlaBody : SlaBody}
                   {sectionFooter('Service Level Agreement')}
                 </section>
               )}
@@ -4562,8 +4709,54 @@
                     <p className="text-[10px] text-slate-500 lg:max-w-md lg:text-right leading-snug">Set task selection and defaults — fine-tune in Planner afterward.</p>
                   </div>
                 </div>
+                {!STARTER_UI && (EP?.getProductPackages?.() || []).length > 0 && (
+                  <div className="mb-3">
+                    <span className="text-[8px] font-mono font-bold tracking-[0.18em] text-brandAmber-400 uppercase">Products (PRO)</span>
+                  </div>
+                )}
                 <div className="packages-grid">
-                  {(EP?.getAllPackages?.() || []).map((pkg) => {
+                  {(!STARTER_UI ? (EP?.getProductPackages?.() || []) : []).map((pkg) => {
+                    const preview = packagePreviewEconomics(pkg.id);
+                    const isActive = selectedPackageId === pkg.id && !packageCustomized;
+                    const selectedCount = H.previewPackageSelection(pkg.id, tasks, catalogTasksRef.current).filter(t => t.selected).length;
+                    const estHours = preview.updatedSummary?.estHours || 0;
+                    const priceLabel = H.formatPackagePriceLabel(preview, formatCurrency);
+                    return (
+                      <article key={pkg.id} className={`packages-card bg-brandNavy-900 border rounded-lg p-3 shadow-lg transition-all ${isActive ? 'border-brandAmber-500 ring-1 ring-brandAmber-500/30' : 'border-brandNavy-700 hover:border-brandAmber-500/40'}`}>
+                        <div className="packages-card-body">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex flex-wrap gap-1 min-w-0">
+                              {(pkg.modules || []).map((mod) => (
+                                <span key={mod} className="text-[7px] font-mono uppercase bg-brandNavy-950 text-brandAmber-300 px-1.5 py-px rounded border border-brandNavy-700 leading-none">{packageModuleLabel(mod)}</span>
+                              ))}
+                            </div>
+                            <span className="text-[8px] font-mono text-brandAmber-300 font-bold whitespace-nowrap shrink-0">{priceLabel}</span>
+                          </div>
+                          <h3 className="text-xs font-bold text-white font-serif leading-tight">{pkg.name}</h3>
+                          <p className="text-[9px] text-slate-400 leading-snug line-clamp-2">{pkg.tagline}</p>
+                          <p className="text-[8px] text-slate-500 leading-snug line-clamp-2 italic">{pkg.forWhom}</p>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] font-mono text-slate-500 pt-1 border-t border-brandNavy-700/50 mt-auto">
+                            <span><span className="text-slate-300 font-bold">{selectedCount}</span> tasks</span>
+                            <span className="text-brandNavy-600">·</span>
+                            <span><span className="text-slate-300 font-bold">{estHours}</span> hrs</span>
+                            {pkg.isMonthly && <><span className="text-brandNavy-600">·</span><span className="text-slate-400">subscription</span></>}
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 mt-2 shrink-0">
+                          <button type="button" onClick={() => requestApplyPackage(pkg.id)} className="flex-1 py-1.5 bg-brandAmber-500 hover:bg-brandAmber-400 text-brandNavy-955 font-bold rounded text-[8px] uppercase tracking-wide leading-none">{isActive ? 'Re-apply' : 'Apply Package'}</button>
+                          <button type="button" onClick={() => setView('sandbox')} className="px-2 py-1.5 text-slate-500 hover:text-brandAmber-300 text-[8px] uppercase font-bold leading-none border border-brandNavy-700 rounded" title="Open Planner without applying">Skip</button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+                {!STARTER_UI && (EP?.getServicePackages?.() || []).length > 0 && (
+                  <div className="mt-4 mb-3">
+                    <span className="text-[8px] font-mono font-bold tracking-[0.18em] text-brandTeal-400 uppercase">Consulting Services (MOD)</span>
+                  </div>
+                )}
+                <div className="packages-grid">
+                  {(STARTER_UI ? (EP?.getAllPackages?.() || []) : (EP?.getServicePackages?.() || [])).map((pkg) => {
                     const preview = packagePreviewEconomics(pkg.id);
                     const isActive = selectedPackageId === pkg.id && !packageCustomized;
                     const selectedCount = H.previewPackageSelection(pkg.id, tasks, catalogTasksRef.current).filter(t => t.selected).length;
@@ -4575,7 +4768,7 @@
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex flex-wrap gap-1 min-w-0">
                               {(pkg.modules || []).map((mod) => (
-                                <span key={mod} className="text-[7px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-1.5 py-px rounded border border-brandNavy-700 leading-none">{mod.replace('mod', 'MOD ')}</span>
+                                <span key={mod} className="text-[7px] font-mono uppercase bg-brandNavy-950 text-brandTeal-400 px-1.5 py-px rounded border border-brandNavy-700 leading-none">{packageModuleLabel(mod)}</span>
                               ))}
                             </div>
                             <span className="text-[8px] font-mono text-brandTeal-300 font-bold whitespace-nowrap shrink-0">{priceLabel}</span>
@@ -4604,7 +4797,7 @@
                       <p className="text-[9px] text-slate-500 leading-snug">Skip presets and build scope manually in the Planner using MOD chips and bespoke tasks.</p>
                       <p className="text-[8px] text-slate-600 leading-snug italic">For non-standard engagements or partial module mixes.</p>
                     </div>
-                    <button type="button" onClick={() => { setSelectedPackageId('custom'); setPackageCustomized(true); setView('sandbox'); }} className="mt-2 w-full py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 border border-brandNavy-700 font-bold rounded text-[8px] uppercase tracking-wide shrink-0 leading-none">Open Planner</button>
+                    <button type="button" onClick={() => { setSelectedPackageId('custom'); setPackageCustomized(true); setEngagementType('service'); setProductId(null); setView('sandbox'); }} className="mt-2 w-full py-1.5 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-200 border border-brandNavy-700 font-bold rounded text-[8px] uppercase tracking-wide shrink-0 leading-none">Open Planner</button>
                   </article>
                 </div>
               </div>
