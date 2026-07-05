@@ -44,7 +44,7 @@
       }
     }
   </script>
-  <script src="../../shared/starter-light-theme.js?v=20250705-ui-v16"></script>
+  <script src="../../shared/starter-light-theme.js?v=20250705-ui-v19"></script>
   
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -548,6 +548,16 @@
         if (match) return modChip(Number(match[1]));
       }
       return (category || '').replace('MOD ', 'M').replace(' - ', ' · ');
+    };
+    const taskModNum = (task) => {
+      if (H?.getTaskModNum) return H.getTaskModNum(task) || 1;
+      const cat = task?.category;
+      if (cat && typeof cat === 'string') {
+        const m = cat.match(/^MOD (\d)/);
+        if (m) return Number(m[1]);
+      }
+      const key = task?.moduleKey || 'mod1';
+      return Number(String(key).replace('mod', '')) || 1;
     };
     const getModPresets = (bundleNames) => [
       { name: 'mod1', label: bundleNames?.mod1 || modChip(1) },
@@ -2465,7 +2475,7 @@
         moduleInvestmentSummaries: plannerModuleSummaries
       } = pricing;
 
-      const usePlannerLineItemBilling = STARTER_UI && tasks.some(H.isAgencyLineItem);
+      const usePlannerLineItemBilling = STARTER_UI || tasks.some(H.isAgencyLineItem);
       const billingMilestones = (
         usePlannerLineItemBilling
           ? plannerBillingMilestones
@@ -2974,6 +2984,7 @@
                     </div>
                   )}
                 </div>
+                {!STARTER_UI && (
                 <div className="mt-4 pt-3 border-t border-slate-200 text-left">
                   <strong className="text-brandTeal-600 print-accent block mb-1.5 uppercase tracking-wider text-[10px] font-mono font-bold font-sans text-left font-sans">Your SME Financial Recovery (ROI Plan):</strong>
                   <span className="text-xs text-slate-700 leading-normal block">
@@ -2986,6 +2997,7 @@
                     Expected Net First Year Savings: <strong className="text-emerald-600 font-mono font-bold">{formatCurrency(updatedSummary.netFirstYearSavings)}</strong> after project investment (ROI of <strong className="text-emerald-600 font-mono font-bold">{updatedSummary.projectROI}%</strong>).
                   </span>
                 </div>
+                )}
               </>
             )}
           </div>
@@ -3146,9 +3158,10 @@
                     <tr key={task.id}>
                       <td className="py-3 px-4 align-top font-bold text-slate-700 text-[10px] uppercase font-sans text-left font-sans font-bold">
                         {(() => {
-                          const modMatch = task.category.match(/^MOD (\d)/);
-                          const modNum = modMatch ? Number(modMatch[1]) : 1;
-                          return `MOD ${modNum} · ${H.getModDisplayName(modNum)}`;
+                          const modNum = taskModNum(task);
+                          return STARTER_UI
+                            ? (moduleBundleNames[`mod${modNum}`] || modTitle(modNum))
+                            : `MOD ${modNum} · ${H.getModDisplayName(modNum)}`;
                         })()}
                       </td>
                       <td className="py-3 px-4 align-top text-slate-800 text-left font-sans">
@@ -3295,8 +3308,8 @@
         ];
 
         return (
-          <aside aria-label="Settings" className={`${embedded ? '' : 'xl:col-span-4 planner-split-panel'} bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left`}>
-            <h3 className="text-sm font-bold tracking-wider text-brandTeal-400 uppercase font-mono flex items-center gap-2 text-left font-sans font-bold">
+          <aside aria-label="Settings" className={`${embedded ? '' : 'xl:col-span-4 planner-split-panel'} ${STARTER_UI ? 'starter-docs-sidebar bg-white border border-slate-200' : 'bg-brandNavy-900 border border-brandNavy-700'} rounded-xl p-6 shadow-2xl backdrop-blur-sm no-print space-y-5 font-sans text-left`}>
+            <h3 className={`text-sm font-bold tracking-wider uppercase font-mono flex items-center gap-2 text-left font-sans font-bold ${STARTER_UI ? 'starter-docs-sidebar-title text-slate-700' : 'text-brandTeal-400'}`}>
               {isRoadmap && !isPackage ? <IconCalendar /> : <IconEdit />}
               {isNda ? "Customize NDA Fields" : isPackage ? "Package Settings" : isAddendum ? "Addendum Settings" : isInvoice ? "Customize Invoice Fields" : ""}
             </h3>
@@ -3395,7 +3408,7 @@
                 </fieldset>
               )}
 
-              {(isProposal || isPackage) && (
+              {(isProposal || isPackage) && !STARTER_UI && (
                 <div className="space-y-2 text-left">
                   <span className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-sans font-semibold">Operational Delays Calculator</span>
                   {renderChaosTaxCalculatorCard(true)}
@@ -3834,6 +3847,7 @@
               <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans">1. Main SOW Project Objectives</h4>
               <p className="text-xs bg-slate-50 p-4 rounded border border-slate-100 font-semibold mb-4 text-slate-800 text-left leading-relaxed font-sans">{proposalObjectives}</p>
 
+              {!STARTER_UI && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 print-pill text-left font-sans">
                 <h5 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3 flex items-center gap-1.5 text-left font-sans">
                   <IconAlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 font-sans" />
@@ -3864,6 +3878,7 @@
                   </div>
                 </div>
               </div>
+              )}
             </div>
             
             <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-4 font-bold text-left font-sans">2. {getModuleCardsHeading()}</h4>
@@ -3904,7 +3919,7 @@
               <div className="space-y-4 font-medium text-left font-sans">
                 {tasks.filter(t => t.selected).map(task => (
                   <div key={task.id} className="border border-slate-200 rounded-lg p-5 bg-slate-50/40 text-left font-sans font-semibold print-avoid-break">
-                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{modTitle(Number(task.category.match(/^MOD (\d)/)?.[1]) || 1)}</span></div>
+                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{modTitle(taskModNum(task))}</span></div>
                     <p className="text-xs text-slate-600 mb-4 font-semibold text-left leading-relaxed font-sans">{task.description}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px] text-slate-800 leading-relaxed text-left font-semibold font-sans">
                       <div><span className="text-[9px] font-mono uppercase text-slate-400 block font-bold mb-1 text-left font-sans">What we do:</span>{task.scopeDetails?.activities || "Custom action"}</div>
@@ -4361,8 +4376,8 @@
       }
 
       return (
-        <div className={STARTER_UI ? "font-sans h-full min-h-0 overflow-hidden text-slate-600 bg-slate-100 flex flex-col animate-fade-in starter-app-root" : "font-sans h-full min-h-0 overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans"}>
-          <header className="planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0">
+        <div className={STARTER_UI ? "font-sans h-full min-h-0 overflow-hidden flex flex-col animate-fade-in starter-app-root text-slate-600 bg-slate-100" : "font-sans h-full min-h-0 overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans"}>
+          <header className={STARTER_UI ? "planner-main-header border-b sticky top-0 z-50 no-print shrink-0" : "planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0"}>
             <div className="planner-header-inner max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
               <div data-app-chrome className="flex items-center gap-2">
                 {renderPlannerHeaderLogo(brand)}

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import './agency-ops-light.css';
+import './agency-ops-dark.css';
 import { initAppCheck } from './lib/firebase';
 import { ProductProvider } from './lib/product-context';
 import { getProductConfig, isAgencyOpsStarter } from './lib/product-config';

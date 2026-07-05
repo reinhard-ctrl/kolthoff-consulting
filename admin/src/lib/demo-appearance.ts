@@ -26,10 +26,11 @@ export function setStoredDemoAppearance(appearance: DemoAppearance): void {
 
 export function applyDemoAppearanceToDocument(appearance: DemoAppearance): void {
   const root = document.documentElement;
+  root.classList.remove('agency-ops-light', 'agency-ops-dark');
   if (appearance === 'light') {
     root.classList.add('agency-ops-light');
   } else {
-    root.classList.remove('agency-ops-light');
+    root.classList.add('agency-ops-dark');
   }
 }
 

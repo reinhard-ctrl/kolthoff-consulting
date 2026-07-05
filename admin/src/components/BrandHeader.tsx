@@ -2,6 +2,7 @@ import { useProduct } from '../lib/product-context';
 import { useTenantBranding } from '../hooks/useTenantBranding';
 import { splitCompanyDisplay } from '../lib/tenant-branding';
 import { useDemoAppearance } from '../lib/demo-appearance-context';
+import { isAgencyOpsStarter } from '../lib/product-config';
 
 type BrandHeaderProps = {
   subtitle?: string;
@@ -56,8 +57,9 @@ export default function BrandHeader({
   const { branding: tenantBranding } = useTenantBranding();
   const { isLight: light } = useDemoAppearance();
   const logoSize = compact ? 'w-8 h-8' : 'w-10 h-10';
+  const useTenantChrome = isAgencyOpsStarter(product.id);
 
-  if (!light) {
+  if (!useTenantChrome && !light) {
     const { branding } = product;
     const displaySubtitle = subtitle ?? branding.subtitle;
 
