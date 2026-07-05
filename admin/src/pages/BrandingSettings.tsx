@@ -28,6 +28,7 @@ export default function BrandingSettings() {
     applyPreset,
     deletePreset,
     restoreDemoPresets,
+    restoreClientDemos,
   } = useTenantBranding();
 
   const [draft, setDraft] = useState<TenantBrandingConfig | null>(null);
@@ -134,6 +135,13 @@ export default function BrandingSettings() {
     await restoreDemoPresets();
     setMessageOk(true);
     setMessage('Demo brand profiles restored.');
+  };
+
+  const handleRestoreClientDemos = async () => {
+    setMessage('');
+    await restoreClientDemos();
+    setMessageOk(true);
+    setMessage('Client demo profiles restored (GolfX, Player 2 Production, WP / Gaming).');
   };
 
   const handleDeletePreset = async (presetId: string) => {
@@ -311,6 +319,14 @@ export default function BrandingSettings() {
               'No client demos yet. Save the form as a new client demo to preview a prospect brand locally.',
               'client-demo',
             )}
+            <button
+              type="button"
+              disabled={saving}
+              onClick={handleRestoreClientDemos}
+              className="ops-btn-secondary w-full text-sm disabled:opacity-50"
+            >
+              Restore client demos
+            </button>
           </div>
         </aside>
 

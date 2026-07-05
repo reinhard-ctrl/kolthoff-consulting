@@ -134,3 +134,25 @@ describe('demo branding preset restore', () => {
     );
   });
 });
+
+const DEFAULT_CLIENT_DEMO_IDS = ['golfx', 'player-2-production', 'wp-gaming'];
+
+function shouldSeedDefaultClientDemoPresets(presets) {
+  return DEFAULT_CLIENT_DEMO_IDS.some((id) => !presets.some((preset) => preset.id === id));
+}
+
+describe('bundled client demo presets', () => {
+  it('seeds when bundled client demos are missing', () => {
+    assert.equal(shouldSeedDefaultClientDemoPresets([]), true);
+    assert.equal(shouldSeedDefaultClientDemoPresets([{ id: 'golfx', name: 'GolfX' }]), true);
+  });
+
+  it('skips seed when all bundled client demos exist', () => {
+    assert.equal(
+      shouldSeedDefaultClientDemoPresets(
+        DEFAULT_CLIENT_DEMO_IDS.map((id) => ({ id, name: id })),
+      ),
+      false,
+    );
+  });
+});
