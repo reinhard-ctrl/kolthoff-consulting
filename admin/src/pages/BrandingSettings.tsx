@@ -82,15 +82,20 @@ export default function BrandingSettings() {
 
   const handleApplyToWorkspace = async () => {
     setMessage('');
-    await saveBranding(active, editorPresetId);
-    setDraft(null);
-    setMessageOk(true);
-    const isClientDemo = editorPresetId && !isBundledDemoBrandingPresetId(editorPresetId);
-    setMessage(
-      isClientDemo
-        ? `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs. Profile list stays local only.`
-        : `Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
-    );
+    try {
+      await saveBranding(active, editorPresetId);
+      setDraft(null);
+      setMessageOk(true);
+      const isClientDemo = editorPresetId && !isBundledDemoBrandingPresetId(editorPresetId);
+      setMessage(
+        isClientDemo
+          ? `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs. Profile list stays local only.`
+          : `Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
+      );
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Could not apply branding to workspace.');
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -111,15 +116,20 @@ export default function BrandingSettings() {
 
   const handleApplyPreset = async (presetId: string) => {
     setMessage('');
-    const result = await applyPreset(presetId);
-    loadPreset(presetId);
-    setDraft(null);
-    setMessageOk(true);
-    setMessage(
-      result === 'workspace'
-        ? 'Demo profile applied to the shared workspace.'
-        : `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
-    );
+    try {
+      const result = await applyPreset(presetId);
+      loadPreset(presetId);
+      setDraft(null);
+      setMessageOk(true);
+      setMessage(
+        result === 'workspace'
+          ? 'Demo profile applied to the shared workspace.'
+          : `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
+      );
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Could not apply branding profile.');
+    }
   };
 
   const handleRestoreDemoPresets = async () => {

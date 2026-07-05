@@ -42,14 +42,31 @@ function tenantConfigRef() {
   return doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
 }
 
-/** updateDoc replaces top-level map fields; setDoc merge leaves removed nested keys behind. */
+function isDeleteFieldValue(value: unknown): boolean {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      (value as { _methodName?: string })._methodName === 'deleteField',
+  );
+}
+
+function omitDeleteFields(patch: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => !isDeleteFieldValue(value)),
+  );
+}
+
+/** updateDoc replaces top-level map fields; setDoc cannot use deleteField(). */
 async function writeTenantConfig(patch: Record<string, unknown>) {
   const ref = tenantConfigRef();
   const snap = await getDoc(ref);
   if (snap.exists()) {
     await updateDoc(ref, patch);
-  } else {
-    await setDoc(ref, patch);
+    return;
+  }
+  const createPatch = omitDeleteFields(patch);
+  if (Object.keys(createPatch).length > 0) {
+    await setDoc(ref, createPatch);
   }
 }
 
@@ -198,7 +215,10 @@ export function useTenantBranding() {
       } else if (isDemoPreset) {
         setAppliedClientDemo(null);
       }
+      applyTenantBrandingCss(next);
       return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Could not save workspace branding.');
     } finally {
       setSaving(false);
     }
@@ -243,11 +263,14 @@ export function useTenantBranding() {
       });
       if (isBundledDemoBrandingPresetId(presetId)) {
         setAppliedClientDemo(null);
+        applyTenantBrandingCss(presetToConfig(preset));
         return 'workspace';
       }
       setAppliedClientDemo(presetId);
       applyTenantBrandingCss(presetToConfig(preset));
       return 'client-demo';
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Could not apply branding profile.');
     } finally {
       setSaving(false);
     }
