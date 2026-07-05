@@ -4,6 +4,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app, adminAppId } from '../lib/firebase';
 import { useTenantBranding } from '../hooks/useTenantBranding';
 import {
+  isBundledDemoBrandingPresetId,
   presetToConfig,
   splitCompanyDisplay,
   type TenantBrandingConfig,
@@ -17,7 +18,7 @@ export default function BrandingSettings() {
   const {
     branding,
     demoPresets,
-    privatePresets,
+    clientDemoPresets,
     presets,
     activePresetId,
     loading,
@@ -37,6 +38,10 @@ export default function BrandingSettings() {
   const [messageOk, setMessageOk] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const initialized = useRef(false);
+
+  const canApplyToWorkspace = Boolean(
+    editorPresetId && isBundledDemoBrandingPresetId(editorPresetId),
+  );
 
   const active = draft ?? branding;
   const editingPreset = editorPresetId ? presets.find((p) => p.id === editorPresetId) : null;
@@ -78,8 +83,18 @@ export default function BrandingSettings() {
   };
 
   const handleApplyToWorkspace = async () => {
+    if (!canApplyToWorkspace) {
+      setMessageOk(false);
+      setMessage('Client demos stay local. Select a demo profile to update the shared workspace.');
+      return;
+    }
     setMessage('');
-    await saveBranding(active, editorPresetId);
+    const ok = await saveBranding(active, editorPresetId);
+    if (!ok) {
+      setMessageOk(false);
+      setMessage('Client demos stay local. Select a demo profile to update the shared workspace.');
+      return;
+    }
     setDraft(null);
     setMessageOk(true);
     setMessage(`Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`);
@@ -98,16 +113,20 @@ export default function BrandingSettings() {
     setProfileName(name);
     setDraft(null);
     setMessageOk(true);
-    setMessage(`Saved profile “${name}”. Click Apply to workspace when ready.`);
+    setMessage(`Saved client demo “${name}”. Preview only — shared workspace unchanged.`);
   };
 
   const handleApplyPreset = async (presetId: string) => {
     setMessage('');
-    await applyPreset(presetId);
+    const result = await applyPreset(presetId);
     loadPreset(presetId);
     setDraft(null);
     setMessageOk(true);
-    setMessage('Profile applied to your workspace.');
+    setMessage(
+      result === 'workspace'
+        ? 'Demo profile applied to the shared workspace.'
+        : 'Client demo loaded for preview. Shared workspace unchanged.',
+    );
   };
 
   const handleRestoreDemoPresets = async () => {
@@ -170,7 +189,11 @@ export default function BrandingSettings() {
 
   const display = splitCompanyDisplay(active.companyName);
 
-  const renderPresetList = (items: typeof presets, emptyLabel: string) => {
+  const renderPresetList = (
+    items: typeof presets,
+    emptyLabel: string,
+    mode: 'demo' | 'client-demo',
+  ) => {
     if (items.length === 0) {
       return <p className="text-sm text-slate-400 leading-relaxed">{emptyLabel}</p>;
     }
@@ -179,7 +202,7 @@ export default function BrandingSettings() {
       <ul className="space-y-2">
         {items.map((preset) => {
           const selected = editorPresetId === preset.id;
-          const live = activePresetId === preset.id;
+          const live = mode === 'demo' && activePresetId === preset.id;
           return (
             <li key={preset.id}>
               <div
@@ -212,11 +235,11 @@ export default function BrandingSettings() {
                 <div className="flex gap-2 mt-2 pt-2 border-t border-brandNavy-700/60">
                   <button
                     type="button"
-                    disabled={saving || live}
+                    disabled={saving || (mode === 'demo' && live)}
                     onClick={() => handleApplyPreset(preset.id)}
                     className="text-xs font-medium brand-primary-text disabled:opacity-40"
                   >
-                    Apply
+                    {mode === 'client-demo' ? 'Preview' : 'Apply'}
                   </button>
                   <button
                     type="button"
@@ -243,19 +266,16 @@ export default function BrandingSettings() {
     <div className="ops-main-inner max-w-5xl">
       <header className="ops-page-header mb-6">
         <h1>Company Branding</h1>
-        <p>Save multiple brand profiles for different agencies or clients, then apply one to your workspace.</p>
+        <p>Use demo profiles for the shared workspace. Save client demos locally to rehearse a prospect brand without changing what visitors see.</p>
       </header>
 
       <div className="grid lg:grid-cols-[16rem,minmax(0,1fr)] gap-6 items-start">
         <aside className="ops-card glass-panel p-4 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Demo profiles</h2>
-            <button type="button" onClick={startNewProfile} className="text-xs font-medium brand-primary-text">
-              + New
-            </button>
           </div>
           <p className="text-[11px] text-slate-500 leading-relaxed">
-            Shared starter brands for the public demo. Anyone with demo access can see these defaults.
+            Shared starter brands for the public demo workspace.
           </p>
 
           {demoPresets.length === 0 ? (
@@ -273,17 +293,23 @@ export default function BrandingSettings() {
               </button>
             </div>
           ) : (
-            renderPresetList(demoPresets, 'No demo profiles loaded.')
+            renderPresetList(demoPresets, 'No demo profiles loaded.', 'demo')
           )}
 
           <div className="border-t border-brandNavy-700/60 pt-4 space-y-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">My demo profiles</h3>
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Client demos only</h3>
+              <button type="button" onClick={startNewProfile} className="text-xs font-medium brand-primary-text">
+                + New
+              </button>
+            </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Profiles you create stay in this browser only. They are not saved to the shared tenant or visible to public visitors.
+              Rehearse a client brand in this browser only. Never saved to the shared tenant or visible to public visitors.
             </p>
             {renderPresetList(
-              privatePresets,
-              'No private profiles yet. Save the form as a new profile to rehearse a client brand locally.',
+              clientDemoPresets,
+              'No client demos yet. Save the form as a new client demo to preview a prospect brand locally.',
+              'client-demo',
             )}
           </div>
         </aside>
@@ -300,10 +326,10 @@ export default function BrandingSettings() {
             />
             <p className="text-xs text-slate-500 mt-1.5">
               {editorPresetId
-                ? privatePresets.some((preset) => preset.id === editorPresetId)
-                  ? 'Private profile — stored in this browser only.'
-                  : 'Shared demo profile.'
-                : 'New profile — saved privately in this browser.'}
+                ? isBundledDemoBrandingPresetId(editorPresetId)
+                  ? 'Shared demo profile — can apply to workspace.'
+                  : 'Client demo only — preview in this browser, not shared.'
+                : 'New client demo — saved locally for rehearsal only.'}
             </p>
           </div>
 
@@ -423,13 +449,22 @@ export default function BrandingSettings() {
               onClick={handleSaveProfile}
               className="ops-btn-secondary disabled:opacity-50"
             >
-              {saving ? 'Saving…' : editorPresetId ? 'Save profile' : 'Save as new profile'}
+              {saving
+                ? 'Saving…'
+                : isBundledDemoBrandingPresetId(editorPresetId)
+                  ? 'Save demo profile'
+                  : 'Save client demo'}
             </button>
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || !canApplyToWorkspace}
               onClick={handleApplyToWorkspace}
               className="ops-btn-primary brand-primary-bg disabled:opacity-50"
+              title={
+                canApplyToWorkspace
+                  ? undefined
+                  : 'Client demos stay local. Select a demo profile to update the shared workspace.'
+              }
             >
               {saving ? 'Applying…' : 'Apply to workspace'}
             </button>
