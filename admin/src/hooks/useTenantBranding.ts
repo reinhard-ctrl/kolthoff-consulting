@@ -3,16 +3,12 @@ import { deleteField, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebas
 import { db, adminAppId } from '../lib/firebase';
 import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
+  CLIENT_DEMO_SETUP_VERSION,
   clearLegacyClientDemoBrandingPresets,
   loadAppliedClientDemoId,
-  loadLegacyClientDemoBrandingPresets,
   listClientDemoPresets,
   mergeClientDemoBrandingPresets,
-  mergeDefaultClientDemoPresets,
-  restoreDefaultClientDemoPresets,
   saveAppliedClientDemoId,
-  seedDefaultClientDemoPresets,
-  shouldSeedDefaultClientDemoPresets,
   upsertClientDemoBrandingPreset,
 } from '../lib/client-demo-branding';
 import {
@@ -95,8 +91,7 @@ export function useTenantBranding() {
   const [presetsFieldPresent, setPresetsFieldPresent] = useState(false);
   const demoPresetsRestoreAttempted = useRef(false);
   const customPresetMigrationAttempted = useRef(false);
-  const clientDemoMigrationAttempted = useRef(false);
-  const clientDemoSeedAttempted = useRef(false);
+  const clientDemoResetAttempted = useRef(false);
 
   const presets = [...demoPresets, ...clientDemoPresets];
 
@@ -127,12 +122,11 @@ export function useTenantBranding() {
         const leakedCustom = firestorePresets.filter(
           (preset) => !isBundledDemoBrandingPresetId(preset.id),
         );
-        const hasClientDemoField = Boolean(
-          data && typeof data.clientDemoPresets === 'object' && data.clientDemoPresets !== null,
-        );
         const firestoreClientDemos = listClientDemoPresets(
           data?.clientDemoPresets as Record<string, unknown> | undefined,
         );
+        const setupVersion =
+          typeof data?.clientDemoSetupVersion === 'number' ? data.clientDemoSetupVersion : 0;
 
         setBranding(merged);
         setDemoPresets(bundled);
@@ -145,6 +139,25 @@ export function useTenantBranding() {
         );
         applyTenantBrandingCss(merged);
         setLoading(false);
+
+        if (setupVersion < CLIENT_DEMO_SETUP_VERSION && !clientDemoResetAttempted.current) {
+          clientDemoResetAttempted.current = true;
+          setClientDemoPresets([]);
+          setAppliedClientDemoId(null);
+          saveAppliedClientDemoId(null);
+          clearLegacyClientDemoBrandingPresets();
+          void (async () => {
+            try {
+              await writeTenantConfig({
+                clientDemoPresets: {},
+                clientDemoSetupVersion: CLIENT_DEMO_SETUP_VERSION,
+              });
+            } catch {
+              clientDemoResetAttempted.current = false;
+            }
+          })();
+          return;
+        }
 
         if (leakedCustom.length > 0 && !customPresetMigrationAttempted.current) {
           customPresetMigrationAttempted.current = true;
@@ -167,27 +180,6 @@ export function useTenantBranding() {
               customPresetMigrationAttempted.current = false;
             }
           })();
-        }
-
-        if (
-          firestoreClientDemos.length === 0 &&
-          !hasClientDemoField &&
-          !clientDemoMigrationAttempted.current
-        ) {
-          const legacy = loadLegacyClientDemoBrandingPresets();
-          if (legacy.length > 0) {
-            clientDemoMigrationAttempted.current = true;
-            const migrated = mergeClientDemoBrandingPresets([], legacy);
-            setClientDemoPresets(migrated);
-            void (async () => {
-              try {
-                await writeClientDemoPresets(migrated);
-                clearLegacyClientDemoBrandingPresets();
-              } catch {
-                clientDemoMigrationAttempted.current = false;
-              }
-            })();
-          }
         }
       },
       () => setLoading(false),
@@ -214,25 +206,6 @@ export function useTenantBranding() {
       }
     })();
   }, [loading, demoPresets, presetsFieldPresent, product.id]);
-
-  useEffect(() => {
-    if (loading || !isAgencyOpsStarter(product.id)) return;
-    if (clientDemoSeedAttempted.current) return;
-    if (!shouldSeedDefaultClientDemoPresets(clientDemoPresets)) return;
-    clientDemoSeedAttempted.current = true;
-
-    void (async () => {
-      setSaving(true);
-      try {
-        const next = seedDefaultClientDemoPresets(clientDemoPresets);
-        await writeClientDemoPresets(next);
-      } catch {
-        clientDemoSeedAttempted.current = false;
-      } finally {
-        setSaving(false);
-      }
-    })();
-  }, [loading, clientDemoPresets, product.id]);
 
   const setAppliedClientDemo = (presetId: string | null) => {
     setAppliedClientDemoId(presetId);
@@ -346,6 +319,9 @@ export function useTenantBranding() {
       if (snap.exists()) {
         await updateDoc(ref, patch);
       }
+      if (appliedClientDemoId === presetId) {
+        setAppliedClientDemo(null);
+      }
     } finally {
       setSaving(false);
     }
@@ -362,11 +338,11 @@ export function useTenantBranding() {
     }
   };
 
-  const restoreClientDemos = async () => {
+  const clearClientDemos = async () => {
     setSaving(true);
     try {
-      const next = restoreDefaultClientDemoPresets(clientDemoPresets);
-      await writeClientDemoPresets(next);
+      await writeClientDemoPresets([]);
+      setAppliedClientDemo(null);
     } finally {
       setSaving(false);
     }
@@ -386,6 +362,6 @@ export function useTenantBranding() {
     applyPreset,
     deletePreset,
     restoreDemoPresets,
-    restoreClientDemos,
+    clearClientDemos,
   };
 }
