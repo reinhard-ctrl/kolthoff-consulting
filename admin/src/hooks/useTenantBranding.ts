@@ -9,6 +9,7 @@ import {
   mergeDefaultClientDemoPresets,
   removeClientDemoBrandingPreset,
   restoreDefaultClientDemoPresets,
+  seedDefaultClientDemoPresets,
   saveAppliedClientDemoId,
   shouldSeedDefaultClientDemoPresets,
   upsertClientDemoBrandingPreset,
@@ -186,7 +187,7 @@ export function useTenantBranding() {
     clientDemoSeedAttempted.current = true;
     const loaded = loadClientDemoBrandingPresets();
     if (shouldSeedDefaultClientDemoPresets(loaded)) {
-      setClientDemoPresets(restoreDefaultClientDemoPresets());
+      setClientDemoPresets(seedDefaultClientDemoPresets());
       return;
     }
     setClientDemoPresets(loaded);

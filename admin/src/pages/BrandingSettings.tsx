@@ -143,7 +143,7 @@ export default function BrandingSettings() {
     setMessage('');
     await restoreClientDemos();
     setMessageOk(true);
-    setMessage('Client demo profiles restored (GolfX, Player 2 Production, WP / Gaming).');
+    setMessage('Client demo profiles restored with logos and brand colors (GolfX, Player 2 Production, WP / Gaming).');
   };
 
   const handleDeletePreset = async (presetId: string) => {

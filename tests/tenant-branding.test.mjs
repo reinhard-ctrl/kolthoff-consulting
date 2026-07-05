@@ -138,7 +138,22 @@ describe('demo branding preset restore', () => {
 const DEFAULT_CLIENT_DEMO_IDS = ['golfx', 'player-2-production', 'wp-gaming'];
 
 function shouldSeedDefaultClientDemoPresets(presets) {
-  return DEFAULT_CLIENT_DEMO_IDS.some((id) => !presets.some((preset) => preset.id === id));
+  const DEFAULTS = [
+    { id: 'golfx', name: 'GolfX', companyName: 'GolfX', tagline: 'Indoor Golf & Performance Training', primaryColor: '#166534', logoUrl: '/shared/assets/client-demos/golfx-logo.svg' },
+    { id: 'player-2-production', name: 'Player 2 Production', companyName: 'Player 2 Production', tagline: 'Events, Festivals & Live Experiences', primaryColor: '#7c3aed', logoUrl: '/shared/assets/client-demos/player-2-production-logo.svg' },
+    { id: 'wp-gaming', name: 'WP / Gaming', companyName: 'WP / Gaming', tagline: 'Gaming & Esports Marketing', primaryColor: '#0284c7', logoUrl: '/shared/assets/client-demos/wp-gaming-logo.svg' },
+  ];
+  return DEFAULTS.some((demo) => {
+    const existing = presets.find((preset) => preset.id === demo.id);
+    if (!existing) return true;
+    return (
+      (demo.logoUrl && !existing.logoUrl) ||
+      existing.primaryColor !== demo.primaryColor ||
+      existing.tagline !== demo.tagline ||
+      existing.companyName !== demo.companyName ||
+      existing.name !== demo.name
+    );
+  });
 }
 
 describe('bundled client demo presets', () => {
@@ -147,11 +162,54 @@ describe('bundled client demo presets', () => {
     assert.equal(shouldSeedDefaultClientDemoPresets([{ id: 'golfx', name: 'GolfX' }]), true);
   });
 
-  it('skips seed when all bundled client demos exist', () => {
+  it('seeds when bundled client demos lost logo or color', () => {
     assert.equal(
-      shouldSeedDefaultClientDemoPresets(
-        DEFAULT_CLIENT_DEMO_IDS.map((id) => ({ id, name: id })),
-      ),
+      shouldSeedDefaultClientDemoPresets([
+        {
+          id: 'golfx',
+          name: 'GolfX',
+          companyName: 'GolfX',
+          tagline: 'Indoor Golf & Performance Training',
+          primaryColor: '#166534',
+          logoUrl: '',
+          updatedAt: 1,
+        },
+      ]),
+      true,
+    );
+  });
+
+  it('skips seed when all bundled client demos exist with logos and colors', () => {
+    assert.equal(
+      shouldSeedDefaultClientDemoPresets([
+        {
+          id: 'golfx',
+          name: 'GolfX',
+          companyName: 'GolfX',
+          tagline: 'Indoor Golf & Performance Training',
+          primaryColor: '#166534',
+          logoUrl: '/shared/assets/client-demos/golfx-logo.svg',
+          updatedAt: 1,
+        },
+        {
+          id: 'player-2-production',
+          name: 'Player 2 Production',
+          companyName: 'Player 2 Production',
+          tagline: 'Events, Festivals & Live Experiences',
+          primaryColor: '#7c3aed',
+          logoUrl: '/shared/assets/client-demos/player-2-production-logo.svg',
+          updatedAt: 1,
+        },
+        {
+          id: 'wp-gaming',
+          name: 'WP / Gaming',
+          companyName: 'WP / Gaming',
+          tagline: 'Gaming & Esports Marketing',
+          primaryColor: '#0284c7',
+          logoUrl: '/shared/assets/client-demos/wp-gaming-logo.svg',
+          updatedAt: 1,
+        },
+      ]),
       false,
     );
   });
