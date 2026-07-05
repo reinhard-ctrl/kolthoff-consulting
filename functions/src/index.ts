@@ -924,3 +924,232 @@ export const onWorkbookProfileWritten = onDocumentWritten(
     }
   },
 );
+
+const DEFAULT_AGENCY_OPS_URL = 'https://kolthoff-consulting.com/agency-ops/';
+const AGENCY_OPS_DEMO_TENANT = 'agency-ops-demo';
+
+function slugifyAgencyName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+function normalizeAgencyTenantId(raw: string): string {
+  const trimmed = raw.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+  return trimmed.startsWith('agency-') ? trimmed : `agency-${trimmed}`;
+}
+
+function validateAgencyTenantId(tenantId: string) {
+  if (!/^agency-[a-z0-9-]{2,48}$/.test(tenantId)) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Tenant ID must look like agency-pixel-wave (lowercase letters, numbers, hyphens).',
+    );
+  }
+  if (tenantId === AGENCY_OPS_DEMO_TENANT) {
+    throw new HttpsError('invalid-argument', 'agency-ops-demo is reserved for the sales demo');
+  }
+}
+
+function generateAgencyPasscode(): string {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let code = '';
+  for (let i = 0; i < 10; i += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+function agencyOpsConsoleUrl(tenantId: string): string {
+  return `${DEFAULT_AGENCY_OPS_URL}?tenant=${encodeURIComponent(tenantId)}`;
+}
+
+interface AgencyBrandingInput {
+  companyName?: string;
+  tagline?: string;
+  primaryColor?: string;
+  logoUrl?: string;
+}
+
+async function ensureAgencyOpsTenant(params: {
+  clientName: string;
+  requestedTenantId?: string;
+  createdBy: string | null;
+  branding?: AgencyBrandingInput;
+  passcode?: string;
+  throwIfExists?: boolean;
+}): Promise<{
+  tenantId: string;
+  clientName: string;
+  consoleUrl: string;
+  passcode: string;
+  created: boolean;
+}> {
+  const clientName = params.clientName.trim();
+  if (!clientName) throw new HttpsError('invalid-argument', 'Client name required');
+
+  const tenantId = params.requestedTenantId
+    ? normalizeAgencyTenantId(params.requestedTenantId)
+    : `agency-${slugifyAgencyName(clientName)}`;
+  validateAgencyTenantId(tenantId);
+
+  const configRef = db.doc(`artifacts/${tenantId}/public/data/tenant_settings/config`);
+  const registryRef = db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_tenants/${tenantId}`);
+  const [configSnap, registrySnap] = await Promise.all([configRef.get(), registryRef.get()]);
+  const consoleUrl = agencyOpsConsoleUrl(tenantId);
+  const passcode = (params.passcode || generateAgencyPasscode()).trim().toLowerCase();
+
+  if (configSnap.exists || registrySnap.exists) {
+    if (params.throwIfExists) {
+      throw new HttpsError('already-exists', `Agency Ops tenant "${tenantId}" already exists`);
+    }
+    return { tenantId, clientName, consoleUrl, passcode, created: false };
+  }
+
+  const now = Date.now();
+  const branding = {
+    companyName: params.branding?.companyName?.trim() || clientName,
+    tagline: params.branding?.tagline?.trim() || 'Creative & Digital Services',
+    primaryColor: params.branding?.primaryColor?.trim() || '#4f46e5',
+    logoUrl: params.branding?.logoUrl?.trim() || '',
+  };
+
+  const batch = db.batch();
+  batch.set(configRef, {
+    id: 'config',
+    productId: 'agency-ops-starter',
+    clientName,
+    features: { messenger: false, approvals: false, vault: false, crm: false },
+    branding,
+    activeBrandingPresetId: 'default',
+    brandingPresets: {
+      default: {
+        id: 'default',
+        name: branding.companyName,
+        ...branding,
+        updatedAt: now,
+      },
+    },
+    createdAt: now,
+    createdBy: params.createdBy,
+    provisionedBy: 'prepareAgencyOpsTenant',
+  });
+  batch.set(db.doc(`artifacts/${tenantId}/public/data/admin_credentials/${passcode}`), {
+    role: 'kolthoff_admin',
+    note: `Agency Ops tenant ${tenantId}`,
+    createdAt: now,
+  });
+  batch.set(registryRef, {
+    id: tenantId,
+    tenantId,
+    clientName,
+    productId: 'agency-ops-starter',
+    status: 'active',
+    consoleUrl,
+    provisioningStatus: 'ready',
+    createdAt: now,
+    createdBy: params.createdBy,
+  });
+  await batch.commit();
+
+  return { tenantId, clientName, consoleUrl, passcode, created: true };
+}
+
+/** Provision white-label Agency Ops tenant after PRO 1 contract sign */
+export const prepareAgencyOpsTenant = onCall(async (request) => {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
+    throw new HttpsError('permission-denied', 'Admin privileges required');
+  }
+
+  const profileId = (request.data?.profileId as string)?.trim();
+  let clientName = (request.data?.clientName as string)?.trim();
+  let requestedTenantId = (request.data?.tenantId as string)?.trim();
+  let quoteId: string | undefined;
+  let branding: AgencyBrandingInput | undefined;
+  const passcodeInput = (request.data?.passcode as string)?.trim();
+
+  if (profileId) {
+    const profileSnap = await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).get();
+    if (!profileSnap.exists) {
+      throw new HttpsError('not-found', `Workbook profile "${profileId}" not found`);
+    }
+    const profile = profileSnap.data() || {};
+    clientName = clientName || (profile.clientCompany as string) || (profile.clientName as string);
+    quoteId = (profile.quoteId as string) || undefined;
+    if (profile.engagementType === 'product' && profile.productId && profile.productId !== 'pro1') {
+      throw new HttpsError('failed-precondition', 'Only PRO 1 Agency Ops is supported for provisioning');
+    }
+    const profileBranding = profile.branding as Record<string, string> | undefined;
+    if (profileBranding) {
+      branding = {
+        companyName: profileBranding.companyName,
+        tagline: profileBranding.tagline,
+        primaryColor: profileBranding.primaryColor,
+        logoUrl: profileBranding.logoUrl,
+      };
+    }
+    if (!requestedTenantId && clientName) {
+      requestedTenantId = `agency-${slugifyAgencyName(clientName)}`;
+    }
+  }
+
+  if (!clientName) throw new HttpsError('invalid-argument', 'Client name required');
+
+  const result = await ensureAgencyOpsTenant({
+    clientName,
+    requestedTenantId: requestedTenantId || undefined,
+    createdBy: request.auth?.uid || null,
+    branding,
+    passcode: passcodeInput || undefined,
+    throwIfExists: Boolean(request.data?.throwIfExists),
+  });
+
+  const now = Date.now();
+  const registryPatch: Record<string, unknown> = {
+    profileId: profileId || null,
+    quoteId: quoteId || null,
+    updatedAt: now,
+  };
+  await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_tenants/${result.tenantId}`).set(registryPatch, { merge: true });
+
+  if (profileId) {
+    await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).set({
+      agencyOpsTenantId: result.tenantId,
+      provisioningStatus: 'ready',
+      links: {
+        agencyOpsConsoleUrl: result.consoleUrl,
+      },
+      updatedAt: now,
+    }, { merge: true });
+  }
+
+  const handoff =
+    `Your Agency Ops workspace is ready.\n\n` +
+    `1. Open: ${result.consoleUrl}\n` +
+    `2. Sign in with passcode: ${result.passcode}\n\n` +
+    `Save this passcode securely — it is shown once during provisioning.`;
+
+  const repEmail = normalizeEmail((request.data?.repEmail as string) || '');
+  const mailtoUrl = repEmail
+    ? `mailto:${encodeURIComponent(repEmail)}?subject=${encodeURIComponent(`${clientName} — Agency Ops Access`)}&body=${encodeURIComponent(handoff)}`
+    : undefined;
+
+  return {
+    tenantId: result.tenantId,
+    clientName,
+    consoleUrl: result.consoleUrl,
+    passcode: result.passcode,
+    profileId: profileId || null,
+    quoteId: quoteId || null,
+    mailtoUrl,
+    created: result.created,
+    message: result.created
+      ? `Provisioned Agency Ops for ${clientName}. Share the console URL and passcode with the client.`
+      : `Agency Ops tenant ${result.tenantId} already exists — credentials refreshed in response.`,
+  };
+});
+

@@ -18,6 +18,20 @@ export function isModCategory(category, modNum) {
   return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
 }
 
+export function isProCategory(category) {
+  return typeof category === 'string' && category.startsWith('PRO ');
+}
+
+export function getProDisplayLabel(category) {
+  const PC = typeof globalThis !== 'undefined' ? globalThis.ProductCatalog : null;
+  if (PC?.getProductByCategory) {
+    const p = PC.getProductByCategory(category);
+    if (p) return p.skuLabel || `${p.key} · ${p.shortTitle}`;
+  }
+  if (typeof category === 'string') return category.replace(' - ', ' · ');
+  return 'PRO · Platform';
+}
+
 export const RATE_TIERS = {
   principal: 3500,
   senior: 2500,
@@ -251,6 +265,35 @@ export function computeModuleInvestmentSummaries(profile) {
       mod4AuditTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier * discFactor
     );
     summaries.push({ modNum: '4a', label: `${getModDisplayName(4)} — System Health Check`, count: mod4AuditTasks.length, baseUndiscounted: auditBase, afterDiscount: auditBase, isAnnual: true });
+  }
+
+  const proSetupTasks = tasks.filter((t) => t.selected && isProCategory(t.category) && !t.isMonthlyRetainer);
+  const proRetainerTasks = tasks.filter((t) => t.selected && isProCategory(t.category) && t.isMonthlyRetainer);
+  const proLabel = getProDisplayLabel(proSetupTasks[0]?.category || proRetainerTasks[0]?.category);
+  if (proSetupTasks.length > 0) {
+    const baseUndiscounted = Math.round(
+      proSetupTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * bufferMultiplier
+    );
+    summaries.push({
+      modNum: 'pro1',
+      label: proLabel,
+      count: proSetupTasks.length,
+      baseUndiscounted,
+      afterDiscount: Math.round(baseUndiscounted * discFactor),
+    });
+  }
+  if (proRetainerTasks.length > 0) {
+    const monthlyBase = Math.round(
+      proRetainerTasks.reduce((acc, t) => acc + (t.estHours || 0) * rateFor(t.tier), 0) * discFactor
+    );
+    summaries.push({
+      modNum: 'pro1-sub',
+      label: `${proLabel} — Subscription`,
+      count: proRetainerTasks.length,
+      baseUndiscounted: monthlyBase,
+      afterDiscount: monthlyBase,
+      isMonthly: true,
+    });
   }
 
   return summaries;
