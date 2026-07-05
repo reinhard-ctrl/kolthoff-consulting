@@ -26,14 +26,21 @@ service cloud.firestore {
       );
     }
 
-    /** Agency Ops Starter demo admin — agency-ops-demo tenant only */
-    function isAgencyOpsAdmin() {
-      return isAuthenticated() && hasAdminSession('agency-ops-demo');
+    /** Agency Ops tenant admin — any agency-* tenant with passcode session */
+    function isAgencyOpsTenantAdmin(tenantId) {
+      return isAuthenticated() &&
+        tenantId.matches('agency-.*') &&
+        hasAdminSession(tenantId);
     }
 
-    /** Either product admin shell (firm or agency ops demo) */
+    /** Legacy demo helper */
+    function isAgencyOpsAdmin() {
+      return isAgencyOpsTenantAdmin('agency-ops-demo');
+    }
+
+    /** Either product admin shell (firm or agency ops tenant) */
     function isKolthoffAdmin() {
-      return isKolthoffFirmAdmin() || isAgencyOpsAdmin();
+      return isKolthoffFirmAdmin() || isAgencyOpsTenantAdmin('agency-ops-demo');
     }
 
     /** Staff: kolthoff admin session, Workspace SSO/claims, or tenant members — not anonymous */
@@ -56,14 +63,15 @@ service cloud.firestore {
     function isTenantMember(tenantId) {
       return isAuthenticated() && (
         isKolthoffFirmAdmin() ||
-        (tenantId == 'agency-ops-demo' && isAgencyOpsAdmin()) ||
+        isAgencyOpsTenantAdmin(tenantId) ||
         request.auth.token.tenantId == tenantId
       );
     }
 
     function isTenantAdmin(tenantId) {
       return isAuthenticated() && (
-        isKolthoffAdmin() ||
+        isKolthoffFirmAdmin() ||
+        isAgencyOpsTenantAdmin(tenantId) ||
         (request.auth.token.tenantId == tenantId && request.auth.token.role == 'admin')
       );
     }

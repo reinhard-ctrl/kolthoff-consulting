@@ -18,7 +18,25 @@ Implementation source: `shared/product-catalog.js`, `shared/engagement-packages.
 3. **Documents** — PRO template: SOW + Quote + **Platform SLA** (no consulting roadmap)
 4. **Contract sign** — `contract_sign.html`
 5. **Collections** — Manual invoicing v1 (setup + subscription milestones)
-6. **Phase 2** — `prepareAgencyOpsTenant` provisions white-label tenant after sign
+6. **Phase 2** — `prepareAgencyOpsTenant` Cloud Function provisions tenant; use **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or **Provision Agency Ops** on signed contracts in Contract Ledger
+
+## Agency Ops tenant registry
+
+Path:
+
+```
+artifacts/kolthoff-admin-app/public/data/agency_ops_tenants/{tenantId}
+```
+
+Workbook profile fields after provisioning:
+
+| Field | Notes |
+|-------|--------|
+| `agencyOpsTenantId` | e.g. `agency-pixel-wave` |
+| `provisioningStatus` | `ready` |
+| `links.agencyOpsConsoleUrl` | Console URL with `?tenant=` |
+
+Console URL pattern: `https://kolthoff-consulting.com/agency-ops/?tenant=agency-{slug}`
 
 ## Profile fields (workbook_profiles)
 

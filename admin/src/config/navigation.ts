@@ -36,6 +36,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
       { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
       { id: 'collections', label: 'Collections', type: 'route', path: '/collections' },
+      { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
       { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
     ],
   },

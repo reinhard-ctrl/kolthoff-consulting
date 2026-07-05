@@ -91,4 +91,4 @@ Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` 
 4. Update `tenant_settings/config` branding fields
 5. Create `admin_credentials/{passcode}` for client login
 
-Future: automate via provisioning wizard (P7 on roadmap).
+Future: automate via **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or the **Provision Agency Ops** action on signed PRO contracts in Contract Ledger. Both call the `prepareAgencyOpsTenant` Cloud Function.
