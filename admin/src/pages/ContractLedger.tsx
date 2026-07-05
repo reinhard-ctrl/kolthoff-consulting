@@ -365,7 +365,7 @@ export default function ContractLedger() {
                     type="button"
                     onClick={() => provisionAgencyOps(provisionTarget)}
                     disabled={processing}
-                    className="px-4 py-2 bg-brandAmber-500 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50"
+                    className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50 shadow-sm"
                   >
                     {processing ? 'Provisioning…' : 'Provision'}
                   </button>
@@ -513,7 +513,7 @@ export default function ContractLedger() {
                               type="button"
                               onClick={() => { setProvisionResult(null); setProvisionTarget(profile || null); }}
                               disabled={processing}
-                              className="px-3 py-1 bg-brandAmber-500/20 text-brandAmber-300 rounded text-xs font-bold"
+                              className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
                             >
                               {profile?.provisioningStatus === 'failed' ? 'Retry Provision' : 'Provision Agency Ops'}
                             </button>
