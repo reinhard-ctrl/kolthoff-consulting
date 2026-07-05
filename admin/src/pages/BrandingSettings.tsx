@@ -16,6 +16,8 @@ export default function BrandingSettings() {
   const modules = product.moduleLabels;
   const {
     branding,
+    demoPresets,
+    privatePresets,
     presets,
     activePresetId,
     loading,
@@ -168,6 +170,71 @@ export default function BrandingSettings() {
 
   const display = splitCompanyDisplay(active.companyName);
 
+  const renderPresetList = (items: typeof presets, emptyLabel: string) => {
+    if (items.length === 0) {
+      return <p className="text-sm text-slate-400 leading-relaxed">{emptyLabel}</p>;
+    }
+
+    return (
+      <ul className="space-y-2">
+        {items.map((preset) => {
+          const selected = editorPresetId === preset.id;
+          const live = activePresetId === preset.id;
+          return (
+            <li key={preset.id}>
+              <div
+                className={`rounded-lg border p-3 transition-colors ${
+                  selected
+                    ? 'border-brandTeal-500/40 bg-brandTeal-500/10'
+                    : 'border-brandNavy-700 hover:border-brandNavy-700/80'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => loadPreset(preset.id)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: preset.primaryColor }}
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm font-medium text-slate-900 truncate">{preset.name}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 truncate">{preset.companyName}</p>
+                  {live && (
+                    <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide brand-primary-text">
+                      Active
+                    </span>
+                  )}
+                </button>
+                <div className="flex gap-2 mt-2 pt-2 border-t border-brandNavy-700/60">
+                  <button
+                    type="button"
+                    disabled={saving || live}
+                    onClick={() => handleApplyPreset(preset.id)}
+                    className="text-xs font-medium brand-primary-text disabled:opacity-40"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleDeletePreset(preset.id)}
+                    className="text-xs font-medium text-rose-500 disabled:opacity-40"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
+
   if (loading) {
     return <p className="text-slate-400 animate-pulse">Loading branding…</p>;
   }
@@ -180,18 +247,21 @@ export default function BrandingSettings() {
       </header>
 
       <div className="grid lg:grid-cols-[16rem,minmax(0,1fr)] gap-6 items-start">
-        <aside className="ops-card glass-panel p-4 space-y-3">
+        <aside className="ops-card glass-panel p-4 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Saved profiles</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Demo profiles</h2>
             <button type="button" onClick={startNewProfile} className="text-xs font-medium brand-primary-text">
               + New
             </button>
           </div>
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            Shared starter brands for the public demo. Anyone with demo access can see these defaults.
+          </p>
 
-          {presets.length === 0 ? (
+          {demoPresets.length === 0 ? (
             <div className="space-y-3">
               <p className="text-sm text-slate-400 leading-relaxed">
-                No saved profiles yet. Edit the form and click Save profile, or restore the demo set.
+                Demo profiles are missing. Restore the bundled Studio North set.
               </p>
               <button
                 type="button"
@@ -203,63 +273,19 @@ export default function BrandingSettings() {
               </button>
             </div>
           ) : (
-            <ul className="space-y-2">
-              {presets.map((preset) => {
-                const selected = editorPresetId === preset.id;
-                const live = activePresetId === preset.id;
-                return (
-                  <li key={preset.id}>
-                    <div
-                      className={`rounded-lg border p-3 transition-colors ${
-                        selected
-                          ? 'border-brandTeal-500/40 bg-brandTeal-500/10'
-                          : 'border-brandNavy-700 hover:border-brandNavy-700/80'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => loadPreset(preset.id)}
-                        className="w-full text-left"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: preset.primaryColor }}
-                            aria-hidden="true"
-                          />
-                          <span className="text-sm font-medium text-slate-900 truncate">{preset.name}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1 truncate">{preset.companyName}</p>
-                        {live && (
-                          <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide brand-primary-text">
-                            Active
-                          </span>
-                        )}
-                      </button>
-                      <div className="flex gap-2 mt-2 pt-2 border-t border-brandNavy-700/60">
-                        <button
-                          type="button"
-                          disabled={saving || live}
-                          onClick={() => handleApplyPreset(preset.id)}
-                          className="text-xs font-medium brand-primary-text disabled:opacity-40"
-                        >
-                          Apply
-                        </button>
-                        <button
-                          type="button"
-                          disabled={saving}
-                          onClick={() => handleDeletePreset(preset.id)}
-                          className="text-xs font-medium text-rose-500 disabled:opacity-40"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            renderPresetList(demoPresets, 'No demo profiles loaded.')
           )}
+
+          <div className="border-t border-brandNavy-700/60 pt-4 space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">My demo profiles</h3>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Profiles you create stay in this browser only. They are not saved to the shared tenant or visible to public visitors.
+            </p>
+            {renderPresetList(
+              privatePresets,
+              'No private profiles yet. Save the form as a new profile to rehearse a client brand locally.',
+            )}
+          </div>
         </aside>
 
         <div className="ops-card glass-panel p-6 sm:p-8 space-y-6">
@@ -273,7 +299,11 @@ export default function BrandingSettings() {
               className="ops-input"
             />
             <p className="text-xs text-slate-500 mt-1.5">
-              {editorPresetId ? 'Updating saved profile.' : 'New profile — save before applying.'}
+              {editorPresetId
+                ? privatePresets.some((preset) => preset.id === editorPresetId)
+                  ? 'Private profile — stored in this browser only.'
+                  : 'Shared demo profile.'
+                : 'New profile — saved privately in this browser.'}
             </p>
           </div>
 
