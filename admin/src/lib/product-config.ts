@@ -147,12 +147,49 @@ export function getProductConfig(productId?: ProductId): ProductConfig {
   return PRODUCTS[id] ?? KOLTHOFF_OS;
 }
 
+const AGENCY_TENANT_SESSION_KEY = 'agency-ops-tenant-id';
+
+function isValidAgencyTenantId(tenant: string): boolean {
+  return /^agency-[a-z0-9-]+$/.test(tenant) && tenant !== 'agency-ops-demo';
+}
+
+/** Persist ?tenant= across reloads for paid white-label clients. */
+export function resolveAgencyTenantId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const fromUrl = new URLSearchParams(window.location.search).get('tenant')?.trim();
+  if (fromUrl && isValidAgencyTenantId(fromUrl)) {
+    try {
+      sessionStorage.setItem(AGENCY_TENANT_SESSION_KEY, fromUrl);
+    } catch {
+      /* ignore quota / private mode */
+    }
+    return fromUrl;
+  }
+  try {
+    const stored = sessionStorage.getItem(AGENCY_TENANT_SESSION_KEY);
+    if (stored && isValidAgencyTenantId(stored)) return stored;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Keep ?tenant= visible in the address bar when restored from session. */
+export function syncAgencyTenantUrl(): void {
+  if (typeof window === 'undefined') return;
+  const tenant = resolveAgencyTenantId();
+  if (!tenant) return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('tenant') === tenant) return;
+  url.searchParams.set('tenant', tenant);
+  window.history.replaceState(null, '', url.toString());
+}
+
 /** Resolve Agency Ops tenant from ?tenant= for paid white-label clients. */
 export function resolveAgencyOpsRuntimeConfig(): ProductConfig {
   const base = AGENCY_OPS_STARTER;
-  if (typeof window === 'undefined') return base;
-  const tenant = new URLSearchParams(window.location.search).get('tenant')?.trim();
-  if (tenant && /^agency-[a-z0-9-]+$/.test(tenant) && tenant !== 'agency-ops-demo') {
+  const tenant = resolveAgencyTenantId();
+  if (tenant) {
     return {
       ...base,
       tenantId: tenant,

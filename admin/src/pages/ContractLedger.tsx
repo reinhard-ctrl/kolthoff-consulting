@@ -20,6 +20,7 @@ interface WorkbookProfile {
   productId?: string;
   agencyOpsTenantId?: string;
   provisioningStatus?: string;
+  provisioningError?: string;
   links?: { agencyOpsConsoleUrl?: string };
   chaosTax?: { source?: string; value?: number };
   annualOperationalLeakage?: number;
@@ -40,6 +41,9 @@ interface ContractRecord {
   status: string;
   signedAt?: string;
   signedBy?: string;
+  agencyOpsAutoProvisioned?: boolean;
+  agencyOpsAutoProvisionError?: string;
+  agencyOpsTenantId?: string;
   auditTrail?: { action: string; timestamp: string }[];
 }
 
@@ -255,6 +259,24 @@ export default function ContractLedger() {
   const isProProfile = (profile?: WorkbookProfile) =>
     Boolean(profile && (profile.engagementType === 'product' || profile.productId === 'pro1'));
 
+  const provisioningBadge = (profile?: WorkbookProfile, contract?: ContractRecord | null) => {
+    if (!profile || !isProProfile(profile)) return null;
+    if (profile.provisioningStatus === 'provisioning') {
+      return <span className="text-amber-400 text-[10px] uppercase font-bold ml-2">Provisioning…</span>;
+    }
+    if (profile.provisioningStatus === 'failed' || contract?.agencyOpsAutoProvisionError) {
+      return (
+        <span className="text-rose-400 text-[10px] uppercase font-bold ml-2" title={profile.provisioningError || contract?.agencyOpsAutoProvisionError}>
+          Provision failed
+        </span>
+      );
+    }
+    if (profile.agencyOpsTenantId) {
+      return <span className="text-emerald-400 text-[10px] uppercase font-bold ml-2">Ops ready</span>;
+    }
+    return null;
+  };
+
   const provisionAgencyOps = async (profile: WorkbookProfile) => {
     setProcessing(true);
     setProvisionResult(null);
@@ -459,7 +481,10 @@ export default function ContractLedger() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4 text-center">{statusBadge(item.contractStatus)}</td>
+                    <td className="p-4 text-center">
+                      {statusBadge(item.contractStatus)}
+                      {provisioningBadge(profile, item.contractData)}
+                    </td>
                     <td className="p-4 text-right space-x-2">
                       {item.contractStatus === 'draft' && (
                         <button
@@ -484,14 +509,14 @@ export default function ContractLedger() {
                           <a href={clientSignUrl(item.profileId, { view: 'audit' })} target="_blank" rel="noreferrer" className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs">
                             Audit Trail
                           </a>
-                          {isProProfile(profile) && !profile?.agencyOpsTenantId && (
+                          {isProProfile(profile) && !profile?.agencyOpsTenantId && profile?.provisioningStatus !== 'provisioning' && (
                             <button
                               type="button"
                               onClick={() => { setProvisionResult(null); setProvisionTarget(profile || null); }}
                               disabled={processing}
                               className="px-3 py-1 bg-brandAmber-500/20 text-brandAmber-300 rounded text-xs font-bold"
                             >
-                              Provision Agency Ops
+                              {profile?.provisioningStatus === 'failed' ? 'Retry Provision' : 'Provision Agency Ops'}
                             </button>
                           )}
                           {profile?.agencyOpsTenantId && (

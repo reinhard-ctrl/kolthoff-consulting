@@ -51,10 +51,21 @@ export default function AgencyOpsDashboard() {
 
       <div className="ops-callout mb-8 px-4 py-3.5">
         <p className="text-sm leading-relaxed">
-          Sample data is included for demos. Customize your logo, company name, and brand color in{' '}
-          <Link to="/settings/branding" style={{ color: branding.primaryColor }}>
-            Company Branding
-          </Link>.
+          {product.isDemo ? (
+            <>
+              Sample data is included for demos. Customize your logo, company name, and brand color in{' '}
+              <Link to="/settings/branding" style={{ color: branding.primaryColor }}>
+                Company Branding
+              </Link>.
+            </>
+          ) : (
+            <>
+              Welcome to your Agency Ops workspace. Start by setting your company name, logo, and brand color in{' '}
+              <Link to="/settings/branding" style={{ color: branding.primaryColor }}>
+                Company Branding
+              </Link>, then add your first deal in {modules.sales}.
+            </>
+          )}
         </p>
       </div>
 

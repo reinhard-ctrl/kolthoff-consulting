@@ -1058,42 +1058,125 @@ async function ensureAgencyOpsTenant(params: {
   return { tenantId, clientName, consoleUrl, passcode, created: true };
 }
 
-/** Provision white-label Agency Ops tenant after PRO 1 contract sign */
-export const prepareAgencyOpsTenant = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
-  if (!isAdmin) {
-    throw new HttpsError('permission-denied', 'Admin privileges required');
+function isPro1AgencyOpsProfile(profile: Record<string, unknown>): boolean {
+  if (profile.productId === 'pro1') return true;
+  if (profile.selectedPackageId === 'pro1-agency-ops-starter') return true;
+  if (profile.engagementType === 'product') {
+    return !profile.productId || profile.productId === 'pro1';
+  }
+  return false;
+}
+
+function extractAgencyBranding(profile: Record<string, unknown>): AgencyBrandingInput | undefined {
+  const profileBranding = profile.branding as Record<string, string> | undefined;
+  if (!profileBranding) return undefined;
+  return {
+    companyName: profileBranding.companyName,
+    tagline: profileBranding.tagline,
+    primaryColor: profileBranding.primaryColor,
+    logoUrl: profileBranding.logoUrl,
+  };
+}
+
+async function syncCrmDealWonForProfile(
+  profile: Record<string, unknown>,
+  profileId: string,
+  signedAt?: string,
+): Promise<string | null> {
+  const links = (profile.links as Record<string, unknown> | undefined) || {};
+  const dealId = (links.crmDealId as string) || (profile.quoteId as string);
+  if (!dealId) return null;
+
+  const dealRef = db.doc(`artifacts/${ADMIN_TENANT}/public/data/crm_deals/${dealId}`);
+  const dealSnap = await dealRef.get();
+  if (!dealSnap.exists) return null;
+
+  const deal = dealSnap.data() || {};
+  const now = Date.now();
+  const signedIso = signedAt || new Date().toISOString();
+
+  if (deal.status !== 'Won') {
+    await dealRef.set({
+      status: 'Won',
+      pipelineStatus: 'Closed Won/Lost',
+      nextAction: 'Contract Executed',
+      contractSignedAt: signedIso,
+      updatedAt: now,
+    }, { merge: true });
   }
 
-  const profileId = (request.data?.profileId as string)?.trim();
-  let clientName = (request.data?.clientName as string)?.trim();
-  let requestedTenantId = (request.data?.tenantId as string)?.trim();
+  const profileRef = db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`);
+  await profileRef.set({
+    links: {
+      ...links,
+      crmDealId: dealId,
+      crmStatus: 'Won',
+      crmPipelineStatus: 'Closed Won/Lost',
+      crmSyncedAt: now,
+      contractSignedAt: signedIso,
+    },
+    updatedAt: now,
+  }, { merge: true });
+
+  return dealId;
+}
+
+async function provisionAgencyOpsForProfile(options: {
+  profileId?: string;
+  profile?: Record<string, unknown>;
+  clientName?: string;
+  requestedTenantId?: string;
+  createdBy: string | null;
+  passcode?: string;
+  throwIfExists?: boolean;
+  autoProvisioned?: boolean;
+}): Promise<{
+  tenantId: string;
+  clientName: string;
+  consoleUrl: string;
+  passcode: string;
+  created: boolean;
+  profileId: string | null;
+  quoteId: string | null;
+}> {
+  let profileId = options.profileId?.trim() || undefined;
+  let profile = options.profile;
+  let clientName = options.clientName?.trim();
+  let requestedTenantId = options.requestedTenantId?.trim();
   let quoteId: string | undefined;
   let branding: AgencyBrandingInput | undefined;
-  const passcodeInput = (request.data?.passcode as string)?.trim();
 
-  if (profileId) {
+  if (profileId && !profile) {
     const profileSnap = await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).get();
     if (!profileSnap.exists) {
       throw new HttpsError('not-found', `Workbook profile "${profileId}" not found`);
     }
-    const profile = profileSnap.data() || {};
+    profile = profileSnap.data() || {};
+  }
+
+  if (profile) {
     clientName = clientName || (profile.clientCompany as string) || (profile.clientName as string);
     quoteId = (profile.quoteId as string) || undefined;
     if (profile.engagementType === 'product' && profile.productId && profile.productId !== 'pro1') {
       throw new HttpsError('failed-precondition', 'Only PRO 1 Agency Ops is supported for provisioning');
     }
-    const profileBranding = profile.branding as Record<string, string> | undefined;
-    if (profileBranding) {
-      branding = {
-        companyName: profileBranding.companyName,
-        tagline: profileBranding.tagline,
-        primaryColor: profileBranding.primaryColor,
-        logoUrl: profileBranding.logoUrl,
-      };
-    }
+    branding = extractAgencyBranding(profile);
     if (!requestedTenantId && clientName) {
       requestedTenantId = `agency-${slugifyAgencyName(clientName)}`;
+    }
+    if (profile.agencyOpsTenantId) {
+      const tenantId = profile.agencyOpsTenantId as string;
+      const registrySnap = await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_tenants/${tenantId}`).get();
+      const initialPasscode = (registrySnap.data()?.initialPasscode as string) || '';
+      return {
+        tenantId,
+        clientName: clientName || tenantId,
+        consoleUrl: agencyOpsConsoleUrl(tenantId),
+        passcode: initialPasscode,
+        created: false,
+        profileId: profileId || null,
+        quoteId: quoteId || null,
+      };
     }
   }
 
@@ -1102,10 +1185,10 @@ export const prepareAgencyOpsTenant = onCall(async (request) => {
   const result = await ensureAgencyOpsTenant({
     clientName,
     requestedTenantId: requestedTenantId || undefined,
-    createdBy: request.auth?.uid || null,
+    createdBy: options.createdBy,
     branding,
-    passcode: passcodeInput || undefined,
-    throwIfExists: Boolean(request.data?.throwIfExists),
+    passcode: options.passcode || undefined,
+    throwIfExists: options.throwIfExists,
   });
 
   const now = Date.now();
@@ -1113,19 +1196,55 @@ export const prepareAgencyOpsTenant = onCall(async (request) => {
     profileId: profileId || null,
     quoteId: quoteId || null,
     updatedAt: now,
+    provisioningStatus: 'ready',
   };
+  if (result.created) {
+    registryPatch.initialPasscode = result.passcode;
+    registryPatch.provisioningMethod = options.autoProvisioned ? 'auto' : 'manual';
+    registryPatch.initialPasscodeSetAt = now;
+  }
   await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_tenants/${result.tenantId}`).set(registryPatch, { merge: true });
 
   if (profileId) {
     await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).set({
       agencyOpsTenantId: result.tenantId,
       provisioningStatus: 'ready',
+      provisioningError: admin.firestore.FieldValue.delete(),
       links: {
         agencyOpsConsoleUrl: result.consoleUrl,
       },
       updatedAt: now,
     }, { merge: true });
   }
+
+  return {
+    ...result,
+    profileId: profileId || null,
+    quoteId: quoteId || null,
+  };
+}
+
+/** Provision white-label Agency Ops tenant after PRO 1 contract sign */
+export const prepareAgencyOpsTenant = onCall(async (request) => {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
+    throw new HttpsError('permission-denied', 'Admin privileges required');
+  }
+
+  const profileId = (request.data?.profileId as string)?.trim();
+  const clientName = (request.data?.clientName as string)?.trim();
+  const requestedTenantId = (request.data?.tenantId as string)?.trim();
+  const passcodeInput = (request.data?.passcode as string)?.trim();
+
+  const result = await provisionAgencyOpsForProfile({
+    profileId: profileId || undefined,
+    clientName,
+    requestedTenantId: requestedTenantId || undefined,
+    createdBy: request.auth?.uid || null,
+    passcode: passcodeInput || undefined,
+    throwIfExists: Boolean(request.data?.throwIfExists),
+    autoProvisioned: false,
+  });
 
   const handoff =
     `Your Agency Ops workspace is ready.\n\n` +
@@ -1135,21 +1254,91 @@ export const prepareAgencyOpsTenant = onCall(async (request) => {
 
   const repEmail = normalizeEmail((request.data?.repEmail as string) || '');
   const mailtoUrl = repEmail
-    ? `mailto:${encodeURIComponent(repEmail)}?subject=${encodeURIComponent(`${clientName} — Agency Ops Access`)}&body=${encodeURIComponent(handoff)}`
+    ? `mailto:${encodeURIComponent(repEmail)}?subject=${encodeURIComponent(`${result.clientName} — Agency Ops Access`)}&body=${encodeURIComponent(handoff)}`
     : undefined;
 
   return {
     tenantId: result.tenantId,
-    clientName,
+    clientName: result.clientName,
     consoleUrl: result.consoleUrl,
     passcode: result.passcode,
-    profileId: profileId || null,
-    quoteId: quoteId || null,
+    profileId: result.profileId,
+    quoteId: result.quoteId,
     mailtoUrl,
     created: result.created,
     message: result.created
-      ? `Provisioned Agency Ops for ${clientName}. Share the console URL and passcode with the client.`
+      ? `Provisioned Agency Ops for ${result.clientName}. Share the console URL and passcode with the client.`
       : `Agency Ops tenant ${result.tenantId} already exists — credentials refreshed in response.`,
   };
 });
+
+/** On contract sign: CRM Won sync + auto-provision PRO 1 Agency Ops */
+export const onContractLedgerWritten = onDocumentWritten(
+  `artifacts/${ADMIN_TENANT}/public/data/contracts_ledger/{contractId}`,
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (!after) return;
+
+    const wasSigned = before?.status === 'signed';
+    const isSigned = after.status === 'signed';
+    if (!isSigned || wasSigned) return;
+
+    const profileId = (after.profileId as string)?.trim();
+    if (!profileId) return;
+
+    const profileRef = db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`);
+    const profileSnap = await profileRef.get();
+    if (!profileSnap.exists) {
+      console.warn('Contract signed but profile missing:', profileId);
+      return;
+    }
+    const profile = profileSnap.data() || {};
+    const signedAt = (after.signedAt as string) || new Date().toISOString();
+
+    try {
+      await syncCrmDealWonForProfile(profile, profileId, signedAt);
+    } catch (err) {
+      console.error('CRM Won sync failed for profile', profileId, err);
+    }
+
+    if (!isPro1AgencyOpsProfile(profile)) return;
+    if (profile.agencyOpsTenantId) {
+      await event.data!.after!.ref.set({
+        agencyOpsAutoProvisioned: true,
+        agencyOpsTenantId: profile.agencyOpsTenantId,
+        agencyOpsProvisionedAt: Date.now(),
+      }, { merge: true });
+      return;
+    }
+
+    try {
+      await profileRef.set({ provisioningStatus: 'provisioning', updatedAt: Date.now() }, { merge: true });
+      const result = await provisionAgencyOpsForProfile({
+        profileId,
+        profile,
+        createdBy: null,
+        autoProvisioned: true,
+      });
+      await event.data!.after!.ref.set({
+        agencyOpsAutoProvisioned: true,
+        agencyOpsTenantId: result.tenantId,
+        agencyOpsProvisionedAt: Date.now(),
+      }, { merge: true });
+      console.log('Auto-provisioned Agency Ops tenant', result.tenantId, 'for profile', profileId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Provisioning failed';
+      console.error('Auto-provision failed for profile', profileId, err);
+      await profileRef.set({
+        provisioningStatus: 'failed',
+        provisioningError: message,
+        updatedAt: Date.now(),
+      }, { merge: true });
+      await event.data!.after!.ref.set({
+        agencyOpsAutoProvisionError: message,
+        agencyOpsAutoProvisionFailedAt: Date.now(),
+      }, { merge: true });
+    }
+  },
+);
 

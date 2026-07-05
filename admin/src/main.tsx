@@ -7,11 +7,15 @@ import './agency-ops-light.css';
 import './agency-ops-dark.css';
 import { initAppCheck } from './lib/firebase';
 import { ProductProvider } from './lib/product-context';
-import { getProductConfig, isAgencyOpsStarter } from './lib/product-config';
+import { getProductConfig, getProductIdFromEnv, isAgencyOpsStarter, syncAgencyTenantUrl } from './lib/product-config';
 import { applyDemoAppearanceToDocument, getStoredDemoAppearance } from './lib/demo-appearance';
 import { DemoAppearanceProvider } from './lib/demo-appearance-context';
 
 initAppCheck();
+
+if (isAgencyOpsStarter(getProductIdFromEnv())) {
+  syncAgencyTenantUrl();
+}
 
 const product = getProductConfig();
 if (isAgencyOpsStarter(product.id)) {
