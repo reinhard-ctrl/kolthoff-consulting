@@ -194,4 +194,14 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
   return redirectBootPromise;
 }
 
+/** Boot hook — restore Google redirect sessions before auth listeners run */
+export async function ensureAuthReady(): Promise<void> {
+  await auth.authStateReady();
+  try {
+    await completeGoogleStaffRedirect();
+  } catch (err) {
+    console.warn('Google SSO redirect handling failed:', err);
+  }
+}
+
 export { isGoogleStaffUser };
