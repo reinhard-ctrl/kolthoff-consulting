@@ -50,14 +50,31 @@ export function isBundledClientDemoPresetId(id: string | null | undefined): bool
   return Boolean(id && BUNDLED_CLIENT_DEMO_PRESET_IDS.has(id));
 }
 
-function bundledPresetNeedsRefresh(existing: BrandingPreset, demo: BrandingPreset): boolean {
+function bundledPresetIsIncomplete(existing: BrandingPreset): boolean {
   return (
-    (demo.logoUrl && !existing.logoUrl) ||
-    existing.primaryColor !== demo.primaryColor ||
-    existing.tagline !== demo.tagline ||
-    existing.companyName !== demo.companyName ||
-    existing.name !== demo.name
+    !existing.name?.trim() ||
+    !existing.companyName?.trim() ||
+    !existing.primaryColor?.trim()
   );
+}
+
+/** Only backfill missing bundled demos or empty required fields — never overwrite user edits. */
+function bundledPresetNeedsSeed(existing: BrandingPreset | undefined, demo: BrandingPreset): boolean {
+  if (!existing) return true;
+  if (bundledPresetIsIncomplete(existing)) return true;
+  return Boolean(demo.logoUrl && !existing.logoUrl?.trim());
+}
+
+function backfillBundledPreset(existing: BrandingPreset, demo: BrandingPreset): BrandingPreset {
+  return {
+    ...existing,
+    name: existing.name?.trim() || demo.name,
+    companyName: existing.companyName?.trim() || demo.companyName,
+    tagline: existing.tagline?.trim() || demo.tagline || '',
+    primaryColor: existing.primaryColor?.trim() || demo.primaryColor,
+    logoUrl: existing.logoUrl?.trim() || demo.logoUrl || '',
+    updatedAt: existing.updatedAt || Date.now(),
+  };
 }
 
 export function mergeDefaultClientDemoPresets(
@@ -70,18 +87,15 @@ export function mergeDefaultClientDemoPresets(
     if (!existing || options.forceBundled) {
       return { ...demo, updatedAt: Date.now() };
     }
-    if (!bundledPresetNeedsRefresh(existing, demo)) return existing;
-    return { ...demo, updatedAt: Date.now() };
+    return backfillBundledPreset(existing, demo);
   });
   return [...bundled, ...custom];
 }
 
 export function shouldSeedDefaultClientDemoPresets(presets: BrandingPreset[]): boolean {
-  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some((demo) => {
-    const existing = presets.find((preset) => preset.id === demo.id);
-    if (!existing) return true;
-    return bundledPresetNeedsRefresh(existing, demo);
-  });
+  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some((demo) =>
+    bundledPresetNeedsSeed(presets.find((preset) => preset.id === demo.id), demo),
+  );
 }
 
 export function loadClientDemoBrandingPresets(): BrandingPreset[] {
