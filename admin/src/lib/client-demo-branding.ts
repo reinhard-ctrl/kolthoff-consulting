@@ -4,124 +4,13 @@ import { listBrandingPresets } from './tenant-branding';
 export const CLIENT_DEMO_PRESETS_STORAGE_KEY = 'agency-ops-client-demo-branding-presets';
 const LEGACY_PRIVATE_PRESETS_STORAGE_KEY = 'agency-ops-private-branding-presets';
 
-/** Stable logo paths served from /shared (copied to dist on deploy). */
-export const CLIENT_DEMO_LOGO_URLS = {
-  golfx: '/shared/assets/client-demos/golfx-logo.svg',
-  'player-2-production': '/shared/assets/client-demos/player-2-production-logo.svg',
-  'wp-gaming': '/shared/assets/client-demos/wp-gaming-logo.svg',
-} as const;
-
-/** Bundled client rehearsal profiles — stored in tenant_settings/config.clientDemoPresets. */
-export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
-  {
-    id: 'golfx',
-    name: 'GolfX',
-    companyName: 'GolfX',
-    tagline: 'Indoor Golf & Performance Training',
-    primaryColor: '#166534',
-    logoUrl: CLIENT_DEMO_LOGO_URLS.golfx,
-    updatedAt: 1751606400000,
-  },
-  {
-    id: 'player-2-production',
-    name: 'Player 2 Production',
-    companyName: 'Player 2 Production',
-    tagline: 'Events, Festivals & Live Experiences',
-    primaryColor: '#7c3aed',
-    logoUrl: CLIENT_DEMO_LOGO_URLS['player-2-production'],
-    updatedAt: 1751606400000,
-  },
-  {
-    id: 'wp-gaming',
-    name: 'WP / Gaming',
-    companyName: 'WP / Gaming',
-    tagline: 'Gaming & Esports Marketing',
-    primaryColor: '#0284c7',
-    logoUrl: CLIENT_DEMO_LOGO_URLS['wp-gaming'],
-    updatedAt: 1751606400000,
-  },
-];
-
-const BUNDLED_CLIENT_DEMO_PRESET_IDS = new Set(
-  DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.map((preset) => preset.id),
-);
-
-export function isBundledClientDemoPresetId(id: string | null | undefined): boolean {
-  return Boolean(id && BUNDLED_CLIENT_DEMO_PRESET_IDS.has(id));
-}
+/** Bump when bundled client demos are removed and Firestore should reset once. */
+export const CLIENT_DEMO_SETUP_VERSION = 2;
 
 export function listClientDemoPresets(
   map: Record<string, unknown> | null | undefined,
 ): BrandingPreset[] {
   return listBrandingPresets(map);
-}
-
-function bundledPresetIsIncomplete(existing: BrandingPreset): boolean {
-  return (
-    !existing.name?.trim() ||
-    !existing.companyName?.trim() ||
-    !existing.primaryColor?.trim()
-  );
-}
-
-/** Only backfill missing bundled demos or empty required fields — never overwrite user edits. */
-function bundledPresetNeedsSeed(existing: BrandingPreset | undefined, demo: BrandingPreset): boolean {
-  if (!existing) return true;
-  if (bundledPresetIsIncomplete(existing)) return true;
-  return Boolean(demo.logoUrl && !existing.logoUrl?.trim());
-}
-
-function backfillBundledPreset(existing: BrandingPreset, demo: BrandingPreset): BrandingPreset {
-  return {
-    ...existing,
-    name: existing.name?.trim() || demo.name,
-    companyName: existing.companyName?.trim() || demo.companyName,
-    tagline: existing.tagline?.trim() || demo.tagline || '',
-    primaryColor: existing.primaryColor?.trim() || demo.primaryColor,
-    logoUrl: existing.logoUrl?.trim() || demo.logoUrl || '',
-    updatedAt: existing.updatedAt || Date.now(),
-  };
-}
-
-export function mergeDefaultClientDemoPresets(
-  presets: BrandingPreset[],
-  options: { forceBundled?: boolean } = {},
-): BrandingPreset[] {
-  const custom = presets.filter((preset) => !isBundledClientDemoPresetId(preset.id));
-  const bundled = DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.map((demo) => {
-    const existing = presets.find((preset) => preset.id === demo.id);
-    if (!existing || options.forceBundled) {
-      return { ...demo, updatedAt: Date.now() };
-    }
-    return backfillBundledPreset(existing, demo);
-  });
-  return [...bundled, ...custom];
-}
-
-export function shouldSeedDefaultClientDemoPresets(presets: BrandingPreset[]): boolean {
-  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some((demo) =>
-    bundledPresetNeedsSeed(presets.find((preset) => preset.id === demo.id), demo),
-  );
-}
-
-/** One-time migration source when Firestore has no clientDemoPresets yet. */
-export function loadLegacyClientDemoBrandingPresets(): BrandingPreset[] {
-  try {
-    let raw = localStorage.getItem(CLIENT_DEMO_PRESETS_STORAGE_KEY);
-    if (!raw) {
-      const legacy = localStorage.getItem(LEGACY_PRIVATE_PRESETS_STORAGE_KEY);
-      if (legacy) {
-        localStorage.setItem(CLIENT_DEMO_PRESETS_STORAGE_KEY, legacy);
-        localStorage.removeItem(LEGACY_PRIVATE_PRESETS_STORAGE_KEY);
-        raw = legacy;
-      }
-    }
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return listBrandingPresets(parsed);
-  } catch {
-    return [];
-  }
 }
 
 export function clearLegacyClientDemoBrandingPresets(): void {
@@ -158,14 +47,6 @@ export function mergeClientDemoBrandingPresets(
     }
   }
   return merged;
-}
-
-export function seedDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
-  return mergeDefaultClientDemoPresets(presets);
-}
-
-export function restoreDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
-  return mergeDefaultClientDemoPresets(presets, { forceBundled: true });
 }
 
 export const APPLIED_CLIENT_DEMO_STORAGE_KEY = 'agency-ops-applied-client-demo-id';

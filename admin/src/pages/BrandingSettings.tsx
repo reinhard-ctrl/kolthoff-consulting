@@ -29,7 +29,7 @@ export default function BrandingSettings() {
     applyPreset,
     deletePreset,
     restoreDemoPresets,
-    restoreClientDemos,
+    clearClientDemos,
   } = useTenantBranding();
 
   const [draft, setDraft] = useState<TenantBrandingConfig | null>(null);
@@ -139,11 +139,24 @@ export default function BrandingSettings() {
     setMessage('Demo brand profiles restored.');
   };
 
-  const handleRestoreClientDemos = async () => {
+  const handleClearClientDemos = async () => {
+    if (!window.confirm('Delete all client demo profiles? Demo profiles (Studio North, etc.) are not affected.')) {
+      return;
+    }
     setMessage('');
-    await restoreClientDemos();
-    setMessageOk(true);
-    setMessage('Client demo profiles restored with logos and brand colors (GolfX, Player 2 Production, WP / Gaming).');
+    try {
+      await clearClientDemos();
+      if (editorPresetId && !isBundledDemoBrandingPresetId(editorPresetId)) {
+        setEditorPresetId(null);
+        setDraft(null);
+        setProfileName(branding.companyName);
+      }
+      setMessageOk(true);
+      setMessage('All client demo profiles deleted.');
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Could not delete client demos.');
+    }
   };
 
   const handleDeletePreset = async (presetId: string) => {
@@ -317,21 +330,23 @@ export default function BrandingSettings() {
               </button>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Rehearse client brands for your demos. Saved profiles persist in your workspace; applying updates CRM and Quotes branding.
+              Create client brands for your demos. Saved profiles persist in your workspace after refresh.
             </p>
             {renderPresetList(
               clientDemoPresets,
-              'No client demos yet. Save the form as a new client demo to preview a prospect brand locally.',
+              'No client demos yet. Click + New, configure branding, then Save client demo.',
               'client-demo',
             )}
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleRestoreClientDemos}
-              className="ops-btn-secondary w-full text-sm disabled:opacity-50"
-            >
-              Restore client demos
-            </button>
+            {clientDemoPresets.length > 0 && (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleClearClientDemos}
+                className="ops-btn-secondary w-full text-sm disabled:opacity-50"
+              >
+                Clear all client demos
+              </button>
+            )}
           </div>
         </aside>
 
@@ -350,7 +365,7 @@ export default function BrandingSettings() {
                 ? isBundledDemoBrandingPresetId(editorPresetId)
                   ? 'Shared demo profile — can apply to workspace.'
                   : 'Client demo — apply to workspace for CRM/Quotes; saved in your demo workspace.'
-                : 'New client demo — saved to your workspace, then apply for your demo.'}
+                : 'New client demo — save to your workspace, then apply for your demo.'}
             </p>
           </div>
 
