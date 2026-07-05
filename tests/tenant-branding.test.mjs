@@ -84,8 +84,9 @@ describe('branding presets', () => {
 
 function shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent) {
   const DEMO_IDS = ['studio-north', 'meridian-creative', 'harbor-digital'];
-  if (!presetsFieldPresent || presets.length === 0) return true;
-  return DEMO_IDS.some((id) => !presets.some((preset) => preset.id === id));
+  const demoPresets = presets.filter((preset) => DEMO_IDS.includes(preset.id));
+  if (!presetsFieldPresent || demoPresets.length === 0) return true;
+  return DEMO_IDS.some((id) => !demoPresets.some((preset) => preset.id === id));
 }
 
 describe('demo branding preset restore', () => {
@@ -93,11 +94,11 @@ describe('demo branding preset restore', () => {
     assert.equal(shouldRestoreDemoBrandingPresets([], false), true);
   });
 
-  it('restores when all presets were deleted', () => {
+  it('restores when all demo presets were deleted', () => {
     assert.equal(shouldRestoreDemoBrandingPresets([], true), true);
   });
 
-  it('restores when a bundled demo profile is missing', () => {
+  it('does not restore when only private presets exist in Firestore list', () => {
     assert.equal(
       shouldRestoreDemoBrandingPresets([{ id: 'custom-agency', name: 'Custom' }], true),
       true,
@@ -111,6 +112,21 @@ describe('demo branding preset restore', () => {
           { id: 'studio-north', name: 'Studio North' },
           { id: 'meridian-creative', name: 'Meridian Creative' },
           { id: 'harbor-digital', name: 'Harbor Digital' },
+        ],
+        true,
+      ),
+      false,
+    );
+  });
+
+  it('ignores private presets when checking bundled demo coverage', () => {
+    assert.equal(
+      shouldRestoreDemoBrandingPresets(
+        [
+          { id: 'studio-north', name: 'Studio North' },
+          { id: 'meridian-creative', name: 'Meridian Creative' },
+          { id: 'harbor-digital', name: 'Harbor Digital' },
+          { id: 'my-client-demo', name: 'Client Demo' },
         ],
         true,
       ),

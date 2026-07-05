@@ -67,6 +67,17 @@ export const DEMO_AGENCY_OPS_BRANDING_PRESETS: BrandingPreset[] = [
   },
 ];
 
+const BUNDLED_DEMO_PRESET_IDS = new Set(DEMO_AGENCY_OPS_BRANDING_PRESETS.map((preset) => preset.id));
+
+/** Bundled starter demos (Studio North, etc.) — safe to keep in shared Firestore. */
+export function isBundledDemoBrandingPresetId(id: string | null | undefined): boolean {
+  return Boolean(id && BUNDLED_DEMO_PRESET_IDS.has(id));
+}
+
+export function filterBundledDemoBrandingPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  return presets.filter((preset) => isBundledDemoBrandingPresetId(preset.id));
+}
+
 export function brandingPresetsToMap(presets: BrandingPreset[]): Record<string, BrandingPreset> {
   return Object.fromEntries(presets.map((preset) => [preset.id, preset]));
 }
@@ -76,17 +87,19 @@ export function shouldRestoreDemoBrandingPresets(
   presets: BrandingPreset[],
   presetsFieldPresent: boolean,
 ): boolean {
-  if (!presetsFieldPresent || presets.length === 0) return true;
+  const demoPresets = filterBundledDemoBrandingPresets(presets);
+  if (!presetsFieldPresent || demoPresets.length === 0) return true;
   return DEMO_AGENCY_OPS_BRANDING_PRESETS.some(
-    (demo) => !presets.some((preset) => preset.id === demo.id),
+    (demo) => !demoPresets.some((preset) => preset.id === demo.id),
   );
 }
 
 export function mergeDemoBrandingPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  const demoPresets = filterBundledDemoBrandingPresets(presets);
   return [
-    ...presets,
+    ...demoPresets,
     ...DEMO_AGENCY_OPS_BRANDING_PRESETS.filter(
-      (demo) => !presets.some((preset) => preset.id === demo.id),
+      (demo) => !demoPresets.some((preset) => preset.id === demo.id),
     ),
   ];
 }
