@@ -641,6 +641,47 @@
     return value;
   }
 
+  function defaultAgencySlaTemplate() {
+    return [
+      'SERVICE LEVEL AGREEMENT',
+      '',
+      'This Service Level Agreement ("SLA") describes support standards between {agencyName} ("Service Provider") and {clientName} ("Client") for ongoing services in this proposal.',
+      '',
+      '1. COVERED SERVICES',
+      'List the deliverables, hosting, maintenance, or retainers this SLA covers.',
+      '',
+      '2. SUPPORT HOURS & CHANNEL',
+      '• Hours: Monday–Friday, 9:00 AM – 5:00 PM (local time)',
+      '• Channel: Designated email or support portal',
+      '',
+      '3. RESPONSE TARGETS',
+      '• Critical — major service outage: respond within 2 business hours',
+      '• High — key workflow blocked: respond within 4 business hours',
+      '• Normal — routine requests: respond within 1 business day',
+      '',
+      '4. CLIENT RESPONSIBILITIES',
+      'Client provides timely access, a primary contact ({clientRep}), and feedback needed to resolve issues.',
+      '',
+      '5. EXCLUSIONS',
+      'Excludes client network outages, unauthorized changes, third-party failures outside Provider control, and force majeure events.',
+      '',
+      '6. DATA & CONFIDENTIALITY',
+      'Both parties handle shared business data per applicable privacy laws and agreed confidentiality terms.',
+      '',
+      'Customize each section above to match your agency support policy.',
+    ].join('\n');
+  }
+
+  function resolveAgencySlaTemplate(content, tokens = {}) {
+    const text = content == null || String(content).trim() === ''
+      ? defaultAgencySlaTemplate()
+      : String(content);
+    return text
+      .replace(/\{agencyName\}/g, tokens.agencyName || 'Service Provider')
+      .replace(/\{clientName\}/g, tokens.clientName || 'Client')
+      .replace(/\{clientRep\}/g, tokens.clientRep || 'Client Representative');
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage, preservedSource) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -673,6 +714,8 @@
       subscriptionMonths: state.subscriptionMonths,
       printSow: state.printSow,
       printTimeline: state.printTimeline,
+      printSla: state.printSla,
+      slaContent: state.slaContent,
       printQuote: state.printQuote,
       printCover: state.printCover,
       milestoneSplit: state.milestoneSplit,
@@ -757,7 +800,7 @@
     }
 
     if (view === 'package') {
-      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover;
+      const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || ctx.printSla;
       if (!hasSection) issues.push('No package print sections are selected.');
       if ((ctx.tasks || []).filter((t) => t.selected).length === 0) issues.push('No modules/tasks are selected for the SOW.');
       if (!ctx.clientAddress?.trim()) warnings.push('Client registered address is empty.');
@@ -992,6 +1035,8 @@
     computeProjectEconomics,
     computeBillingMilestones,
     computeAnnualOperationalLeakage,
+    resolveAgencySlaTemplate,
+    defaultAgencySlaTemplate,
     buildProfilePayload,
     pickPreservedProfileSlices,
     PRESERVED_PROFILE_SLICE_KEYS,

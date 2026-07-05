@@ -60,6 +60,16 @@ const sparseCatalog = [
 const preserved = H.applyPackageToTasks('leak-scan', tasksWithDeliverable, sparseCatalog);
 assert.equal(preserved.tasks.find((t) => t.id === 'm1-01')?.deliverable, 'Saved deliverable name');
 
+assert.ok(H.defaultAgencySlaTemplate().includes('{agencyName}'));
+assert.match(
+  H.resolveAgencySlaTemplate('Support for {clientName} by {agencyName}.', {
+    agencyName: 'Studio North',
+    clientName: 'Acme Co',
+  }),
+  /Support for Acme Co by Studio North\./
+);
+assert.match(H.resolveAgencySlaTemplate('', { agencyName: 'Studio North' }), /Studio North/);
+
 const payload = H.buildProfilePayload('p1', 'Ws', {
   clientCompany: 'Co',
   clientRep: 'Rep',
@@ -83,8 +93,10 @@ const payload = H.buildProfilePayload('p1', 'Ws', {
   tasks: catalog,
   discountPercent: 0,
   subscriptionMonths: 6,
+  slaContent: 'Support for {clientName} by {agencyName}.',
   printSow: true,
   printTimeline: true,
+  printSla: true,
   printQuote: true,
   printCover: false,
   milestoneSplit: 'auto',

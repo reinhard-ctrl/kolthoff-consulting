@@ -911,6 +911,8 @@
       mod4: modTitle(4),
     });
 
+    const defaultAgencySlaContent = () => H.defaultAgencySlaTemplate?.() || '';
+
     // --- DEFAULT PROFILES DATA ---
     const DEFAULT_CLIENTS = [
       {
@@ -1316,10 +1318,18 @@
 
       // --- RETAINER CONFIG STATE ---
       const [subscriptionMonths, setSubscriptionMonths] = useState(activeProfile.subscriptionMonths || 6);
+      const [slaContent, setSlaContent] = useState(
+        activeProfile.slaContent ?? (STARTER_UI ? defaultAgencySlaContent() : '')
+      );
 
       // --- SELECTIVE PDF PRINTING TOGGLES ---
       const [printSow, setPrintSow] = useState(activeProfile.printSow !== undefined ? activeProfile.printSow : true);
       const [printTimeline, setPrintTimeline] = useState(activeProfile.printTimeline !== undefined ? activeProfile.printTimeline : true);
+      const [printSla, setPrintSla] = useState(
+        STARTER_UI
+          ? (activeProfile.printSla !== undefined ? activeProfile.printSla : true)
+          : false
+      );
       const [printQuote, setPrintQuote] = useState(activeProfile.printQuote !== undefined ? activeProfile.printQuote : true);
       const [printCover, setPrintCover] = useState(activeProfile.printCover !== undefined ? activeProfile.printCover : false);
 
@@ -1550,7 +1560,9 @@
           tasks: (STARTER_UI ? (p.tasks || PRODUCT_TASK_CATALOG).map((t) => H.normalizeAgencyLineItemTask(t, bundleNames)) : (p.tasks || PRODUCT_TASK_CATALOG)), discountPercent: p.discountPercent || 0,
           moduleBundleNames: bundleNames,
           subscriptionMonths: p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6,
+          slaContent: p.slaContent ?? (STARTER_UI ? defaultAgencySlaContent() : ''),
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
+          printSla: STARTER_UI ? (p.printSla !== undefined ? p.printSla : true) : false,
           printQuote: p.printQuote !== undefined ? p.printQuote : true,
           printCover: p.printCover !== undefined ? p.printCover : false,
           milestoneSplit: p.milestoneSplit || 'auto', customSplit1: p.customSplit1 !== undefined ? p.customSplit1 : 40,
@@ -1604,8 +1616,10 @@
         setModuleBundleNames(profileState.moduleBundleNames || defaultAgencyModuleBundleNames());
         setDiscountPercent(profileState.discountPercent);
         setSubscriptionMonths(profileState.subscriptionMonths);
+        setSlaContent(profileState.slaContent ?? (STARTER_UI ? defaultAgencySlaContent() : ''));
         setPrintSow(profileState.printSow);
         setPrintTimeline(profileState.printTimeline);
+        setPrintSla(profileState.printSla);
         setPrintQuote(profileState.printQuote);
         setPrintCover(profileState.printCover);
         setMilestoneSplit(profileState.milestoneSplit);
@@ -1667,14 +1681,14 @@
         clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity,
         includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList,
         frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours,
-        clientReviewWeeks, tasks, discountPercent, subscriptionMonths, printSow, printTimeline, printQuote, printCover,
+        clientReviewWeeks, tasks, discountPercent, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId,
         moduleBundleNames,
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, subscriptionMonths, printSow, printTimeline, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -1779,7 +1793,10 @@
         setOverrideTimeline(d.overrideTimeline || ''); setWeeklyHours(d.weeklyHours || 16); setClientReviewWeeks(d.clientReviewWeeks ?? 1);
         setTasks(d.tasks || INITIAL_TASKS); setDiscountPercent(d.discountPercent || 0);
         setSubscriptionMonths(d.subscriptionMonths ?? 6);
-        setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true); setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
+        setSlaContent(d.slaContent ?? (STARTER_UI ? defaultAgencySlaContent() : ''));
+        setPrintSow(d.printSow ?? true); setPrintTimeline(d.printTimeline ?? true);
+        setPrintSla(STARTER_UI ? (d.printSla ?? true) : false);
+        setPrintQuote(d.printQuote ?? true); setPrintCover(d.printCover ?? false);
         setMilestoneSplit(d.milestoneSplit || 'auto'); setCustomSplit1(d.customSplit1 ?? 40); setCustomSplit2(d.customSplit2 ?? 40); setCustomSplit3(d.customSplit3 ?? 20);
         setNdaEffectiveDate(d.ndaEffectiveDate || ''); setNdaPurpose(d.ndaPurpose || ''); setNdaTerm(d.ndaTerm || '5 (Five) Years');
         setNdaJurisdiction(d.ndaJurisdiction || 'Taytay, Rizal, Philippines'); setInvoiceMilestone(d.invoiceMilestone || 'full');
@@ -1884,7 +1901,8 @@
           proposalSponsor: 'Representative (Director)', preDiagnosticList: "• Standard active staff directory\n• Samples of current invoices and transaction flows",
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
           discountPercent: 0, subscriptionMonths: 6,
-          printSow: true, printTimeline: true, printQuote: true, printCover: false,
+          slaContent: STARTER_UI ? defaultAgencySlaContent() : '',
+          printSow: true, printTimeline: true, printSla: STARTER_UI, printQuote: true, printCover: false,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
           invoiceNumberSuffix: '01', invoiceDueDate: '', tasks: INITIAL_TASKS.map(t => ({ ...t, selected: defaultMod1Selected(t) })),
@@ -1970,7 +1988,7 @@
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
           invoiceDueDate: view === 'addendum' ? (activeAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
-          printSow, printTimeline, printQuote, activePMO, activeGov, printCover,
+          printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
           validateTIN: validatePhilippineTIN,
           activeAddendum,
         });
@@ -2009,7 +2027,7 @@
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
           invoiceDueDate: isAddendumInvoice ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
-          printSow, printTimeline, printQuote, activePMO, activeGov, printCover,
+          printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
           validateTIN: validatePhilippineTIN,
           invoiceTargetAddendum: isAddendumInvoice ? invoiceTargetAddendum : null,
           issueInvoice: true,
@@ -2477,9 +2495,10 @@
         if (printCover) count += 1;
         if (printSow) count += 1;
         if (printTimeline) count += 1;
+        if (STARTER_UI && printSla) count += 1;
         if (printQuote) count += 1;
         return count;
-      }, [printCover, printSow, printTimeline, printQuote]);
+      }, [printCover, printSow, printTimeline, printSla, printQuote]);
 
       const setPrintDocumentTitle = () => {
         const slug = (clientCompany || 'Proposal').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 40);
@@ -2549,11 +2568,20 @@
         }
       }, [billingMilestones, invoiceMilestone]);
 
+      const resolvedSlaContent = useMemo(() => (
+        H.resolveAgencySlaTemplate?.(slaContent, {
+          agencyName: issuerCompanyName,
+          clientName: clientCompany,
+          clientRep: clientRep,
+        }) || ''
+      ), [slaContent, issuerCompanyName, clientCompany, clientRep]);
+
       const applyClientPdfPreset = () => {
         setPrintCover(true);
         setPrintSow(true);
         setPrintQuote(true);
         setPrintTimeline(tasks.some(t => H.isModCategory(t, 2) && t.selected) || tasks.some(t => H.isModCategory(t, 3) && t.selected));
+        if (STARTER_UI) setPrintSla(true);
         setPrintRoadmapGantt(true);
         setPrintRoadmapTable(true);
         setPrintRoadmapScale(true);
@@ -2564,6 +2592,7 @@
         setPrintSow(true);
         setPrintTimeline(true);
         setPrintQuote(true);
+        if (STARTER_UI) setPrintSla(true);
         setPrintRoadmapGantt(true);
         setPrintRoadmapTable(true);
         setPrintRoadmapScale(true);
@@ -2602,6 +2631,7 @@
                 {printSow && <li>✓ Scope &amp; Project Proposal</li>}
                 {printQuote && <li>✓ Official Price Quotation &amp; Terms</li>}
                 {printTimeline && <li>✓ Implementation Timeline</li>}
+                {STARTER_UI && printSla && <li>✓ Service Level Agreement</li>}
               </ul>
             </div>
           </div>
@@ -3276,12 +3306,13 @@
         const isInvoice = view === 'invoice';
         const isPackage = view === 'package';
         const isAddendum = view === 'addendum';
-        const hasPrintSection = printCover || printSow || printTimeline || printQuote;
+        const hasPrintSection = printCover || printSow || printTimeline || printQuote || (STARTER_UI && printSla);
 
         const printSectionOptions = [
           { id: 'print-cover', label: 'Cover Page', checked: printCover, onChange: setPrintCover },
           { id: 'print-sow', label: 'SOW Project Proposal Page', checked: printSow, onChange: setPrintSow },
           { id: 'print-timeline', label: 'Roadmap / Timeline Page', checked: printTimeline, onChange: setPrintTimeline },
+          ...(STARTER_UI ? [{ id: 'print-sla', label: 'SLA & Support Standards Page', checked: printSla, onChange: setPrintSla }] : []),
           { id: 'print-quote', label: 'Official Price Quotation & Terms', checked: printQuote, onChange: setPrintQuote }
         ];
 
@@ -3599,6 +3630,28 @@
                     <input type="range" min="1" max="24" step="1" value={subscriptionMonths} onChange={(e) => setSubscriptionMonths(parseInt(e.target.value))} className="w-full accent-brandTeal-500 bg-brandNavy-955 h-1 rounded cursor-pointer mb-2" />
                   </div>
                 </div>
+              )}
+
+              {STARTER_UI && isPackage && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1">SLA template</legend>
+                  <p className="text-[9px] text-slate-500 leading-relaxed">
+                    Edit your agency&apos;s support standards for the SLA page. Optional placeholders: {'{agencyName}'}, {'{clientName}'}, {'{clientRep}'}.
+                  </p>
+                  <textarea
+                    rows={14}
+                    value={slaContent}
+                    onChange={(e) => setSlaContent(e.target.value)}
+                    className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 resize-y text-xs leading-relaxed font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSlaContent(defaultAgencySlaContent())}
+                    className="px-2.5 py-1.5 text-[10px] font-bold rounded bg-brandNavy-900 text-slate-400 border border-brandNavy-700 uppercase hover:text-brandTeal-300"
+                  >
+                    Reset to default template
+                  </button>
+                </fieldset>
               )}
 
               {/* Company Block — contract client (Documents / NDA); invoice bill-to is separate above */}
@@ -3974,6 +4027,12 @@
           </div>
         );
 
+        const AgencySlaBody = (
+          <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap font-medium text-left font-sans">
+            {resolvedSlaContent}
+          </div>
+        );
+
         const QuoteBody = (isInv) => (
           <div className="text-left font-sans text-sm">
             {(!isInv || !isAddendumInvoiceMode) && renderModuleInvestmentSummary()}
@@ -4047,6 +4106,14 @@
                   {renderPrintHeader("Strategic Implementation Roadmap", false, false, true)}
                   {RoadmapBody}
                   {sectionFooter('Implementation Roadmap')}
+                </section>
+              )}
+
+              {STARTER_UI && printSla && (
+                <section aria-label="Service level agreement" className="bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
+                  {renderPrintHeader("SERVICE LEVEL AGREEMENT (SLA)", false, false, false)}
+                  {AgencySlaBody}
+                  {sectionFooter('Service Level Agreement')}
                 </section>
               )}
 
