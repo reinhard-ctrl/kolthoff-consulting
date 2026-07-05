@@ -51,12 +51,22 @@ export function resolveMilestoneLabel(invoiceMilestone, billingMilestones, optio
       ? `${prefix}${options.addendumTitle || 'Full payment'}`
       : 'Full project payment';
   }
-  if (invoiceMilestone === 'retainer') return 'MOD 4 Care Plan — full subscription';
+  if (invoiceMilestone === 'retainer') {
+    if (options.isProEngagement) {
+      const label = options.proLabel || 'PRO Subscription';
+      const months = options.subscriptionMonths;
+      return months ? `${label} — Full Subscription (${months} mo)` : `${label} — Full Subscription`;
+    }
+    return 'MOD 4 Care Plan — full subscription';
+  }
   if (invoiceMilestone === 'retainer_monthly') {
     const periodLabel = formatBillingPeriodLabel(options.billingPeriod);
+    const productLabel = options.isProEngagement
+      ? (options.proLabel || 'PRO Subscription')
+      : 'MOD 4 Care Plan';
     return periodLabel
-      ? `MOD 4 Care Plan — ${periodLabel}`
-      : 'MOD 4 Care Plan — monthly retainer';
+      ? `${productLabel} — ${periodLabel}`
+      : `${productLabel} — monthly retainer`;
   }
   if (invoiceMilestone === 'custom') {
     return options.isAddendum ? `${prefix}Custom amount` : 'Custom milestone';

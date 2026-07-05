@@ -1302,6 +1302,18 @@ export const onContractLedgerWritten = onDocumentWritten(
       console.error('CRM Won sync failed for profile', profileId, err);
     }
 
+    if (isPro1AgencyOpsProfile(profile)) {
+      await profileRef.set({
+        subscriptionBilling: {
+          enabled: true,
+          contractSignedAt: signedAt,
+          subscriptionMonths: (profile.subscriptionMonths as number) || 12,
+          initializedAt: Date.now(),
+        },
+        updatedAt: Date.now(),
+      }, { merge: true });
+    }
+
     if (!isPro1AgencyOpsProfile(profile)) return;
     if (profile.agencyOpsTenantId) {
       await event.data!.after!.ref.set({

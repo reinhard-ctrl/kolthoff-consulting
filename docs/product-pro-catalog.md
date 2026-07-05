@@ -19,7 +19,7 @@ Implementation source: `shared/product-catalog.js`, `shared/engagement-packages.
 4. **Contract sign** — `contract_sign.html`
 5. **Auto-provision** — Firestore trigger `onContractLedgerWritten` provisions Agency Ops when status → `signed` (PRO 1 only)
 6. **CRM sync** — Same trigger marks linked CRM deal **Won**
-7. **Collections** — Manual invoicing v1 (setup + subscription milestones)
+7. **Collections** — **PRO Subscriptions** tab: issue setup milestones + monthly platform invoices (v1 rhythm)
 8. **Manual retry** — Agency Ops Manager or Contract Ledger if auto-provision fails
 
 ## Agency Ops tenant registry
@@ -38,8 +38,19 @@ Workbook profile fields after provisioning:
 | `provisioningStatus` | `ready` \| `provisioning` \| `failed` |
 | `provisioningError` | Set when auto-provision fails |
 | `links.agencyOpsConsoleUrl` | Console URL with `?tenant=` |
+| `subscriptionBilling.enabled` | Set on contract sign for PRO 1 |
+| `subscriptionBilling.contractSignedAt` | Anchor for first billing period |
 
 Console URL pattern: `https://kolthoff-consulting.com/agency-ops/?tenant=agency-{slug}`
+
+## Collections — PRO subscription rhythm
+
+In Kolthoff OS (`/admin/collections`), the **PRO Subscriptions** tab lists signed PRO 1 contracts:
+
+1. **Setup milestones** — Issue 50/50 (or configured split) setup invoices
+2. **Monthly platform fee** — One-click issue for the next billing month (`retainer_monthly`)
+
+Helpers: `shared/subscription-billing.js`. Invoice labels use **PRO 1 · Agency Ops** instead of MOD 4 Care Plan.
 
 ## Profile fields (workbook_profiles)
 
