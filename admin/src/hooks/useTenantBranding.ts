@@ -7,9 +7,11 @@ import {
   brandingPresetsToMap,
   DEMO_AGENCY_OPS_BRANDING_PRESETS,
   listBrandingPresets,
+  mergeDemoBrandingPresets,
   mergeTenantBranding,
   presetFromConfig,
   presetToConfig,
+  shouldRestoreDemoBrandingPresets,
   uniquePresetId,
   type BrandingPreset,
   type TenantBrandingConfig,
@@ -89,14 +91,15 @@ export function useTenantBranding() {
 
   useEffect(() => {
     if (loading || !isAgencyOpsStarter(product.id)) return;
-    if (presetsFieldPresent || demoPresetsRestoreAttempted.current) return;
+    if (demoPresetsRestoreAttempted.current) return;
+    if (!shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent)) return;
     demoPresetsRestoreAttempted.current = true;
 
     void (async () => {
       setSaving(true);
       try {
         await writeTenantConfig({
-          brandingPresets: brandingPresetsToMap(DEMO_AGENCY_OPS_BRANDING_PRESETS),
+          brandingPresets: brandingPresetsToMap(mergeDemoBrandingPresets(presets)),
         });
       } catch {
         demoPresetsRestoreAttempted.current = false;
@@ -104,7 +107,7 @@ export function useTenantBranding() {
         setSaving(false);
       }
     })();
-  }, [loading, presetsFieldPresent, product.id]);
+  }, [loading, presets, presetsFieldPresent, product.id]);
 
   const saveBranding = async (next: TenantBrandingConfig, presetId?: string | null) => {
     setSaving(true);
@@ -176,14 +179,8 @@ export function useTenantBranding() {
   const restoreDemoPresets = async () => {
     setSaving(true);
     try {
-      const merged = [
-        ...presets,
-        ...DEMO_AGENCY_OPS_BRANDING_PRESETS.filter(
-          (demo) => !presets.some((preset) => preset.id === demo.id),
-        ),
-      ];
       await writeTenantConfig({
-        brandingPresets: brandingPresetsToMap(merged),
+        brandingPresets: brandingPresetsToMap(mergeDemoBrandingPresets(presets)),
       });
     } finally {
       setSaving(false);

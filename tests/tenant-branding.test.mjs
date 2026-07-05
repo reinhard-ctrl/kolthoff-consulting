@@ -81,3 +81,40 @@ describe('branding presets', () => {
     assert.equal(list[0].id, 'studio-north');
   });
 });
+
+function shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent) {
+  const DEMO_IDS = ['studio-north', 'meridian-creative', 'harbor-digital'];
+  if (!presetsFieldPresent || presets.length === 0) return true;
+  return DEMO_IDS.some((id) => !presets.some((preset) => preset.id === id));
+}
+
+describe('demo branding preset restore', () => {
+  it('restores when presets field is missing', () => {
+    assert.equal(shouldRestoreDemoBrandingPresets([], false), true);
+  });
+
+  it('restores when all presets were deleted', () => {
+    assert.equal(shouldRestoreDemoBrandingPresets([], true), true);
+  });
+
+  it('restores when a bundled demo profile is missing', () => {
+    assert.equal(
+      shouldRestoreDemoBrandingPresets([{ id: 'custom-agency', name: 'Custom' }], true),
+      true,
+    );
+  });
+
+  it('skips restore when all demo profiles are present', () => {
+    assert.equal(
+      shouldRestoreDemoBrandingPresets(
+        [
+          { id: 'studio-north', name: 'Studio North' },
+          { id: 'meridian-creative', name: 'Meridian Creative' },
+          { id: 'harbor-digital', name: 'Harbor Digital' },
+        ],
+        true,
+      ),
+      false,
+    );
+  });
+});

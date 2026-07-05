@@ -71,6 +71,26 @@ export function brandingPresetsToMap(presets: BrandingPreset[]): Record<string, 
   return Object.fromEntries(presets.map((preset) => [preset.id, preset]));
 }
 
+/** True when demo tenant should merge back bundled starter profiles. */
+export function shouldRestoreDemoBrandingPresets(
+  presets: BrandingPreset[],
+  presetsFieldPresent: boolean,
+): boolean {
+  if (!presetsFieldPresent || presets.length === 0) return true;
+  return DEMO_AGENCY_OPS_BRANDING_PRESETS.some(
+    (demo) => !presets.some((preset) => preset.id === demo.id),
+  );
+}
+
+export function mergeDemoBrandingPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  return [
+    ...presets,
+    ...DEMO_AGENCY_OPS_BRANDING_PRESETS.filter(
+      (demo) => !presets.some((preset) => preset.id === demo.id),
+    ),
+  ];
+}
+
 export function getDefaultPrimaryColor(productId?: ProductId): string {
   return isAgencyOpsStarter(productId) ? AGENCY_OPS_PRIMARY_COLOR : KOLTHOFF_PRIMARY_COLOR;
 }
