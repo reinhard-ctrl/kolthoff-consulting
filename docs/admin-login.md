@@ -71,7 +71,7 @@ Legacy callable `verifyAdminPasscode` and HTTP `verifyAdminPasscodeHttp` require
 PROJECT=kolthoff-portal
 REGION=asia-southeast1
 
-for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp requestWorkspacePasswordReset provisionGoogleStaff prepareAgencyOpsTenant onAgencyOpsProvisionRequest onContractLedgerWritten; do
+for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp requestWorkspacePasswordReset provisionGoogleStaff prepareAgencyOpsTenant; do
   gcloud functions add-invoker-policy-binding "$FN" \
     --gen2 --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
@@ -79,7 +79,7 @@ for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken genera
     --quiet || true
 done
 
-for SVC in verifyadminpasscode verifyadminpasscodehttp generateportaltoken generateportaltokenhttp requestworkspacepasswordreset prepareagencyopstenant onagencyopsprovisionrequest oncontractledgerwritten; do
+for SVC in verifyadminpasscode verifyadminpasscodehttp generateportaltoken generateportaltokenhttp requestworkspacepasswordreset prepareagencyopstenant; do
   gcloud run services add-iam-policy-binding "$SVC" \
     --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
@@ -96,5 +96,19 @@ gcloud iam service-accounts add-iam-policy-binding \
 ```
 
 If bindings fail with `FAILED_PRECONDITION` / organization policy, **ignore them** — the Firestore passcode flow above does not need public functions.
+
+## Cloud Functions deploy: HTTPS → Firestore trigger
+
+If deploy fails with `Changing from an HTTPS function to a background triggered function` for `onAgencyOpsProvisionRequest`, delete the orphaned HTTPS version once, then redeploy:
+
+```bash
+gcloud functions delete onAgencyOpsProvisionRequest \
+  --region=asia-southeast1 \
+  --project=kolthoff-portal \
+  --gen2 \
+  --quiet
+```
+
+CI on `main` runs this automatically before each functions deploy.
 
 To temporarily allow public bindings, an org admin may need to relax **Domain restricted sharing** under IAM & Admin → Organization policies.
