@@ -146,14 +146,35 @@ function shouldSeedDefaultClientDemoPresets(presets) {
   return DEFAULTS.some((demo) => {
     const existing = presets.find((preset) => preset.id === demo.id);
     if (!existing) return true;
-    return (
-      (demo.logoUrl && !existing.logoUrl) ||
-      existing.primaryColor !== demo.primaryColor ||
-      existing.tagline !== demo.tagline ||
-      existing.companyName !== demo.companyName ||
-      existing.name !== demo.name
-    );
+    if (!existing.name?.trim() || !existing.companyName?.trim() || !existing.primaryColor?.trim()) {
+      return true;
+    }
+    return Boolean(demo.logoUrl && !existing.logoUrl?.trim());
   });
+}
+
+function mergeDefaultClientDemoPresets(presets, { forceBundled = false } = {}) {
+  const BUNDLED_IDS = new Set(DEFAULT_CLIENT_DEMO_IDS);
+  const DEFAULTS = [
+    { id: 'golfx', name: 'GolfX', companyName: 'GolfX', tagline: 'Indoor Golf & Performance Training', primaryColor: '#166534', logoUrl: '/shared/assets/client-demos/golfx-logo.svg', updatedAt: 1 },
+    { id: 'player-2-production', name: 'Player 2 Production', companyName: 'Player 2 Production', tagline: 'Events, Festivals & Live Experiences', primaryColor: '#7c3aed', logoUrl: '/shared/assets/client-demos/player-2-production-logo.svg', updatedAt: 1 },
+    { id: 'wp-gaming', name: 'WP / Gaming', companyName: 'WP / Gaming', tagline: 'Gaming & Esports Marketing', primaryColor: '#0284c7', logoUrl: '/shared/assets/client-demos/wp-gaming-logo.svg', updatedAt: 1 },
+  ];
+  const custom = presets.filter((preset) => !BUNDLED_IDS.has(preset.id));
+  const bundled = DEFAULTS.map((demo) => {
+    const existing = presets.find((preset) => preset.id === demo.id);
+    if (!existing || forceBundled) return { ...demo, updatedAt: Date.now() };
+    return {
+      ...existing,
+      name: existing.name?.trim() || demo.name,
+      companyName: existing.companyName?.trim() || demo.companyName,
+      tagline: existing.tagline?.trim() || demo.tagline || '',
+      primaryColor: existing.primaryColor?.trim() || demo.primaryColor,
+      logoUrl: existing.logoUrl?.trim() || demo.logoUrl || '',
+      updatedAt: existing.updatedAt || Date.now(),
+    };
+  });
+  return [...bundled, ...custom];
 }
 
 describe('bundled client demo presets', () => {
@@ -179,17 +200,17 @@ describe('bundled client demo presets', () => {
     );
   });
 
-  it('skips seed when all bundled client demos exist with logos and colors', () => {
+  it('skips seed when user customized bundled client demo branding', () => {
     assert.equal(
       shouldSeedDefaultClientDemoPresets([
         {
           id: 'golfx',
-          name: 'GolfX',
-          companyName: 'GolfX',
-          tagline: 'Indoor Golf & Performance Training',
-          primaryColor: '#166534',
-          logoUrl: '/shared/assets/client-demos/golfx-logo.svg',
-          updatedAt: 1,
+          name: 'GolfX Custom',
+          companyName: 'GolfX International',
+          tagline: 'Premium indoor golf',
+          primaryColor: '#0f5132',
+          logoUrl: 'https://example.com/golfx.png',
+          updatedAt: 99,
         },
         {
           id: 'player-2-production',
@@ -212,5 +233,44 @@ describe('bundled client demo presets', () => {
       ]),
       false,
     );
+  });
+
+  it('merge keeps saved client demo edits on refresh', () => {
+    const saved = [
+      {
+        id: 'golfx',
+        name: 'GolfX Custom',
+        companyName: 'GolfX International',
+        tagline: 'Premium indoor golf',
+        primaryColor: '#0f5132',
+        logoUrl: 'https://example.com/golfx.png',
+        updatedAt: 99,
+      },
+    ];
+    const merged = mergeDefaultClientDemoPresets(saved);
+    const golfx = merged.find((preset) => preset.id === 'golfx');
+    assert.equal(golfx.companyName, 'GolfX International');
+    assert.equal(golfx.primaryColor, '#0f5132');
+    assert.equal(golfx.logoUrl, 'https://example.com/golfx.png');
+    assert.equal(golfx.updatedAt, 99);
+  });
+
+  it('merge only backfills missing logo without overwriting custom fields', () => {
+    const saved = [
+      {
+        id: 'golfx',
+        name: 'GolfX',
+        companyName: 'GolfX',
+        tagline: 'Custom tagline',
+        primaryColor: '#123456',
+        logoUrl: '',
+        updatedAt: 42,
+      },
+    ];
+    const merged = mergeDefaultClientDemoPresets(saved);
+    const golfx = merged.find((preset) => preset.id === 'golfx');
+    assert.equal(golfx.tagline, 'Custom tagline');
+    assert.equal(golfx.primaryColor, '#123456');
+    assert.equal(golfx.logoUrl, '/shared/assets/client-demos/golfx-logo.svg');
   });
 });
