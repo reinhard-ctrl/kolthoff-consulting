@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { auth } from './firebase';
+import { isEmbeddedView } from './embed-mode';
 import { isKolthoffStaffEmail } from './staff-domain';
 import { recordGoogleAdminSession } from './google-admin-session';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
@@ -114,8 +115,9 @@ export async function signInWithGoogleStaff(): Promise<User> {
   }
 
   const preferPopup =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('sso') === 'popup';
+    isEmbeddedView() ||
+    (typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('sso') === 'popup');
 
   if (!preferPopup) {
     await startGoogleStaffRedirect();
@@ -157,8 +159,18 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
     redirectBootPromise = (async () => {
       await auth.authStateReady();
       const pendingRedirect = isReturningFromOAuthRedirect();
+      const embedded = isEmbeddedView();
 
       if (!pendingRedirect) {
+        sessionStorage.removeItem(SSO_PENDING_KEY);
+        const existing = auth.currentUser;
+        if (existing && isGoogleStaffUser(existing)) {
+          return finalizeGoogleStaffUser(existing, { backgroundProvision: true });
+        }
+        return null;
+      }
+
+      if (embedded) {
         sessionStorage.removeItem(SSO_PENDING_KEY);
         const existing = auth.currentUser;
         if (existing && isGoogleStaffUser(existing)) {
@@ -197,6 +209,9 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
 /** Boot hook — restore Google redirect sessions before auth listeners run */
 export async function ensureAuthReady(): Promise<void> {
   await auth.authStateReady();
+  if (isEmbeddedView()) {
+    return;
+  }
   try {
     await completeGoogleStaffRedirect();
   } catch (err) {

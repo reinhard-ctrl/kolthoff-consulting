@@ -1,20 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { signOut, auth, logAudit, hasAdminStaffSession, getDocs, query, where, tenantCol } from './lib/firebase';
+import { signOut, auth, logAudit, hasAdminStaffSession, waitForAdminStaffSession } from './lib/firebase';
 import { useAuth } from './hooks/useAuth';
 import { useTenantFeatures } from './hooks/useTenant';
+import { isEmbeddedView, initEmbedMode } from './lib/embed-mode';
+import { resolveCoreUserFromAuthUser, resolveCoreUserFromCurrentAuth, type CoreUser } from './lib/core-user';
 import LoginPage from './components/LoginPage';
+import EmbedAuthPrompt from './components/EmbedAuthPrompt';
 import MessengerApp from './apps/MessengerApp';
 import ApprovalsApp from './apps/ApprovalsApp';
 import VaultApp from './apps/VaultApp';
 import CRMApp from './apps/CRMApp';
-
-interface CoreUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
 
 const NAV = [
   { key: 'messenger', label: 'Messenger', icon: '💬', feature: 'messenger' as const },
@@ -40,7 +36,7 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 
   return (
     <div className="flex h-screen">
-      <aside className="w-16 md:w-56 bg-slate-900 flex flex-col items-center md:items-stretch py-4 shrink-0">
+      <aside data-app-sidebar className="w-16 md:w-56 bg-slate-900 flex flex-col items-center md:items-stretch py-4 shrink-0">
         <div className="hidden md:block px-4 mb-6">
           <div className="text-white font-bold text-sm">Workspace</div>
           <div className="text-slate-400 text-xs truncate">{user.name}</div>
@@ -66,75 +62,68 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 }
 
 export default function App() {
+  const embedded = isEmbeddedView();
   const { user: authUser, loading } = useAuth();
   const [user, setUser] = useState<CoreUser | null>(null);
   const [checkingStaff, setCheckingStaff] = useState(true);
   const [restoringSession, setRestoringSession] = useState(true);
   const [googleSsoError, setGoogleSsoError] = useState('');
+  const [embedAuthRequired, setEmbedAuthRequired] = useState(false);
 
   useEffect(() => {
+    initEmbedMode();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       try {
-        const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
-        const googleUser = await completeGoogleStaffRedirect();
-        if (googleUser?.email) {
-          const email = googleUser.email.trim().toLowerCase();
-          const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
-          const match = snap.empty
-            ? {
-                id: googleUser.uid,
-                email,
-                name: googleUser.displayName || email.split('@')[0],
-                role: 'kolthoff_admin',
-              }
-            : (snap.docs[0].data() as CoreUser);
-          await logAudit('workspace_login', { email: match.email, provider: 'google' });
-          setUser(match);
-          setCheckingStaff(false);
-          setRestoringSession(false);
-          return;
-        }
-      } catch (err) {
-        setGoogleSsoError(err instanceof Error ? err.message : 'Google sign-in failed');
-      }
-
-      hasAdminStaffSession().then(async (ok) => {
-        if (ok && auth.currentUser) {
-          try {
-            const currentEmail = auth.currentUser.email?.trim().toLowerCase();
-            if (currentEmail) {
-              const byEmail = await getDocs(query(tenantCol('core_users'), where('email', '==', currentEmail)));
-              if (!byEmail.empty) {
-                setUser(byEmail.docs[0].data() as CoreUser);
-                setCheckingStaff(false);
-                return;
-              }
-            }
-            const adminSnap = await getDocs(query(tenantCol('core_users'), where('role', '==', 'kolthoff_admin')));
-            if (!adminSnap.empty) {
-              setUser(adminSnap.docs[0].data() as CoreUser);
-            } else {
-              setUser({
-                id: auth.currentUser.uid,
-                email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
-                name: 'Kolthoff Admin',
-                role: 'kolthoff_admin',
-              });
-            }
-          } catch (err) {
-            console.warn('Admin staff lookup failed:', err);
-            setUser({
-              id: auth.currentUser.uid,
-              email: auth.currentUser.email || 'admin@kolthoff-consulting.com',
-              name: 'Kolthoff Admin',
-              role: 'kolthoff_admin',
-            });
+        if (!embedded) {
+          const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
+          const googleUser = await completeGoogleStaffRedirect();
+          if (cancelled) return;
+          if (googleUser?.email) {
+            const match = await resolveCoreUserFromAuthUser(googleUser);
+            await logAudit('workspace_login', { email: match.email, provider: 'google' });
+            setUser(match);
+            setCheckingStaff(false);
+            setRestoringSession(false);
+            return;
           }
         }
-        setCheckingStaff(false);
-      });
+
+        const staffOk = embedded
+          ? await waitForAdminStaffSession(10000)
+          : await hasAdminStaffSession();
+
+        if (cancelled) return;
+
+        if (staffOk && auth.currentUser) {
+          const match = await resolveCoreUserFromCurrentAuth();
+          if (match) {
+            setUser(match);
+            setCheckingStaff(false);
+            setRestoringSession(false);
+            return;
+          }
+        }
+
+        if (embedded && !staffOk) {
+          setEmbedAuthRequired(true);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setGoogleSsoError(err instanceof Error ? err.message : 'Google sign-in failed');
+      } finally {
+        if (!cancelled) setCheckingStaff(false);
+      }
     })();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [embedded]);
 
   useEffect(() => {
     if (loading || checkingStaff || user) {
@@ -144,12 +133,9 @@ export default function App() {
 
     const restoreWorkspaceSession = async () => {
       try {
-        const current = auth.currentUser;
-        if (!current || current.isAnonymous || !current.email) return;
-        const email = current.email.trim().toLowerCase();
-        const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
-        if (!snap.empty) {
-          setUser(snap.docs[0].data() as CoreUser);
+        const match = await resolveCoreUserFromCurrentAuth();
+        if (match) {
+          setUser(match);
         }
       } catch (err) {
         console.warn('Workspace session restore failed:', err);
@@ -165,6 +151,7 @@ export default function App() {
     await logAudit('workspace_logout', { email: user?.email });
     await signOut(auth);
     setUser(null);
+    if (embedded) setEmbedAuthRequired(true);
   };
 
   if (loading || checkingStaff || restoringSession) {
@@ -175,10 +162,16 @@ export default function App() {
     );
   }
 
+  if (embedded && embedAuthRequired && !user) {
+    return <EmbedAuthPrompt />;
+  }
+
   return (
     <Routes>
       <Route path="/" element={
-        user ? <Shell user={user} onLogout={logout} /> : <LoginPage onLogin={setUser} googleSsoError={googleSsoError} />
+        user
+          ? <Shell user={user} onLogout={logout} />
+          : <LoginPage onLogin={setUser} googleSsoError={googleSsoError} embedded={embedded} />
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

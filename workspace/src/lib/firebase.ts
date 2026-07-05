@@ -60,27 +60,48 @@ const ADMIN_APP = 'kolthoff-admin-app';
 export async function hasAdminStaffSession(): Promise<boolean> {
   try {
     await auth.authStateReady();
-  } catch {
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    if (user.isAnonymous) {
+      const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', user.uid);
+      const snap = await getDoc(sessionRef);
+      return snap.exists();
+    }
+
+    const token = await user.getIdTokenResult();
+    if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
+      return true;
+    }
+
+    if (
+      user.email?.toLowerCase().endsWith('@kolthoff-consulting.com') &&
+      user.providerData.some((p) => p.providerId === 'google.com')
+    ) {
+      return true;
+    }
+
+    const googleSessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'google_admin_sessions', user.uid);
+    const googleSnap = await getDoc(googleSessionRef);
+    if (googleSnap.exists()) return true;
+
+    const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', user.uid);
+    const snap = await getDoc(sessionRef);
+    return snap.exists();
+  } catch (err) {
+    console.warn('hasAdminStaffSession failed:', err);
     return false;
   }
-  const user = auth.currentUser;
-  if (!user) return false;
+}
 
-  const token = await user.getIdTokenResult();
-  if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
-    return true;
+/** Poll until admin console auth is visible inside an iframe (shared IndexedDB). */
+export async function waitForAdminStaffSession(maxMs = 10000): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    if (await hasAdminStaffSession()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
-
-  if (
-    user.email?.toLowerCase().endsWith('@kolthoff-consulting.com') &&
-    user.providerData.some((p) => p.providerId === 'google.com')
-  ) {
-    return true;
-  }
-
-  const sessionRef = doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', user.uid);
-  const snap = await getDoc(sessionRef);
-  return snap.exists();
+  return hasAdminStaffSession();
 }
 
 export function initAppCheck() {
