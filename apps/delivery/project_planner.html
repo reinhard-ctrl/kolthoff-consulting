@@ -10,8 +10,8 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase Module Initialization -->
-      <script type="module" src="../../shared/firebase-init.js?v=20250704-ui-v15"></script>
-    <script type="module" src="../../shared/auth-gate.js?v=20250704-ui-v15"></script>
+      <script type="module" src="../../shared/firebase-init.js?v=20250705-ui-v16"></script>
+    <script type="module" src="../../shared/auth-gate.js?v=20250705-ui-v16"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,7 +44,7 @@
       }
     }
   </script>
-  <script src="../../shared/starter-light-theme.js?v=20250704-ui-v15"></script>
+  <script src="../../shared/starter-light-theme.js?v=20250705-ui-v16"></script>
   
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -492,7 +492,7 @@
     window.SharedFinancials = Financials;
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
-  <script src="project_planner_helpers.js?v=20250704-firestore-v1"></script>
+  <script src="project_planner_helpers.js?v=20250705-line-items-v1"></script>
   <script src="project_planner_addendum.js?v=20250704-brand-pdf-v1"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
@@ -549,11 +549,11 @@
       }
       return (category || '').replace('MOD ', 'M').replace(' - ', ' · ');
     };
-    const getModPresets = () => [
-      { name: 'mod1', label: modChip(1) },
-      { name: 'mod2', label: modChip(2) },
-      { name: 'mod3', label: modChip(3) },
-      { name: 'mod4', label: modChip(4) },
+    const getModPresets = (bundleNames) => [
+      { name: 'mod1', label: bundleNames?.mod1 || modChip(1) },
+      { name: 'mod2', label: bundleNames?.mod2 || modChip(2) },
+      { name: 'mod3', label: bundleNames?.mod3 || modChip(3) },
+      { name: 'mod4', label: bundleNames?.mod4 || modChip(4) },
     ];
     const STARTER_UI = isAgencyStarterContext();
     const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
@@ -826,6 +826,78 @@
         scopeDetails: { activities: 'Half-day audit of usage, permissions, broken/outdated forms; schedule or apply fixes.', expectations: 'Manager access for review session; twice per year on calendar.', output: 'Audit report + fixes applied or scheduled.' }
       }
     ];
+
+    const AGENCY_DEMO_TASKS = [
+      {
+        id: 'line-deluxe-bay',
+        moduleKey: 'mod1',
+        category: 'MOD 1 - Discovery & Audit',
+        deliverable: 'Deluxe Bay',
+        description: 'Full-service production bay with equipment package.',
+        selected: true,
+        lineQty: 6,
+        lineDuration: 4,
+        lineUnitPrice: 1800,
+        lineUnit: 'per hour',
+        lineMarkUp: 33.33333333333333,
+        estHours: 24,
+        tier: 'senior',
+      },
+      {
+        id: 'line-premium-bay',
+        moduleKey: 'mod1',
+        category: 'MOD 1 - Discovery & Audit',
+        deliverable: 'Premium Bay',
+        description: 'Premium bay — single-day booking.',
+        selected: true,
+        lineQty: 1,
+        lineDuration: 1,
+        lineUnitPrice: 3000,
+        lineUnit: 'per day',
+        lineMarkUp: 50,
+        estHours: 8,
+        tier: 'senior',
+      },
+      {
+        id: 'line-brand-kit',
+        moduleKey: 'mod2',
+        category: 'MOD 2 - Process Design',
+        deliverable: 'Brand Identity Kit',
+        description: 'Logo suite, color system, and typography guidelines.',
+        selected: false,
+        lineQty: 1,
+        lineDuration: 1,
+        lineUnitPrice: 85000,
+        lineUnit: 'per project',
+        lineMarkUp: 25,
+        estHours: 40,
+        tier: 'senior',
+      },
+      {
+        id: 'line-web-build',
+        moduleKey: 'mod3',
+        category: 'MOD 3 - Build & Implementation',
+        deliverable: 'Marketing Website',
+        description: 'Responsive site build with CMS handoff.',
+        selected: false,
+        lineQty: 1,
+        lineDuration: 1,
+        lineUnitPrice: 120000,
+        lineUnit: 'per project',
+        lineMarkUp: 30,
+        estHours: 80,
+        tier: 'associate',
+      },
+    ];
+
+    const PRODUCT_TASK_CATALOG = STARTER_UI ? AGENCY_DEMO_TASKS : INITIAL_TASKS;
+
+    const defaultAgencyModuleBundleNames = () => ({
+      mod1: modTitle(1),
+      mod2: modTitle(2),
+      mod3: modTitle(3),
+      mod4: modTitle(4),
+    });
 
     // --- DEFAULT PROFILES DATA ---
     const DEFAULT_CLIENTS = [
@@ -1265,7 +1337,11 @@
       }, [annualOperationalLeakage]);
 
       // --- SOW SELECTION ---
-      const [tasks, setTasks] = useState(activeProfile.tasks || INITIAL_TASKS);
+      const [tasks, setTasks] = useState(activeProfile.tasks || PRODUCT_TASK_CATALOG);
+      const [moduleBundleNames, setModuleBundleNames] = useState(() => ({
+        ...defaultAgencyModuleBundleNames(),
+        ...(activeProfile.moduleBundleNames || {}),
+      }));
       const [discountPercent, setDiscountPercent] = useState(activeProfile.discountPercent || 0);
       const [milestoneSplit, setMilestoneSplit] = useState(activeProfile.milestoneSplit || 'auto');
       const [customSplit1, setCustomSplit1] = useState(activeProfile.customSplit1 || 40);
@@ -1317,10 +1393,16 @@
       const [packageAppliedAt, setPackageAppliedAt] = useState(null);
       const [showPackageApplyConfirm, setShowPackageApplyConfirm] = useState(false);
       const [pendingPackageId, setPendingPackageId] = useState(null);
-      const catalogTasksRef = useRef(INITIAL_TASKS.map(t => ({ ...t })));
+      const catalogTasksRef = useRef(PRODUCT_TASK_CATALOG.map(t => ({ ...t })));
 
       const [newTaskCategory, setNewTaskCategory] = useState(MOD_1);
       const [newTaskDeliv, setNewTaskDeliv] = useState('');
+      const [newLineQty, setNewLineQty] = useState('1');
+      const [newLineDuration, setNewLineDuration] = useState('1');
+      const [newLineUnitPrice, setNewLineUnitPrice] = useState('');
+      const [newLineUnit, setNewLineUnit] = useState('per hour');
+      const [newLineMarkUp, setNewLineMarkUp] = useState('33.3');
+      const [newLineModuleKey, setNewLineModuleKey] = useState('mod1');
       const [newTaskDesc, setNewTaskDesc] = useState('');
       const [newTaskHours, setNewTaskHours] = useState('');
       const [newTaskMultiplier, setNewTaskMultiplier] = useState(0); 
@@ -1456,6 +1538,7 @@
         const profileMonthlySalary = p.monthlySalary !== undefined ? p.monthlySalary : 25000;
         const profileWastedHours = p.wastedHours !== undefined ? p.wastedHours : 2.0;
         const profileLeakage = H.computeAnnualOperationalLeakage(profileStaffCount, profileMonthlySalary, profileWastedHours);
+        const bundleNames = { ...defaultAgencyModuleBundleNames(), ...(p.moduleBundleNames || {}) };
         const profileState = {
           clientCompany: p.clientCompany, clientRep: p.clientRep, clientAddress: p.clientAddress, clientTin: p.clientTin,
           quoteId: p.quoteId, quoteDate: p.quoteDate, quoteValidity: p.quoteValidity, includeTax: p.includeTax,
@@ -1464,7 +1547,8 @@
           frictionBuffer: p.frictionBuffer, principalToSeniorDelegate: p.principalToSeniorDelegate,
           seniorToAssociateDelegate: p.seniorToAssociateDelegate, overrideTimeline: p.overrideTimeline || '',
           weeklyHours: p.weeklyHours || 16, clientReviewWeeks: p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1,
-          tasks: p.tasks || INITIAL_TASKS, discountPercent: p.discountPercent || 0,
+          tasks: (STARTER_UI ? (p.tasks || PRODUCT_TASK_CATALOG).map((t) => H.normalizeAgencyLineItemTask(t, bundleNames)) : (p.tasks || PRODUCT_TASK_CATALOG)), discountPercent: p.discountPercent || 0,
+          moduleBundleNames: bundleNames,
           dpaRetentionDays: p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14, slaCureDays: p.slaCureDays !== undefined ? p.slaCureDays : 30,
           slaRecurrenceMonths: p.slaRecurrenceMonths !== undefined ? p.slaRecurrenceMonths : 3, subscriptionMonths: p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6,
           printSow: p.printSow !== undefined ? p.printSow : true, printTimeline: p.printTimeline !== undefined ? p.printTimeline : true,
@@ -1518,6 +1602,7 @@
         setWeeklyHours(profileState.weeklyHours);
         setClientReviewWeeks(profileState.clientReviewWeeks);
         setTasks(profileState.tasks);
+        setModuleBundleNames(profileState.moduleBundleNames || defaultAgencyModuleBundleNames());
         setDiscountPercent(profileState.discountPercent);
         setDpaRetentionDays(profileState.dpaRetentionDays);
         setSlaCureDays(profileState.slaCureDays);
@@ -1593,8 +1678,9 @@
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
-        selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId]);
+        selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId,
+        moduleBundleNames,
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -2063,6 +2149,25 @@
       const updateTaskTier = (id, tier) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, tier: tier } : t)); };
       const updateTaskDeliverable = (id, value) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, deliverable: value } : t)); };
       const updateTaskDescription = (id, value) => { setPackageCustomized(true); setTasks(prev => prev.map(t => t.id === id ? { ...t, description: value } : t)); };
+      const updateTaskLineField = (id, field, rawValue) => {
+        setPackageCustomized(true);
+        setTasks(prev => prev.map(t => {
+          if (t.id !== id) return t;
+          if (field === 'lineUnit' || field === 'deliverable') return { ...t, [field]: rawValue };
+          const num = Math.max(0, Number(rawValue) || 0);
+          return { ...t, [field]: num };
+        }));
+      };
+      const updateTaskModuleKey = (id, modKey) => {
+        setPackageCustomized(true);
+        const label = moduleBundleNames[modKey] || modTitle(Number(String(modKey).replace('mod', '')));
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, moduleKey: modKey, category: H.agencyModCategory(modKey, label) } : t));
+      };
+      const renameModuleBundle = (modKey, label) => {
+        setPackageCustomized(true);
+        setModuleBundleNames(prev => ({ ...prev, [modKey]: label }));
+        setTasks(prev => prev.map(t => t.moduleKey === modKey ? { ...t, category: H.agencyModCategory(modKey, label) } : t));
+      };
       const removeTask = (id) => { setPackageCustomized(true); setTasks(prev => prev.filter(t => t.id !== id)); };
 
       const reorderTasks = (fromId, toId) => {
@@ -2099,6 +2204,35 @@
 
       const addNewTask = (e) => {
         e.preventDefault();
+        if (STARTER_UI) {
+          if (!newTaskDeliv.trim()) return;
+          const modKey = newLineModuleKey || 'mod1';
+          const label = moduleBundleNames[modKey] || modTitle(Number(String(modKey).replace('mod', '')));
+          const lineTask = {
+            id: `line-${Date.now()}`,
+            moduleKey: modKey,
+            category: H.agencyModCategory(modKey, label),
+            deliverable: newTaskDeliv.trim(),
+            description: newTaskDesc || '',
+            selected: true,
+            lineQty: Math.max(0, Number(newLineQty) || 0),
+            lineDuration: Math.max(0, Number(newLineDuration) || 0),
+            lineUnitPrice: Math.max(0, Number(newLineUnitPrice) || 0),
+            lineUnit: newLineUnit || 'per hour',
+            lineMarkUp: Math.max(0, Number(newLineMarkUp) || 0),
+            estHours: Math.max(1, Math.round((Number(newLineQty) || 1) * (Number(newLineDuration) || 1))),
+            tier: 'senior',
+          };
+          setPackageCustomized(true);
+          setTasks(prev => [...prev, lineTask]);
+          setNewTaskDeliv('');
+          setNewTaskDesc('');
+          setNewLineQty('1');
+          setNewLineDuration('1');
+          setNewLineUnitPrice('');
+          setNewLineMarkUp('33.3');
+          return;
+        }
         if (!newTaskDeliv) return;
         const baseHours = Number(newTaskHours) || 0;
         const multiplier = Number(newTaskMultiplier) / 100;
@@ -2175,7 +2309,7 @@
         setActivePresets(updatedPresets);
         const categoryToPreset = H.CATEGORY_TO_PRESET;
         setTasks(prev => prev.map(t => {
-          const presetForTask = categoryToPreset[t.category];
+          const presetForTask = H.presetForTask(t);
           return { ...t, selected: presetForTask ? updatedPresets.includes(presetForTask) : t.selected };
         }));
       };
@@ -2291,8 +2425,10 @@
         tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
         milestoneSplit, customSplit1, customSplit2, customSplit3,
         rates: hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate,
-        recoveryPotential, staffCount, monthlySalary, wastedHours, formatCurrency
-      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours]);
+        recoveryPotential, staffCount, monthlySalary, wastedHours, formatCurrency,
+        starterLineItems: STARTER_UI,
+        moduleBundleNames,
+      }), [tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths, milestoneSplit, customSplit1, customSplit2, customSplit3, hourlyRates, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours, moduleBundleNames]);
 
       const sharedProfileForBilling = useMemo(() => ({
         tasks, frictionBuffer, discountPercent, includeTax, subscriptionMonths,
@@ -2330,7 +2466,9 @@
       } = pricing;
 
       const billingMilestones = sharedBillingSchedule?.milestones?.length ? sharedBillingSchedule.milestones : plannerBillingMilestones;
-      const moduleInvestmentSummaries = sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries;
+      const moduleInvestmentSummaries = (STARTER_UI && tasks.some(H.isAgencyLineItem))
+        ? plannerModuleSummaries
+        : (sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries);
       const retainerCostPart = sharedBillingSchedule?.retainerMonthly || plannerRetainerCostPart;
       const retainerCostTotalPart = sharedBillingSchedule?.retainerTotal || plannerRetainerCostTotalPart;
 
@@ -2907,7 +3045,9 @@
               ? (isAddendumInvoiceMode
                 ? `Please find below the itemized billing details for addendum scope ${invoiceTargetAddendum?.ref || ''} in accordance with the master project SOW ${quoteId}:`
                 : "Please find below the itemized billing details for operational support services rendered in accordance with our master project SOW:")
-              : "We are pleased to submit our formal flat-rate pricing proposal to fix operational leaks, document how your business runs, and launch your team workspace:"}
+              : (STARTER_UI
+                ? 'We are pleased to submit our formal pricing proposal for the services listed below:'
+                : "We are pleased to submit our formal flat-rate pricing proposal to fix operational leaks, document how your business runs, and launch your team workspace:")}
           </div>
 
           {isInvoice ? (
@@ -2940,6 +3080,47 @@
                       {formatCurrency(computedInvoiceCost.baseAmount)}
                     </td>
                   </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : STARTER_UI ? (
+            <div className="border border-slate-200 rounded-lg overflow-hidden mb-8 print-divider font-sans text-left">
+              <table className="w-full text-left border-collapse text-[10px] font-sans">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-mono text-[8px] tracking-wider font-extrabold">
+                    <th className="py-2 px-2 text-left">Module</th>
+                    <th className="py-2 px-2 text-left">Particular</th>
+                    <th className="py-2 px-2 text-center">Qty</th>
+                    <th className="py-2 px-2 text-center">Duration</th>
+                    <th className="py-2 px-2 text-right">Unit Price</th>
+                    <th className="py-2 px-2 text-left">Unit</th>
+                    <th className="py-2 px-2 text-right">Base Price</th>
+                    <th className="py-2 px-2 text-right">Mark Up</th>
+                    <th className="py-2 px-2 text-right">Gross Profit</th>
+                    <th className="py-2 px-2 text-right">GP Margin</th>
+                    <th className="py-2 px-2 text-right">Estimate Cost</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {tasks.filter(t => t.selected).map((task) => {
+                    const row = H.computeAgencyLineItemPricing(task);
+                    const modKey = task.moduleKey || H.presetForTask(task) || 'mod1';
+                    return (
+                      <tr key={task.id}>
+                        <td className="py-2 px-2 font-semibold text-slate-700">{moduleBundleNames[modKey] || H.getModDisplayName(Number(String(modKey).replace('mod', '')))}</td>
+                        <td className="py-2 px-2 font-bold text-slate-900">{task.deliverable}</td>
+                        <td className="py-2 px-2 text-center font-mono">{task.lineQty ?? 0}</td>
+                        <td className="py-2 px-2 text-center font-mono">{task.lineDuration ?? 0}</td>
+                        <td className="py-2 px-2 text-right font-mono">{formatCurrency(task.lineUnitPrice ?? 0)}</td>
+                        <td className="py-2 px-2">{task.lineUnit || 'per hour'}</td>
+                        <td className="py-2 px-2 text-right font-mono">{formatCurrency(row.basePrice)}</td>
+                        <td className="py-2 px-2 text-right font-mono">{row.markUp.toFixed(1)}%</td>
+                        <td className="py-2 px-2 text-right font-mono">{formatCurrency(row.grossProfit)}</td>
+                        <td className="py-2 px-2 text-right font-mono">{row.gpMargin.toFixed(1)}%</td>
+                        <td className="py-2 px-2 text-right font-mono font-bold">{formatCurrency(row.estimateCost)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -4418,10 +4599,12 @@
                         <div className="flex justify-between items-center mb-1.5 text-left"><label className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase font-bold text-left font-sans font-bold">Partnership Discount</label><span className="text-xs font-mono font-bold text-right font-sans">{discountPercent}%</span></div>
                         <input type="range" min="0" max="30" step="5" value={discountPercent} onChange={(e) => setDiscountPercent(parseInt(e.target.value))} className="w-full accent-brandTeal-500 bg-brandNavy-955 h-1 rounded-lg cursor-pointer font-sans" />
                       </div>
+                      {!STARTER_UI && (
                       <div className="py-4 border-b border-brandNavy-700 text-left font-sans font-medium">
                         <div className="flex justify-between items-center mb-1.5 text-left font-sans font-bold"><label className="text-[10px] font-mono tracking-widest text-brandTeal-400 uppercase font-bold text-left">Project Buffer</label><span className="text-xs font-mono font-bold text-brandTeal-300 text-right">+{frictionBuffer}%</span></div>
                         <input type="range" min="0" max="30" step="5" value={frictionBuffer} onChange={(e) => setFrictionBuffer(parseInt(e.target.value))} className="w-full accent-brandTeal-500 bg-brandNavy-955 h-1 rounded-lg cursor-pointer" />
                       </div>
+                      )}
                       <div className="py-4 border-b border-brandNavy-700 space-y-1.5 text-xs font-sans font-semibold text-left font-sans font-semibold">
                         <div className="flex justify-between text-left"><span>SOW Subtotal:</span><span className="font-mono text-white text-right">{formatCurrency(projectCostBase + retainerCostTotalBase)}</span></div>
                         {includeTax && <div className="flex justify-between text-slate-400 text-left font-sans font-semibold"><span>PH VAT (12%):</span><span className="font-mono text-right font-sans">{formatCurrency(updatedSummary.taxValue)}</span></div>}
@@ -4429,6 +4612,8 @@
                       </div>
 
                       <div className="pt-4 border-t border-brandNavy-700 text-left font-sans">
+                        {!STARTER_UI && (
+                        <>
                         <h4 className="text-[10px] font-mono uppercase text-slate-400 font-bold mb-3">Customize Hourly Settings</h4>
                         <div className="space-y-3">
                           <div className="bg-brandNavy-955 p-3 rounded-lg border border-brandNavy-700 text-left font-sans font-medium">
@@ -4448,6 +4633,8 @@
                             <input type="range" min="1000" max="5000" step="100" value={partnerRate} onChange={(e) => setPartnerRate(Number(e.target.value))} className="w-full accent-brandTeal-500 h-1 rounded-lg cursor-pointer" />
                           </div>
                         </div>
+                        </>
+                        )}
                       </div>
                     </div>
                   </aside>
@@ -4467,7 +4654,7 @@
                           </div>
                         </div>
                         <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>
-                          {getModPresets().map(preset => {
+                          {getModPresets(moduleBundleNames).map(preset => {
                             const isActive = activePresets.includes(preset.name);
                             return (
                               <button key={preset.name} onClick={() => handleTogglePreset(preset.name)} className={STARTER_UI ? `starter-sow-preset px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 ${isActive ? 'starter-sow-preset-active' : 'starter-sow-preset-inactive'}` : `px-3 py-1.5 text-xs font-bold rounded transition-all flex items-center gap-1.5 font-sans font-bold ${isActive ? 'bg-brandTeal-500 text-white' : 'bg-brandNavy-900 text-slate-300 border-brandNavy-700'}`}>
@@ -4476,8 +4663,96 @@
                             );
                           })}
                         </div>
+                        {STARTER_UI && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 pt-1">
+                            {['mod1', 'mod2', 'mod3', 'mod4'].map((modKey) => (
+                              <label key={modKey} className="block text-left">
+                                <span className="starter-sow-field-label text-[10px] font-medium text-slate-500 uppercase tracking-wide">Module {modKey.replace('mod', '')} name</span>
+                                <input
+                                  type="text"
+                                  value={moduleBundleNames[modKey] || ''}
+                                  onChange={(e) => renameModuleBundle(modKey, e.target.value)}
+                                  className="starter-sow-input w-full border border-slate-200 rounded-md px-2 py-1.5 text-xs text-slate-800 mt-1"
+                                  placeholder={`Module ${modKey.replace('mod', '')}`}
+                                />
+                              </label>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="overflow-x-auto text-left font-sans font-semibold">
+                        {STARTER_UI ? (
+                        <table className="w-full text-left border-collapse text-[11px] min-w-[1280px] font-sans">
+                          <thead>
+                            <tr className="starter-sow-table-head bg-slate-100 text-xs font-semibold text-slate-600 border-b border-slate-200">
+                              <th className="py-3 px-2 text-center w-[3%]" scope="col" aria-label="Reorder">#</th>
+                              <th className="py-3 px-2 text-center w-[4%]" scope="col">Incl</th>
+                              <th className="py-3 px-2 text-left w-[11%]" scope="col">Module</th>
+                              <th className="py-3 px-2 text-left w-[12%]" scope="col">Particular</th>
+                              <th className="py-3 px-2 text-center w-[6%]" scope="col">Qty</th>
+                              <th className="py-3 px-2 text-center w-[6%]" scope="col">Duration</th>
+                              <th className="py-3 px-2 text-right w-[8%]" scope="col">Unit Price</th>
+                              <th className="py-3 px-2 text-left w-[8%]" scope="col">Unit</th>
+                              <th className="py-3 px-2 text-right w-[9%]" scope="col">Base Price</th>
+                              <th className="py-3 px-2 text-right w-[7%]" scope="col">Mark Up</th>
+                              <th className="py-3 px-2 text-right w-[9%]" scope="col">Gross Profit</th>
+                              <th className="py-3 px-2 text-right w-[7%]" scope="col">GP Margin</th>
+                              <th className="py-3 px-2 text-right w-[10%] font-bold text-indigo-600" scope="col">Estimate Cost</th>
+                            </tr>
+                          </thead>
+                          <tbody className="starter-sow-table-body divide-y divide-slate-200">
+                            {tasks.map((task, taskIndex) => {
+                              const pricingRow = H.isAgencyLineItem(task) ? H.computeAgencyLineItemPricing(task) : null;
+                              const modKey = task.moduleKey || H.presetForTask(task) || 'mod1';
+                              const isDragging = dragTaskId === task.id;
+                              return (
+                                <tr key={task.id} onDragOver={handleTaskDragOver} onDrop={() => handleTaskDrop(task.id)} className={`transition-all ${task.selected ? 'starter-sow-row-selected bg-white' : 'starter-sow-row-muted bg-slate-50/80 opacity-60'} ${isDragging ? 'opacity-70 ring-1 ring-indigo-300' : ''}`}>
+                                  <td className="py-2 px-1 text-center align-middle">
+                                    <span draggable onDragStart={() => handleTaskDragStart(task.id)} onDragEnd={() => setDragTaskId(null)} className="cursor-grab text-slate-400"><IconGripVertical /></span>
+                                  </td>
+                                  <td className="py-2 px-1 text-center align-middle">
+                                    <button type="button" onClick={() => toggleTask(task.id)} className="p-1 text-slate-400 hover:text-indigo-600" aria-pressed={task.selected}>{task.selected ? <IconCheckSquare /> : <IconSquare />}</button>
+                                    {(task.id.startsWith('custom-') || task.id.startsWith('line-')) && (
+                                      <button type="button" onClick={() => removeTask(task.id)} className="p-1 text-rose-500" aria-label="Remove line"><IconTrash className="w-3.5 h-3.5" /></button>
+                                    )}
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <select value={modKey} onChange={(e) => updateTaskModuleKey(task.id, e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md py-1 px-1 text-[11px]">
+                                      {['mod1', 'mod2', 'mod3', 'mod4'].map((key) => (
+                                        <option key={key} value={key}>{moduleBundleNames[key] || modTitle(Number(key.replace('mod', '')))}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <input type="text" value={task.deliverable} onChange={(e) => updateTaskDeliverable(task.id, e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md px-2 py-1 text-xs font-medium" />
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <input type="number" min="0" step="any" value={task.lineQty ?? 1} onChange={(e) => updateTaskLineField(task.id, 'lineQty', e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md px-1 py-1 text-xs text-center font-mono" />
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <input type="number" min="0" step="any" value={task.lineDuration ?? 1} onChange={(e) => updateTaskLineField(task.id, 'lineDuration', e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md px-1 py-1 text-xs text-center font-mono" />
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <input type="number" min="0" step="any" value={task.lineUnitPrice ?? 0} onChange={(e) => updateTaskLineField(task.id, 'lineUnitPrice', e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md px-1 py-1 text-xs text-right font-mono" />
+                                  </td>
+                                  <td className="py-2 px-1 align-top">
+                                    <select value={task.lineUnit || 'per hour'} onChange={(e) => updateTaskLineField(task.id, 'lineUnit', e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md py-1 px-1 text-[10px]">
+                                      {(H.AGENCY_LINE_UNITS || []).map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                                    </select>
+                                  </td>
+                                  <td className="py-2 px-1 text-right font-mono align-top">{formatCurrency(pricingRow?.basePrice || 0)}</td>
+                                  <td className="py-2 px-1 align-top">
+                                    <input type="number" min="0" step="0.1" value={task.lineMarkUp ?? 0} onChange={(e) => updateTaskLineField(task.id, 'lineMarkUp', e.target.value)} disabled={!task.selected} className="starter-sow-input w-full border border-slate-200 rounded-md px-1 py-1 text-xs text-right font-mono" />
+                                  </td>
+                                  <td className="py-2 px-1 text-right font-mono align-top">{formatCurrency(pricingRow?.grossProfit || 0)}</td>
+                                  <td className="py-2 px-1 text-right font-mono align-top">{pricingRow ? `${pricingRow.gpMargin.toFixed(1)}%` : '0.0%'}</td>
+                                  <td className="py-2 px-1 text-right font-mono font-semibold text-indigo-700 align-top">{formatCurrency(pricingRow?.estimateCost || 0)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        ) : (
                         <table className="w-full text-left border-collapse text-xs table-fixed min-w-[1050px] font-sans">
                           <thead>
                             <tr className={STARTER_UI ? "starter-sow-table-head bg-slate-100 text-xs font-semibold text-slate-600 border-b border-slate-200" : "bg-brandNavy-950/80 text-[10px] uppercase font-mono tracking-wider text-slate-400 border-b border-brandNavy-700 font-sans font-bold"}>
@@ -4564,10 +4839,55 @@
                             })}
                           </tbody>
                         </table>
+                        )}
                       </div>
                     </div>
 
-                    {/* Custom Task Generator Form */}
+                    {STARTER_UI ? (
+                    <div className="starter-sow-panel bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-left font-sans">
+                      <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2"><IconPlus /> Add line item</h3>
+                      <form onSubmit={addNewTask} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div className="col-span-12 md:col-span-2">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Module</label>
+                          <select value={newLineModuleKey} onChange={(e) => setNewLineModuleKey(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs">
+                            {['mod1', 'mod2', 'mod3', 'mod4'].map((key) => (
+                              <option key={key} value={key}>{moduleBundleNames[key]}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-12 md:col-span-2">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Particular</label>
+                          <input type="text" value={newTaskDeliv} onChange={(e) => setNewTaskDeliv(e.target.value)} placeholder="e.g. Deluxe Bay" className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs" required />
+                        </div>
+                        <div className="col-span-6 md:col-span-1">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Qty</label>
+                          <input type="number" min="0" value={newLineQty} onChange={(e) => setNewLineQty(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs font-mono" />
+                        </div>
+                        <div className="col-span-6 md:col-span-1">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Duration</label>
+                          <input type="number" min="0" value={newLineDuration} onChange={(e) => setNewLineDuration(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs font-mono" />
+                        </div>
+                        <div className="col-span-6 md:col-span-2">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Unit price</label>
+                          <input type="number" min="0" value={newLineUnitPrice} onChange={(e) => setNewLineUnitPrice(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs font-mono" required />
+                        </div>
+                        <div className="col-span-6 md:col-span-2">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Unit</label>
+                          <select value={newLineUnit} onChange={(e) => setNewLineUnit(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs">
+                            {(H.AGENCY_LINE_UNITS || []).map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                          </select>
+                        </div>
+                        <div className="col-span-6 md:col-span-1">
+                          <label className="starter-sow-field-label text-[10px] uppercase text-slate-500 block mb-1">Mark up %</label>
+                          <input type="number" min="0" step="0.1" value={newLineMarkUp} onChange={(e) => setNewLineMarkUp(e.target.value)} className="starter-sow-input w-full border border-slate-200 rounded-md p-2 text-xs font-mono" />
+                        </div>
+                        <div className="col-span-6 md:col-span-2">
+                          <button type="submit" className="starter-sow-btn-primary w-full py-2 rounded-lg text-xs font-semibold">Add to scope</button>
+                        </div>
+                      </form>
+                    </div>
+                    ) : (
+                    /* Custom Task Generator Form */
                     <div className="bg-brandNavy-900 border border-brandNavy-700 rounded-xl p-5 shadow-2xl text-left font-sans font-semibold">
                       <h3 className="text-xs font-bold font-mono uppercase text-brandTeal-400 mb-4 flex items-center gap-2 text-left font-sans font-semibold"><IconPlus /> Add Bespoke SOW Task</h3>
                       <form onSubmit={addNewTask} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end text-left font-sans">
@@ -4614,6 +4934,7 @@
                         </div>
                       </form>
                     </div>
+                    )}
                   </section>
                 </div>
               </div>
