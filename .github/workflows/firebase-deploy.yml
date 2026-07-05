@@ -145,6 +145,15 @@ jobs:
             --gen2 \
             --quiet
 
+      - name: Remove orphaned onAgencyOpsProvisionRequest (HTTPS → Firestore trigger)
+        continue-on-error: true
+        run: |
+          gcloud functions delete onAgencyOpsProvisionRequest \
+            --region=asia-southeast1 \
+            --project=kolthoff-portal \
+            --gen2 \
+            --quiet
+
       - name: Deploy hosting and security rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
@@ -171,14 +180,14 @@ jobs:
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal
-          for FN in verifyAdminPasscode generatePortalToken provisionGoogleStaff; do
+          for FN in verifyAdminPasscode generatePortalToken provisionGoogleStaff prepareAgencyOpsTenant; do
             gcloud functions add-iam-policy-binding "$FN" \
               --gen2 --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
               --role="roles/cloudfunctions.invoker" \
               --quiet || true
           done
-          for SVC in verifyadminpasscode generateportaltoken generateportaltokenhttp requestworkspacepasswordreset provisiongooglestaff; do
+          for SVC in verifyadminpasscode generateportaltoken generateportaltokenhttp requestworkspacepasswordreset provisiongooglestaff prepareagencyopstenant; do
             gcloud run services add-iam-policy-binding "$SVC" \
               --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
