@@ -60,19 +60,21 @@ for (const app of ['workspace', 'admin']) {
       if (fs.existsSync(outDir)) {
         copyDir(outDir, path.join(dist, app));
       }
-      // Agency Ops Starter white-label admin shell
-      execSync('npm run build:agency-ops', { cwd: appDir, stdio: 'inherit' });
-      const agencyOut = path.join(appDir, 'dist-agency-ops');
-      if (fs.existsSync(agencyOut)) {
-        copyDir(agencyOut, path.join(dist, 'agency-ops'));
-        const agencyHtml = path.join(dist, 'agency-ops', 'agency-ops.html');
-        const agencyIndex = path.join(dist, 'agency-ops', 'index.html');
-        if (fs.existsSync(agencyHtml)) {
-          fs.copyFileSync(agencyHtml, agencyIndex);
+      if (app === 'admin') {
+        execSync('npm run build:agency-ops', { cwd: appDir, stdio: 'inherit' });
+        const agencyOut = path.join(appDir, 'dist-agency-ops');
+        if (fs.existsSync(agencyOut)) {
+          copyDir(agencyOut, path.join(dist, 'agency-ops'));
+          const agencyHtml = path.join(dist, 'agency-ops', 'agency-ops.html');
+          const agencyIndex = path.join(dist, 'agency-ops', 'index.html');
+          if (fs.existsSync(agencyHtml)) {
+            fs.copyFileSync(agencyHtml, agencyIndex);
+          }
         }
       }
     } catch (e) {
-      console.warn(`Warning: ${app} build skipped (${e.message})`);
+      console.error(`Error: ${app} build failed (${e.message})`);
+      if (app === 'workspace' || app === 'admin') process.exit(1);
     }
   }
 }
