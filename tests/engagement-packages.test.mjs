@@ -32,7 +32,7 @@ const catalog = [
   { id: 'm4-01', category: 'MOD 4 - Care Plan', selected: false, estHours: 4, tier: 'partner', isMonthlyRetainer: true },
 ];
 
-assert.equal(EP.getMarketingPackages().length, 4);
+assert.equal(EP.getMarketingPackages().length, 5);
 assert.equal(EP.suggestPackageFromText('MOD 1+2 fix the flow'), 'fix-the-flow');
 
 const leakScan = H.applyPackageToTasks('leak-scan', catalog, catalog);

@@ -697,7 +697,8 @@
                 }
 
                 const customIdInput = formData.get("customId");
-                const finalId = customIdInput ? customIdInput.trim().toUpperCase().replace(/\s+/g, '-') : `KC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+                const dealIdPrefix = STARTER_UI ? 'Q' : 'KC';
+                const finalId = customIdInput ? customIdInput.trim().toUpperCase().replace(/\s+/g, '-') : `${dealIdPrefix}-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
                 const isCurrentlySynced = findSyncedProfile(finalId);
                 const finalEstValue = isCurrentlySynced ? getProfileDealValue(isCurrentlySynced) : parseFloat(formData.get("estValue") || 0);
@@ -708,7 +709,8 @@
                     email: formData.get("email") || "", mobile: formData.get("mobile") || "", contactInfo: formData.get("contactInfo"),
                     leadSource: formData.get("leadSource"), pipelineStatus: inputPipelineStatus, estValue: finalEstValue,
                     nextAction: formData.get("nextAction"), followUpDate: formData.get("followUpDate"), notes: formData.get("notes"),
-                    status: inputStatus
+                    status: inputStatus,
+                    dealCategory: STARTER_UI ? 'consulting' : (formData.get("dealCategory") || 'consulting'),
                 };
 
                 if (data.status === "Won" && (!editingItem || editingItem.status !== "Won")) {
@@ -1554,12 +1556,23 @@
                                             id="deal-customId" 
                                             type="text" 
                                             name="customId" 
-                                            defaultValue={editingItem?.id || `KC-${new Date().getFullYear()}-`} 
+                                            defaultValue={editingItem?.id || `${STARTER_UI ? 'Q' : 'KC'}-${new Date().getFullYear()}-`} 
                                             className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-brandTeal-300 font-mono focus:outline-none focus:border-brandTeal-500 uppercase" 
-                                            placeholder="e.g. KC-2026-CLIENT" 
+                                            placeholder={STARTER_UI ? 'e.g. Q-2026-CLIENT' : 'e.g. KC-2026-CLIENT'} 
                                         />
                                         <p className="text-[8.5px] text-slate-400 mt-1.5 font-mono leading-tight">Match this with your Planner <span className="text-brandTeal-400 font-bold">Quote ID</span> to sync identities.</p>
                                     </div>
+
+                                    {!STARTER_UI && (
+                                    <div>
+                                        <label htmlFor="deal-dealCategory" className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-mono">Deal Category</label>
+                                        <select id="deal-dealCategory" name="dealCategory" defaultValue={editingItem?.dealCategory || 'consulting'} className="w-full bg-[#020613] border border-brandNavy-700/60 rounded-lg p-2 text-xs text-white focus:outline-none">
+                                            <option value="consulting">MOD · Consulting Services</option>
+                                            <option value="product">PRO · Product Subscription</option>
+                                        </select>
+                                        <p className="text-[8.5px] text-slate-500 mt-1 font-mono leading-tight">Product deals pre-select PRO 1 Agency Ops when creating a Planner workspace.</p>
+                                    </div>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
