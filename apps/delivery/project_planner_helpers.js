@@ -349,7 +349,9 @@
       customSplit2,
       customSplit3,
       getModNet,
-      formatCurrency
+      formatCurrency,
+      starterLineItems,
+      moduleBundleNames,
     });
 
     const moduleInvestmentSummaries = computeModuleInvestmentSummaries({
@@ -403,25 +405,43 @@
 
     if (milestoneSplit === 'auto') {
       const arr = [];
+      const modLabel = (modNum) => {
+        if (ctx.starterLineItems && ctx.moduleBundleNames?.[`mod${modNum}`]) {
+          return ctx.moduleBundleNames[`mod${modNum}`];
+        }
+        return getModDisplayName(modNum);
+      };
       if (m1Net > 0) {
         arr.push({
-          label: 'Gate 1: Module 1 Commitment — Business Leak Scan',
+          label: ctx.starterLineItems
+            ? `Gate 1: ${modLabel(1)} — Project kickoff`
+            : 'Gate 1: Module 1 Commitment — Business Leak Scan',
           amount: Math.round(m1Net * taxMultiplier),
-          desc: 'Authorized immediately at initial signup. Deliverable yields a waste-to-peso report and prioritized fix list from your leak scan.'
+          desc: ctx.starterLineItems
+            ? 'Authorized at signing. Covers discovery and initial deliverables in this module.'
+            : 'Authorized immediately at initial signup. Deliverable yields a waste-to-peso report and prioritized fix list from your leak scan.'
         });
       }
       if (m2Net > 0) {
         arr.push({
-          label: 'Gate 2: Module 2 Commitment — How Your Business Runs',
+          label: ctx.starterLineItems
+            ? `Gate 2: ${modLabel(2)} — Mid-project approval`
+            : 'Gate 2: Module 2 Commitment — How Your Business Runs',
           amount: Math.round(m2Net * taxMultiplier),
-          desc: 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.'
+          desc: ctx.starterLineItems
+            ? 'Billed upon client approval to proceed after the prior gate is accepted.'
+            : 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.'
         });
       }
       if (m3Net > 0) {
         arr.push({
-          label: 'Gate 3: Module 3 Commitment — Your Team Workspace',
+          label: ctx.starterLineItems
+            ? `Gate 3: ${modLabel(3)} — Final delivery`
+            : 'Gate 3: Module 3 Commitment — Your Team Workspace',
           amount: Math.round(m3Net * taxMultiplier),
-          desc: 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.'
+          desc: ctx.starterLineItems
+            ? 'Billed upon completion of build and handover for this module.'
+            : 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.'
         });
       }
       return arr;

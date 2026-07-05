@@ -218,9 +218,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, [product.id]);
 
   return (
-    <div className={`h-screen flex overflow-hidden ${light ? 'ops-shell bg-brandNavy-955' : 'bg-brandNavy-955'}`}>
-      <aside className={`admin-sidebar w-[clamp(14rem,17vw,18rem)] flex flex-col shrink-0 overflow-hidden min-h-0 pl-0 pr-2 py-3 ${light ? 'ops-sidebar bg-brandNavy-900 border-r border-brandNavy-800' : 'bg-brandNavy-900 border-r border-brandNavy-800'}`}>
-        <div className={`px-3 pb-3 shrink-0 ${light ? 'ops-sidebar-header border-b border-brandNavy-800' : 'px-2 pb-2 border-b border-brandNavy-800'}`}>
+    <div className={`h-screen flex overflow-hidden ops-shell ${light ? 'bg-brandNavy-955' : 'bg-brandNavy-955'}`}>
+      <aside className={`admin-sidebar w-[clamp(14rem,17vw,18rem)] flex flex-col shrink-0 overflow-hidden min-h-0 pl-0 pr-2 py-3 ops-sidebar ${light ? 'bg-brandNavy-900 border-r border-brandNavy-800' : 'bg-brandNavy-900 border-r border-brandNavy-800'}`}>
+        <div className={`px-3 pb-3 shrink-0 ops-sidebar-header ${light ? 'border-b border-brandNavy-800' : 'px-2 pb-2 border-b border-brandNavy-800'}`}>
           <BrandHeader compact />
         </div>
         <SidebarNav />
@@ -236,7 +236,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <main
-        className={`ops-main flex-1 min-w-0 min-h-0 ${isEmbed ? `overflow-hidden ${light ? 'bg-white' : 'bg-brandNavy-950'}` : 'p-5 sm:p-8 overflow-auto'}`}
+        className={`ops-main flex-1 min-w-0 min-h-0 ${isEmbed ? `overflow-hidden ops-embed-frame ${light ? 'bg-[#e3e6eb]' : 'bg-[#1a1d21]'}` : 'p-5 sm:p-8 overflow-auto ops-main-inner'}`}
       >
         {children}
       </main>

@@ -1,11 +1,13 @@
 /**
- * Agency Ops Starter light theme bootstrap for embedded HTML apps.
+ * Agency Ops Starter appearance bootstrap for embedded HTML apps (light + dark).
  */
-(function applyStarterLightTheme() {
+(function applyStarterAppearanceTheme() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   const GREY_CANVAS = '#e3e6eb';
+  const DARK_CANVAS = '#1a1d21';
   const APPEARANCE_STORAGE_KEY = 'agency-ops-demo-appearance';
+  const CACHE_VERSION = '20250705-ui-v19';
 
   function isStarterContext() {
     const params = new URLSearchParams(window.location.search);
@@ -29,24 +31,32 @@
   }
 
   if (!isStarterContext()) return;
-  if (resolveAppearance() === 'dark') return;
 
+  const appearance = resolveAppearance();
+  const isLight = appearance === 'light';
   const root = document.documentElement;
-  root.classList.remove('dark');
-  root.classList.add('agency-starter-light');
+
+  root.classList.remove('agency-starter-light', 'agency-starter-dark', 'dark');
+  root.classList.add(isLight ? 'agency-starter-light' : 'agency-starter-dark');
+
+  const canvas = isLight ? GREY_CANVAS : DARK_CANVAS;
 
   if (!document.getElementById('agency-starter-critical')) {
     const critical = document.createElement('style');
     critical.id = 'agency-starter-critical';
     critical.textContent = `
       html.agency-starter-light,
-      html.agency-starter-light body {
-        background: ${GREY_CANVAS} !important;
+      html.agency-starter-light body,
+      html.agency-starter-dark,
+      html.agency-starter-dark body {
+        background: ${canvas} !important;
         background-image: none !important;
       }
       html.agency-starter-light.luxury-gradient,
-      html.agency-starter-light .luxury-gradient {
-        background: ${GREY_CANVAS} !important;
+      html.agency-starter-light .luxury-gradient,
+      html.agency-starter-dark.luxury-gradient,
+      html.agency-starter-dark .luxury-gradient {
+        background: ${canvas} !important;
         background-image: none !important;
       }
     `;
@@ -55,7 +65,7 @@
 
   function applyBodyBackground() {
     if (!document.body) return;
-    document.body.style.backgroundColor = GREY_CANVAS;
+    document.body.style.backgroundColor = canvas;
     document.body.style.backgroundImage = 'none';
   }
 
@@ -72,16 +82,21 @@
     document.head.appendChild(link);
   }
 
-  if (document.getElementById('agency-starter-light-styles')) return;
+  const styleId = isLight ? 'agency-starter-light-styles' : 'agency-starter-dark-styles';
+  const otherId = isLight ? 'agency-starter-dark-styles' : 'agency-starter-light-styles';
+  document.getElementById(otherId)?.remove();
+
+  if (document.getElementById(styleId)) return;
 
   const script = document.currentScript;
+  const cssFile = isLight ? 'starter-light-theme.css' : 'starter-dark-theme.css';
   const cssHref = script?.src
-    ? script.src.replace(/starter-light-theme\.js(\?.*)?$/, 'starter-light-theme.css$1')
-    : '../../shared/starter-light-theme.css';
+    ? script.src.replace(/starter-light-theme\.js(\?.*)?$/, `${cssFile}$1`)
+    : `../../shared/${cssFile}`;
 
   const styleLink = document.createElement('link');
-  styleLink.id = 'agency-starter-light-styles';
+  styleLink.id = styleId;
   styleLink.rel = 'stylesheet';
-  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250705-ui-v18`;
+  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=${CACHE_VERSION}`;
   document.head.appendChild(styleLink);
 })();

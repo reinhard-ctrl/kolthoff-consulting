@@ -1,0 +1,579 @@
+/**
+ * Neutral dark theme — Agency Ops Starter only (demo appearance toggle).
+ */
+html.agency-ops-dark {
+  color-scheme: dark;
+  --brand-primary: #a8b0bb;
+  --brand-primary-hover: #c4c9d0;
+  --brand-primary-soft: rgba(168, 176, 187, 0.12);
+  --brand-primary-ring: rgba(168, 176, 187, 0.22);
+  --surface-canvas: #1a1d21;
+  --surface-sidebar: #22262c;
+  --surface: #252930;
+  --surface-elevated: #2a2f36;
+  --surface-muted: #2e333b;
+  --surface-subtle: #353b44;
+  --surface-inset: #3d4450;
+  --border: #3d4450;
+  --border-strong: #4a5260;
+  --text: #f1f3f5;
+  --text-secondary: #c4c9d0;
+  --text-muted: #9aa3ad;
+  --text-faint: #7a838e;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.38), 0 2px 8px rgba(0, 0, 0, 0.22);
+  --radius: 0.75rem;
+}
+
+html.agency-ops-dark body {
+  font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif !important;
+  background-color: var(--surface-canvas) !important;
+  color: var(--text) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shell layout ── */
+html.agency-ops-dark .ops-shell {
+  background: var(--surface-canvas) !important;
+}
+
+html.agency-ops-dark .ops-sidebar {
+  background: var(--surface-sidebar) !important;
+  border-right: 1px solid var(--border) !important;
+  box-shadow: 1px 0 0 rgba(26, 29, 33, 0.04);
+}
+
+html.agency-ops-dark .ops-sidebar-header {
+  border-bottom: 1px solid var(--border) !important;
+  padding-bottom: 0.875rem;
+}
+
+html.agency-ops-dark .ops-sidebar-footer {
+  border-top: 1px solid var(--border) !important;
+  color: var(--text-faint) !important;
+  font-size: 0.6875rem;
+  letter-spacing: 0.01em;
+  font-family: inherit;
+}
+
+html.agency-ops-dark .demo-appearance-toggle {
+  border-color: var(--border) !important;
+  background: var(--surface-raised) !important;
+}
+
+html.agency-ops-dark .demo-appearance-toggle button[aria-pressed='true'] {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+}
+
+html.agency-ops-dark .demo-appearance-toggle button[aria-pressed='false'] {
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-dark .demo-appearance-toggle button[aria-pressed='false']:hover {
+  color: var(--text-secondary) !important;
+}
+
+html.agency-ops-dark .ops-main {
+  background: var(--surface-canvas);
+}
+
+html.agency-ops-dark .ops-main-inner {
+  max-width: 72rem;
+}
+
+/* ── Login ── */
+html.agency-ops-dark .ops-login {
+  background: linear-gradient(165deg, #eceef2 0%, #e3e6eb 48%, #dde1e8 100%) !important;
+}
+
+html.agency-ops-dark .ops-login-card {
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 1rem !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+html.agency-ops-dark .ops-login-card input {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+html.agency-ops-dark .ops-login-card input:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px var(--brand-primary-ring) !important;
+  outline: none;
+}
+
+html.agency-ops-dark .ops-login-card button.brand-primary-bg {
+  border-radius: 0.5rem !important;
+  font-weight: 600 !important;
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+  transition: background-color 0.15s;
+}
+
+html.agency-ops-dark .ops-login-card button.brand-primary-bg:hover:not(:disabled) {
+  background-color: var(--brand-primary-hover) !important;
+}
+
+/* ── Page structure ── */
+html.agency-ops-dark .ops-page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+html.agency-ops-dark .ops-page-header p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+html.agency-ops-dark .ops-callout {
+  background: var(--brand-primary-soft) !important;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent) !important;
+  border-radius: var(--radius) !important;
+  color: var(--text-secondary) !important;
+}
+
+html.agency-ops-dark .ops-callout a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+html.agency-ops-dark .ops-callout a:hover {
+  text-decoration: underline;
+}
+
+/* ── Cards ── */
+html.agency-ops-dark .ops-card,
+html.agency-ops-dark .glass-panel {
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+html.agency-ops-dark a.ops-card:hover,
+html.agency-ops-dark a.glass-panel:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 28%, var(--border)) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+html.agency-ops-dark .ops-stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+html.agency-ops-dark .ops-stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--brand-primary);
+  border-radius: 3px 0 0 3px;
+}
+
+html.agency-ops-dark .ops-stat-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+html.agency-ops-dark .ops-stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+html.agency-ops-dark .ops-stat-hint {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+html.agency-ops-dark .ops-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+html.agency-ops-dark .ops-step-card .ops-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+html.agency-ops-dark .ops-step-card h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+/* ── Forms ── */
+html.agency-ops-dark .ops-form-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+html.agency-ops-dark .ops-input,
+html.agency-ops-dark input.ops-input,
+html.agency-ops-dark select,
+html.agency-ops-dark textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+  color: var(--text) !important;
+  font-size: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+html.agency-ops-dark .ops-input:focus,
+html.agency-ops-dark input:focus,
+html.agency-ops-dark select:focus,
+html.agency-ops-dark textarea:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px var(--brand-primary-ring) !important;
+  outline: none;
+}
+
+html.agency-ops-dark .ops-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff !important;
+  background: var(--brand-primary) !important;
+  border: none;
+  transition: background-color 0.15s;
+}
+
+html.agency-ops-dark .ops-btn-primary:hover:not(:disabled) {
+  background: var(--brand-primary-hover) !important;
+}
+
+html.agency-ops-dark .ops-btn-secondary {
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary) !important;
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+html.agency-ops-dark .ops-btn-secondary:hover {
+  background: var(--surface-muted) !important;
+  border-color: var(--border-strong) !important;
+}
+
+html.agency-ops-dark .ops-message {
+  font-size: 0.875rem;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+}
+
+html.agency-ops-dark .ops-message-success {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+/* ── Brand header (light) ── */
+html.agency-ops-dark .ops-brand-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+html.agency-ops-dark .ops-brand-tagline {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-top: 0.125rem;
+}
+
+html.agency-ops-dark .ops-brand-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-subtle);
+  border-radius: 0.25rem;
+}
+
+/* ── Sidebar navigation ── */
+html.agency-ops-dark .sidebar-group-card {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+html.agency-ops-dark .sidebar-nav-group-label {
+  color: var(--text-faint) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  font-family: inherit !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item {
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  font-size: 0.8125rem !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item:not([class*='bg-brandTeal']) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--text-secondary) !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item:not([class*='bg-brandTeal']):hover {
+  background: var(--surface-subtle) !important;
+  color: var(--text) !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item[class*='bg-brandTeal-500/15'],
+html.agency-ops-dark .sidebar-nav-item[class*='bg-brandTeal-500/20'] {
+  background: var(--brand-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent) !important;
+  color: var(--brand-primary) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+html.agency-ops-dark .sidebar-nav-icon-wrap {
+  border-radius: 0.375rem !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item[class*='bg-brandTeal'] .sidebar-nav-icon-wrap {
+  background: color-mix(in srgb, var(--brand-primary) 12%, transparent) !important;
+  border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent) !important;
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item:not([class*='bg-brandTeal']) .sidebar-nav-icon-wrap {
+  background: var(--surface-muted) !important;
+  border-color: var(--border) !important;
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-dark .ops-embed-frame {
+  background: var(--surface-canvas) !important;
+}
+
+html.agency-ops-dark .brand-preview-panel {
+  background: var(--surface-muted) !important;
+  border-color: var(--border) !important;
+}
+
+/* ── Legacy Tailwind remaps ── */
+html.agency-ops-dark .bg-brandNavy-955,
+html.agency-ops-dark .bg-brandNavy-950 {
+  background-color: var(--surface-canvas) !important;
+}
+
+html.agency-ops-dark .bg-brandNavy-900,
+html.agency-ops-dark .bg-brandNavy-900\/50,
+html.agency-ops-dark .bg-brandNavy-900\/60,
+html.agency-ops-dark .bg-brandNavy-900\/80,
+html.agency-ops-dark .bg-brandNavy-900\/40 {
+  background-color: var(--surface-elevated) !important;
+}
+
+html.agency-ops-dark .bg-brandNavy-800,
+html.agency-ops-dark .bg-brandNavy-800\/40,
+html.agency-ops-dark .bg-brandNavy-800\/50 {
+  background-color: var(--surface-muted) !important;
+}
+
+html.agency-ops-dark .border-brandNavy-700,
+html.agency-ops-dark .border-brandNavy-700\/40,
+html.agency-ops-dark .border-brandNavy-700\/50,
+html.agency-ops-dark .border-brandNavy-700\/60,
+html.agency-ops-dark .border-brandNavy-800,
+html.agency-ops-dark .border-brandNavy-800\/80 {
+  border-color: var(--border) !important;
+}
+
+html.agency-ops-dark .text-white {
+  color: var(--text) !important;
+}
+
+html.agency-ops-dark .text-slate-200,
+html.agency-ops-dark .text-slate-300 {
+  color: var(--text-secondary) !important;
+}
+
+html.agency-ops-dark .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-dark .text-slate-500,
+html.agency-ops-dark .text-slate-600 {
+  color: var(--text-faint) !important;
+}
+
+html.agency-ops-dark .brand-primary-text {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .bg-brandTeal-500,
+html.agency-ops-dark .brand-primary-bg {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+html.agency-ops-dark .text-brandTeal-400,
+html.agency-ops-dark .text-brandTeal-300,
+html.agency-ops-dark .text-brandTeal-200,
+html.agency-ops-dark a.text-brandTeal-400 {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .hover\:border-brandTeal-500\/50:hover,
+html.agency-ops-dark .hover\:border-brandTeal-500\/40:hover,
+html.agency-ops-dark .hover\:border-brandTeal-500\/30:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent) !important;
+}
+
+html.agency-ops-dark .hover\:text-brandTeal-400:hover,
+html.agency-ops-dark .group-hover\:text-brandTeal-400:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .group-hover\:border-brandTeal-500\/20:hover {
+  border-color: color-mix(in srgb, var(--brand-primary) 22%, transparent) !important;
+}
+
+html.agency-ops-dark .border-brandTeal-500\/50,
+html.agency-ops-dark .border-brandTeal-500\/40,
+html.agency-ops-dark .border-brandTeal-500\/30 {
+  border-color: color-mix(in srgb, var(--brand-primary) 25%, transparent) !important;
+}
+
+html.agency-ops-dark .bg-brandTeal-500\/15,
+html.agency-ops-dark .bg-brandTeal-500\/20,
+html.agency-ops-dark .bg-brandTeal-500\/10 {
+  background-color: var(--brand-primary-soft) !important;
+}
+
+html.agency-ops-dark .divide-brandNavy-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+html.agency-ops-dark thead.bg-brandNavy-950 {
+  background-color: var(--surface-subtle) !important;
+}
+
+html.agency-ops-dark tbody tr:hover {
+  background-color: var(--surface-subtle);
+}
+
+html.agency-ops-dark button.brand-primary-bg,
+html.agency-ops-dark .brand-primary-bg.text-white {
+  color: #ffffff !important;
+}
+
+html.agency-ops-dark .text-brandNavy-955 {
+  color: #ffffff !important;
+}
+
+html.agency-ops-dark input::placeholder,
+html.agency-ops-dark textarea::placeholder {
+  color: var(--text-faint);
+}
+
+html.agency-ops-dark .ring-offset-brandNavy-950 {
+  --tw-ring-offset-color: var(--surface-elevated) !important;
+}
+
+/* ── Remap legacy Kolthoff teal → tenant brand accent ── */
+html.agency-ops-dark ::selection {
+  background: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  color: var(--text);
+}
+
+html.agency-ops-dark .bg-brandTeal-600,
+html.agency-ops-dark .hover\:bg-brandTeal-600:hover,
+html.agency-ops-dark .hover\:bg-brandTeal-500:hover {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+}
+
+html.agency-ops-dark .text-brandTeal-500,
+html.agency-ops-dark .text-brandTeal-600,
+html.agency-ops-dark .text-brandTeal-700,
+html.agency-ops-dark .hover\:text-brandTeal-300:hover {
+  color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .bg-brandTeal-500\/20,
+html.agency-ops-dark .border-brandTeal-500\/20,
+html.agency-ops-dark .border-brandTeal-500\/40,
+html.agency-ops-dark .border-brandTeal-500\/60 {
+  border-color: color-mix(in srgb, var(--brand-primary) 28%, var(--border)) !important;
+}
+
+html.agency-ops-dark .sidebar-nav-item[class*='bg-brandTeal-500/15'],
+html.agency-ops-dark .sidebar-nav-item[class*='bg-brandTeal-500/20'] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-primary) 12%, transparent) !important;
+}
+
+html.agency-ops-dark .ring-brandTeal-500,
+html.agency-ops-dark .ring-brandTeal-500\/50,
+html.agency-ops-dark .focus-visible\:ring-brandTeal-500\/50:focus-visible,
+html.agency-ops-dark .focus\:border-brandTeal-500:focus,
+html.agency-ops-dark .focus\:border-brandTeal-500\/50:focus {
+  --tw-ring-color: var(--brand-primary-ring) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+html.agency-ops-dark .border-brandTeal-500\/40.bg-brandTeal-500\/10 {
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, var(--border)) !important;
+  background-color: var(--brand-primary-soft) !important;
+}
