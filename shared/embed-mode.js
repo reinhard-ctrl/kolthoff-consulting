@@ -27,6 +27,10 @@
     html.kolthoff-embed aside[data-app-sidebar] {
       display: none !important;
     }
+    /* Analytics apps: in-app sidebar (kanban nav, sync) must stay visible in admin embed */
+    html.kolthoff-embed aside[data-analytics-sidebar] {
+      display: flex !important;
+    }
     /* Project Planner: never hide tab nav when embed chrome is stripped */
     html.kolthoff-embed .planner-main-header {
       display: block !important;
