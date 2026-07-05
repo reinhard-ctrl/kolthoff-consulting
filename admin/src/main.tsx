@@ -9,6 +9,7 @@ import { initAppCheck } from './lib/firebase';
 import { ProductProvider } from './lib/product-context';
 import { getProductConfig, getProductIdFromEnv, isAgencyOpsStarter, syncAgencyTenantUrl } from './lib/product-config';
 import { applyDemoAppearanceToDocument, getStoredDemoAppearance } from './lib/demo-appearance';
+import { BrandingPreviewProvider } from './lib/branding-preview-context';
 import { DemoAppearanceProvider } from './lib/demo-appearance-context';
 
 initAppCheck();
@@ -29,9 +30,11 @@ if (root) {
     <React.StrictMode>
       <ProductProvider config={product}>
         <DemoAppearanceProvider>
-          <BrowserRouter basename={product.basePath}>
-            <App />
-          </BrowserRouter>
+          <BrandingPreviewProvider>
+            <BrowserRouter basename={product.basePath}>
+              <App />
+            </BrowserRouter>
+          </BrandingPreviewProvider>
         </DemoAppearanceProvider>
       </ProductProvider>
     </React.StrictMode>

@@ -147,6 +147,22 @@ export function presetToConfig(preset: BrandingPreset): TenantBrandingConfig {
   };
 }
 
+/** Sidebar/header branding from the selected or active saved profile. */
+export function resolveActiveProfileId(
+  previewPresetId: string | null | undefined,
+  appliedClientDemoId: string | null | undefined,
+  activePresetId: string | null | undefined,
+): string | null {
+  return previewPresetId ?? appliedClientDemoId ?? activePresetId ?? null;
+}
+
+export function resolveProfileBranding(
+  preset: BrandingPreset | null | undefined,
+  fallback: TenantBrandingConfig,
+): TenantBrandingConfig {
+  return preset ? presetToConfig(preset) : fallback;
+}
+
 export function normalizeBrandingPreset(raw: unknown, mapKey?: string): BrandingPreset | null {
   if (!raw || typeof raw !== 'object') return null;
   const p = raw as Partial<BrandingPreset>;

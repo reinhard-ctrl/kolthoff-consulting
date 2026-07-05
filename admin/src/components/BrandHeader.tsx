@@ -1,6 +1,12 @@
+import { useMemo } from 'react';
 import { useProduct } from '../lib/product-context';
 import { useTenantBranding } from '../hooks/useTenantBranding';
-import { splitCompanyDisplay } from '../lib/tenant-branding';
+import { useBrandingPreview } from '../lib/branding-preview-context';
+import {
+  resolveActiveProfileId,
+  resolveProfileBranding,
+  splitCompanyDisplay,
+} from '../lib/tenant-branding';
 import { useDemoAppearance } from '../lib/demo-appearance-context';
 import { isAgencyOpsStarter } from '../lib/product-config';
 
@@ -54,10 +60,26 @@ export default function BrandHeader({
   className = '',
 }: BrandHeaderProps) {
   const product = useProduct();
-  const { branding: tenantBranding } = useTenantBranding();
+  const {
+    branding: tenantBranding,
+    presets,
+    activePresetId,
+    appliedClientDemoId,
+  } = useTenantBranding();
+  const { previewPresetId } = useBrandingPreview();
   const { isLight: light } = useDemoAppearance();
   const logoSize = compact ? 'w-8 h-8' : 'w-10 h-10';
   const useTenantChrome = isAgencyOpsStarter(product.id);
+
+  const profileBranding = useMemo(() => {
+    const profileId = resolveActiveProfileId(
+      previewPresetId,
+      appliedClientDemoId,
+      activePresetId,
+    );
+    const preset = profileId ? presets.find((item) => item.id === profileId) : null;
+    return resolveProfileBranding(preset, tenantBranding);
+  }, [previewPresetId, appliedClientDemoId, activePresetId, presets, tenantBranding]);
 
   if (!useTenantChrome && !light) {
     const { branding } = product;
@@ -89,18 +111,18 @@ export default function BrandHeader({
     );
   }
 
-  const displaySubtitle = subtitle ?? tenantBranding.tagline ?? product.branding.subtitle;
-  const display = splitCompanyDisplay(tenantBranding.companyName);
-  const color = tenantBranding.primaryColor;
+  const displaySubtitle = subtitle ?? profileBranding.tagline ?? product.branding.subtitle;
+  const display = splitCompanyDisplay(profileBranding.companyName);
+  const color = profileBranding.primaryColor;
   const companyDisplay = display.line2
     ? `${display.line1} ${display.line2}`
     : display.line1;
 
   return (
     <div className={`flex items-center gap-3 min-w-0 ${className}`}>
-      {tenantBranding.logoUrl ? (
+      {profileBranding.logoUrl ? (
         <img
-          src={tenantBranding.logoUrl}
+          src={profileBranding.logoUrl}
           alt=""
           className={`${logoSize} shrink-0 object-contain`}
         />
