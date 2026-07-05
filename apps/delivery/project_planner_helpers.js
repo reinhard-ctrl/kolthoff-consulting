@@ -51,6 +51,36 @@
     return getTaskModNum(categoryOrTask) === modNum;
   }
 
+  function isProTask(task) {
+    const cat = task?.category;
+    if (typeof cat === 'string' && cat.startsWith('PRO ')) return true;
+    const preset = presetForTask(task);
+    return typeof preset === 'string' && preset.startsWith('pro');
+  }
+
+  function getProductSkuLabel(productIdOrCategory) {
+    const PC = global.ProductCatalog;
+    if (!PC) return null;
+    if (typeof productIdOrCategory === 'string' && productIdOrCategory.startsWith('PRO ')) {
+      const p = PC.getProductByCategory?.(productIdOrCategory);
+      if (p) return p.skuLabel || `${p.key} · ${p.shortTitle}`;
+    }
+    const p = PC.getProductById?.(productIdOrCategory);
+    if (p) return p.skuLabel || `${p.key} · ${p.shortTitle}`;
+    return null;
+  }
+
+  function getTaskCategoryLabel(task) {
+    if (isProTask(task)) {
+      return getProductSkuLabel(task.category) || String(task.category || '').replace(' - ', ' · ');
+    }
+    const modNum = getTaskModNum(task);
+    if (modNum != null) return `MOD ${modNum} · ${getModDisplayName(modNum)}`;
+    const cat = task?.category;
+    if (typeof cat === 'string') return cat.replace('MOD ', 'M').replace(' - ', ' · ');
+    return '';
+  }
+
   function isAgencyLineItem(task) {
     return task != null && task.lineUnitPrice != null && Number.isFinite(Number(task.lineUnitPrice));
   }
@@ -193,6 +223,36 @@
         baseUndiscounted: auditBase,
         afterDiscount: auditBase,
         isAnnual: true
+      });
+    }
+
+    const proSetupTasks = tasks.filter((t) => t.selected && isProTask(t) && !t.isMonthlyRetainer);
+    const proRetainerTasks = tasks.filter((t) => t.selected && isProTask(t) && t.isMonthlyRetainer);
+    const proLabel = getProductSkuLabel(proSetupTasks[0]?.category || proRetainerTasks[0]?.category)
+      || 'PRO 1 · Agency Ops';
+    if (proSetupTasks.length > 0) {
+      const baseUndiscounted = Math.round(
+        proSetupTasks.reduce((acc, t) => acc + taskBillableBase(t, billCtx), 0)
+      );
+      summaries.push({
+        modNum: presetForTask(proSetupTasks[0]) || 'pro1',
+        label: proLabel,
+        count: proSetupTasks.length,
+        baseUndiscounted,
+        afterDiscount: Math.round(baseUndiscounted * discFactor),
+      });
+    }
+    if (proRetainerTasks.length > 0) {
+      const monthlyBase = Math.round(
+        proRetainerTasks.reduce((acc, t) => acc + taskBillableBase(t, billCtx), 0) * discFactor
+      );
+      summaries.push({
+        modNum: `${presetForTask(proRetainerTasks[0]) || 'pro1'}-sub`,
+        label: `${proLabel} — Subscription`,
+        count: proRetainerTasks.length,
+        baseUndiscounted: monthlyBase,
+        afterDiscount: monthlyBase,
+        isMonthly: true,
       });
     }
 
@@ -999,6 +1059,9 @@
     presetForTask,
     getTaskModNum,
     isModCategory,
+    isProTask,
+    getProductSkuLabel,
+    getTaskCategoryLabel,
     getModDisplayName,
     computeModuleInvestmentSummaries,
     presetForCategory,

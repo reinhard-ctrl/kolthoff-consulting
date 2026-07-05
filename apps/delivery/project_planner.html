@@ -493,7 +493,7 @@
     window.SharedFinancials = Financials;
     window.InvoiceHelpers = InvoiceHelpers;
   </script>
-  <script src="project_planner_helpers.js?v=20250705-line-items-v1"></script>
+  <script src="project_planner_helpers.js?v=20250705-pro-labels-v1"></script>
   <script src="project_planner_addendum.js?v=20250704-brand-pdf-v1"></script>
   <script type="text/babel">
     const { useState, useMemo, useEffect, useRef, useCallback, Component } = React;
@@ -549,6 +549,9 @@
       return String(mod).replace('mod', 'MOD ');
     };
     const formatCategoryDisplay = (category) => {
+      if (typeof category === 'string' && category.startsWith('PRO ')) {
+        return PC?.getProductByCategory?.(category)?.skuLabel || category.replace(' - ', ' · ');
+      }
       if (window.ProductConfig?.formatModCategoryDisplay) {
         return window.ProductConfig.formatModCategoryDisplay(category, isAgencyStarterContext());
       }
@@ -559,7 +562,11 @@
       return (category || '').replace('MOD ', 'M').replace(' - ', ' · ');
     };
     const taskModNum = (task) => {
-      if (H?.getTaskModNum) return H.getTaskModNum(task) || 1;
+      if (H?.isProTask?.(task)) return null;
+      if (H?.getTaskModNum) {
+        const n = H.getTaskModNum(task);
+        if (n != null) return n;
+      }
       const cat = task?.category;
       if (cat && typeof cat === 'string') {
         const m = cat.match(/^MOD (\d)/);
@@ -2733,7 +2740,7 @@
         if (!moduleInvestmentSummaries || moduleInvestmentSummaries.length === 0) return null;
         return (
           <div className="mb-8 print-avoid-break">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">Module Investment Summary</h4>
+            <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-3">{isProEngagement ? 'Product Investment Summary' : 'Module Investment Summary'}</h4>
             <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
               <table className="w-full border-collapse">
                 <thead>
@@ -2780,6 +2787,7 @@
       };
 
       const getModuleCardsHeading = () => {
+        if (isProEngagement) return 'Platform services included in this proposal';
         const selectedMods = [activeDiag, activeSOP, activePMO, activeGov].filter(Boolean).length;
         if (selectedMods === 4) return 'Modules included in this proposal';
         if (selectedMods === 0) return 'Your growth roadmap';
@@ -2788,9 +2796,7 @@
 
       const renderEngagementPackageCallout = () => {
         if (!activePackageMeta) return null;
-        const packageModLabels = (activePackageMeta.modules || []).map((mod) =>
-          modChip(Number(String(mod).replace(/^mod/i, '')))
-        );
+        const packageModLabels = (activePackageMeta.modules || []).map((mod) => packageModuleLabel(mod));
         return (
           <div className="mb-4 border border-brandTeal-200 bg-brandTeal-50/40 rounded-xl p-4 print-pill print-avoid-break text-left font-sans" aria-label="Selected engagement package">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
@@ -2812,7 +2818,9 @@
               </div>
             </div>
             <p className="text-[9px] text-slate-500 leading-relaxed mt-3 pt-3 border-t border-brandTeal-100">
-              The module cards below show what is active in this SOW and the deliverables included under each phase.
+              {isProEngagement
+                ? 'The platform card below shows the PRO services active in this SOW and the deliverables included.'
+                : 'The module cards below show what is active in this SOW and the deliverables included under each phase.'}
             </p>
           </div>
         );
@@ -2851,14 +2859,16 @@
           if (billingMilestones[idx]) return `Stage-Gated Milestone Payment: ${billingMilestones[idx].label} under SOW-${quoteId}`;
         }
         if (invoiceMilestone === 'retainer') {
-          return `MOD 4 ${modTitle(4)} — full ${subscriptionMonths}-month subscription${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total commitment)`;
+          const retainerLabel = isProEngagement ? (proProductMeta?.skuLabel || 'PRO 1 · Agency Ops') : `MOD 4 ${modTitle(4)}`;
+          return `${retainerLabel} — full ${subscriptionMonths}-month subscription${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)} / month (${formatCurrency(retainerCostTotalPart)} total commitment)`;
         }
         if (invoiceMilestone === 'retainer_monthly') {
           const periodLabel = window.InvoiceHelpers?.formatBillingPeriodLabel?.(retainerBillingPeriod) || 'monthly period';
-          return `MOD 4 ${modTitle(4)} — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
+          const retainerLabel = isProEngagement ? (proProductMeta?.skuLabel || 'PRO 1 · Agency Ops') : `MOD 4 ${modTitle(4)}`;
+          return `${retainerLabel} — ${periodLabel}${discountPercent > 0 ? ` (with ${discountPercent}% Partnership Discount applied)` : ''} — ${formatCurrency(retainerCostPart)}${includeTax ? ' inc. VAT' : ''} monthly retainer`;
         }
         return `Custom Service Milestone Billing under SOW-${quoteId}`;
-      }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths]);
+      }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths, isProEngagement, proProductMeta]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
@@ -3222,12 +3232,7 @@
                   {tasks.filter(t => t.selected).map((task) => (
                     <tr key={task.id}>
                       <td className="py-3 px-4 align-top font-bold text-slate-700 text-[10px] uppercase font-sans text-left font-sans font-bold">
-                        {(() => {
-                          const modNum = taskModNum(task);
-                          return STARTER_UI
-                            ? (moduleBundleNames[`mod${modNum}`] || modTitle(modNum))
-                            : `MOD ${modNum} · ${H.getModDisplayName(modNum)}`;
-                        })()}
+                        {H.getTaskCategoryLabel ? H.getTaskCategoryLabel(task) : formatCategoryDisplay(task.category)}
                       </td>
                       <td className="py-3 px-4 align-top text-slate-800 text-left font-sans">
                         <div className="font-bold text-slate-900 font-sans text-xs text-left font-sans font-bold">{task.deliverable}</div>
@@ -3266,13 +3271,15 @@
           )}
 
           {retainerCostBase > 0 && (
-            <article className="p-4 bg-slate-50 rounded-xl border border-slate-200 print-pill mb-4 font-sans text-left font-sans font-semibold" aria-label={`Module 4 ${modTitle(4)} retainer`}>
+            <article className="p-4 bg-slate-50 rounded-xl border border-slate-200 print-pill mb-4 font-sans text-left font-sans font-semibold" aria-label={isProEngagement ? 'PRO platform subscription retainer' : `Module 4 ${modTitle(4)} retainer`}>
               <div className="flex justify-between items-center font-bold text-slate-800 text-sm">
-                <span>MOD 4 {modTitle(4)} ({subscriptionMonths} months)</span>
+                <span>{isProEngagement ? `${proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'} (${subscriptionMonths} months)` : `MOD 4 ${modTitle(4)} (${subscriptionMonths} months)`}</span>
                 <span className="text-brandTeal-600 print-accent font-mono font-bold">{formatCurrency(retainerCostPart)} / Month{includeTax ? " (inc. VAT)" : ""}</span>
               </div>
               <p className="text-[11px] text-slate-500 mt-2 leading-relaxed text-left font-sans">
-                Covers platform hosting, user care, and bi-weekly operations check-in calls. Payments are due at the beginning of each calendar month ({subscriptionMonths} × {formatCurrency(retainerCostPart)} = <strong>{formatCurrency(retainerCostTotalPart)}</strong>{includeTax ? " inc. VAT" : ""} total commitment). Semi-annual system health checks are billed separately when selected.
+                {isProEngagement
+                  ? `Covers platform hosting, product updates, and standard user support. Payments are due at the beginning of each calendar month (${subscriptionMonths} × ${formatCurrency(retainerCostPart)} = ${formatCurrency(retainerCostTotalPart)}${includeTax ? " inc. VAT" : ""} total commitment).`
+                  : `Covers platform hosting, user care, and bi-weekly operations check-in calls. Payments are due at the beginning of each calendar month (${subscriptionMonths} × ${formatCurrency(retainerCostPart)} = ${formatCurrency(retainerCostTotalPart)}${includeTax ? " inc. VAT" : ""} total commitment). Semi-annual system health checks are billed separately when selected.`}
               </p>
             </article>
           )}
@@ -3580,14 +3587,14 @@
                             }
                           }} className="mt-0.5 accent-brandTeal-500 shrink-0" />
                           <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                            <span className="block font-sans">MOD 4 {modTitle(4)} — Monthly Invoice</span>
+                            <span className="block font-sans">{isProEngagement ? `${proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'} — Monthly Invoice` : `MOD 4 ${modTitle(4)} — Monthly Invoice`}</span>
                             <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostPart)} / month{includeTax ? ' inc. VAT' : ''}</span>
                           </span>
                         </label>
                         <label className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${invoiceMilestone === 'retainer' ? 'border-brandTeal-500/50 bg-brandTeal-500/10' : 'border-brandNavy-800 hover:border-brandNavy-700'}`}>
                           <input type="radio" name="invoiceMilestone" value="retainer" checked={invoiceMilestone === 'retainer'} onChange={() => setInvoiceMilestone('retainer')} className="mt-0.5 accent-brandTeal-500 shrink-0" />
                           <span className="flex-1 text-[11px] text-slate-200 font-semibold leading-snug text-left">
-                            <span className="block font-sans">MOD 4 {modTitle(4)} — Full Subscription ({subscriptionMonths} mo)</span>
+                            <span className="block font-sans">{isProEngagement ? `${proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'} — Full Subscription (${subscriptionMonths} mo)` : `MOD 4 ${modTitle(4)} — Full Subscription (${subscriptionMonths} mo)`}</span>
                             <span className="text-brandTeal-300 font-mono text-[10px]">{formatCurrency(retainerCostTotalPart)} upfront</span>
                           </span>
                         </label>
@@ -3949,8 +3956,29 @@
             <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-4 font-bold text-left font-sans">2. {getModuleCardsHeading()}</h4>
             {renderEngagementPackageCallout()}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans print-avoid-break" role="list" aria-label="Project modules">
-              {[
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-left font-sans print-avoid-break" role="list" aria-label={isProEngagement ? 'Platform services' : 'Project modules'}>
+              {isProEngagement ? (
+                <article role="listitem" className="print-module-card border rounded-xl p-4 flex flex-col justify-between min-h-[19rem] text-left font-sans border-brandAmber-500 bg-amber-50/20 font-bold md:col-span-2 lg:col-span-4">
+                  <div className="space-y-3 text-left font-sans">
+                    <div className="flex justify-between items-center text-left font-sans">
+                      <div className="min-w-[3.5rem] px-2 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] bg-amber-100 text-amber-800">
+                        {proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'}
+                      </div>
+                      <span className="text-[8px] font-mono font-bold uppercase text-slate-400 text-left font-sans font-bold">ACTIVE IN SOW</span>
+                    </div>
+                    <h3 className="text-xs font-bold text-slate-900 text-left font-sans">{proProductMeta?.title || 'Agency Ops Platform'}</h3>
+                    <p className="text-[10px] font-semibold text-slate-500 text-left leading-normal font-sans">{proProductMeta?.description || 'White-label quote-to-cash for creative and digital agencies.'}</p>
+                    <ul className="text-[10px] space-y-1.5 pt-1 overflow-y-auto font-medium text-left font-sans font-semibold">
+                      {tasks.filter(t => t.selected && (t.category?.startsWith('PRO ') || t.id?.startsWith('pro1-'))).map(t => (
+                        <li key={t.id} className="flex items-start gap-2 text-left font-sans">
+                          <ShieldIndicator active={t.selected} aria-hidden="true" />
+                          <span className="text-slate-800 font-bold">{getShortDeliverableName(t.deliverable)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+              ) : [
                 { id: 'MOD 1', num: 1, isActive: activeDiag },
                 { id: 'MOD 2', num: 2, isActive: activeSOP },
                 { id: 'MOD 3', num: 3, isActive: activePMO },
@@ -3984,7 +4012,7 @@
               <div className="space-y-4 font-medium text-left font-sans">
                 {tasks.filter(t => t.selected).map(task => (
                   <div key={task.id} className="border border-slate-200 rounded-lg p-5 bg-slate-50/40 text-left font-sans font-semibold print-avoid-break">
-                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{modTitle(taskModNum(task))}</span></div>
+                    <div className="flex justify-between pb-3 border-b mb-3 text-left font-sans font-semibold"><h5 className="font-bold text-sm text-brandTeal-600 text-left font-sans">{task.deliverable}</h5><span className="text-[9px] font-mono uppercase bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold font-sans">{H.getTaskCategoryLabel ? H.getTaskCategoryLabel(task) : formatCategoryDisplay(task.category)}</span></div>
                     <p className="text-xs text-slate-600 mb-4 font-semibold text-left leading-relaxed font-sans">{task.description}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[11px] text-slate-800 leading-relaxed text-left font-semibold font-sans">
                       <div><span className="text-[9px] font-mono uppercase text-slate-400 block font-bold mb-1 text-left font-sans">What we do:</span>{task.scopeDetails?.activities || "Custom action"}</div>
