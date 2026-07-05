@@ -21,6 +21,7 @@ export default function BrandingSettings() {
     clientDemoPresets,
     presets,
     activePresetId,
+    appliedClientDemoId,
     loading,
     saving,
     saveBranding,
@@ -39,10 +40,6 @@ export default function BrandingSettings() {
   const [messageOk, setMessageOk] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const initialized = useRef(false);
-
-  const canApplyToWorkspace = Boolean(
-    editorPresetId && isBundledDemoBrandingPresetId(editorPresetId),
-  );
 
   const active = draft ?? branding;
   const editingPreset = editorPresetId ? presets.find((p) => p.id === editorPresetId) : null;
@@ -84,21 +81,16 @@ export default function BrandingSettings() {
   };
 
   const handleApplyToWorkspace = async () => {
-    if (!canApplyToWorkspace) {
-      setMessageOk(false);
-      setMessage('Client demos stay local. Select a demo profile to update the shared workspace.');
-      return;
-    }
     setMessage('');
-    const ok = await saveBranding(active, editorPresetId);
-    if (!ok) {
-      setMessageOk(false);
-      setMessage('Client demos stay local. Select a demo profile to update the shared workspace.');
-      return;
-    }
+    await saveBranding(active, editorPresetId);
     setDraft(null);
     setMessageOk(true);
-    setMessage(`Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`);
+    const isClientDemo = editorPresetId && !isBundledDemoBrandingPresetId(editorPresetId);
+    setMessage(
+      isClientDemo
+        ? `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs. Profile list stays local only.`
+        : `Active workspace branding updated. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
+    );
   };
 
   const handleSaveProfile = async () => {
@@ -114,7 +106,7 @@ export default function BrandingSettings() {
     setProfileName(name);
     setDraft(null);
     setMessageOk(true);
-    setMessage(`Saved client demo “${name}”. Preview only — shared workspace unchanged.`);
+    setMessage(`Saved client demo “${name}”. Click Apply to update the workspace for your demo.`);
   };
 
   const handleApplyPreset = async (presetId: string) => {
@@ -126,7 +118,7 @@ export default function BrandingSettings() {
     setMessage(
       result === 'workspace'
         ? 'Demo profile applied to the shared workspace.'
-        : 'Client demo loaded for preview. Shared workspace unchanged.',
+        : `Client demo applied to workspace. Refresh ${modules.sales} and ${modules.quotes} tabs.`,
     );
   };
 
@@ -210,7 +202,10 @@ export default function BrandingSettings() {
       <ul className="space-y-2">
         {items.map((preset) => {
           const selected = editorPresetId === preset.id;
-          const live = mode === 'demo' && activePresetId === preset.id;
+          const live =
+            mode === 'demo'
+              ? activePresetId === preset.id
+              : appliedClientDemoId === preset.id;
           return (
             <li key={preset.id}>
               <div
@@ -247,7 +242,7 @@ export default function BrandingSettings() {
                     onClick={() => handleApplyPreset(preset.id)}
                     className="text-xs font-medium brand-primary-text disabled:opacity-40"
                   >
-                    {mode === 'client-demo' ? 'Preview' : 'Apply'}
+                    Apply
                   </button>
                   <button
                     type="button"
@@ -274,7 +269,7 @@ export default function BrandingSettings() {
     <div className="ops-main-inner max-w-5xl">
       <header className="ops-page-header mb-6">
         <h1>Company Branding</h1>
-        <p>Use demo profiles for the shared workspace. Save client demos locally to rehearse a prospect brand without changing what visitors see.</p>
+        <p>Use demo profiles for the default workspace, or apply a client demo to rehearse a prospect brand in CRM and Quotes.</p>
       </header>
 
       <div className="grid lg:grid-cols-[16rem,minmax(0,1fr)] gap-6 items-start">
@@ -312,7 +307,7 @@ export default function BrandingSettings() {
               </button>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              Rehearse a client brand in this browser only. Never saved to the shared tenant or visible to public visitors.
+              Rehearse client brands in this browser. Applying updates CRM and Quotes; the saved profile list stays local only.
             </p>
             {renderPresetList(
               clientDemoPresets,
@@ -344,8 +339,8 @@ export default function BrandingSettings() {
               {editorPresetId
                 ? isBundledDemoBrandingPresetId(editorPresetId)
                   ? 'Shared demo profile — can apply to workspace.'
-                  : 'Client demo only — preview in this browser, not shared.'
-                : 'New client demo — saved locally for rehearsal only.'}
+                  : 'Client demo — apply to workspace for CRM/Quotes; profile list stays local.'
+                : 'New client demo — saved locally, then apply to workspace for your demo.'}
             </p>
           </div>
 
@@ -473,14 +468,9 @@ export default function BrandingSettings() {
             </button>
             <button
               type="button"
-              disabled={saving || !canApplyToWorkspace}
+              disabled={saving}
               onClick={handleApplyToWorkspace}
               className="ops-btn-primary brand-primary-bg disabled:opacity-50"
-              title={
-                canApplyToWorkspace
-                  ? undefined
-                  : 'Client demos stay local. Select a demo profile to update the shared workspace.'
-              }
             >
               {saving ? 'Applying…' : 'Apply to workspace'}
             </button>

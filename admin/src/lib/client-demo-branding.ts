@@ -118,3 +118,25 @@ export function restoreDefaultClientDemoPresets(): BrandingPreset[] {
   saveClientDemoBrandingPresets(next);
   return next;
 }
+
+export const APPLIED_CLIENT_DEMO_STORAGE_KEY = 'agency-ops-applied-client-demo-id';
+
+export function loadAppliedClientDemoId(): string | null {
+  try {
+    return sessionStorage.getItem(APPLIED_CLIENT_DEMO_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveAppliedClientDemoId(presetId: string | null): void {
+  try {
+    if (presetId) {
+      sessionStorage.setItem(APPLIED_CLIENT_DEMO_STORAGE_KEY, presetId);
+      return;
+    }
+    sessionStorage.removeItem(APPLIED_CLIENT_DEMO_STORAGE_KEY);
+  } catch {
+    /* ignore storage errors */
+  }
+}
