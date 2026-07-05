@@ -83,6 +83,7 @@
       ...task,
       moduleKey: modKey,
       category: agencyModCategory(modKey, label),
+      deliverable: task.deliverable ?? '',
       lineQty: task.lineQty ?? 1,
       lineDuration: task.lineDuration ?? estHours,
       lineUnitPrice: task.lineUnitPrice ?? 1500,
@@ -519,6 +520,7 @@
       const selected = selectedIds.has(t.id);
       const base = catalog ? { ...catalog } : { ...t };
       base.selected = selected;
+      if (base.deliverable == null && t.deliverable != null) base.deliverable = t.deliverable;
       if (selected && overrides[t.id]) {
         Object.assign(base, overrides[t.id]);
         if (overrides[t.id].scopeDetails) {
