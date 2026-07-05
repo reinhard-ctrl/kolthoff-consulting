@@ -83,9 +83,9 @@ async function finalizeGoogleStaffUser(
   }
   await recordGoogleAdminSession(user);
   const provision = provisionGoogleStaffViaFirestore(user, {
-    timeoutMs: options?.backgroundProvision ? 8000 : undefined,
+    timeoutMs: options?.backgroundProvision ? 8000 : 15000,
   });
-  if (options?.backgroundProvision) {
+  if (options?.backgroundProvision !== false) {
     provision.catch((err) => {
       console.warn('Background staff provisioning failed:', err);
     });
@@ -99,17 +99,43 @@ async function finalizeGoogleStaffUser(
   return user;
 }
 
-/** Popup first; redirect only when popup is blocked */
+async function startGoogleStaffRedirect(): Promise<never> {
+  sessionStorage.setItem(SSO_PENDING_KEY, '1');
+  redirectBootPromise = null;
+  await signInWithRedirect(auth, buildGoogleProvider());
+  throw new Error('REDIRECT_STARTED');
+}
+
+/** Redirect-first — popup breaks when COOP blocks opener ↔ popup communication */
 export async function signInWithGoogleStaff(): Promise<User> {
   await auth.authStateReady();
   if (auth.currentUser?.isAnonymous) {
     await signOut(auth);
   }
 
+  const preferPopup =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('sso') === 'popup';
+
+  if (!preferPopup) {
+    await startGoogleStaffRedirect();
+  }
+
   const provider = buildGoogleProvider();
   try {
     const cred = await signInWithPopup(auth, provider);
-    return finalizeGoogleStaffUser(cred.user);
+    await auth.authStateReady();
+    const signedIn = auth.currentUser;
+    if (
+      !signedIn ||
+      signedIn.isAnonymous ||
+      signedIn.uid !== cred.user.uid ||
+      !isGoogleStaffUser(signedIn)
+    ) {
+      console.warn('Google popup did not persist session — falling back to redirect');
+      await startGoogleStaffRedirect();
+    }
+    return finalizeGoogleStaffUser(signedIn, { backgroundProvision: true });
   } catch (err) {
     if (err instanceof FirebaseError) {
       if (err.code === 'auth/popup-closed-by-user') {
@@ -119,10 +145,7 @@ export async function signInWithGoogleStaff(): Promise<User> {
         err.code === 'auth/popup-blocked' ||
         err.code === 'auth/cancelled-popup-request'
       ) {
-        sessionStorage.setItem(SSO_PENDING_KEY, '1');
-        redirectBootPromise = null;
-        await signInWithRedirect(auth, provider);
-        throw new Error('REDIRECT_STARTED');
+        await startGoogleStaffRedirect();
       }
     }
     throw err;
@@ -159,7 +182,7 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
         const result = await getRedirectResultWithTimeout();
         sessionStorage.removeItem(SSO_PENDING_KEY);
         if (result?.user) {
-          return finalizeGoogleStaffUser(result.user);
+          return finalizeGoogleStaffUser(result.user, { backgroundProvision: true });
         }
       } catch (err) {
         redirectBootPromise = null;
@@ -171,7 +194,7 @@ export function completeGoogleStaffRedirect(): Promise<User | null> {
       sessionStorage.removeItem(SSO_PENDING_KEY);
 
       if (user && isGoogleStaffUser(user)) {
-        return finalizeGoogleStaffUser(user);
+        return finalizeGoogleStaffUser(user, { backgroundProvision: true });
       }
 
       throw new Error(
