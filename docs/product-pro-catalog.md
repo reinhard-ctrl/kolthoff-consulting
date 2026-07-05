@@ -17,8 +17,10 @@ Implementation source: `shared/product-catalog.js`, `shared/engagement-packages.
 2. **Planner** — Apply **Agency Ops Starter** package (`pro1-agency-ops-starter`)
 3. **Documents** — PRO template: SOW + Quote + **Platform SLA** (no consulting roadmap)
 4. **Contract sign** — `contract_sign.html`
-5. **Collections** — Manual invoicing v1 (setup + subscription milestones)
-6. **Phase 2** — `prepareAgencyOpsTenant` Cloud Function provisions tenant; use **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or **Provision Agency Ops** on signed contracts in Contract Ledger
+5. **Auto-provision** — Firestore trigger `onContractLedgerWritten` provisions Agency Ops when status → `signed` (PRO 1 only)
+6. **CRM sync** — Same trigger marks linked CRM deal **Won**
+7. **Collections** — Manual invoicing v1 (setup + subscription milestones)
+8. **Manual retry** — Agency Ops Manager or Contract Ledger if auto-provision fails
 
 ## Agency Ops tenant registry
 
@@ -33,7 +35,8 @@ Workbook profile fields after provisioning:
 | Field | Notes |
 |-------|--------|
 | `agencyOpsTenantId` | e.g. `agency-pixel-wave` |
-| `provisioningStatus` | `ready` |
+| `provisioningStatus` | `ready` \| `provisioning` \| `failed` |
+| `provisioningError` | Set when auto-provision fails |
 | `links.agencyOpsConsoleUrl` | Console URL with `?tenant=` |
 
 Console URL pattern: `https://kolthoff-consulting.com/agency-ops/?tenant=agency-{slug}`

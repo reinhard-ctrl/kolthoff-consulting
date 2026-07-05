@@ -92,3 +92,5 @@ Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` 
 5. Create `admin_credentials/{passcode}` for client login
 
 Future: automate via **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or the **Provision Agency Ops** action on signed PRO contracts in Contract Ledger. Both call the `prepareAgencyOpsTenant` Cloud Function.
+
+**Phase 3 (live):** PRO 1 contracts auto-provision on e-sign via the `onContractLedgerWritten` Firestore trigger. Passcodes are stored on the tenant registry (`initialPasscode`) for staff retrieval. Paid clients use `/agency-ops/?tenant=agency-{slug}` — the tenant ID persists in session storage across reloads.

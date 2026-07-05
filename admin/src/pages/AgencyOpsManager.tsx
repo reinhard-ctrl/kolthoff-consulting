@@ -10,6 +10,8 @@ interface AgencyOpsTenant {
   profileId?: string;
   quoteId?: string;
   provisioningStatus?: string;
+  provisioningMethod?: string;
+  initialPasscode?: string;
   createdAt?: number;
 }
 
@@ -80,7 +82,9 @@ export default function AgencyOpsManager() {
 
   const proProfiles = useMemo(
     () => profiles.filter((p) =>
-      (p.engagementType === 'product' || p.productId === 'pro1') && !p.agencyOpsTenantId
+      (p.engagementType === 'product' || p.productId === 'pro1')
+      && !p.agencyOpsTenantId
+      && p.provisioningStatus !== 'provisioning',
     ),
     [profiles],
   );
@@ -144,7 +148,7 @@ export default function AgencyOpsManager() {
           <h1 className="text-2xl font-bold mb-2">Agency Ops Manager</h1>
           <p className="text-sm text-slate-400 max-w-2xl">
             Provision white-label Agency Ops tenants after PRO 1 contracts are signed.
-            Each tenant gets a dedicated console URL and passcode login.
+            PRO 1 contracts auto-provision on e-sign; use this page to retry failures or provision manually.
           </p>
         </div>
         <button
@@ -189,6 +193,7 @@ export default function AgencyOpsManager() {
               <th className="p-4">Tenant ID</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4">Status</th>
+              <th className="p-4">Passcode</th>
               <th className="p-4 text-right">Console</th>
             </tr>
           </thead>
@@ -200,6 +205,26 @@ export default function AgencyOpsManager() {
                 <td className="p-4 font-mono text-xs text-slate-500">{t.quoteId || '—'}</td>
                 <td className="p-4">
                   <span className="text-emerald-400 text-xs uppercase font-bold">{t.provisioningStatus || t.status || 'active'}</span>
+                  {t.provisioningMethod === 'auto' && (
+                    <span className="block text-[10px] text-slate-500 mt-0.5">Auto on sign</span>
+                  )}
+                </td>
+                <td className="p-4 font-mono text-xs">
+                  {t.initialPasscode ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(t.initialPasscode!);
+                        showToast('Passcode copied.');
+                      }}
+                      className="text-brandAmber-300 hover:underline"
+                      title="Copy passcode"
+                    >
+                      {t.initialPasscode}
+                    </button>
+                  ) : (
+                    <span className="text-slate-600">—</span>
+                  )}
                 </td>
                 <td className="p-4 text-right">
                   {t.consoleUrl && (
