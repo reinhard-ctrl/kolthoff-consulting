@@ -27,8 +27,73 @@
     'MOD 4 - Ongoing Support': 'mod4'
   };
 
-  function isModCategory(category, modNum) {
-    return typeof category === 'string' && category.startsWith(`MOD ${modNum}`);
+  const AGENCY_LINE_UNITS = ['per hour', 'per day', 'per unit', 'per project'];
+
+  function getTaskModNum(taskOrCategory) {
+    if (taskOrCategory && typeof taskOrCategory === 'object') {
+      if (taskOrCategory.moduleKey) {
+        const n = Number(String(taskOrCategory.moduleKey).replace('mod', ''));
+        return Number.isFinite(n) ? n : null;
+      }
+      return getTaskModNum(taskOrCategory.category);
+    }
+    const cat = String(taskOrCategory || '');
+    const modMatch = cat.match(/^MOD (\d)/);
+    if (modMatch) return Number(modMatch[1]);
+    const phaseMatch = cat.match(/^Phase (\d)/);
+    if (phaseMatch) return Number(phaseMatch[1]);
+    return null;
+  }
+
+  function isModCategory(categoryOrTask, modNum) {
+    return getTaskModNum(categoryOrTask) === modNum;
+  }
+
+  function isAgencyLineItem(task) {
+    return task != null && task.lineUnitPrice != null && Number.isFinite(Number(task.lineUnitPrice));
+  }
+
+  function computeAgencyLineItemPricing(task) {
+    const qty = Math.max(0, Number(task.lineQty) || 0);
+    const duration = Math.max(0, Number(task.lineDuration) || 0);
+    const unitPrice = Math.max(0, Number(task.lineUnitPrice) || 0);
+    const markUp = Math.max(0, Number(task.lineMarkUp) || 0);
+    const basePrice = Math.round(qty * duration * unitPrice);
+    const grossProfit = Math.round(basePrice * (markUp / 100));
+    const estimateCost = basePrice + grossProfit;
+    const gpMargin = estimateCost > 0
+      ? Math.round((grossProfit / estimateCost) * 1000) / 10
+      : 0;
+    return { basePrice, grossProfit, gpMargin, estimateCost, markUp };
+  }
+
+  function agencyModCategory(modKey, label) {
+    const n = Number(String(modKey).replace('mod', ''));
+    const name = label || getModDisplayName(n);
+    return `MOD ${n} - ${name}`;
+  }
+
+  function normalizeAgencyLineItemTask(task, moduleBundleNames) {
+    if (!task || typeof task !== 'object') return task;
+    const modKey = task.moduleKey || presetForTask(task) || 'mod1';
+    const modNum = Number(String(modKey).replace('mod', ''));
+    const label = moduleBundleNames?.[modKey] || getModDisplayName(modNum);
+    const estHours = task.estHours || 1;
+    return {
+      ...task,
+      moduleKey: modKey,
+      category: agencyModCategory(modKey, label),
+      lineQty: task.lineQty ?? 1,
+      lineDuration: task.lineDuration ?? estHours,
+      lineUnitPrice: task.lineUnitPrice ?? 1500,
+      lineUnit: task.lineUnit || 'per hour',
+      lineMarkUp: task.lineMarkUp ?? 25,
+    };
+  }
+
+  function presetForTask(task) {
+    if (task?.moduleKey) return task.moduleKey;
+    return presetForCategory(task?.category);
   }
 
   const MOD_DISPLAY_NAMES = {
@@ -45,47 +110,69 @@
     return MOD_DISPLAY_NAMES[modNum] || `Module ${modNum}`;
   }
 
+  function taskBillableBase(task, ctx) {
+    const {
+      starterLineItems,
+      frictionBuffer,
+      rates,
+    } = ctx;
+    if (starterLineItems && isAgencyLineItem(task)) {
+      return computeAgencyLineItemPricing(task).estimateCost;
+    }
+    const bufferMultiplier = 1 + frictionBuffer / 100;
+    const getRate = (tier) => getRateForTier(tier, rates);
+    return task.estHours * getRate(task.tier) * bufferMultiplier;
+  }
+
   function computeModuleInvestmentSummaries(ctx) {
     const {
       tasks,
       frictionBuffer,
       discountPercent,
-      rates
+      rates,
+      starterLineItems,
+      moduleBundleNames,
     } = ctx;
     const bufferMultiplier = 1 + frictionBuffer / 100;
     const discFactor = 1 - discountPercent / 100;
     const getRate = (tier) => getRateForTier(tier, rates);
+    const billCtx = { starterLineItems, frictionBuffer, rates };
+
+    const modLabel = (modNum) => {
+      const key = `mod${modNum}`;
+      return moduleBundleNames?.[key] || getModDisplayName(modNum);
+    };
 
     const summaries = [];
     [1, 2, 3].forEach((modNum) => {
       const modTasks = tasks.filter(
-        (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, modNum)
+        (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t, modNum)
       );
       if (modTasks.length === 0) return;
       const baseUndiscounted = Math.round(
-        modTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * bufferMultiplier
+        modTasks.reduce((acc, t) => acc + taskBillableBase(t, billCtx), 0)
       );
       const afterDiscount = Math.round(baseUndiscounted * discFactor);
       summaries.push({
         modNum,
-        label: getModDisplayName(modNum),
+        label: modLabel(modNum),
         count: modTasks.length,
         baseUndiscounted,
         afterDiscount
       });
     });
 
-    const mod4RetainerTasks = tasks.filter((t) => t.selected && t.isMonthlyRetainer && isModCategory(t.category, 4));
+    const mod4RetainerTasks = tasks.filter((t) => t.selected && t.isMonthlyRetainer && isModCategory(t, 4));
     const mod4AuditTasks = tasks.filter(
-      (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t.category, 4)
+      (t) => t.selected && !t.isMonthlyRetainer && isModCategory(t, 4)
     );
     if (mod4RetainerTasks.length > 0) {
       const monthlyBase = Math.round(
-        mod4RetainerTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * discFactor
+        mod4RetainerTasks.reduce((acc, t) => acc + taskBillableBase(t, billCtx), 0) * discFactor
       );
       summaries.push({
         modNum: 4,
-        label: getModDisplayName(4),
+        label: modLabel(4),
         count: mod4RetainerTasks.length,
         baseUndiscounted: monthlyBase,
         afterDiscount: monthlyBase,
@@ -94,7 +181,7 @@
     }
     if (mod4AuditTasks.length > 0) {
       const auditBase = Math.round(
-        mod4AuditTasks.reduce((acc, t) => acc + t.estHours * getRate(t.tier), 0) * bufferMultiplier * discFactor
+        mod4AuditTasks.reduce((acc, t) => acc + taskBillableBase(t, billCtx), 0) * discFactor
       );
       summaries.push({
         modNum: '4a',
@@ -123,7 +210,7 @@
     const presets = new Set();
     (tasks || []).forEach((t) => {
       if (t.selected) {
-        const preset = presetForCategory(t.category);
+        const preset = presetForTask(t);
         if (preset) presets.add(preset);
       }
     });
@@ -158,28 +245,31 @@
       staffCount,
       monthlySalary,
       wastedHours,
-      formatCurrency
+      formatCurrency,
+      starterLineItems,
+      moduleBundleNames,
     } = params;
 
     const getRate = (tier) => getRateForTier(tier, rates);
     const bufferMultiplier = 1 + (frictionBuffer / 100);
     const taxMultiplier = includeTax ? 1.12 : 1.0;
     const discFactor = 1 - (discountPercent / 100);
+    const billCtx = { starterLineItems, frictionBuffer, rates };
 
     const selectedTasks = tasks.filter((t) => t.selected);
-    const activeDiag = tasks.some((t) => isModCategory(t.category, 1) && t.selected);
-    const activeSOP = tasks.some((t) => isModCategory(t.category, 2) && t.selected);
-    const activePMO = tasks.some((t) => isModCategory(t.category, 3) && t.selected);
+    const activeDiag = tasks.some((t) => isModCategory(t, 1) && t.selected);
+    const activeSOP = tasks.some((t) => isModCategory(t, 2) && t.selected);
+    const activePMO = tasks.some((t) => isModCategory(t, 3) && t.selected);
 
     const projectCostBaseUndiscounted = Math.round(
       tasks.filter((t) => t.selected && !t.isMonthlyRetainer).reduce(
-        (acc, curr) => acc + (curr.estHours * getRate(curr.tier)), 0
-      ) * bufferMultiplier
+        (acc, curr) => acc + taskBillableBase(curr, billCtx), 0
+      )
     );
 
     const retainerCostBaseUndiscounted = Math.round(
       tasks.filter((t) => t.selected && t.isMonthlyRetainer).reduce(
-        (acc, curr) => acc + (curr.estHours * getRate(curr.tier)), 0
+        (acc, curr) => acc + taskBillableBase(curr, billCtx), 0
       )
     );
 
@@ -243,9 +333,9 @@
     };
 
     const getModNet = (modNum) => Math.round(
-      tasks.filter((t) => t.selected && !t.isMonthlyRetainer && t.category.startsWith(`MOD ${modNum}`)).reduce(
-        (acc, curr) => acc + (curr.estHours * getRate(curr.tier)), 0
-      ) * bufferMultiplier * discFactor
+      tasks.filter((t) => t.selected && !t.isMonthlyRetainer && isModCategory(t, modNum)).reduce(
+        (acc, curr) => acc + taskBillableBase(curr, billCtx), 0
+      ) * discFactor
     );
 
     const billingMilestones = computeBillingMilestones({
@@ -266,7 +356,9 @@
       tasks,
       frictionBuffer,
       discountPercent,
-      rates
+      rates,
+      starterLineItems,
+      moduleBundleNames,
     });
 
     return {
@@ -488,6 +580,45 @@
     return slices;
   }
 
+  /** Firestore rejects undefined field values — omit them recursively before setDoc. */
+  function stripUndefinedDeep(value) {
+    if (Array.isArray(value)) {
+      let changed = false;
+      const mapped = value.map((item) => {
+        const cleaned = stripUndefinedDeep(item);
+        if (cleaned !== item) changed = true;
+        return cleaned;
+      });
+      return changed ? mapped : value;
+    }
+    if (value !== null && typeof value === 'object') {
+      let hasUndefined = false;
+      for (const nested of Object.values(value)) {
+        if (nested === undefined) {
+          hasUndefined = true;
+          break;
+        }
+      }
+      if (!hasUndefined) {
+        let nestedChanged = false;
+        for (const nested of Object.values(value)) {
+          if (stripUndefinedDeep(nested) !== nested) {
+            nestedChanged = true;
+            break;
+          }
+        }
+        if (!nestedChanged) return value;
+      }
+      const out = {};
+      for (const [key, nested] of Object.entries(value)) {
+        if (nested === undefined) continue;
+        out[key] = stripUndefinedDeep(nested);
+      }
+      return out;
+    }
+    return value;
+  }
+
   function buildProfilePayload(activeProfileId, workspaceName, state, annualOperationalLeakage, preservedSource) {
     const EC = global.EngagementConfig || {};
     const chaosValue = typeof annualOperationalLeakage === 'number'
@@ -496,19 +627,19 @@
     const base = {
       id: activeProfileId,
       workspaceName: workspaceName || '',
-      clientCompany: state.clientCompany,
-      clientRep: state.clientRep,
-      clientAddress: state.clientAddress,
-      clientTin: state.clientTin,
-      quoteId: state.quoteId,
-      quoteDate: state.quoteDate,
-      quoteValidity: state.quoteValidity,
-      includeTax: state.includeTax,
-      preparerTitle: state.preparerTitle,
-      targetStartDate: state.targetStartDate,
-      proposalObjectives: state.proposalObjectives,
-      proposalSponsor: state.proposalSponsor,
-      preDiagnosticList: state.preDiagnosticList,
+      clientCompany: state.clientCompany ?? '',
+      clientRep: state.clientRep ?? '',
+      clientAddress: state.clientAddress ?? '',
+      clientTin: state.clientTin ?? '',
+      quoteId: state.quoteId ?? '',
+      quoteDate: state.quoteDate ?? '',
+      quoteValidity: state.quoteValidity ?? '',
+      includeTax: Boolean(state.includeTax),
+      preparerTitle: state.preparerTitle ?? '',
+      targetStartDate: state.targetStartDate ?? '',
+      proposalObjectives: state.proposalObjectives ?? '',
+      proposalSponsor: state.proposalSponsor ?? '',
+      preDiagnosticList: state.preDiagnosticList ?? '',
       frictionBuffer: state.frictionBuffer,
       principalToSeniorDelegate: state.principalToSeniorDelegate,
       seniorToAssociateDelegate: state.seniorToAssociateDelegate,
@@ -565,6 +696,7 @@
       addenda: Array.isArray(state.addenda) ? state.addenda : (preservedSource?.addenda || []),
       activeAddendumId: state.activeAddendumId ?? preservedSource?.activeAddendumId ?? null,
       invoiceAddendumId: state.invoiceAddendumId ?? preservedSource?.invoiceAddendumId ?? null,
+      moduleBundleNames: state.moduleBundleNames,
     };
     base._meta = EC.buildProfileMeta ? EC.buildProfileMeta() : { schemaVersion: 2, updatedAt: Date.now() };
     base.links = EC.buildProfileLinks
@@ -574,7 +706,7 @@
         portalClientId: state.links?.portalClientId || state.quoteId || null,
         contractId: state.links?.contractId || (state.quoteId ? `contract-${activeProfileId}` : null)
       };
-    return { ...base, ...pickPreservedProfileSlices(preservedSource) };
+    return stripUndefinedDeep({ ...base, ...pickPreservedProfileSlices(preservedSource) });
   }
 
   function validatePrintReadiness(view, ctx) {
@@ -825,6 +957,13 @@
     MOD_CATEGORIES,
     MOD_DISPLAY_NAMES,
     CATEGORY_TO_PRESET,
+    AGENCY_LINE_UNITS,
+    isAgencyLineItem,
+    computeAgencyLineItemPricing,
+    agencyModCategory,
+    normalizeAgencyLineItemTask,
+    presetForTask,
+    getTaskModNum,
     isModCategory,
     getModDisplayName,
     computeModuleInvestmentSummaries,
