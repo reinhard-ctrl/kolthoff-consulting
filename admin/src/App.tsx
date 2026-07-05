@@ -117,6 +117,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
   const signInGoogle = async () => {
     setGoogleLoading(true);
     setError('');
+    let redirectStarted = false;
     try {
       const { signInWithGoogleStaff } = await import('./lib/staff-sso');
       await signInWithGoogleStaff();
@@ -127,11 +128,15 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         onAuth();
       }
     } catch (err) {
-      if (err instanceof Error && err.message === 'REDIRECT_STARTED') return;
+      if (err instanceof Error && err.message === 'REDIRECT_STARTED') {
+        redirectStarted = true;
+        setError('');
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Google sign-in failed';
       setError(msg);
     } finally {
-      setGoogleLoading(false);
+      if (!redirectStarted) setGoogleLoading(false);
     }
   };
 
@@ -153,7 +158,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
           disabled={googleLoading || loading}
           className="w-full py-2.5 mb-4 bg-white text-slate-800 rounded font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-100 disabled:opacity-50"
         >
-          {googleLoading ? 'Signing in…' : 'Sign in with Google'}
+          {googleLoading ? 'Redirecting to Google…' : 'Sign in with Google'}
         </button>
         )}
         {!product.isDemo && (
