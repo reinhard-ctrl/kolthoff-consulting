@@ -8,28 +8,32 @@ Holistic plan to finish the platform migration so you can focus on **content, cl
 
 ## Current status (at a glance)
 
-**You are here:** Platform is live and feature-complete for daily delivery. Engineering is shifting from *building infrastructure* to *polish + React migration*. Your job now is **verify production**, **turn on Google SSO + App Check**, then **focus on content and client delivery**.
+**You are here:** Platform is live. **Google SSO works** on `/admin/` (slow on first login — provisioning + popup/COOP). Passcode remains break-glass. Your focus today: **deploy login speed fix**, **P4 smoke test**, then **content/delivery**.
 
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform (Phases 0–2.5)** | ✅ **Done on `main`** | Hosting, auth, CRM, planner, portal, workspace, rules, CI deploys all working |
-| **P5 Security (Phase 3A)** | 🔶 **Code deployed — Console steps left** | Google SSO + tighter rules shipped; you enable Google provider + App Check in Firebase Console |
-| **P4 Verification** | ⏳ **Your turn** | Walk through production flows below and confirm they work |
+| **P5 Security (Phase 3A)** | 🔶 **SSO verified — polish pending** | Google provider + authorized domains configured; login works but slow; PR #141 (redirect-first) pending merge/deploy |
+| **P4 Verification** | ⏳ **Your turn today** | Walk through production flows below and confirm they work |
+| **Agency Ops Starter demo** | ✅ **Shipped** | White-label demo at `/agency-ops/` — separate from Kolthoff firm admin |
 | **P6–P7 (React + provisioning)** | ⏳ **Engineering next** | Migrate HTML apps into admin shell; client onboarding wizard |
-| **Phase 4 (content)** | ⏳ **Your primary focus after P4/P5** | SOW library, playbooks, portal copy, templates |
+| **Phase 4 (content)** | ⏳ **Primary focus after P4** | SOW library, playbooks, portal copy, templates |
 
 ### Your checklist (do in this order)
 
-1. **Staff login** — Enable Google provider in Firebase Console → test https://kolthoff-consulting.com/admin/ with `@kolthoff-consulting.com` (passcode still works as backup). See `docs/app-check-sso.md`.
-2. **Production smoke test (P4)** — Contract sign → portal login → org chart visible in portal → file upload. ~20 min.
-3. **App Check (optional, recommended)** — Register reCAPTCHA v3 → add GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last.
-4. **Then stop worrying about infra** — Fill planner profiles, CRM deals, portal content. Engineering handles P6/P7 unless something breaks.
+1. ~~**Staff login — Firebase Console**~~ ✅ Google provider + authorized domains done; login confirmed (slow but works).
+2. **Deploy login speed fix** — Merge PR #141 → redeploy → retest Google sign-in (should redirect, not popup; faster).
+3. **OAuth redirect URIs** (if redirect sign-in fails) — Google Cloud Console → add `https://kolthoff-consulting.com/__/auth/handler` (+ web.app, www). See `docs/app-check-sso.md`.
+4. **Production smoke test (P4)** — Contract sign → portal login → org chart visible in portal → file upload. ~20 min.
+5. **App Check (optional, recommended)** — Register reCAPTCHA v3 → add GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last.
+6. **Then stop worrying about infra** — Fill planner profiles, CRM deals, portal content. Engineering handles P6/P7 unless something breaks.
 
 ### What engineering handles (you can ignore)
 
+- Merge/deploy PR #141 (Google redirect-first login)
 - React migration of embedded HTML apps (P6)
 - Blueprint designer + client provisioning wizard (P7)
-- Planner/Gantt/Org Chart polish (ongoing as requested)
+- Agency Ops demo polish (open PRs #140+)
 
 ---
 
@@ -139,8 +143,8 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (sign → portal → org chart) | ⏳ **You** — on `kolthoff-consulting.com` |
-| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **Code on `main`** — enable Google + App Check in Console; verify SSO |
+| **P4** | Production client journey verification (sign → portal → org chart) | ⏳ **You — today** |
+| **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **SSO works** — merge PR #141 for speed; App Check optional |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
 | **P7** | Phase 3C: Blueprint designer + client provisioning wizard | ⏳ Planned |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
@@ -442,4 +446,4 @@ flowchart TB
 
 ---
 
-*Last updated: July 2026 — P5 code on `main`; P4 production verification + Console SSO/App Check are your next steps*
+*Last updated: 5 July 2026 — Google SSO confirmed working (slow); PR #141 pending; P4 smoke test is today's priority*
