@@ -32,7 +32,7 @@ const catalog = [
   { id: 'm4-01', category: 'MOD 4 - Care Plan', selected: false, estHours: 4, tier: 'partner', isMonthlyRetainer: true },
 ];
 
-assert.equal(EP.getMarketingPackages().length, 4);
+assert.equal(EP.getMarketingPackages().length, 5);
 assert.equal(EP.suggestPackageFromText('MOD 1+2 fix the flow'), 'fix-the-flow');
 
 const leakScan = H.applyPackageToTasks('leak-scan', catalog, catalog);
@@ -60,6 +60,16 @@ const sparseCatalog = [
 const preserved = H.applyPackageToTasks('leak-scan', tasksWithDeliverable, sparseCatalog);
 assert.equal(preserved.tasks.find((t) => t.id === 'm1-01')?.deliverable, 'Saved deliverable name');
 
+assert.ok(H.defaultAgencySlaTemplate().includes('{agencyName}'));
+assert.match(
+  H.resolveAgencySlaTemplate('Support for {clientName} by {agencyName}.', {
+    agencyName: 'Studio North',
+    clientName: 'Acme Co',
+  }),
+  /Support for Acme Co by Studio North\./
+);
+assert.match(H.resolveAgencySlaTemplate('', { agencyName: 'Studio North' }), /Studio North/);
+
 const payload = H.buildProfilePayload('p1', 'Ws', {
   clientCompany: 'Co',
   clientRep: 'Rep',
@@ -82,10 +92,8 @@ const payload = H.buildProfilePayload('p1', 'Ws', {
   clientReviewWeeks: 1,
   tasks: catalog,
   discountPercent: 0,
-  dpaRetentionDays: 14,
-  slaCureDays: 30,
-  slaRecurrenceMonths: 3,
   subscriptionMonths: 6,
+  slaContent: 'Support for {clientName} by {agencyName}.',
   printSow: true,
   printTimeline: true,
   printSla: true,

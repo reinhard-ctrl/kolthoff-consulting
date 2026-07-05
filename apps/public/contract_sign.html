@@ -18,6 +18,7 @@
         window.Financials = Financials;
     </script>
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
+    <script src="../delivery/project_planner_helpers.js?v=20250705-sla-template"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.20/babel.min.js" crossorigin></script>
@@ -674,15 +675,17 @@
 
                     {profileObj.printSla === true && (
                         <div className="space-y-4 text-xs text-slate-600 leading-relaxed border-t border-slate-200 pt-6 mt-8 print:mt-6">
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">5. Service Level Agreement (SLA) & Data Privacy</h3>
-                            <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 space-y-3 print:bg-white print:border-slate-300">
-                                <p><strong>System Availability:</strong> Target 99.9% uptime during business hours. 48-hour notice provided for planned downtime.</p>
-                                <p><strong>Response & Resolution Matrix:</strong> Severity 1 (Critical) within 2 hours response, 8 hours resolution. Severity 2 (High) within 4 hours response, 24 hours resolution. Severity 3 (Normal) within 24 hours response, 2-5 business days resolution.</p>
-                                <p><strong>Data Processing Addendum (RA 10173):</strong> As Personal Information Processor (PIP), Service Provider processes personnel data strictly under Client instructions. All stored profiles will be securely exported and purged within <strong>{profileObj.dpaRetentionDays || 14} days</strong> of SOW termination.</p>
-                                <p><strong>Breach Remedies & Exit Clause:</strong> Service Provider is granted a <strong>{profileObj.slaCureDays || 30}-day</strong> cure period for breaches. If Severity 1 breaches repeat for <strong>{profileObj.slaRecurrenceMonths || 3} consecutive months</strong>, Client reserves the right to terminate retainers without exit penalties.</p>
+                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-3">5. Service Level Agreement (SLA)</h3>
+                            <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 whitespace-pre-wrap print:bg-white print:border-slate-300">
+                                {window.PlannerHelpers?.resolveAgencySlaTemplate?.(profileObj.slaContent, {
+                                    agencyName: profileObj.branding?.companyName || PREPARED_BY,
+                                    clientName: profileObj.clientCompany,
+                                    clientRep: profileObj.clientRep,
+                                })}
                             </div>
                         </div>
                     )}
+
                 </>
                 );
             };
