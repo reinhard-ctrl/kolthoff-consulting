@@ -17,8 +17,8 @@ export type NavGroup = {
 };
 
 /**
- * Shipped sidebar layout (also the Customize → Reset target).
- * Order: Command → Operations → Delivery Suite → Workspace → Analytics → Client.
+ * Shipped sidebar layout (fallback when no org layout saved in Firestore).
+ * Order: Command → Project Management → Deliverables → Product → Analytics → Client.
  */
 export const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
@@ -30,19 +30,18 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'operations',
-    label: 'Operations',
+    label: 'Project Management',
     items: [
       { id: 'crm-pipeline', label: 'CRM Pipeline', type: 'embed', href: '/apps/operations/crm_pipeline.html' },
       { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
       { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
       { id: 'collections', label: 'Collections', type: 'route', path: '/collections' },
-      { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
       { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
     ],
   },
   {
     id: 'delivery',
-    label: 'Delivery Suite',
+    label: 'Deliverables',
     items: [
       { id: 'org-chart', label: 'Org Chart', type: 'route', path: '/org-chart' },
       { id: 'diagnosis-reports', label: 'Diagnosis Reports', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
@@ -51,11 +50,12 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: 'workspace',
-    label: 'Workspace',
+    id: 'product',
+    label: 'Product',
     items: [
       { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
       { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
+      { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
     ],
   },
   {

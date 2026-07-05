@@ -68,6 +68,9 @@ const ICONS: Record<string, (p: IconProps) => JSX.Element> = {
   collections: ({ className }) => (
     <Svg className={className}><path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></Svg>
   ),
+  'agency-ops-manager': ({ className }) => (
+    <Svg className={className}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></Svg>
+  ),
   branding: ({ className }) => (
     <Svg className={className}><circle cx="12" cy="12" r="3" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2" /></Svg>
   ),
