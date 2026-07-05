@@ -1966,10 +1966,10 @@
         setActivePresets(H.deriveActivePresetsFromTasks(tasks));
       }, [tasks]);
 
-      const activeDiag = useMemo(() => tasks.some(t => H.isModCategory(t.category, 1) && t.selected), [tasks]);
-      const activeSOP = useMemo(() => tasks.some(t => H.isModCategory(t.category, 2) && t.selected), [tasks]);
-      const activePMO = useMemo(() => tasks.some(t => H.isModCategory(t.category, 3) && t.selected), [tasks]);
-      const activeGov = useMemo(() => tasks.some(t => H.isModCategory(t.category, 4) && t.selected), [tasks]);
+      const activeDiag = useMemo(() => tasks.some(t => H.isModCategory(t, 1) && t.selected), [tasks]);
+      const activeSOP = useMemo(() => tasks.some(t => H.isModCategory(t, 2) && t.selected), [tasks]);
+      const activePMO = useMemo(() => tasks.some(t => H.isModCategory(t, 3) && t.selected), [tasks]);
+      const activeGov = useMemo(() => tasks.some(t => H.isModCategory(t, 4) && t.selected), [tasks]);
       
       const handlePrint = () => {
         const validation = H.validatePrintReadiness(view, {
@@ -2324,10 +2324,10 @@
         const bufferMultiplier = 1 + (frictionBuffer / 100);
         let currentWeek = 1;
         
-        const p1Tasks = selected.filter(t => H.isModCategory(t.category, 1));
-        const p2Tasks = selected.filter(t => H.isModCategory(t.category, 2));
-        const p3Tasks = selected.filter(t => H.isModCategory(t.category, 3));
-        const p4Tasks = selected.filter(t => H.isModCategory(t.category, 4));
+        const p1Tasks = selected.filter(t => H.isModCategory(t, 1));
+        const p2Tasks = selected.filter(t => H.isModCategory(t, 2));
+        const p3Tasks = selected.filter(t => H.isModCategory(t, 3));
+        const p4Tasks = selected.filter(t => H.isModCategory(t, 4));
 
         const activePhases = [];
         if (p1Tasks.length) activePhases.push(p1Tasks);
@@ -2465,10 +2465,17 @@
         moduleInvestmentSummaries: plannerModuleSummaries
       } = pricing;
 
-      const billingMilestones = sharedBillingSchedule?.milestones?.length ? sharedBillingSchedule.milestones : plannerBillingMilestones;
-      const moduleInvestmentSummaries = (STARTER_UI && tasks.some(H.isAgencyLineItem))
-        ? plannerModuleSummaries
-        : (sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries);
+      const usePlannerLineItemBilling = STARTER_UI && tasks.some(H.isAgencyLineItem);
+      const billingMilestones = (
+        usePlannerLineItemBilling
+          ? plannerBillingMilestones
+          : (sharedBillingSchedule?.milestones?.length ? sharedBillingSchedule.milestones : plannerBillingMilestones)
+      ) ?? [];
+      const moduleInvestmentSummaries = (
+        usePlannerLineItemBilling
+          ? plannerModuleSummaries
+          : (sharedModuleSummaries?.length ? sharedModuleSummaries : plannerModuleSummaries)
+      ) ?? [];
       const retainerCostPart = sharedBillingSchedule?.retainerMonthly || plannerRetainerCostPart;
       const retainerCostTotalPart = sharedBillingSchedule?.retainerTotal || plannerRetainerCostTotalPart;
 
@@ -2544,7 +2551,8 @@
       }, [invoiceMilestone, projectCostBaseUndiscounted, retainerCostTotalBaseUndiscounted, retainerCostBaseUndiscounted, computedInvoiceCost]);
 
       useEffect(() => {
-        if (invoiceMilestone.startsWith('milestone_') && parseInt(invoiceMilestone.split('_')[1], 10) >= billingMilestones.length) {
+        const milestoneCount = billingMilestones?.length ?? 0;
+        if (invoiceMilestone.startsWith('milestone_') && parseInt(invoiceMilestone.split('_')[1], 10) >= milestoneCount) {
           setInvoiceMilestone('full');
         }
       }, [billingMilestones, invoiceMilestone]);
@@ -2553,7 +2561,7 @@
         setPrintCover(true);
         setPrintSow(true);
         setPrintQuote(true);
-        setPrintTimeline(tasks.some(t => H.isModCategory(t.category, 2) && t.selected) || tasks.some(t => H.isModCategory(t.category, 3) && t.selected));
+        setPrintTimeline(tasks.some(t => H.isModCategory(t, 2) && t.selected) || tasks.some(t => H.isModCategory(t, 3) && t.selected));
         setPrintSla(activePMO || activeGov);
         setPrintRoadmapGantt(true);
         setPrintRoadmapTable(true);
@@ -3102,7 +3110,7 @@
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {tasks.filter(t => t.selected).map((task) => {
+                  {tasks.filter(t => t.selected && H.isAgencyLineItem(t)).map((task) => {
                     const row = H.computeAgencyLineItemPricing(task);
                     const modKey = task.moduleKey || H.presetForTask(task) || 'mod1';
                     return (
@@ -3879,7 +3887,7 @@
                     <h3 className="text-xs font-bold text-slate-900 text-left font-sans">{modTitle(mod.num)}</h3>
                     <p className="text-[10px] font-semibold text-slate-500 text-left leading-normal font-sans">{modDesc(mod.num)}</p>
                     <ul className="text-[10px] space-y-1.5 pt-1 overflow-y-auto font-medium text-left font-sans font-semibold">
-                      {tasks.filter(t => t.category.startsWith(mod.id)).map(t => (
+                      {tasks.filter(t => t.category?.startsWith(mod.id)).map(t => (
                         <li key={t.id} className="flex items-start gap-2 text-left font-sans">
                           <ShieldIndicator active={t.selected} aria-hidden="true" />
                           <span className={t.selected && mod.isActive ? 'text-slate-800 font-bold' : 'text-slate-400 font-medium font-sans'}>{getShortDeliverableName(t.deliverable)}</span>
@@ -3931,14 +3939,14 @@
                       </div>
                     </div>
                     {['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].map((modPrefix) => {
-                      const phaseTasks = scheduledTasks.filter(t => t.category.startsWith(modPrefix));
+                      const phaseTasks = scheduledTasks.filter(t => t.category?.startsWith(modPrefix));
                       if (phaseTasks.length === 0) return null;
                       const phaseName = modPhase(Number(modPrefix.replace('MOD ', '')));
                       
                       const isSubsequentPhase = modPrefix === 'MOD 2' || modPrefix === 'MOD 3';
                       let previousPhaseTasks = [];
-                      if (modPrefix === 'MOD 2') previousPhaseTasks = scheduledTasksAndPhases.scheduledP1;
-                      if (modPrefix === 'MOD 3') previousPhaseTasks = scheduledTasksAndPhases.scheduledP2.length > 0 ? scheduledTasksAndPhases.scheduledP2 : scheduledTasksAndPhases.scheduledP1;
+                      if (modPrefix === 'MOD 2') previousPhaseTasks = scheduledTasksAndPhases.scheduledP1 ?? [];
+                      if (modPrefix === 'MOD 3') previousPhaseTasks = (scheduledTasksAndPhases.scheduledP2?.length ?? 0) > 0 ? scheduledTasksAndPhases.scheduledP2 : (scheduledTasksAndPhases.scheduledP1 ?? []);
 
                       const showReviewGap = isSubsequentPhase && previousPhaseTasks.length > 0 && clientReviewWeeks > 0;
                       const maxPrevEndWeek = previousPhaseTasks.length > 0 ? Math.max(...previousPhaseTasks.map(t => t.endWeek)) : 0;
