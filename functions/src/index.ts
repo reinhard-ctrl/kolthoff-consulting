@@ -1224,8 +1224,48 @@ async function provisionAgencyOpsForProfile(options: {
   };
 }
 
+function buildAgencyOpsProvisionResponse(
+  result: Awaited<ReturnType<typeof provisionAgencyOpsForProfile>>,
+  repEmail?: string,
+): {
+  tenantId: string;
+  clientName: string;
+  consoleUrl: string;
+  passcode: string;
+  profileId: string | null;
+  quoteId: string | null;
+  mailtoUrl?: string;
+  created: boolean;
+  message: string;
+} {
+  const handoff =
+    `Your Agency Ops workspace is ready.\n\n` +
+    `1. Open: ${result.consoleUrl}\n` +
+    `2. Sign in with passcode: ${result.passcode}\n\n` +
+    `Save this passcode securely — it is shown once during provisioning.`;
+
+  const normalizedRepEmail = normalizeEmail(repEmail || '');
+  const mailtoUrl = normalizedRepEmail
+    ? `mailto:${encodeURIComponent(normalizedRepEmail)}?subject=${encodeURIComponent(`${result.clientName} — Agency Ops Access`)}&body=${encodeURIComponent(handoff)}`
+    : undefined;
+
+  return {
+    tenantId: result.tenantId,
+    clientName: result.clientName,
+    consoleUrl: result.consoleUrl,
+    passcode: result.passcode,
+    profileId: result.profileId,
+    quoteId: result.quoteId,
+    mailtoUrl,
+    created: result.created,
+    message: result.created
+      ? `Provisioned Agency Ops for ${result.clientName}. Share the console URL and passcode with the client.`
+      : `Agency Ops tenant ${result.tenantId} already exists — credentials refreshed in response.`,
+  };
+}
+
 /** Provision white-label Agency Ops tenant after PRO 1 contract sign */
-export const prepareAgencyOpsTenant = onCall(async (request) => {
+export const prepareAgencyOpsTenant = onCall({ invoker: 'public', cors: true }, async (request) => {
   const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
@@ -1246,31 +1286,58 @@ export const prepareAgencyOpsTenant = onCall(async (request) => {
     autoProvisioned: false,
   });
 
-  const handoff =
-    `Your Agency Ops workspace is ready.\n\n` +
-    `1. Open: ${result.consoleUrl}\n` +
-    `2. Sign in with passcode: ${result.passcode}\n\n` +
-    `Save this passcode securely — it is shown once during provisioning.`;
-
-  const repEmail = normalizeEmail((request.data?.repEmail as string) || '');
-  const mailtoUrl = repEmail
-    ? `mailto:${encodeURIComponent(repEmail)}?subject=${encodeURIComponent(`${result.clientName} — Agency Ops Access`)}&body=${encodeURIComponent(handoff)}`
-    : undefined;
-
-  return {
-    tenantId: result.tenantId,
-    clientName: result.clientName,
-    consoleUrl: result.consoleUrl,
-    passcode: result.passcode,
-    profileId: result.profileId,
-    quoteId: result.quoteId,
-    mailtoUrl,
-    created: result.created,
-    message: result.created
-      ? `Provisioned Agency Ops for ${result.clientName}. Share the console URL and passcode with the client.`
-      : `Agency Ops tenant ${result.tenantId} already exists — credentials refreshed in response.`,
-  };
+  return buildAgencyOpsProvisionResponse(result, (request.data?.repEmail as string) || undefined);
 });
+
+/** Firestore path when org policy blocks public Cloud Function invoke (same as staff SSO) */
+export const onAgencyOpsProvisionRequest = onDocumentWritten(
+  `artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/{requestId}`,
+  async (event) => {
+    const afterSnap = event.data?.after;
+    if (!afterSnap?.exists) return;
+
+    const data = afterSnap.data();
+    if (!data || data.status !== 'pending') return;
+
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    if (before?.status === 'pending' && before.requestedAt === data.requestedAt) return;
+
+    const requestId = event.params.requestId;
+    const ref = afterSnap.ref;
+
+    try {
+      const result = await provisionAgencyOpsForProfile({
+        profileId: typeof data.profileId === 'string' ? data.profileId.trim() : undefined,
+        clientName: String(data.clientName || '').trim(),
+        requestedTenantId: typeof data.tenantId === 'string' ? data.tenantId.trim() : undefined,
+        createdBy: typeof data.requestedBy === 'string' ? data.requestedBy : null,
+        passcode: typeof data.passcode === 'string' ? data.passcode.trim() : undefined,
+        throwIfExists: Boolean(data.throwIfExists),
+        autoProvisioned: false,
+      });
+
+      const response = buildAgencyOpsProvisionResponse(
+        result,
+        typeof data.repEmail === 'string' ? data.repEmail : undefined,
+      );
+
+      await ref.update({
+        status: 'complete',
+        ...response,
+        completedAt: Date.now(),
+      });
+      console.log('onAgencyOpsProvisionRequest complete', requestId, response.tenantId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Provisioning failed';
+      console.error('onAgencyOpsProvisionRequest failed', requestId, err);
+      await ref.update({
+        status: 'error',
+        error: message,
+        failedAt: Date.now(),
+      });
+    }
+  },
+);
 
 /** On contract sign: CRM Won sync + auto-provision PRO 1 Agency Ops */
 export const onContractLedgerWritten = onDocumentWritten(

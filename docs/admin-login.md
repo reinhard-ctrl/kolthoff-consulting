@@ -71,7 +71,7 @@ Legacy callable `verifyAdminPasscode` and HTTP `verifyAdminPasscodeHttp` require
 PROJECT=kolthoff-portal
 REGION=asia-southeast1
 
-for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp requestWorkspacePasswordReset provisionGoogleStaff; do
+for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp requestWorkspacePasswordReset provisionGoogleStaff prepareAgencyOpsTenant onAgencyOpsProvisionRequest onContractLedgerWritten; do
   gcloud functions add-invoker-policy-binding "$FN" \
     --gen2 --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
@@ -79,7 +79,7 @@ for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken genera
     --quiet || true
 done
 
-for SVC in verifyadminpasscode verifyadminpasscodehttp generateportaltoken generateportaltokenhttp requestworkspacepasswordreset; do
+for SVC in verifyadminpasscode verifyadminpasscodehttp generateportaltoken generateportaltokenhttp requestworkspacepasswordreset prepareagencyopstenant onagencyopsprovisionrequest oncontractledgerwritten; do
   gcloud run services add-iam-policy-binding "$SVC" \
     --region="$REGION" --project="$PROJECT" \
     --member="allUsers" \
