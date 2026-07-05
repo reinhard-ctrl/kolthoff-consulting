@@ -24,7 +24,9 @@
     'MOD 1 - Workflow Diagnosis': 'mod1',
     'MOD 2 - Organizing How You Work': 'mod2',
     'MOD 3 - Workspace Automation': 'mod3',
-    'MOD 4 - Ongoing Support': 'mod4'
+    'MOD 4 - Ongoing Support': 'mod4',
+    'PRO 1 - Agency Ops Platform': 'pro1',
+    'PRO 2 - Core Workspace Platform': 'pro2',
   };
 
   const AGENCY_LINE_UNITS = ['per hour', 'per day', 'per unit', 'per project'];
@@ -199,8 +201,16 @@
 
   function presetForCategory(category) {
     if (CATEGORY_TO_PRESET[category]) return CATEGORY_TO_PRESET[category];
+    const PC = global.ProductCatalog;
+    if (PC?.getProductByCategory) {
+      const product = PC.getProductByCategory(category);
+      if (product?.id) return product.id;
+    }
     const match = typeof category === 'string' && category.match(/^MOD (\d)/);
-    return match ? `mod${match[1]}` : null;
+    if (match) return `mod${match[1]}`;
+    const proMatch = typeof category === 'string' && category.match(/^PRO (\d)/);
+    if (proMatch) return `pro${proMatch[1]}`;
+    return null;
   }
 
   function getWorkspaceLabel(profile) {
@@ -715,6 +725,8 @@
       selectedPackageId: state.selectedPackageId ?? null,
       packageCustomized: Boolean(state.packageCustomized),
       packageAppliedAt: state.packageAppliedAt ?? null,
+      engagementType: state.engagementType ?? 'service',
+      productId: state.productId ?? null,
       addenda: Array.isArray(state.addenda) ? state.addenda : (preservedSource?.addenda || []),
       activeAddendumId: state.activeAddendumId ?? preservedSource?.activeAddendumId ?? null,
       invoiceAddendumId: state.invoiceAddendumId ?? preservedSource?.invoiceAddendumId ?? null,

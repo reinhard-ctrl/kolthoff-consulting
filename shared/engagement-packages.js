@@ -195,8 +195,47 @@
         milestoneSplit: 'auto',
         subscriptionMonths: 6
       },
+    },
+    {
+      id: 'pro1-agency-ops-starter',
+      name: 'Agency Ops Starter',
+      tagline: 'White-label quote-to-cash for creative and digital agencies.',
+      forWhom: 'Agencies selling retainers and project work who want their own branded ops stack.',
+      packageKind: 'product',
+      productId: 'pro1',
+      modules: ['pro1'],
+      marketingVisible: true,
+      sortOrder: 100,
+      tasks: {
+        mode: 'include',
+        include: ['pro1-01', 'pro1-02', 'pro1-03']
+      },
+      defaults: {
+        engagementType: 'product',
+        productId: 'pro1',
+        proposalObjectives: 'Provision a white-label Agency Ops workspace — branded CRM, quote builder, and invoicing — plus onboarding training and a monthly platform subscription.',
+        frictionBuffer: 0,
+        discountPercent: 0,
+        milestoneSplit: '50-50',
+        subscriptionMonths: 12,
+        printTimeline: false,
+        printSla: true,
+      },
+      isMonthly: true
     }
   ];
+
+  function isProductPackage(pkg) {
+    return pkg?.packageKind === 'product' || Boolean(pkg?.productId);
+  }
+
+  function getServicePackages() {
+    return getAllPackages().filter((p) => !isProductPackage(p));
+  }
+
+  function getProductPackages() {
+    return getAllPackages().filter((p) => isProductPackage(p));
+  }
 
   function getPackageById(id) {
     return PACKAGES.find((p) => p.id === id) || null;
@@ -213,6 +252,7 @@
   function suggestPackageFromText(text) {
     if (!text || typeof text !== 'string') return null;
     const lower = text.toLowerCase();
+    if (lower.includes('agency ops') || lower.includes('pro 1') || lower.includes('pro1')) return 'pro1-agency-ops-starter';
     if (lower.includes('mod 1+2') || lower.includes('mod1+2') || lower.includes('fix the flow')) return 'fix-the-flow';
     if (lower.includes('full transform') || lower.includes('mod 1+2+3')) return 'full-transformation';
     if (lower.includes('care plan') || lower.includes('mod 4')) return 'care-plan';
@@ -222,11 +262,20 @@
     return null;
   }
 
+  function resolvePackageFromCrmDeal(deal) {
+    if (deal?.dealCategory === 'product') return 'pro1-agency-ops-starter';
+    return suggestPackageFromText(deal?.notes || '');
+  }
+
   global.EngagementPackages = {
     PACKAGES,
     getPackageById,
     getMarketingPackages,
     getAllPackages,
+    getServicePackages,
+    getProductPackages,
+    isProductPackage,
+    resolvePackageFromCrmDeal,
     suggestPackageFromText
   };
 })(window);
