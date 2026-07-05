@@ -137,6 +137,17 @@ export function useTenantBranding() {
         setActivePresetId(
           typeof data?.activeBrandingPresetId === 'string' ? data.activeBrandingPresetId : null,
         );
+        const firestoreClientDemoId =
+          typeof data?.activeClientDemoPresetId === 'string'
+            ? data.activeClientDemoPresetId
+            : null;
+        if (firestoreClientDemoId) {
+          setAppliedClientDemoId(firestoreClientDemoId);
+          saveAppliedClientDemoId(firestoreClientDemoId);
+        } else if (typeof data?.activeBrandingPresetId === 'string') {
+          setAppliedClientDemoId(null);
+          saveAppliedClientDemoId(null);
+        }
         applyTenantBrandingCss(merged);
         setLoading(false);
 
@@ -151,6 +162,7 @@ export function useTenantBranding() {
               await writeTenantConfig({
                 clientDemoPresets: {},
                 clientDemoSetupVersion: CLIENT_DEMO_SETUP_VERSION,
+                activeClientDemoPresetId: deleteField(),
               });
             } catch {
               clientDemoResetAttempted.current = false;
@@ -221,10 +233,12 @@ export function useTenantBranding() {
 
     setSaving(true);
     try {
-      await writeTenantConfig({
+      const patch: Record<string, unknown> = {
         branding: brandingPayload(next),
         activeBrandingPresetId: isDemoPreset ? resolvedPresetId : deleteField(),
-      });
+        activeClientDemoPresetId: isClientDemoPreset ? resolvedPresetId : deleteField(),
+      };
+      await writeTenantConfig(patch);
       if (isClientDemoPreset) {
         setAppliedClientDemo(resolvedPresetId);
       } else if (isDemoPreset) {
@@ -275,6 +289,9 @@ export function useTenantBranding() {
       await writeTenantConfig({
         branding: brandingPayload(presetToConfig(preset)),
         activeBrandingPresetId: isBundledDemoBrandingPresetId(presetId) ? presetId : deleteField(),
+        activeClientDemoPresetId: isBundledDemoBrandingPresetId(presetId)
+          ? deleteField()
+          : presetId,
       });
       if (isBundledDemoBrandingPresetId(presetId)) {
         setAppliedClientDemo(null);
@@ -315,6 +332,9 @@ export function useTenantBranding() {
       const patch: Record<string, unknown> = {
         [`clientDemoPresets.${presetId}`]: deleteField(),
       };
+      if (appliedClientDemoId === presetId) {
+        patch.activeClientDemoPresetId = deleteField();
+      }
       const snap = await getDoc(ref);
       if (snap.exists()) {
         await updateDoc(ref, patch);
@@ -341,7 +361,10 @@ export function useTenantBranding() {
   const clearClientDemos = async () => {
     setSaving(true);
     try {
-      await writeClientDemoPresets([]);
+      await writeTenantConfig({
+        clientDemoPresets: {},
+        activeClientDemoPresetId: deleteField(),
+      });
       setAppliedClientDemo(null);
     } finally {
       setSaving(false);

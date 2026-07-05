@@ -3,6 +3,7 @@ import { useProduct } from '../lib/product-context';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { app, adminAppId } from '../lib/firebase';
 import { useTenantBranding } from '../hooks/useTenantBranding';
+import { useBrandingPreview } from '../lib/branding-preview-context';
 import {
   isBundledDemoBrandingPresetId,
   presetToConfig,
@@ -31,6 +32,9 @@ export default function BrandingSettings() {
     restoreDemoPresets,
     clearClientDemos,
   } = useTenantBranding();
+  const { setPreviewPresetId } = useBrandingPreview();
+
+  useEffect(() => () => setPreviewPresetId(null), [setPreviewPresetId]);
 
   const [draft, setDraft] = useState<TenantBrandingConfig | null>(null);
   const [editorPresetId, setEditorPresetId] = useState<string | null>(null);
@@ -47,17 +51,22 @@ export default function BrandingSettings() {
   useEffect(() => {
     if (loading || initialized.current) return;
     initialized.current = true;
-    if (activePresetId && presets.some((p) => p.id === activePresetId)) {
-      const preset = presets.find((p) => p.id === activePresetId);
+    const initialProfileId =
+      (activePresetId && presets.some((p) => p.id === activePresetId) && activePresetId) ||
+      (appliedClientDemoId && presets.some((p) => p.id === appliedClientDemoId) && appliedClientDemoId) ||
+      null;
+    if (initialProfileId) {
+      const preset = presets.find((p) => p.id === initialProfileId);
       if (preset) {
-        setEditorPresetId(activePresetId);
+        setPreviewPresetId(initialProfileId);
+        setEditorPresetId(initialProfileId);
         setDraft(presetToConfig(preset));
         setProfileName(preset.name);
       }
     } else {
       setProfileName(branding.companyName);
     }
-  }, [loading, activePresetId, presets, branding]);
+  }, [loading, activePresetId, appliedClientDemoId, presets, branding, setPreviewPresetId]);
 
   const update = (patch: Partial<TenantBrandingConfig>) => {
     setDraft((d) => ({ ...(d ?? branding), ...patch }));
@@ -67,6 +76,7 @@ export default function BrandingSettings() {
   const loadPreset = (presetId: string) => {
     const preset = presets.find((p) => p.id === presetId);
     if (!preset) return;
+    setPreviewPresetId(presetId);
     setEditorPresetId(presetId);
     setDraft(presetToConfig(preset));
     setProfileName(preset.name);
@@ -74,6 +84,7 @@ export default function BrandingSettings() {
   };
 
   const startNewProfile = () => {
+    setPreviewPresetId(null);
     setEditorPresetId(null);
     setDraft({ ...branding });
     setProfileName('');
