@@ -15,7 +15,9 @@ import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
 import { useProduct } from './lib/product-context';
-import { isAgencyOpsStarter, isLightProductTheme } from './lib/product-config';
+import { isAgencyOpsStarter } from './lib/product-config';
+import { useDemoAppearance } from './lib/demo-appearance-context';
+import DemoAppearanceToggle from './components/DemoAppearanceToggle';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -60,7 +62,7 @@ function getReturnUrl(): string | null {
 
 function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
   const product = useProduct();
-  const light = isLightProductTheme(product.id);
+  const { isLight: light } = useDemoAppearance();
   const [code, setCode] = useState(product.isDemo ? (product.demoPasscode ?? '') : '');
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
@@ -191,7 +193,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
 
 function Layout({ children }: { children: React.ReactNode }) {
   const product = useProduct();
-  const light = isLightProductTheme(product.id);
+  const { isLight: light } = useDemoAppearance();
   const location = useLocation();
   const isEmbed = location.pathname.startsWith('/app/');
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
@@ -222,14 +224,19 @@ function Layout({ children }: { children: React.ReactNode }) {
           <BrandHeader compact />
         </div>
         <SidebarNav />
-        <div className={`sidebar-nav-hint px-3 pt-2 shrink-0 truncate ${light ? 'ops-sidebar-footer border-t border-brandNavy-800 text-slate-600' : 'text-slate-600 px-2 border-t border-brandNavy-800 font-mono'}`}>
-          {isAgencyOpsStarter(product.id)
-            ? `${metrics.deals} deals · ${metrics.profiles} estimates`
-            : `${metrics.clients} clients · ${metrics.profiles} SOWs · ${metrics.deals} deals`}
+        <div className={`sidebar-nav-hint px-3 pt-2 pb-2 shrink-0 space-y-2 ${light ? 'ops-sidebar-footer border-t border-brandNavy-800 text-slate-600' : 'text-slate-600 px-2 border-t border-brandNavy-800 font-mono'}`}>
+          {isAgencyOpsStarter(product.id) && (
+            <DemoAppearanceToggle />
+          )}
+          <div className="truncate">
+            {isAgencyOpsStarter(product.id)
+              ? `${metrics.deals} deals · ${metrics.profiles} estimates`
+              : `${metrics.clients} clients · ${metrics.profiles} SOWs · ${metrics.deals} deals`}
+          </div>
         </div>
       </aside>
       <main
-        className={`ops-main flex-1 min-w-0 min-h-0 ${isEmbed ? 'overflow-hidden bg-white' : 'p-5 sm:p-8 overflow-auto'}`}
+        className={`ops-main flex-1 min-w-0 min-h-0 ${isEmbed ? `overflow-hidden ${light ? 'bg-white' : 'bg-brandNavy-950'}` : 'p-5 sm:p-8 overflow-auto'}`}
       >
         {children}
       </main>

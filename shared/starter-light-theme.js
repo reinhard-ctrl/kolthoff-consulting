@@ -5,6 +5,7 @@
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   const GREY_CANVAS = '#e3e6eb';
+  const APPEARANCE_STORAGE_KEY = 'agency-ops-demo-appearance';
 
   function isStarterContext() {
     const params = new URLSearchParams(window.location.search);
@@ -14,7 +15,21 @@
     return Boolean(cfg?.starterMode);
   }
 
+  function resolveAppearance() {
+    const params = new URLSearchParams(window.location.search);
+    const fromParam = params.get('appearance');
+    if (fromParam === 'dark' || fromParam === 'light') return fromParam;
+    try {
+      const stored = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+      if (stored === 'dark' || stored === 'light') return stored;
+    } catch {
+      /* ignore storage errors */
+    }
+    return 'light';
+  }
+
   if (!isStarterContext()) return;
+  if (resolveAppearance() === 'dark') return;
 
   const root = document.documentElement;
   root.classList.remove('dark');
@@ -67,6 +82,6 @@
   const styleLink = document.createElement('link');
   styleLink.id = 'agency-starter-light-styles';
   styleLink.rel = 'stylesheet';
-  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250704-ui-v9`;
+  styleLink.href = cssHref.includes('?') ? cssHref : `${cssHref}?v=20250705-ui-v18`;
   document.head.appendChild(styleLink);
 })();

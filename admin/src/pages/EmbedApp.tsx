@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { getNavItem } from '../lib/navPreferences';
 import { useProduct } from '../lib/product-context';
+import { useDemoAppearance } from '../lib/demo-appearance-context';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250705-ui-v16';
+const EMBED_CACHE_VERSION = '20250705-ui-v18';
 
 function buildEmbedSrc(href: string, embedParams: Record<string, string>): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
@@ -17,6 +18,7 @@ function buildEmbedSrc(href: string, embedParams: Record<string, string>): strin
 
 export default function EmbedApp({ appId }: { appId: string }) {
   const product = useProduct();
+  const { appearance, isLight } = useDemoAppearance();
   const item = getNavItem(appId);
 
   if (!item || item.type !== 'embed' || !item.href || item.openInNewTab) {
@@ -30,13 +32,18 @@ export default function EmbedApp({ appId }: { appId: string }) {
     );
   }
 
-  const src = buildEmbedSrc(item.href, product.embedParams);
+  const embedParams = {
+    ...product.embedParams,
+    ...(appearance ? { appearance } : {}),
+  };
+  const src = buildEmbedSrc(item.href, embedParams);
 
   return (
     <iframe
+      key={appearance ?? 'default'}
       title={item.label}
       src={src}
-      className={`w-full h-full border-0 block ops-embed-frame ${product.theme === 'light' ? 'bg-[#e3e6eb]' : 'bg-brandNavy-950'}`}
+      className={`w-full h-full border-0 block ops-embed-frame ${isLight ? 'bg-[#e3e6eb]' : 'bg-brandNavy-950'}`}
     />
   );
 }
