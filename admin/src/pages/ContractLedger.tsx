@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { deleteDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
-import { adminCol, adminDoc } from '../lib/firebase';
+import { adminCol, adminDoc, bootstrapAuth, functions, httpsCallable } from '../lib/firebase';
 import {
   formatCurrency,
   getBillingSchedule,
@@ -14,7 +14,13 @@ interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
+  clientRep?: string;
   quoteId?: string;
+  engagementType?: string;
+  productId?: string;
+  agencyOpsTenantId?: string;
+  provisioningStatus?: string;
+  links?: { agencyOpsConsoleUrl?: string };
   chaosTax?: { source?: string; value?: number };
   annualOperationalLeakage?: number;
   tasks?: { id?: string; selected?: boolean; estHours?: number; tier?: string; isMonthlyRetainer?: boolean; category?: string }[];
@@ -155,6 +161,8 @@ export default function ContractLedger() {
   const [resetTarget, setResetTarget] = useState<LedgerRow | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isPulling, setIsPulling] = useState(false);
+  const [provisionTarget, setProvisionTarget] = useState<WorkbookProfile | null>(null);
+  const [provisionResult, setProvisionResult] = useState<{ consoleUrl: string; passcode: string; message: string } | null>(null);
 
   useEffect(() => {
     const unsubs = [
@@ -244,6 +252,30 @@ export default function ContractLedger() {
     }
   };
 
+  const isProProfile = (profile?: WorkbookProfile) =>
+    Boolean(profile && (profile.engagementType === 'product' || profile.productId === 'pro1'));
+
+  const provisionAgencyOps = async (profile: WorkbookProfile) => {
+    setProcessing(true);
+    setProvisionResult(null);
+    try {
+      await bootstrapAuth();
+      const fn = httpsCallable(functions, 'prepareAgencyOpsTenant');
+      const response = await fn({
+        profileId: profile.id,
+        clientName: getClientDisplayName(profile),
+        repEmail: '',
+      });
+      const data = response.data as { consoleUrl: string; passcode: string; message: string };
+      setProvisionResult(data);
+      showToast('Agency Ops tenant provisioned.');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Provisioning failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const pullFromCloud = async () => {
     setIsPulling(true);
     try {
@@ -293,6 +325,48 @@ export default function ContractLedger() {
               </button>
               <button onClick={() => setResetTarget(null)} className="px-4 py-2 bg-brandNavy-800 rounded text-sm">Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {provisionTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
+            {!provisionResult ? (
+              <>
+                <h3 className="font-bold mb-2">Provision Agency Ops tenant?</h3>
+                <p className="text-xs text-slate-400 mb-4">
+                  Creates a white-label console for <strong>{getClientDisplayName(provisionTarget)}</strong> after contract execution.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setProvisionTarget(null)} className="px-4 py-2 bg-brandNavy-800 rounded text-sm">Cancel</button>
+                  <button
+                    type="button"
+                    onClick={() => provisionAgencyOps(provisionTarget)}
+                    disabled={processing}
+                    className="px-4 py-2 bg-brandAmber-500 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50"
+                  >
+                    {processing ? 'Provisioning…' : 'Provision'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="font-bold mb-2 text-emerald-400">Tenant ready</h3>
+                <p className="text-xs text-slate-400 mb-3">{provisionResult.message}</p>
+                <div className="text-xs font-mono bg-brandNavy-950 p-3 rounded border border-brandNavy-800 space-y-1 mb-4">
+                  <div>URL: {provisionResult.consoleUrl}</div>
+                  <div>Passcode: <strong className="text-brandAmber-300">{provisionResult.passcode}</strong></div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setProvisionTarget(null); setProvisionResult(null); }}
+                  className="w-full px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded text-sm font-bold"
+                >
+                  Done
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -410,6 +484,26 @@ export default function ContractLedger() {
                           <a href={clientSignUrl(item.profileId, { view: 'audit' })} target="_blank" rel="noreferrer" className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs">
                             Audit Trail
                           </a>
+                          {isProProfile(profile) && !profile?.agencyOpsTenantId && (
+                            <button
+                              type="button"
+                              onClick={() => { setProvisionResult(null); setProvisionTarget(profile || null); }}
+                              disabled={processing}
+                              className="px-3 py-1 bg-brandAmber-500/20 text-brandAmber-300 rounded text-xs font-bold"
+                            >
+                              Provision Agency Ops
+                            </button>
+                          )}
+                          {profile?.agencyOpsTenantId && (
+                            <a
+                              href={profile.links?.agencyOpsConsoleUrl || `https://kolthoff-consulting.com/agency-ops/?tenant=${encodeURIComponent(profile.agencyOpsTenantId)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-3 py-1 bg-brandNavy-800 text-brandTeal-400 rounded text-xs"
+                            >
+                              Console
+                            </a>
+                          )}
                           <button onClick={() => setResetTarget(item)} className="px-2 py-1 text-red-400 text-xs">Reset</button>
                         </>
                       )}

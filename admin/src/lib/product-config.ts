@@ -141,7 +141,31 @@ export function getProductIdFromEnv(): ProductId {
 
 export function getProductConfig(productId?: ProductId): ProductConfig {
   const id = productId ?? getProductIdFromEnv();
+  if (id === 'agency-ops-starter') {
+    return resolveAgencyOpsRuntimeConfig();
+  }
   return PRODUCTS[id] ?? KOLTHOFF_OS;
+}
+
+/** Resolve Agency Ops tenant from ?tenant= for paid white-label clients. */
+export function resolveAgencyOpsRuntimeConfig(): ProductConfig {
+  const base = AGENCY_OPS_STARTER;
+  if (typeof window === 'undefined') return base;
+  const tenant = new URLSearchParams(window.location.search).get('tenant')?.trim();
+  if (tenant && /^agency-[a-z0-9-]+$/.test(tenant) && tenant !== 'agency-ops-demo') {
+    return {
+      ...base,
+      tenantId: tenant,
+      isDemo: false,
+      demoPasscode: undefined,
+      demoPasscodeHint: undefined,
+      embedParams: {
+        product: 'agency-ops-starter',
+        tenant,
+      },
+    };
+  }
+  return base;
 }
 
 export function getAdminTenantId(productId?: ProductId): string {

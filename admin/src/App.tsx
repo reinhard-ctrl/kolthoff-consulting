@@ -9,6 +9,7 @@ import Tenants from './pages/Tenants';
 import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
+import AgencyOpsManager from './pages/AgencyOpsManager';
 import Collections from './pages/Collections';
 import BrandingSettings from './pages/BrandingSettings';
 import EmbedApp from './pages/EmbedApp';
@@ -343,6 +344,7 @@ function AppRoutes() {
         {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/org-chart" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
         {!isAgencyOpsStarter() && <Route path="/contracts" element={<ContractLedger />} />}
+        {!isAgencyOpsStarter() && <Route path="/agency-ops-manager" element={<AgencyOpsManager />} />}
         <Route path="/collections" element={<Collections />} />
         {isAgencyOpsStarter() && <Route path="/settings/branding" element={<BrandingSettings />} />}
         {!isAgencyOpsStarter() && <Route path="/master" element={<Navigate to="/tenants?tab=support" replace />} />}
