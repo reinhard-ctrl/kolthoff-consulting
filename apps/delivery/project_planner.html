@@ -659,6 +659,7 @@
     };
 
     function getShortDeliverableName(name) {
+      const label = name == null ? '' : String(name);
       const mappings = {
         'Simple Privacy & Directory': 'Team List & Privacy Rules',
         'Anonymous Suggestion Box': 'Staff Feedback Channel',
@@ -689,8 +690,9 @@
         'Weekly Operations & Adoption Huddles': 'Operations Check-In Calls',
         'Managed App Hosting & IT Administration': 'Platform Hosting & User Care'
       };
-      if (mappings[name]) return mappings[name];
-      return name.length > 32 ? name.substring(0, 32) + '...' : name;
+      if (mappings[label]) return mappings[label];
+      if (!label) return 'Untitled deliverable';
+      return label.length > 32 ? label.substring(0, 32) + '...' : label;
     }
 
     // --- DATA CONSTANTS ---

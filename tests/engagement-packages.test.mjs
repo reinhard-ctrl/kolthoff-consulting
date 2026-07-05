@@ -51,6 +51,15 @@ assert.equal(liteForms?.selected, true);
 assert.equal(liteForms?.estHours, 12);
 assert.match(liteForms?.deliverable || '', /up to 3/i);
 
+const tasksWithDeliverable = [
+  { id: 'm1-01', category: 'MOD 1 - Business Leak Scan', deliverable: 'Saved deliverable name', selected: false, estHours: 3, tier: 'associate' },
+];
+const sparseCatalog = [
+  { id: 'm1-01', category: 'MOD 1 - Business Leak Scan', selected: false, estHours: 3, tier: 'associate' },
+];
+const preserved = H.applyPackageToTasks('leak-scan', tasksWithDeliverable, sparseCatalog);
+assert.equal(preserved.tasks.find((t) => t.id === 'm1-01')?.deliverable, 'Saved deliverable name');
+
 const payload = H.buildProfilePayload('p1', 'Ws', {
   clientCompany: 'Co',
   clientRep: 'Rep',
