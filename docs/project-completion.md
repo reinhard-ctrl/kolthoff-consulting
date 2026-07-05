@@ -143,18 +143,19 @@ Quick summary of what remains:
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **2.5** | Ops hardening — client sign/intake/portal, data model unity | **Engineering complete** — verify on production (Package P4) |
-| **3** | SSO, App Check, React migration, tenant provisioning | **Next** (Package P5–P7) |
-| **4** | Content, templates, delivery automation (**your focus**) | After 2.5 verify + Phase 3 |
+| **2.5** | Ops hardening — client sign/portal, workspace, embeds | **Complete on `main`** — verify on production (Package P4) |
+| **3** | SSO ✅, App Check, React migration, tenant provisioning | **In progress** — Agency Ops PRO Phase 1–2 done; Kolthoff wizard + P6 remain |
+| **4** | Content, templates, delivery automation (**your focus**) | After P4 verify |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
 Legacy bullet list (superseded by migration-roadmap.md):
 
-- Google Workspace SSO (`@kolthoff-consulting.com`)
-- App Check + reCAPTCHA
+- ~~Google Workspace SSO~~ ✅ live (redirect-first)
+- App Check + reCAPTCHA (optional enforcement)
 - Master Admin blueprint visual designer
 - Migrate delivery/ops/analytics HTML apps into React
-- Portal custom-token auth (replace anonymous client access)
+- ~~Portal custom-token auth~~ ✅
+- ~~Workspace deploy + admin embed~~ ✅
 
 ---
 
