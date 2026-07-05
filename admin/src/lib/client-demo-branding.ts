@@ -4,6 +4,60 @@ import { listBrandingPresets } from './tenant-branding';
 export const CLIENT_DEMO_PRESETS_STORAGE_KEY = 'agency-ops-client-demo-branding-presets';
 const LEGACY_PRIVATE_PRESETS_STORAGE_KEY = 'agency-ops-private-branding-presets';
 
+/** Bundled client rehearsal profiles — local browser only, never shared Firestore. */
+export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
+  {
+    id: 'golfx',
+    name: 'GolfX',
+    companyName: 'GolfX',
+    tagline: 'Indoor Golf & Performance Training',
+    primaryColor: '#166534',
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+  {
+    id: 'player-2-production',
+    name: 'Player 2 Production',
+    companyName: 'Player 2 Production',
+    tagline: 'Events, Festivals & Live Experiences',
+    primaryColor: '#7c3aed',
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+  {
+    id: 'wp-gaming',
+    name: 'WP / Gaming',
+    companyName: 'WP / Gaming',
+    tagline: 'Gaming & Esports Marketing',
+    primaryColor: '#0284c7',
+    logoUrl: '',
+    updatedAt: 1751606400000,
+  },
+];
+
+const BUNDLED_CLIENT_DEMO_PRESET_IDS = new Set(
+  DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.map((preset) => preset.id),
+);
+
+export function isBundledClientDemoPresetId(id: string | null | undefined): boolean {
+  return Boolean(id && BUNDLED_CLIENT_DEMO_PRESET_IDS.has(id));
+}
+
+export function mergeDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  return [
+    ...presets,
+    ...DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.filter(
+      (demo) => !presets.some((preset) => preset.id === demo.id),
+    ),
+  ];
+}
+
+export function shouldSeedDefaultClientDemoPresets(presets: BrandingPreset[]): boolean {
+  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some(
+    (demo) => !presets.some((preset) => preset.id === demo.id),
+  );
+}
+
 export function loadClientDemoBrandingPresets(): BrandingPreset[] {
   try {
     let raw = localStorage.getItem(CLIENT_DEMO_PRESETS_STORAGE_KEY);
@@ -57,4 +111,10 @@ export function mergeClientDemoBrandingPresets(incoming: BrandingPreset[]): Bran
   }
   saveClientDemoBrandingPresets(merged);
   return merged;
+}
+
+export function restoreDefaultClientDemoPresets(): BrandingPreset[] {
+  const next = mergeDefaultClientDemoPresets(loadClientDemoBrandingPresets());
+  saveClientDemoBrandingPresets(next);
+  return next;
 }

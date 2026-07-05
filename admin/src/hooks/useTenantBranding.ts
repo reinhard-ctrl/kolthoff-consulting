@@ -5,7 +5,10 @@ import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
   loadClientDemoBrandingPresets,
   mergeClientDemoBrandingPresets,
+  mergeDefaultClientDemoPresets,
   removeClientDemoBrandingPreset,
+  restoreDefaultClientDemoPresets,
+  shouldSeedDefaultClientDemoPresets,
   upsertClientDemoBrandingPreset,
 } from '../lib/client-demo-branding';
 import {
@@ -64,6 +67,7 @@ export function useTenantBranding() {
   const [presetsFieldPresent, setPresetsFieldPresent] = useState(false);
   const demoPresetsRestoreAttempted = useRef(false);
   const customPresetMigrationAttempted = useRef(false);
+  const clientDemoSeedAttempted = useRef(false);
 
   const presets = [...demoPresets, ...clientDemoPresets];
 
@@ -153,6 +157,18 @@ export function useTenantBranding() {
       }
     })();
   }, [loading, demoPresets, presetsFieldPresent, product.id]);
+
+  useEffect(() => {
+    if (loading || !isAgencyOpsStarter(product.id)) return;
+    if (clientDemoSeedAttempted.current) return;
+    clientDemoSeedAttempted.current = true;
+    const loaded = loadClientDemoBrandingPresets();
+    if (shouldSeedDefaultClientDemoPresets(loaded)) {
+      setClientDemoPresets(restoreDefaultClientDemoPresets());
+      return;
+    }
+    setClientDemoPresets(loaded);
+  }, [loading, product.id]);
 
   const saveBranding = async (next: TenantBrandingConfig, presetId?: string | null) => {
     const resolvedPresetId = presetId ?? activePresetId;
@@ -260,6 +276,11 @@ export function useTenantBranding() {
     }
   };
 
+  const restoreClientDemos = async () => {
+    const next = restoreDefaultClientDemoPresets();
+    setClientDemoPresets(next);
+  };
+
   return {
     branding,
     presets,
@@ -273,5 +294,6 @@ export function useTenantBranding() {
     applyPreset,
     deletePreset,
     restoreDemoPresets,
+    restoreClientDemos,
   };
 }
