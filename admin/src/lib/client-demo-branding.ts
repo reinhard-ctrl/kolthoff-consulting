@@ -11,7 +11,7 @@ export const CLIENT_DEMO_LOGO_URLS = {
   'wp-gaming': '/shared/assets/client-demos/wp-gaming-logo.svg',
 } as const;
 
-/** Bundled client rehearsal profiles — local browser only, never shared Firestore. */
+/** Bundled client rehearsal profiles — stored in tenant_settings/config.clientDemoPresets. */
 export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
   {
     id: 'golfx',
@@ -48,6 +48,12 @@ const BUNDLED_CLIENT_DEMO_PRESET_IDS = new Set(
 
 export function isBundledClientDemoPresetId(id: string | null | undefined): boolean {
   return Boolean(id && BUNDLED_CLIENT_DEMO_PRESET_IDS.has(id));
+}
+
+export function listClientDemoPresets(
+  map: Record<string, unknown> | null | undefined,
+): BrandingPreset[] {
+  return listBrandingPresets(map);
 }
 
 function bundledPresetIsIncomplete(existing: BrandingPreset): boolean {
@@ -98,7 +104,8 @@ export function shouldSeedDefaultClientDemoPresets(presets: BrandingPreset[]): b
   );
 }
 
-export function loadClientDemoBrandingPresets(): BrandingPreset[] {
+/** One-time migration source when Firestore has no clientDemoPresets yet. */
+export function loadLegacyClientDemoBrandingPresets(): BrandingPreset[] {
   try {
     let raw = localStorage.getItem(CLIENT_DEMO_PRESETS_STORAGE_KEY);
     if (!raw) {
@@ -117,52 +124,48 @@ export function loadClientDemoBrandingPresets(): BrandingPreset[] {
   }
 }
 
-export function saveClientDemoBrandingPresets(presets: BrandingPreset[]): void {
+export function clearLegacyClientDemoBrandingPresets(): void {
   try {
-    const map = Object.fromEntries(presets.map((preset) => [preset.id, preset]));
-    localStorage.setItem(CLIENT_DEMO_PRESETS_STORAGE_KEY, JSON.stringify(map));
+    localStorage.removeItem(CLIENT_DEMO_PRESETS_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_PRIVATE_PRESETS_STORAGE_KEY);
   } catch {
-    /* ignore quota / privacy mode */
+    /* ignore storage errors */
   }
 }
 
-export function upsertClientDemoBrandingPreset(preset: BrandingPreset): BrandingPreset[] {
-  const next = [
-    ...loadClientDemoBrandingPresets().filter((item) => item.id !== preset.id),
-    preset,
-  ];
-  saveClientDemoBrandingPresets(next);
-  return next;
+export function upsertClientDemoBrandingPreset(
+  presets: BrandingPreset[],
+  preset: BrandingPreset,
+): BrandingPreset[] {
+  return [...presets.filter((item) => item.id !== preset.id), preset];
 }
 
-export function removeClientDemoBrandingPreset(presetId: string): BrandingPreset[] {
-  const next = loadClientDemoBrandingPresets().filter((item) => item.id !== presetId);
-  saveClientDemoBrandingPresets(next);
-  return next;
+export function removeClientDemoBrandingPreset(
+  presets: BrandingPreset[],
+  presetId: string,
+): BrandingPreset[] {
+  return presets.filter((item) => item.id !== presetId);
 }
 
-export function mergeClientDemoBrandingPresets(incoming: BrandingPreset[]): BrandingPreset[] {
-  const existing = loadClientDemoBrandingPresets();
+export function mergeClientDemoBrandingPresets(
+  existing: BrandingPreset[],
+  incoming: BrandingPreset[],
+): BrandingPreset[] {
   const merged = [...existing];
   for (const preset of incoming) {
     if (!merged.some((item) => item.id === preset.id)) {
       merged.push(preset);
     }
   }
-  saveClientDemoBrandingPresets(merged);
   return merged;
 }
 
-export function seedDefaultClientDemoPresets(): BrandingPreset[] {
-  const next = mergeDefaultClientDemoPresets(loadClientDemoBrandingPresets());
-  saveClientDemoBrandingPresets(next);
-  return next;
+export function seedDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  return mergeDefaultClientDemoPresets(presets);
 }
 
-export function restoreDefaultClientDemoPresets(): BrandingPreset[] {
-  const next = mergeDefaultClientDemoPresets(loadClientDemoBrandingPresets(), { forceBundled: true });
-  saveClientDemoBrandingPresets(next);
-  return next;
+export function restoreDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
+  return mergeDefaultClientDemoPresets(presets, { forceBundled: true });
 }
 
 export const APPLIED_CLIENT_DEMO_STORAGE_KEY = 'agency-ops-applied-client-demo-id';
