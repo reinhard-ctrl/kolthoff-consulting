@@ -3,11 +3,14 @@ import { deleteField, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebas
 import { db, adminAppId } from '../lib/firebase';
 import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
+  loadAppliedClientDemoId,
   loadClientDemoBrandingPresets,
   mergeClientDemoBrandingPresets,
   mergeDefaultClientDemoPresets,
   removeClientDemoBrandingPreset,
   restoreDefaultClientDemoPresets,
+  seedDefaultClientDemoPresets,
+  saveAppliedClientDemoId,
   shouldSeedDefaultClientDemoPresets,
   upsertClientDemoBrandingPreset,
 } from '../lib/client-demo-branding';
@@ -40,14 +43,31 @@ function tenantConfigRef() {
   return doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
 }
 
-/** updateDoc replaces top-level map fields; setDoc merge leaves removed nested keys behind. */
+function isDeleteFieldValue(value: unknown): boolean {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      (value as { _methodName?: string })._methodName === 'deleteField',
+  );
+}
+
+function omitDeleteFields(patch: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(patch).filter(([, value]) => !isDeleteFieldValue(value)),
+  );
+}
+
+/** updateDoc replaces top-level map fields; setDoc cannot use deleteField(). */
 async function writeTenantConfig(patch: Record<string, unknown>) {
   const ref = tenantConfigRef();
   const snap = await getDoc(ref);
   if (snap.exists()) {
     await updateDoc(ref, patch);
-  } else {
-    await setDoc(ref, patch);
+    return;
+  }
+  const createPatch = omitDeleteFields(patch);
+  if (Object.keys(createPatch).length > 0) {
+    await setDoc(ref, createPatch);
   }
 }
 
@@ -62,6 +82,9 @@ export function useTenantBranding() {
     agencyOps ? loadClientDemoBrandingPresets() : [],
   );
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [appliedClientDemoId, setAppliedClientDemoId] = useState<string | null>(() =>
+    agencyOps ? loadAppliedClientDemoId() : null,
+  );
   const [loading, setLoading] = useState(agencyOps);
   const [saving, setSaving] = useState(false);
   const [presetsFieldPresent, setPresetsFieldPresent] = useState(false);
@@ -164,27 +187,39 @@ export function useTenantBranding() {
     clientDemoSeedAttempted.current = true;
     const loaded = loadClientDemoBrandingPresets();
     if (shouldSeedDefaultClientDemoPresets(loaded)) {
-      setClientDemoPresets(restoreDefaultClientDemoPresets());
+      setClientDemoPresets(seedDefaultClientDemoPresets());
       return;
     }
     setClientDemoPresets(loaded);
   }, [loading, product.id]);
 
+  const setAppliedClientDemo = (presetId: string | null) => {
+    setAppliedClientDemoId(presetId);
+    saveAppliedClientDemoId(presetId);
+  };
+
   const saveBranding = async (next: TenantBrandingConfig, presetId?: string | null) => {
     const resolvedPresetId = presetId ?? activePresetId;
-    if (resolvedPresetId && !isBundledDemoBrandingPresetId(resolvedPresetId)) {
-      return false;
-    }
+    const isDemoPreset = isBundledDemoBrandingPresetId(resolvedPresetId);
+    const isClientDemoPreset = Boolean(
+      resolvedPresetId && !isBundledDemoBrandingPresetId(resolvedPresetId),
+    );
 
     setSaving(true);
     try {
       await writeTenantConfig({
         branding: brandingPayload(next),
-        activeBrandingPresetId: isBundledDemoBrandingPresetId(resolvedPresetId)
-          ? resolvedPresetId
-          : deleteField(),
+        activeBrandingPresetId: isDemoPreset ? resolvedPresetId : deleteField(),
       });
+      if (isClientDemoPreset) {
+        setAppliedClientDemo(resolvedPresetId);
+      } else if (isDemoPreset) {
+        setAppliedClientDemo(null);
+      }
+      applyTenantBrandingCss(next);
       return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Could not save workspace branding.');
     } finally {
       setSaving(false);
     }
@@ -216,23 +251,27 @@ export function useTenantBranding() {
     }
   };
 
-  /** Apply a saved preset. Demo profiles update shared workspace; client demos preview locally only. */
+  /** Apply a saved preset to the workspace. Client demo profiles stay out of brandingPresets. */
   const applyPreset = async (presetId: string): Promise<'workspace' | 'client-demo'> => {
     const preset = presets.find((item) => item.id === presetId);
     if (!preset) return 'client-demo';
-
-    if (!isBundledDemoBrandingPresetId(presetId)) {
-      applyTenantBrandingCss(presetToConfig(preset));
-      return 'client-demo';
-    }
 
     setSaving(true);
     try {
       await writeTenantConfig({
         branding: brandingPayload(presetToConfig(preset)),
-        activeBrandingPresetId: presetId,
+        activeBrandingPresetId: isBundledDemoBrandingPresetId(presetId) ? presetId : deleteField(),
       });
-      return 'workspace';
+      if (isBundledDemoBrandingPresetId(presetId)) {
+        setAppliedClientDemo(null);
+        applyTenantBrandingCss(presetToConfig(preset));
+        return 'workspace';
+      }
+      setAppliedClientDemo(presetId);
+      applyTenantBrandingCss(presetToConfig(preset));
+      return 'client-demo';
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Could not apply branding profile.');
     } finally {
       setSaving(false);
     }
@@ -287,6 +326,7 @@ export function useTenantBranding() {
     demoPresets,
     clientDemoPresets,
     activePresetId,
+    appliedClientDemoId,
     loading,
     saving,
     saveBranding,

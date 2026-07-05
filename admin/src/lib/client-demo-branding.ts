@@ -4,6 +4,13 @@ import { listBrandingPresets } from './tenant-branding';
 export const CLIENT_DEMO_PRESETS_STORAGE_KEY = 'agency-ops-client-demo-branding-presets';
 const LEGACY_PRIVATE_PRESETS_STORAGE_KEY = 'agency-ops-private-branding-presets';
 
+/** Stable logo paths served from /shared (copied to dist on deploy). */
+export const CLIENT_DEMO_LOGO_URLS = {
+  golfx: '/shared/assets/client-demos/golfx-logo.svg',
+  'player-2-production': '/shared/assets/client-demos/player-2-production-logo.svg',
+  'wp-gaming': '/shared/assets/client-demos/wp-gaming-logo.svg',
+} as const;
+
 /** Bundled client rehearsal profiles — local browser only, never shared Firestore. */
 export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
   {
@@ -12,7 +19,7 @@ export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
     companyName: 'GolfX',
     tagline: 'Indoor Golf & Performance Training',
     primaryColor: '#166534',
-    logoUrl: '',
+    logoUrl: CLIENT_DEMO_LOGO_URLS.golfx,
     updatedAt: 1751606400000,
   },
   {
@@ -21,7 +28,7 @@ export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
     companyName: 'Player 2 Production',
     tagline: 'Events, Festivals & Live Experiences',
     primaryColor: '#7c3aed',
-    logoUrl: '',
+    logoUrl: CLIENT_DEMO_LOGO_URLS['player-2-production'],
     updatedAt: 1751606400000,
   },
   {
@@ -30,7 +37,7 @@ export const DEFAULT_CLIENT_DEMO_BRANDING_PRESETS: BrandingPreset[] = [
     companyName: 'WP / Gaming',
     tagline: 'Gaming & Esports Marketing',
     primaryColor: '#0284c7',
-    logoUrl: '',
+    logoUrl: CLIENT_DEMO_LOGO_URLS['wp-gaming'],
     updatedAt: 1751606400000,
   },
 ];
@@ -43,19 +50,38 @@ export function isBundledClientDemoPresetId(id: string | null | undefined): bool
   return Boolean(id && BUNDLED_CLIENT_DEMO_PRESET_IDS.has(id));
 }
 
-export function mergeDefaultClientDemoPresets(presets: BrandingPreset[]): BrandingPreset[] {
-  return [
-    ...presets,
-    ...DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.filter(
-      (demo) => !presets.some((preset) => preset.id === demo.id),
-    ),
-  ];
+function bundledPresetNeedsRefresh(existing: BrandingPreset, demo: BrandingPreset): boolean {
+  return (
+    (demo.logoUrl && !existing.logoUrl) ||
+    existing.primaryColor !== demo.primaryColor ||
+    existing.tagline !== demo.tagline ||
+    existing.companyName !== demo.companyName ||
+    existing.name !== demo.name
+  );
+}
+
+export function mergeDefaultClientDemoPresets(
+  presets: BrandingPreset[],
+  options: { forceBundled?: boolean } = {},
+): BrandingPreset[] {
+  const custom = presets.filter((preset) => !isBundledClientDemoPresetId(preset.id));
+  const bundled = DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.map((demo) => {
+    const existing = presets.find((preset) => preset.id === demo.id);
+    if (!existing || options.forceBundled) {
+      return { ...demo, updatedAt: Date.now() };
+    }
+    if (!bundledPresetNeedsRefresh(existing, demo)) return existing;
+    return { ...demo, updatedAt: Date.now() };
+  });
+  return [...bundled, ...custom];
 }
 
 export function shouldSeedDefaultClientDemoPresets(presets: BrandingPreset[]): boolean {
-  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some(
-    (demo) => !presets.some((preset) => preset.id === demo.id),
-  );
+  return DEFAULT_CLIENT_DEMO_BRANDING_PRESETS.some((demo) => {
+    const existing = presets.find((preset) => preset.id === demo.id);
+    if (!existing) return true;
+    return bundledPresetNeedsRefresh(existing, demo);
+  });
 }
 
 export function loadClientDemoBrandingPresets(): BrandingPreset[] {
@@ -113,8 +139,36 @@ export function mergeClientDemoBrandingPresets(incoming: BrandingPreset[]): Bran
   return merged;
 }
 
-export function restoreDefaultClientDemoPresets(): BrandingPreset[] {
+export function seedDefaultClientDemoPresets(): BrandingPreset[] {
   const next = mergeDefaultClientDemoPresets(loadClientDemoBrandingPresets());
   saveClientDemoBrandingPresets(next);
   return next;
+}
+
+export function restoreDefaultClientDemoPresets(): BrandingPreset[] {
+  const next = mergeDefaultClientDemoPresets(loadClientDemoBrandingPresets(), { forceBundled: true });
+  saveClientDemoBrandingPresets(next);
+  return next;
+}
+
+export const APPLIED_CLIENT_DEMO_STORAGE_KEY = 'agency-ops-applied-client-demo-id';
+
+export function loadAppliedClientDemoId(): string | null {
+  try {
+    return sessionStorage.getItem(APPLIED_CLIENT_DEMO_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveAppliedClientDemoId(presetId: string | null): void {
+  try {
+    if (presetId) {
+      sessionStorage.setItem(APPLIED_CLIENT_DEMO_STORAGE_KEY, presetId);
+      return;
+    }
+    sessionStorage.removeItem(APPLIED_CLIENT_DEMO_STORAGE_KEY);
+  } catch {
+    /* ignore storage errors */
+  }
 }
