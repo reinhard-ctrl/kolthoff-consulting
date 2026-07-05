@@ -66,4 +66,7 @@ export {
   outstandingAmount,
   invoicesToCsv,
   withholding2307ToCsv,
+  formatBillingPeriodLabel,
+  currentBillingPeriod,
+  suggestRetainerMonthlySuffix,
 } from '../../../shared/invoices.js';

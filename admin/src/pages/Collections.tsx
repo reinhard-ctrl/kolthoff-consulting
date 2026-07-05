@@ -11,9 +11,16 @@ import {
   isOverdue,
   outstandingAmount,
   withholding2307ToCsv,
+  formatBillingPeriodLabel,
   type InvoiceRecord,
   type Withholding2307Record,
 } from '../lib/invoices';
+import {
+  buildProMonthlyInvoiceDraft,
+  buildProSetupInvoiceDraft,
+  buildProSubscriptionRows,
+  PRO_1_SKU_LABEL,
+} from '../lib/subscription-billing';
 import { syncPortalBillingForAccessCode } from '../lib/portal-billing-sync';
 import { useProduct } from '../lib/product-context';
 import { isAgencyOpsStarter } from '../lib/product-config';
@@ -23,9 +30,25 @@ interface WorkbookProfile {
   clientCompany?: string;
   clientName?: string;
   quoteId?: string;
+  engagementType?: string;
+  productId?: string;
+  includeTax?: boolean;
+  subscriptionMonths?: number;
+  milestoneSplit?: string;
+  tasks?: unknown[];
+  links?: { portalClientId?: string; crmDealId?: string };
+  subscriptionBilling?: { contractSignedAt?: string; enabled?: boolean };
+  agencyOpsTenantId?: string;
 }
 
-type TabId = 'collections' | '2307';
+interface ContractRecord {
+  id: string;
+  profileId: string;
+  status: string;
+  signedAt?: string;
+}
+
+type TabId = 'collections' | 'subscriptions' | '2307';
 
 function statusBadge(status: string) {
   if (status === 'paid') return <span className="text-emerald-400 text-xs uppercase font-bold">Paid</span>;
@@ -54,6 +77,7 @@ export default function Collections() {
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [withholding, setWithholding] = useState<Withholding2307Record[]>([]);
   const [profiles, setProfiles] = useState<WorkbookProfile[]>([]);
+  const [contracts, setContracts] = useState<ContractRecord[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'overdue' | 'due_soon' | 'open'>('all');
@@ -86,6 +110,11 @@ export default function Collections() {
         const list: WorkbookProfile[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WorkbookProfile));
         setProfiles(list);
+      }),
+      onSnapshot(adminCol('contracts_ledger'), (snap) => {
+        const list: ContractRecord[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ContractRecord));
+        setContracts(list);
       }),
     ];
     return () => unsubs.forEach((u) => u());
@@ -129,6 +158,11 @@ export default function Collections() {
       return true;
     });
   }, [enriched, filter]);
+
+  const proSubscriptions = useMemo(
+    () => (agencyOps ? [] : buildProSubscriptionRows({ profiles, contracts, invoices })),
+    [agencyOps, profiles, contracts, invoices],
+  );
 
   const persistInvoice = async (invoice: InvoiceRecord) => {
     await setDoc(adminDoc('invoices', invoice.id), invoice);
@@ -221,6 +255,52 @@ export default function Collections() {
   const profileLabel = (profileId: string) => {
     const p = profiles.find((x) => x.id === profileId);
     return p ? getClientDisplayName(p) : profileId;
+  };
+
+  const issueProMonthlyInvoice = async (row: ReturnType<typeof buildProSubscriptionRows>[number]) => {
+    if (row.nextPeriodAlreadyInvoiced) {
+      showToast(`Invoice for ${formatBillingPeriodLabel(row.nextPeriod)} already exists.`);
+      return;
+    }
+    setProcessing(true);
+    try {
+      const invoice = buildProMonthlyInvoiceDraft({
+        profile: row.profile,
+        profileId: row.profileId,
+        period: row.nextPeriod,
+        retainerCostBase: row.retainerCostBase,
+        includeTax: row.includeTax,
+      });
+      await persistInvoice(invoice);
+      showToast(`Issued ${invoice.invoiceNumber} for ${formatBillingPeriodLabel(row.nextPeriod)}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to issue subscription invoice.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const issueProSetupInvoice = async (
+    row: ReturnType<typeof buildProSubscriptionRows>[number],
+    milestoneIndex: number,
+  ) => {
+    setProcessing(true);
+    try {
+      const invoice = buildProSetupInvoiceDraft({
+        profile: row.profile,
+        profileId: row.profileId,
+        milestoneIndex,
+        billingMilestones: row.schedule.milestones,
+        finalProjectCostBase: row.financials.finalProjectCostBase,
+        includeTax: row.includeTax,
+      });
+      await persistInvoice(invoice);
+      showToast(`Issued setup invoice ${invoice.invoiceNumber}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to issue setup invoice.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -319,6 +399,18 @@ export default function Collections() {
         >
           Invoices
         </button>
+        {!agencyOps && (
+          <button
+            type="button"
+            onClick={() => setTab('subscriptions')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase ${tab === 'subscriptions' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-400'}`}
+          >
+            PRO Subscriptions
+            {proSubscriptions.length > 0 && (
+              <span className="ml-1.5 text-[10px] opacity-80">({proSubscriptions.length})</span>
+            )}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setTab('2307')}
@@ -386,6 +478,106 @@ export default function Collections() {
                 : 'No invoices yet. Open Project Planner → Invoice tab → Issue Invoice to create one.'}
             </p>
           )}
+        </div>
+      )}
+
+      {tab === 'subscriptions' && !agencyOps && (
+        <div className="space-y-4">
+          <div className="glass-panel p-4 border border-brandAmber-500/20">
+            <h2 className="text-xs font-mono uppercase tracking-wider text-brandAmber-400 font-bold mb-1">
+              {PRO_1_SKU_LABEL} billing rhythm
+            </h2>
+            <p className="text-xs text-slate-400 max-w-3xl">
+              Signed PRO contracts appear here. Issue setup milestone invoices (typically 50/50), then monthly platform
+              subscription invoices each billing period. Invoices are saved to the register and appear on the Invoices tab.
+            </p>
+          </div>
+          <div className="glass-panel overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
+                <tr>
+                  <th className="p-4">Client</th>
+                  <th className="p-4">Signed</th>
+                  <th className="p-4 text-right">Monthly</th>
+                  <th className="p-4">Setup milestones</th>
+                  <th className="p-4">Subscription</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brandNavy-800">
+                {proSubscriptions.map((row) => (
+                  <tr key={row.profileId} className="hover:bg-brandNavy-800/30 align-top">
+                    <td className="p-4">
+                      <div className="font-bold">{row.clientCompany}</div>
+                      <div className="font-mono text-[10px] text-slate-500 mt-0.5">{row.quoteId}</div>
+                      {row.agencyOpsTenantId && (
+                        <div className="text-[10px] text-emerald-400 mt-1 font-mono">{row.agencyOpsTenantId}</div>
+                      )}
+                    </td>
+                    <td className="p-4 text-xs text-slate-500 font-mono">
+                      {row.contractSignedAt ? row.contractSignedAt.slice(0, 10) : '—'}
+                    </td>
+                    <td className="p-4 text-right font-mono text-brandTeal-400">
+                      {formatCurrency(row.monthlyAmount)}
+                      <span className="text-slate-500 text-[10px]">/mo</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="space-y-1.5">
+                        {row.setupStatus.map(({ milestone, index, invoiced }) => (
+                          <div key={index} className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span className={`truncate max-w-[220px] ${invoiced ? 'text-slate-500 line-through' : 'text-slate-300'}`} title={milestone.label}>
+                              {milestone.label}
+                            </span>
+                            {invoiced ? (
+                              <span className="text-emerald-400 text-[10px] uppercase font-bold shrink-0">Invoiced</span>
+                            ) : (
+                              <button
+                                type="button"
+                                disabled={processing}
+                                onClick={() => issueProSetupInvoice(row, index)}
+                                className="px-2 py-0.5 bg-brandNavy-800 hover:bg-brandNavy-750 border border-brandNavy-700 rounded text-[10px] font-bold shrink-0"
+                              >
+                                Issue
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {row.setupStatus.length === 0 && (
+                          <span className="text-slate-600 text-xs italic">No setup gates</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-4 text-xs">
+                      <div className="text-slate-300">
+                        {row.monthsBilled} / {row.subscriptionMonths} months billed
+                      </div>
+                      <div className="text-slate-500 mt-1">
+                        Next: <span className="font-mono text-brandAmber-300">{formatBillingPeriodLabel(row.nextPeriod)}</span>
+                      </div>
+                      {row.nextPeriodAlreadyInvoiced && (
+                        <span className="text-emerald-400 text-[10px] uppercase font-bold block mt-1">Next period invoiced</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        type="button"
+                        disabled={processing || row.nextPeriodAlreadyInvoiced || row.monthlyAmount <= 0}
+                        onClick={() => issueProMonthlyInvoice(row)}
+                        className="px-3 py-1 bg-brandAmber-500/20 text-brandAmber-300 rounded text-xs font-bold disabled:opacity-40"
+                      >
+                        Issue {formatBillingPeriodLabel(row.nextPeriod)}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {proSubscriptions.length === 0 && (
+              <p className="p-6 text-slate-500 italic">
+                No signed PRO 1 contracts yet. Close a deal in CRM, sign the contract, then return here to run setup and subscription billing.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
