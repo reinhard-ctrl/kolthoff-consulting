@@ -58,6 +58,24 @@ html.agency-ops-light .ops-sidebar-footer {
   font-family: inherit;
 }
 
+html.agency-ops-light .demo-appearance-toggle {
+  border-color: var(--border) !important;
+  background: var(--surface-raised) !important;
+}
+
+html.agency-ops-light .demo-appearance-toggle button[aria-pressed='true'] {
+  background: #ffffff !important;
+  color: var(--text-primary) !important;
+}
+
+html.agency-ops-light .demo-appearance-toggle button[aria-pressed='false'] {
+  color: var(--text-muted) !important;
+}
+
+html.agency-ops-light .demo-appearance-toggle button[aria-pressed='false']:hover {
+  color: var(--text-secondary) !important;
+}
+
 html.agency-ops-light .ops-main {
   background: var(--surface-canvas);
 }
