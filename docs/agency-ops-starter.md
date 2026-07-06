@@ -91,7 +91,7 @@ Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` 
 2. Planner → apply **Agency Ops Starter** package → generate contract
 3. Client signs → auto-provision on e-sign (`onContractLedgerWritten`)
 4. **Agency Ops Manager** (`/admin/agency-ops-manager`) → verify tenant **ready**, copy handoff
-5. Select tenant in **Active Agency Ops tenant** → sidebar **Agency Ops** opens client console for support
+5. Select tenant in **Active Agency Ops tenant** → **Open Agency Ops console** for support
 6. Client: passcode → branding → first deal (empty planner by design)
 
 **Manual / retry:** Agency Ops Manager **Provision now** or **Retry provision** (instant direct Firestore path). Contract Ledger shows status + console link.
