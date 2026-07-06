@@ -25,9 +25,11 @@ export function initEmbedMode(): boolean {
       height: 100%;
       overflow: hidden;
     }
-    html.kolthoff-embed [data-app-chrome],
-    html.kolthoff-embed aside[data-app-sidebar] {
+    html.kolthoff-embed [data-app-chrome] {
       display: none !important;
+    }
+    html.kolthoff-embed aside[data-workspace-sidebar] {
+      display: flex !important;
     }
     html.kolthoff-embed main,
     html.kolthoff-embed .flex.h-screen {
