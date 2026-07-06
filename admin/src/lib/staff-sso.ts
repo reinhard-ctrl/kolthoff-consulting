@@ -12,7 +12,6 @@ import { auth } from './firebase';
 import { isKolthoffStaffEmail } from './staff-domain';
 import { recordGoogleAdminSession } from './google-admin-session';
 import { provisionGoogleStaffViaFirestore } from './staff-provision-firestore';
-import { adminAppId } from './firebase';
 
 const SSO_PENDING_KEY = 'kolthoff_google_sso_pending';
 const REDIRECT_RESULT_TIMEOUT_MS = 8000;
@@ -74,23 +73,8 @@ async function getRedirectResultWithTimeout() {
   ]);
 }
 
-async function logBackgroundProvisionFailure(user: User, err: unknown): Promise<void> {
-  try {
-    await user.getIdToken(true);
-    const token = await user.getIdTokenResult();
-    if (
-      (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') &&
-      token.claims.tenantId === adminAppId
-    ) {
-      return;
-    }
-  } catch {
-    /* session still grants access via google_admin_sessions */
-  }
-  console.warn(
-    'Background staff provisioning failed (Google admin session still grants access):',
-    err,
-  );
+async function logBackgroundProvisionFailure(_user: User, _err: unknown): Promise<void> {
+  // google_admin_sessions already grants admin access — claim sync is best-effort
 }
 
 async function finalizeGoogleStaffUser(

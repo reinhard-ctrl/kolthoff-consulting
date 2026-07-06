@@ -2,8 +2,8 @@ import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db, adminAppId } from './firebase';
 
-const PROVISION_TIMEOUT_MS = 45000;
-const RETRY_WAIT_MS = 30000;
+const PROVISION_TIMEOUT_MS = 90000;
+const RETRY_WAIT_MS = 60000;
 
 function staffSsoRequestRef(uid: string) {
   return doc(db, 'artifacts', adminAppId, 'public', 'data', 'staff_sso_requests', uid);

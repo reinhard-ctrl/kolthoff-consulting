@@ -26,6 +26,11 @@ interface WorkbookProfileOption {
   productId?: string;
   agencyOpsTenantId?: string;
   provisioningStatus?: string;
+  provisioningError?: string;
+}
+
+function isProProfile(p: WorkbookProfileOption): boolean {
+  return p.engagementType === 'product' || p.productId === 'pro1';
 }
 
 function slugifyAgencyName(name: string): string {
@@ -50,6 +55,7 @@ export default function AgencyOpsManager() {
   const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<PrepareResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -73,10 +79,21 @@ export default function AgencyOpsManager() {
 
   const proProfiles = useMemo(
     () => profiles.filter((p) =>
-      (p.engagementType === 'product' || p.productId === 'pro1')
+      isProProfile(p)
       && !p.agencyOpsTenantId
-      && p.provisioningStatus !== 'provisioning',
+      && p.provisioningStatus !== 'provisioning'
+      && p.provisioningStatus !== 'failed',
     ),
+    [profiles],
+  );
+
+  const provisioningProfiles = useMemo(
+    () => profiles.filter((p) => isProProfile(p) && p.provisioningStatus === 'provisioning' && !p.agencyOpsTenantId),
+    [profiles],
+  );
+
+  const failedProfiles = useMemo(
+    () => profiles.filter((p) => isProProfile(p) && (p.provisioningStatus === 'failed' || Boolean(p.provisioningError)) && !p.agencyOpsTenantId),
     [profiles],
   );
 
@@ -93,6 +110,25 @@ export default function AgencyOpsManager() {
     setRepEmail('');
     setCustomPasscode('');
     setShowModal(true);
+  };
+
+  const runProvisionForProfile = async (profile: WorkbookProfileOption) => {
+    if (!profile.clientCompany && !profile.id) return;
+    setRetryingId(profile.id);
+    try {
+      await bootstrapAuth();
+      const data = await provisionAgencyOpsViaFirestore({
+        profileId: profile.id,
+        clientName: (profile.clientCompany || profile.id).trim(),
+        tenantId: slugifyAgencyName(profile.clientCompany || profile.id) || undefined,
+      });
+      setResult(data);
+      showToast(`Tenant ${data.tenantId} provisioned.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Provisioning failed');
+    } finally {
+      setRetryingId(null);
+    }
   };
 
   const runProvision = async () => {
@@ -139,6 +175,7 @@ export default function AgencyOpsManager() {
           <p className="text-sm text-slate-400 max-w-2xl">
             Provision white-label Agency Ops tenants after PRO 1 contracts are signed.
             PRO 1 contracts auto-provision on e-sign; use this page to retry failures or provision manually.
+            Console warnings about staff SSO timeout are harmless — your Google admin session still works.
           </p>
         </div>
         <button
@@ -149,6 +186,56 @@ export default function AgencyOpsManager() {
           Provision Tenant
         </button>
       </div>
+
+      {provisioningProfiles.length > 0 && (
+        <div className="glass-panel p-4 mb-6 border border-brandTeal-500/20">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-brandTeal-400 font-bold mb-2">
+            Provisioning in progress
+          </h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Auto-provision runs after contract sign. Cold Cloud Functions can take up to 2 minutes — refresh if stuck.
+          </p>
+          <div className="space-y-2">
+            {provisioningProfiles.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div>
+                  <span className="font-semibold text-white">{p.clientCompany || p.id}</span>
+                  {p.quoteId && <span className="text-slate-500 font-mono text-xs ml-2">{p.quoteId}</span>}
+                </div>
+                <span className="text-amber-400 text-xs uppercase font-bold animate-pulse">Provisioning…</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {failedProfiles.length > 0 && (
+        <div className="glass-panel p-4 mb-6 border border-rose-500/30">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-rose-400 font-bold mb-2">
+            Provisioning failed — retry
+          </h2>
+          <div className="space-y-2">
+            {failedProfiles.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <div>
+                  <span className="font-semibold text-white">{p.clientCompany || p.id}</span>
+                  {p.provisioningError && (
+                    <span className="block text-rose-300/80 text-xs mt-1 max-w-xl">{p.provisioningError}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => runProvisionForProfile(p)}
+                  disabled={retryingId === p.id}
+                  className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm disabled:opacity-50"
+                >
+                  {retryingId === p.id ? 'Retrying…' : 'Retry provision'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {proProfiles.length > 0 && (
         <div className="glass-panel p-4 mb-6 border border-brandAmber-500/20">
@@ -227,8 +314,14 @@ export default function AgencyOpsManager() {
             ))}
           </tbody>
         </table>
-        {tenants.length === 0 && (
-          <p className="p-6 text-slate-500 italic">No Agency Ops tenants provisioned yet.</p>
+        {tenants.length === 0 && provisioningProfiles.length === 0 && failedProfiles.length === 0 && (
+          <p className="p-6 text-slate-500 italic">
+            No Agency Ops tenants yet. After a PRO 1 contract is signed, a tenant should appear here within ~2 minutes.
+            If not, use &quot;Retry provision&quot; above or Provision Tenant manually.
+          </p>
+        )}
+        {tenants.length === 0 && (provisioningProfiles.length > 0 || failedProfiles.length > 0) && (
+          <p className="p-6 text-slate-500 italic">Tenant registry empty — check provisioning status above.</p>
         )}
       </div>
 

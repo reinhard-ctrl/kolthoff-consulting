@@ -1,7 +1,7 @@
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, adminAppId } from './firebase';
 
-const PROVISION_TIMEOUT_MS = 60000;
+const PROVISION_TIMEOUT_MS = 120000;
 
 export interface AgencyOpsProvisionInput {
   clientName: string;

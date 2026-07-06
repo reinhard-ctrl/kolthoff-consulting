@@ -53,7 +53,7 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 | B1 | CRM: create or open deal tagged as **product** (Agency Ops) | ☐ |
 | B2 | Planner: apply **Agency Ops Starter** package to profile | ☐ |
 | B3 | Contract Ledger: send sign link → sign in incognito | ☐ |
-| B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** or **provisioned** | ☐ |
+| B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** (may take ~2 min after sign on cold Functions). If empty, check **Provisioning in progress** or **Retry provision** panel | ☐ |
 | B5 | Open `/agency-ops/?tenant=<slug>` — demo loads with client branding | ☐ |
 | B6 | **Collections** → **PRO Subscriptions** tab → issue setup fee + monthly invoice | ☐ |
 
@@ -83,7 +83,8 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 | Portal auth API 403 | Expected with private invoker + org policy — portal uses Firestore-direct auth |
 | Google SSO stuck | Add authorized domain + OAuth redirect URI — see `docs/app-check-sso.md` |
 | Stale admin / 404 embed | Hard refresh; check CI build did not skip workspace |
-| Agency Ops tenant missing | Agency Ops Manager → Retry provision; check Functions logs |
+| Console: staff SSO / provisioning timeout | Harmless — Google admin session still works; ignore or hard refresh |
+| Agency Ops tenant missing after 2 min | Agency Ops Manager → **Retry provision** on failed deal, or **Provision** manually |
 
 ---
 

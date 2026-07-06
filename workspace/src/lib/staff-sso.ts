@@ -74,25 +74,8 @@ async function getRedirectResultWithTimeout() {
   ]);
 }
 
-const ADMIN_APP = 'kolthoff-admin-app';
-
-async function logBackgroundProvisionFailure(user: User, err: unknown): Promise<void> {
-  try {
-    await user.getIdToken(true);
-    const token = await user.getIdTokenResult();
-    if (
-      (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') &&
-      token.claims.tenantId === ADMIN_APP
-    ) {
-      return;
-    }
-  } catch {
-    /* session still grants access via google_admin_sessions */
-  }
-  console.warn(
-    'Background staff provisioning failed (Google admin session still grants access):',
-    err,
-  );
+async function logBackgroundProvisionFailure(_user: User, _err: unknown): Promise<void> {
+  // google_admin_sessions already grants admin access — claim sync is best-effort
 }
 
 async function finalizeGoogleStaffUser(
