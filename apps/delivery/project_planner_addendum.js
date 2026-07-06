@@ -229,10 +229,22 @@
     const logoNode = renderPrintBrandLogo && brand
       ? renderPrintBrandLogo(brand)
       : (BrandLogo ? React.createElement(BrandLogo, { className: 'w-14 h-14 shrink-0 text-brandTeal-500' }) : null);
+    const primary = (brand?.primaryColor || '#4f46e5').trim();
+    const brandSurfaceStyle = starterUi
+      ? {
+          '--brand-primary': primary,
+          '--brand-primary-soft': `${primary}14`,
+          '--brand-primary-ring': `${primary}40`,
+        }
+      : undefined;
 
     return React.createElement(
       'div',
-      { id: 'addendum-print-area', className: `xl:col-span-8 planner-split-panel print:w-full print-section text-left font-sans${starterUi ? ' starter-pdf-neutral' : ''}` },
+      {
+        id: 'addendum-print-area',
+        className: `xl:col-span-8 planner-split-panel print:w-full print-section text-left font-sans${starterUi ? ' starter-pdf-branded' : ''}`,
+        style: brandSurfaceStyle,
+      },
       React.createElement(
         'section',
         { className: 'print-card bg-white text-slate-900 p-8 rounded-xl border border-slate-200 print:rounded-none print:border-0 print:p-0 space-y-6' },
@@ -241,7 +253,7 @@
           { className: 'space-y-4 print-avoid-break' },
           React.createElement(
             'div',
-            { className: 'flex items-center gap-4 pb-4 border-b border-slate-200' },
+            { className: 'flex items-center gap-4 pb-4 border-b-2 border-brandTeal-500 print-card-header' },
             logoNode,
             React.createElement(
               'div',
@@ -249,7 +261,7 @@
               starterUi
                 ? [
                     React.createElement('h2', { key: 'name', className: 'text-lg font-bold text-slate-900 leading-tight' }, issuerName),
-                    brand?.tagline && React.createElement('p', { key: 'tag', className: 'text-[10px] text-slate-500 mt-1' }, brand.tagline),
+                    brand?.tagline && React.createElement('p', { key: 'tag', className: 'text-[10px] print-accent font-semibold mt-1' }, brand.tagline),
                   ]
                 : [
                     React.createElement('h2', { key: 'name', className: 'text-sm font-bold text-slate-900 uppercase tracking-wide' }, preparedBy),

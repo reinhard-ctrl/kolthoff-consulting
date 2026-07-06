@@ -455,81 +455,63 @@
         line-height: 1.2 !important;
       }
 
-      /* Agency Ops PDF template — neutral grey/black (demo UI keeps brand colors) */
-      .starter-pdf-neutral .print-accent,
-      html.agency-starter-light .starter-pdf-neutral .print-accent,
-      html.agency-starter-dark .starter-pdf-neutral .print-accent {
-        color: #0f172a !important;
-        fill: #0f172a !important;
+      /* Agency Ops PDF template — client branding accents (mirrors Kolthoff teal print role) */
+      .starter-pdf-branded .print-accent {
+        color: var(--brand-primary, #4f46e5) !important;
+        fill: var(--brand-primary, #4f46e5) !important;
       }
-      .starter-pdf-neutral .print-card-header,
-      html.agency-starter-light .starter-pdf-neutral .print-card-header,
-      html.agency-starter-dark .starter-pdf-neutral .print-card-header {
-        border-bottom-color: #334155 !important;
+      .starter-pdf-branded .print-card-header {
+        border-bottom-color: var(--brand-primary, #4f46e5) !important;
       }
-      .starter-pdf-neutral .print-pill,
-      html.agency-starter-light .starter-pdf-neutral .print-pill,
-      html.agency-starter-dark .starter-pdf-neutral .print-pill {
-        color: #334155 !important;
+      .starter-pdf-branded .print-pill {
+        color: var(--brand-primary, #4f46e5) !important;
       }
-      .starter-pdf-neutral .print-chaos-metric,
-      html.agency-starter-light .starter-pdf-neutral .print-chaos-metric,
-      html.agency-starter-dark .starter-pdf-neutral .print-chaos-metric {
-        border-left-color: #475569 !important;
+      .starter-pdf-branded .print-chaos-metric {
+        border-left-color: var(--brand-primary, #4f46e5) !important;
       }
-      .starter-pdf-neutral [class*="text-brandTeal"],
-      .starter-pdf-neutral [class*="text-teal"],
-      html.agency-starter-light .starter-pdf-neutral [class*="text-brandTeal"],
-      html.agency-starter-light .starter-pdf-neutral [class*="text-teal"],
-      html.agency-starter-dark .starter-pdf-neutral [class*="text-brandTeal"],
-      html.agency-starter-dark .starter-pdf-neutral [class*="text-teal"] {
-        color: #0f172a !important;
+      .starter-pdf-branded [class*="text-brandTeal"],
+      .starter-pdf-branded [class*="text-teal"] {
+        color: var(--brand-primary, #4f46e5) !important;
       }
-      .starter-pdf-neutral [class*="border-brandTeal"],
-      html.agency-starter-light .starter-pdf-neutral [class*="border-brandTeal"],
-      html.agency-starter-dark .starter-pdf-neutral [class*="border-brandTeal"] {
-        border-color: #cbd5e1 !important;
+      .starter-pdf-branded [class*="border-brandTeal"] {
+        border-color: var(--brand-primary-ring, #4f46e540) !important;
       }
-      .starter-pdf-neutral [class*="bg-brandTeal"],
-      html.agency-starter-light .starter-pdf-neutral [class*="bg-brandTeal"],
-      html.agency-starter-dark .starter-pdf-neutral [class*="bg-brandTeal"] {
-        background-color: #f8fafc !important;
+      .starter-pdf-branded [class*="bg-brandTeal"] {
+        background-color: var(--brand-primary-soft, #4f46e514) !important;
       }
-      .starter-pdf-neutral .roadmap-gantt-bar-fill[class*="brandTeal"],
-      html.agency-starter-light .starter-pdf-neutral .roadmap-gantt-bar-fill[class*="brandTeal"],
-      html.agency-starter-dark .starter-pdf-neutral .roadmap-gantt-bar-fill[class*="brandTeal"] {
-        background-color: #f1f5f9 !important;
-        border-color: #94a3b8 !important;
+      .starter-pdf-branded .roadmap-gantt-bar-fill[class*="brandTeal"] {
+        background-color: var(--brand-primary-soft, #4f46e514) !important;
+        border-color: var(--brand-primary-ring, #4f46e540) !important;
       }
     }
 
-    /* Agency Ops document preview + PDF — grey/black accents in print template only */
-    .starter-pdf-neutral .print-accent {
-      color: #0f172a !important;
-      fill: #0f172a !important;
+    /* Agency Ops document preview + PDF — tenant brand color accents */
+    .starter-pdf-branded .print-accent {
+      color: var(--brand-primary, #4f46e5) !important;
+      fill: var(--brand-primary, #4f46e5) !important;
     }
-    .starter-pdf-neutral .print-card-header {
-      border-bottom-color: #334155 !important;
+    .starter-pdf-branded .print-card-header {
+      border-bottom-color: var(--brand-primary, #4f46e5) !important;
     }
-    .starter-pdf-neutral .print-pill {
-      color: #334155 !important;
+    .starter-pdf-branded .print-pill {
+      color: var(--brand-primary, #4f46e5) !important;
     }
-    .starter-pdf-neutral .print-chaos-metric {
-      border-left-color: #475569 !important;
+    .starter-pdf-branded .print-chaos-metric {
+      border-left-color: var(--brand-primary, #4f46e5) !important;
     }
-    .starter-pdf-neutral [class*="text-brandTeal"],
-    .starter-pdf-neutral [class*="text-teal"] {
-      color: #0f172a !important;
+    .starter-pdf-branded [class*="text-brandTeal"],
+    .starter-pdf-branded [class*="text-teal"] {
+      color: var(--brand-primary, #4f46e5) !important;
     }
-    .starter-pdf-neutral [class*="border-brandTeal"] {
-      border-color: #cbd5e1 !important;
+    .starter-pdf-branded [class*="border-brandTeal"] {
+      border-color: var(--brand-primary-ring, #4f46e540) !important;
     }
-    .starter-pdf-neutral [class*="bg-brandTeal"] {
-      background-color: #f8fafc !important;
+    .starter-pdf-branded [class*="bg-brandTeal"] {
+      background-color: var(--brand-primary-soft, #4f46e514) !important;
     }
-    .starter-pdf-neutral .roadmap-gantt-bar-fill[class*="brandTeal"] {
-      background-color: #f1f5f9 !important;
-      border-color: #94a3b8 !important;
+    .starter-pdf-branded .roadmap-gantt-bar-fill[class*="brandTeal"] {
+      background-color: var(--brand-primary-soft, #4f46e514) !important;
+      border-color: var(--brand-primary-ring, #4f46e540) !important;
     }
   </style>
   <script>
@@ -658,6 +640,14 @@
       { name: 'mod4', label: bundleNames?.mod4 || modChip(4) },
     ];
     const STARTER_UI = isAgencyStarterContext();
+    const pdfBrandCssVars = (primaryColor) => {
+      const primary = (primaryColor || '#4f46e5').trim();
+      return {
+        '--brand-primary': primary,
+        '--brand-primary-soft': `${primary}14`,
+        '--brand-primary-ring': `${primary}40`,
+      };
+    };
     const MOD_1 = H?.MOD_CATEGORIES?.mod1 ?? 'MOD 1 - Business Leak Scan';
     const MOD_2 = H?.MOD_CATEGORIES?.mod2 ?? 'MOD 2 - How Your Business Runs';
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
@@ -1247,7 +1237,8 @@
       }
       return (
         <div
-          className="w-14 h-14 shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-xl bg-slate-700"
+          className="w-14 h-14 shrink-0 rounded-lg flex items-center justify-center text-white font-bold text-xl"
+          style={{ backgroundColor: brand.primaryColor || '#4f46e5' }}
           aria-hidden="true"
         >
           {(brand.companyName || 'A').charAt(0)}
@@ -1430,6 +1421,10 @@
       const issuerCompanyName = STARTER_UI ? (brand.companyName || 'Studio North') : 'Kolthoff Consulting';
       const issuerLegalName = STARTER_UI ? (brand.companyName || 'Studio North') : preparedBy;
       const issuerTagline = STARTER_UI ? (brand.tagline || '') : 'Operational Excellence & Strategy';
+      const starterPdfBrandVars = useMemo(
+        () => (STARTER_UI ? pdfBrandCssVars(brand.primaryColor) : null),
+        [brand.primaryColor],
+      );
       const [targetStartDate, setTargetStartDate] = useState(activeProfile.targetStartDate ?? '');
       const [proposalObjectives, setProposalObjectives] = useState(activeProfile.proposalObjectives);
       const [proposalSponsor, setProposalSponsor] = useState(activeProfile.proposalSponsor);
@@ -2961,7 +2956,7 @@
       }, [isAddendumInvoiceMode, invoiceTargetAddendum, invoiceTargetEconomics, invoiceMilestone, finalProjectCostBase, retainerCostTotalBase, retainerCostPart, retainerCostTotalPart, retainerBillingPeriod, billingMilestones, quoteId, includeTax, discountPercent, subscriptionMonths, isProEngagement, proProductMeta]);
 
       const renderPrintHeader = (title, isNda = false, isInvoice = false, isRoadmap = false) => (
-        <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 mb-8 print-card-header gap-6 font-sans ${STARTER_UI ? 'border-slate-800' : 'border-brandTeal-500'}`}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-8 border-b-2 border-brandTeal-500 mb-8 print-card-header gap-6 font-sans">
           <div className="flex items-center gap-4">
             {renderPrintBrandLogo(brand)}
             <div>
@@ -2969,7 +2964,7 @@
                 <>
                   <h1 className="font-sans font-black tracking-tight text-lg text-slate-900 leading-tight">{issuerCompanyName}</h1>
                   {issuerTagline ? (
-                    <span className="text-[10px] font-semibold tracking-wide block mt-1 font-sans text-slate-600">{issuerTagline}</span>
+                    <span className="text-[10px] print-accent font-semibold tracking-wide block mt-1 font-sans">{issuerTagline}</span>
                   ) : null}
                 </>
               ) : (
@@ -4494,7 +4489,7 @@
             return renderPrintFooter(label, sectionIdx, packageSectionCount);
           };
           return (
-            <div className={`xl:col-span-8 planner-split-panel print:w-full print:max-w-none space-y-8 print:space-y-0 print:block text-left${STARTER_UI ? ' starter-pdf-neutral' : ''}`} id="package-print-area">
+            <div className={`xl:col-span-8 planner-split-panel print:w-full print:max-w-none space-y-8 print:space-y-0 print:block text-left${STARTER_UI ? ' starter-pdf-branded' : ''}`} id="package-print-area" style={starterPdfBrandVars || undefined}>
               {printCover && (
                 <section aria-label="Package cover page" className="bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium mb-8 print:mb-0" style={{ pageBreakAfter: 'always', breakAfter: 'page' }}>
                   {renderCoverPage()}
@@ -4549,7 +4544,7 @@
         else if (isNda) headerTitle = "CONFIDENTIAL NDA AGREEMENT";
 
         return (
-          <div className={`xl:col-span-8 planner-split-panel print:w-full print:max-w-none bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium text-left${STARTER_UI ? ' starter-pdf-neutral' : ''}`} id={`${view}-print-area`}>
+          <div className={`xl:col-span-8 planner-split-panel print:w-full print:max-w-none bg-white text-slate-900 border border-slate-200 rounded-xl p-8 sm:p-12 shadow-2xl print-card print-section font-sans font-medium text-left${STARTER_UI ? ' starter-pdf-branded' : ''}`} id={`${view}-print-area`} style={starterPdfBrandVars || undefined}>
             {isInvoice && renderEOPTAlertBlock(isInvoice)}
             {renderPrintHeader(headerTitle, isNda, isInvoice, false)}
             {!isNda && renderCustomerBlock(isInvoice, false)}
