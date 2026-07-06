@@ -247,6 +247,11 @@ service cloud.firestore {
       allow list, create, update, delete: if isStaffMember();
     }
 
+    // Core Workspace client registry — staff list for Workspace Admin
+    match /artifacts/kolthoff-admin-app/public/data/core_workspaces/{workspaceId} {
+      allow read, write: if isStaffMember();
+    }
+
     match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
       allow read, write: if isStaffMember();
     }
