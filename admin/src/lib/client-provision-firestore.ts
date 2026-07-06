@@ -36,7 +36,11 @@ function newRequestId(): string {
   return `cw-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-async function waitForProvision(requestId: string, timeoutMs: number): Promise<ClientProvisionResult> {
+async function waitForProvision(
+  requestId: string,
+  timeoutMs: number,
+  onProgress?: (message: string) => void,
+): Promise<ClientProvisionResult> {
   const ref = provisionRequestRef(requestId);
 
   return new Promise((resolve, reject) => {
@@ -49,7 +53,11 @@ async function waitForProvision(requestId: string, timeoutMs: number): Promise<C
       ref,
       (snap) => {
         const data = snap.data();
-        if (data?.status === 'complete') {
+        if (!data) return;
+
+        if (data.status === 'pending') {
+          onProgress?.('Server is provisioning the workspace…');
+        } else if (data.status === 'complete') {
           clearTimeout(timeout);
           unsub();
           resolve({
@@ -64,7 +72,7 @@ async function waitForProvision(requestId: string, timeoutMs: number): Promise<C
             message: String(data.message || 'Client workspace provisioned.'),
             workspaceCreated: Boolean(data.workspaceCreated),
           });
-        } else if (data?.status === 'error') {
+        } else if (data.status === 'error') {
           clearTimeout(timeout);
           unsub();
           reject(new Error(String(data.error || 'Client workspace provisioning failed')));
@@ -108,10 +116,11 @@ async function enqueueProvisionRequest(input: ClientProvisionInput): Promise<str
 /** Provision via Firestore trigger — works when Cloud Functions are not publicly invokable */
 export async function provisionClientWorkspaceViaFirestore(
   input: ClientProvisionInput,
-  options?: { timeoutMs?: number },
+  options?: { timeoutMs?: number; onProgress?: (message: string) => void },
 ): Promise<ClientProvisionResult> {
+  options?.onProgress?.('Queuing provision request…');
   const requestId = await enqueueProvisionRequest(input);
-  return waitForProvision(requestId, options?.timeoutMs ?? PROVISION_TIMEOUT_MS);
+  return waitForProvision(requestId, options?.timeoutMs ?? PROVISION_TIMEOUT_MS, options?.onProgress);
 }
 
 export async function retryClientProvisionRequest(

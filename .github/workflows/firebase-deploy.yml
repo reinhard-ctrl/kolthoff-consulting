@@ -146,8 +146,6 @@ jobs:
           ORPHANS=(
             validateWorkbookProfile
             onAgencyOpsProvisionRequest
-            processClientProvisionRequest
-            onApprovalRequestWritten
           )
           for FN in "${ORPHANS[@]}"; do
             echo "=== Removing orphaned function: $FN ==="
@@ -185,14 +183,14 @@ jobs:
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal
-          for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp provisionGoogleStaff prepareAgencyOpsTenant; do
+          for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp provisionGoogleStaff prepareAgencyOpsTenant prepareClientWorkspace createClientWorkspace; do
             gcloud functions add-iam-policy-binding "$FN" \
               --gen2 --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
               --role="roles/cloudfunctions.invoker" \
               --quiet || true
           done
-          for SVC in verifyadminpasscode generateportaltoken generateportaltokenhttp requestworkspacepasswordreset provisiongooglestaff prepareagencyopstenant; do
+          for SVC in verifyadminpasscode generateportaltoken generateportaltokenhttp requestworkspacepasswordreset provisiongooglestaff prepareagencyopstenant prepareclientworkspace createclientworkspace; do
             gcloud run services add-iam-policy-binding "$SVC" \
               --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
@@ -215,8 +213,6 @@ jobs:
           ORPHANS=(
             validateWorkbookProfile
             onAgencyOpsProvisionRequest
-            processClientProvisionRequest
-            onApprovalRequestWritten
           )
           for FN in "${ORPHANS[@]}"; do
             echo "=== Removing orphaned function before retry: $FN ==="

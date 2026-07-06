@@ -347,11 +347,21 @@ async function sendPasswordResetEmail(email: string, continueUrl: string): Promi
   throw lastError || new Error('sendOobCode failed');
 }
 
-async function callerIsAdmin(uid: string | undefined, tokenRole: unknown): Promise<boolean> {
+async function callerIsAdmin(
+  uid: string | undefined,
+  tokenRole: unknown,
+  tokenEmail?: unknown,
+): Promise<boolean> {
   if (!uid) return false;
   if (tokenRole === 'kolthoff_admin' || tokenRole === 'admin') return true;
   const session = await db.doc(`artifacts/kolthoff-admin-app/public/data/admin_sessions/${uid}`).get();
-  return session.exists;
+  if (session.exists) return true;
+  const googleSession = await db.doc(`artifacts/kolthoff-admin-app/public/data/google_admin_sessions/${uid}`).get();
+  if (googleSession.exists) return true;
+  if (typeof tokenEmail === 'string' && tokenEmail.toLowerCase().endsWith('@kolthoff-consulting.com')) {
+    return true;
+  }
+  return false;
 }
 
 async function verifyPasscode(code: string) {
@@ -490,7 +500,7 @@ export const generatePortalTokenHttp = onRequest({ invoker: 'private', cors: tru
 
 /** Invite workspace user — creates Firebase Auth user + core_users doc */
 export const inviteWorkspaceUser = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -545,7 +555,7 @@ export const requestWorkspacePasswordReset = onCall({ invoker: 'public' }, async
 
 /** Admin-triggered password reset for a workspace user */
 export const sendWorkspacePasswordReset = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -572,7 +582,7 @@ export const sendWorkspacePasswordReset = onCall(async (request) => {
 
 /** Remove a workspace member from a tenant */
 export const removeWorkspaceUser = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -646,7 +656,7 @@ export const removeWorkspaceUser = onCall(async (request) => {
 
 /** Provision an isolated Core Workspace tenant for a client */
 export const createClientWorkspace = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -862,7 +872,7 @@ async function prepareClientWorkspaceInternal(params: {
 
 /** Prepare workspace + client portal delivery + optional contact invite */
 export const prepareClientWorkspace = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
@@ -1095,7 +1105,7 @@ export const onStaffSsoProvisionRequest = onDocumentWritten(
 
 /** Set custom claims — kolthoff admin only */
 export const setUserClaims = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Kolthoff admin only');
   }
@@ -1601,7 +1611,7 @@ function buildAgencyOpsProvisionResponse(
 
 /** Provision white-label Agency Ops tenant after PRO 1 contract sign */
 export const prepareAgencyOpsTenant = onCall({ invoker: 'public', cors: true }, async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role, request.auth?.token?.email);
   if (!isAdmin) {
     throw new HttpsError('permission-denied', 'Admin privileges required');
   }
