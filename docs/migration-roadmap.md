@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** P4 **verified on production** (6 Jul 2026). Platform engineering for Phases 2.5 + 3A/P7 is **complete** (#198–#210). Automated smoke: **26/26** on `kolthoff-consulting.com`. **Primary focus:** Phase 4 content (SOW library, CRM playbooks, portal defaults).
+**You are here:** P4 **verified on production** (6 Jul 2026). Platform engineering for Phases 2.5 + 3A/P7 is **complete** (#198–#210). Automated smoke: **26/26** on `kolthoff-consulting.com` (includes P4 section C embed shell routes). **Primary focus:** Phase 4 content (SOW library, CRM playbooks, portal defaults).
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -575,4 +575,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — P4 complete (sections A–D signed off). Phase 4 content is primary focus. Eng backlog: App Check (optional) + P6 React migration.*
+*Last updated: 6 July 2026 — P4 complete (sections A–D signed off). Smoke **26/26** (includes P4 section C embed routes). Phase 4 content is primary focus. Eng backlog: App Check (optional) + P6 React migration.*

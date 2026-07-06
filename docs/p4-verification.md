@@ -22,6 +22,8 @@ bash scripts/smoke-test.sh https://kolthoff-consulting.com
 
 Expect **0 failures** (26 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
 
+Section **C** embed shell routes (`/admin/app/resource-capacity`, `/admin/app/project-planner`) are covered by smoke. Sections **A**, **B**, and **D** remain manual regression checks after major deploys.
+
 ---
 
 ## A — Consulting smoke test (MOD engagement)
