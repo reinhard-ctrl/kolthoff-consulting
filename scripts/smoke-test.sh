@@ -60,7 +60,9 @@ check "/admin/contracts"
 check "/admin/org-chart"
 check "/admin/master"
 check "/admin/tenants"
+check "/admin/agency-ops-manager"
 check "/workspace/"
+check "/agency-ops/"
 
 # Delivery / ops HTML apps
 check "/apps/operations/crm_pipeline.html"

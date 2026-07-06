@@ -56,6 +56,7 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 | B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** (may take ~2 min after sign on cold Functions). If empty, check **Provisioning in progress** or **Retry provision** panel | ☐ |
 | B5 | Client opens `/agency-ops/?tenant=<slug>` with **passcode** (not Kolthoff admin) → Sales/Quotes loads with **your branding** and empty planner | ☐ |
 | B6 | **Collections** → **PRO Subscriptions** tab → issue setup fee + monthly invoice | ☐ |
+| B7 | **Agency Ops Manager** → select tenant in **Active Agency Ops tenant** dropdown → sidebar **Agency Ops** opens same `?tenant=` URL; **Reset passcode** works on a test tenant | ☐ |
 
 **Notes / failures:**
 

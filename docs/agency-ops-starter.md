@@ -83,16 +83,44 @@ Each product build sets `VITE_PRODUCT_ID`:
 
 Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` via the admin iframe.
 
-## Provisioning a new client
+## Provisioning a new client (PRO 1)
 
-1. Create a new tenant ID (e.g. `client-pixel-wave`)
-2. Copy and customize seed data from `data/agency-ops/`
-3. Run `node seed.mjs --tenant client-pixel-wave --data-dir agency-ops --force`
-4. Update `tenant_settings/config` branding fields
-5. Create `admin_credentials/{passcode}` for client login
+**Recommended — automated in Kolthoff OS:**
 
-Future: automate via **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or the **Provision Agency Ops** action on signed PRO contracts in Contract Ledger.
+1. CRM → tag deal as **product** (PRO 1 · Agency Ops)
+2. Planner → apply **Agency Ops Starter** package → generate contract
+3. Client signs → auto-provision on e-sign (`onContractLedgerWritten`)
+4. **Agency Ops Manager** (`/admin/agency-ops-manager`) → verify tenant **ready**, copy handoff
+5. Select tenant in **Active Agency Ops tenant** → sidebar **Agency Ops** opens client console for support
+6. Client: passcode → branding → first deal (empty planner by design)
 
-**Provisioning path:** Admin UI writes to `agency_ops_provision_requests` → Firestore trigger `processAgencyOpsProvisionRequest` (no public Cloud Function required). Callable `prepareAgencyOpsTenant` remains as fallback where public invoke is allowed.
+**Manual / retry:** Agency Ops Manager **Provision now** or **Retry provision** (instant direct Firestore path). Contract Ledger shows status + console link.
 
-**Phase 3 (live):** PRO 1 contracts auto-provision on e-sign via the `onContractLedgerWritten` Firestore trigger. Passcodes are stored on the tenant registry (`initialPasscode`) for staff retrieval. Paid clients use `/agency-ops/?tenant=agency-{slug}` — the tenant ID persists in session storage across reloads.
+**Passcode ops:** Copy from registry; **Reset passcode** rotates credentials (staff-only).
+
+**Cancel / delete:** **Cancel account** soft-disables access; **Delete** removes test tenants from registry (typed confirm).
+
+Console URL: `https://kolthoff-consulting.com/agency-ops/?tenant=agency-{slug}`
+
+**Technical path:** Staff provision uses direct Firestore writes (`provisionAgencyOpsDirect`) when rules allow; auto-provision on sign queues `agency_ops_provision_requests` → `processAgencyOpsProvisionRequest`. Callable `prepareAgencyOpsTenant` remains for ops where public invoke is allowed.
+
+Do **not** use `agency-ops-demo` or `demostart2026` for sold clients.
+
+## Demo seed only (sales sandbox)
+
+For the public demo tenant (`agency-ops-demo`) only:
+
+```bash
+bash scripts/seed-agency-ops-demo.sh
+# Force overwrite:
+bash scripts/seed-agency-ops-demo.sh agency-ops-demo --force
+```
+
+Or manually:
+
+```bash
+cd scripts/seed-firestore && npm install
+node seed.mjs --tenant agency-ops-demo --data-dir agency-ops --force
+```
+
+Paid client tenants are **not** seeded — they start empty (see provisioning above).
