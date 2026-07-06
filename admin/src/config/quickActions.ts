@@ -29,7 +29,7 @@ export const QUICK_ACTION_CATALOG: QuickActionDef[] = [
   ),
 ].filter((action, index, list) => list.findIndex((a) => a.id === action.id) === index);
 
-export const DEFAULT_QUICK_ACTION_IDS = ['new-sow', 'contracts', 'core-workspace', 'portals'];
+export const DEFAULT_QUICK_ACTION_IDS = ['new-sow', 'contracts', 'tenants', 'portals'];
 
 export function getQuickAction(id: string): QuickActionDef | undefined {
   return QUICK_ACTION_CATALOG.find((action) => action.id === id);

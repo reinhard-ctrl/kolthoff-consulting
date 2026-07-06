@@ -4,11 +4,10 @@
  */
 import assert from 'node:assert/strict';
 
-const DEFAULT_QUICK_ACTION_IDS = ['new-sow', 'contracts', 'core-workspace', 'portals'];
+const DEFAULT_QUICK_ACTION_IDS = ['new-sow', 'contracts', 'tenants', 'portals'];
 const CATALOG = [
   { id: 'new-sow' },
   { id: 'contracts' },
-  { id: 'core-workspace' },
   { id: 'portals' },
   { id: 'crm-pipeline' },
   { id: 'tenants' },
@@ -47,12 +46,12 @@ function replaceQuickAction(order, index, nextId) {
 }
 
 const reordered = reorderQuickActions(DEFAULT_QUICK_ACTION_IDS, 0, 3);
-assert.deepEqual(reordered, ['contracts', 'core-workspace', 'portals', 'new-sow']);
+assert.deepEqual(reordered, ['contracts', 'tenants', 'portals', 'new-sow']);
 
 const swapped = replaceQuickAction(DEFAULT_QUICK_ACTION_IDS, 0, 'portals');
-assert.deepEqual(swapped, ['portals', 'contracts', 'core-workspace', 'new-sow']);
+assert.deepEqual(swapped, ['portals', 'contracts', 'tenants', 'new-sow']);
 
 const replaced = replaceQuickAction(DEFAULT_QUICK_ACTION_IDS, 1, 'crm-pipeline');
-assert.deepEqual(replaced, ['new-sow', 'crm-pipeline', 'core-workspace', 'portals']);
+assert.deepEqual(replaced, ['new-sow', 'crm-pipeline', 'tenants', 'portals']);
 
 console.log('quick-action-preferences tests passed');

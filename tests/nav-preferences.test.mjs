@@ -41,7 +41,7 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'product',
     label: 'Product',
-    items: [{ id: 'core-workspace' }, { id: 'tenants' }, { id: 'agency-ops-manager' }],
+    items: [{ id: 'tenants' }, { id: 'agency-ops-manager' }],
   },
   {
     id: 'analytics',
@@ -159,7 +159,7 @@ assert.equal(
 );
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'product')?.items.map((i) => i.id).join(','),
-  'core-workspace,tenants,agency-ops-manager',
+  'tenants,agency-ops-manager',
 );
 
 const movedPrefs = {
@@ -168,7 +168,7 @@ const movedPrefs = {
     command: ['dashboard'],
     operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections', 'portals'],
     delivery: ['org-chart', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
-    product: ['core-workspace', 'tenants', 'agency-ops-manager'],
+    product: ['tenants', 'agency-ops-manager'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
     client: ['client-portal', 'marketing'],
   },
