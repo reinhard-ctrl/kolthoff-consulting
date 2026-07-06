@@ -9,7 +9,7 @@ interface TenantFeatures {
   crm: boolean;
 }
 
-const defaults: TenantFeatures = { messenger: true, approvals: true, vault: false, crm: false };
+const defaults: TenantFeatures = { messenger: true, approvals: true, vault: true, crm: false };
 
 export function useTenantFeatures() {
   const [features, setFeatures] = useState<TenantFeatures>(defaults);

@@ -166,6 +166,29 @@ service cloud.firestore {
       allow delete: if isKolthoffFirmAdmin();
     }
 
+    // Core Workspace client provisioning — Firestore trigger
+    match /artifacts/kolthoff-admin-app/public/data/client_provision_requests/{requestId} {
+      allow read: if isKolthoffFirmAdmin();
+      allow create: if isKolthoffFirmAdmin() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.clientName is string &&
+        request.resource.data.clientName.size() > 0 &&
+        request.resource.data.requestedAt is int &&
+        request.resource.data.requestedBy == request.auth.uid;
+      allow update: if isKolthoffFirmAdmin() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.requestedBy == request.auth.uid &&
+        (
+          resource.data.status == 'error' ||
+          resource.data.status == 'complete' ||
+          (resource.data.status == 'pending' &&
+            request.resource.data.requestedAt is int &&
+            resource.data.requestedAt is int &&
+            request.resource.data.requestedAt > resource.data.requestedAt)
+        );
+      allow delete: if isKolthoffFirmAdmin();
+    }
+
     // Google SSO admin session (client-written after Google sign-in — no Cloud Function required)
     match /artifacts/kolthoff-admin-app/public/data/google_admin_sessions/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
@@ -226,6 +249,20 @@ service cloud.firestore {
 
     match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
       allow read, write: if isStaffMember();
+    }
+
+    // Approval requests — assignee-scoped updates
+    match /artifacts/{tenantId}/public/data/core_requests/{requestId} {
+      allow read: if isTenantMember(tenantId);
+      allow create: if isTenantMember(tenantId) &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.requesterId is string;
+      allow update: if isTenantMember(tenantId) && (
+        isKolthoffFirmAdmin() ||
+        isTenantAdmin(tenantId) ||
+        request.auth.uid in resource.data.get('currentAssigneeFirebaseUids', [])
+      );
+      allow delete: if isTenantAdmin(tenantId) || isKolthoffFirmAdmin();
     }
 
     // Tenant-scoped collections

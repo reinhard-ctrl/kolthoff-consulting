@@ -670,29 +670,110 @@ export const createClientWorkspace = onCall(async (request) => {
   };
 });
 
-/** Prepare workspace + client portal delivery + optional contact invite */
-export const prepareClientWorkspace = onCall(async (request) => {
-  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
-  if (!isAdmin) {
-    throw new HttpsError('permission-denied', 'Admin privileges required');
+const STARTER_APPROVAL_TEMPLATES = [
+  {
+    id: 'tpl-leave',
+    name: 'Leave Request',
+    type: 'approval',
+    fields: [
+      { id: 'startDate', label: 'Start date', type: 'date', required: true },
+      { id: 'endDate', label: 'End date', type: 'date', required: true },
+      { id: 'leaveType', label: 'Leave type', type: 'select', required: true, options: ['Vacation', 'Sick', 'Personal', 'Other'] },
+      { id: 'reason', label: 'Reason', type: 'textarea', required: true },
+    ],
+    flowSteps: [{ id: 'mgr', type: 'approval', label: 'Manager approval', assigneeType: 'any_admin' }],
+  },
+  {
+    id: 'tpl-expense',
+    name: 'Expense Reimbursement',
+    type: 'approval',
+    fields: [
+      { id: 'amount', label: 'Amount (PHP)', type: 'number', required: true },
+      { id: 'category', label: 'Category', type: 'select', required: true, options: ['Travel', 'Meals', 'Supplies', 'Software', 'Other'] },
+      { id: 'description', label: 'Description', type: 'textarea', required: true },
+      { id: 'receiptDate', label: 'Receipt date', type: 'date', required: true },
+    ],
+    flowSteps: [{ id: 'finance', type: 'approval', label: 'Finance approval', assigneeType: 'any_admin' }],
+  },
+  {
+    id: 'tpl-access',
+    name: 'Access / Tool Request',
+    type: 'approval',
+    fields: [
+      { id: 'tool', label: 'Tool or system', type: 'text', required: true },
+      { id: 'accessLevel', label: 'Access level', type: 'select', required: true, options: ['Read', 'Edit', 'Admin'] },
+      { id: 'justification', label: 'Business justification', type: 'textarea', required: true },
+    ],
+    flowSteps: [{ id: 'it', type: 'approval', label: 'IT / Admin approval', assigneeType: 'any_admin' }],
+  },
+  {
+    id: 'tpl-document',
+    name: 'Document Approval',
+    type: 'approval',
+    fields: [
+      { id: 'documentTitle', label: 'Document title', type: 'text', required: true },
+      { id: 'documentType', label: 'Type', type: 'select', required: true, options: ['Policy', 'Contract', 'SOP', 'Other'] },
+      { id: 'summary', label: 'Summary', type: 'textarea', required: true },
+    ],
+    flowSteps: [
+      { id: 'review', type: 'approval', label: 'Reviewer approval', assigneeType: 'any_admin' },
+      { id: 'final', type: 'approval', label: 'Final sign-off', assigneeType: 'role', role: 'admin' },
+    ],
+  },
+];
+
+async function deployStarterApprovalTemplates(tenantId: string): Promise<number> {
+  const batch = db.batch();
+  const now = Date.now();
+  for (const tmpl of STARTER_APPROVAL_TEMPLATES) {
+    batch.set(
+      db.doc(`artifacts/${tenantId}/public/data/core_templates/${tmpl.id}`),
+      { ...tmpl, deployedAt: now },
+      { merge: true },
+    );
   }
+  await batch.commit();
+  return STARTER_APPROVAL_TEMPLATES.length;
+}
 
-  const clientName = (request.data?.clientName as string)?.trim();
-  const requestedTenantId = (request.data?.tenantId as string)?.trim();
-  const portalAccessCodeInput = (request.data?.portalAccessCode as string)?.trim();
-  const repName = (request.data?.repName as string)?.trim();
-  const repEmail = normalizeEmail((request.data?.repEmail as string) || '');
-  const deliverViaPortal = request.data?.deliverViaPortal !== false;
-  const inviteContact = request.data?.inviteContact !== false;
+interface PrepareClientWorkspaceResult {
+  tenantId: string;
+  clientName: string;
+  workspaceUrl: string;
+  portalUrl: string;
+  portalAccessCode: string;
+  portalDelivered: boolean;
+  passwordEmailSent: boolean;
+  invitedUserId?: string;
+  mailtoUrl?: string;
+  workspaceCreated: boolean;
+  message: string;
+}
 
-  if (!clientName) throw new HttpsError('invalid-argument', 'Client name required');
+async function prepareClientWorkspaceInternal(params: {
+  clientName: string;
+  requestedTenantId?: string;
+  portalAccessCodeInput?: string;
+  repName?: string;
+  repEmail?: string;
+  deliverViaPortal?: boolean;
+  inviteContact?: boolean;
+  deployStarterTemplates?: boolean;
+  profileId?: string;
+  createdBy?: string | null;
+}): Promise<PrepareClientWorkspaceResult> {
+  const clientName = params.clientName.trim();
+  const repName = params.repName?.trim();
+  const repEmail = normalizeEmail(params.repEmail || '');
+  const deliverViaPortal = params.deliverViaPortal !== false;
+  const inviteContact = params.inviteContact !== false;
 
   const workspace = await ensureClientWorkspace(
     clientName,
-    requestedTenantId || undefined,
-    request.auth?.uid || null,
+    params.requestedTenantId || undefined,
+    params.createdBy ?? null,
   );
-  const portalAccessCode = derivePortalAccessCode(clientName, workspace.tenantId, portalAccessCodeInput);
+  const portalAccessCode = derivePortalAccessCode(clientName, workspace.tenantId, params.portalAccessCodeInput);
 
   if (deliverViaPortal) {
     await upsertClientPortalDelivery({
@@ -709,6 +790,17 @@ export const prepareClientWorkspace = onCall(async (request) => {
     portalUrl: DEFAULT_PORTAL_URL,
     updatedAt: Date.now(),
   }, { merge: true });
+
+  if (params.profileId?.trim()) {
+    await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${params.profileId.trim()}`).set({
+      coreWorkspaceTenantId: workspace.tenantId,
+      updatedAt: Date.now(),
+    }, { merge: true });
+  }
+
+  if (params.deployStarterTemplates !== false) {
+    await deployStarterApprovalTemplates(workspace.tenantId);
+  }
 
   let passwordEmailSent = false;
   let invitedUserId: string | undefined;
@@ -743,6 +835,7 @@ export const prepareClientWorkspace = onCall(async (request) => {
     inviteContact && repEmail
       ? (passwordEmailSent ? `password setup email sent to ${repEmail}` : `invite created for ${repEmail} (email failed — use Reset password)`)
       : null,
+    params.deployStarterTemplates !== false ? 'approval templates deployed' : null,
   ].filter(Boolean);
 
   return {
@@ -760,7 +853,79 @@ export const prepareClientWorkspace = onCall(async (request) => {
       ? `Prepared ${clientName}. Delivered via ${deliveryParts.join(' + ')}.`
       : `Prepared ${clientName}. Copy the workspace link below to share manually.`,
   };
+}
+
+/** Prepare workspace + client portal delivery + optional contact invite */
+export const prepareClientWorkspace = onCall(async (request) => {
+  const isAdmin = await callerIsAdmin(request.auth?.uid, request.auth?.token?.role);
+  if (!isAdmin) {
+    throw new HttpsError('permission-denied', 'Admin privileges required');
+  }
+
+  const clientName = (request.data?.clientName as string)?.trim();
+  if (!clientName) throw new HttpsError('invalid-argument', 'Client name required');
+
+  return prepareClientWorkspaceInternal({
+    clientName,
+    requestedTenantId: (request.data?.tenantId as string)?.trim(),
+    portalAccessCodeInput: (request.data?.portalAccessCode as string)?.trim(),
+    repName: (request.data?.repName as string)?.trim(),
+    repEmail: (request.data?.repEmail as string)?.trim(),
+    deliverViaPortal: request.data?.deliverViaPortal !== false,
+    inviteContact: request.data?.inviteContact !== false,
+    deployStarterTemplates: request.data?.deployStarterTemplates !== false,
+    profileId: (request.data?.profileId as string)?.trim(),
+    createdBy: request.auth?.uid || null,
+  });
 });
+
+/** Firestore path when org policy blocks public Cloud Function invoke */
+export const processClientProvisionRequest = onDocumentWritten(
+  `artifacts/${ADMIN_TENANT}/public/data/client_provision_requests/{requestId}`,
+  async (event) => {
+    const afterSnap = event.data?.after;
+    if (!afterSnap?.exists) return;
+
+    const data = afterSnap.data();
+    if (!data || data.status !== 'pending') return;
+
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    if (before?.status === 'pending' && before.requestedAt === data.requestedAt) return;
+
+    const requestId = event.params.requestId;
+    const ref = afterSnap.ref;
+
+    try {
+      const result = await prepareClientWorkspaceInternal({
+        clientName: String(data.clientName || '').trim(),
+        requestedTenantId: typeof data.tenantId === 'string' ? data.tenantId.trim() : undefined,
+        portalAccessCodeInput: typeof data.portalAccessCode === 'string' ? data.portalAccessCode.trim() : undefined,
+        repName: typeof data.repName === 'string' ? data.repName.trim() : undefined,
+        repEmail: typeof data.repEmail === 'string' ? data.repEmail.trim() : undefined,
+        deliverViaPortal: data.deliverViaPortal !== false,
+        inviteContact: data.inviteContact !== false,
+        deployStarterTemplates: data.deployStarterTemplates !== false,
+        profileId: typeof data.profileId === 'string' ? data.profileId.trim() : undefined,
+        createdBy: typeof data.requestedBy === 'string' ? data.requestedBy : null,
+      });
+
+      await ref.update({
+        status: 'complete',
+        ...result,
+        completedAt: Date.now(),
+      });
+      console.log('processClientProvisionRequest complete', requestId, result.tenantId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Provisioning failed';
+      console.error('processClientProvisionRequest failed', requestId, err);
+      await ref.update({
+        status: 'error',
+        error: message,
+        failedAt: Date.now(),
+      });
+    }
+  },
+);
 
 const KOLTHOFF_STAFF_DOMAIN = '@kolthoff-consulting.com';
 

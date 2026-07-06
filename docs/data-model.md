@@ -24,8 +24,8 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `admin_sessions` | Active admin login sessions | passcodeVerified, verifiedAt |
 | `core_users` | Workspace users | email, role, departmentId, firebaseUid |
 | `core_departments` | Org structure | name, parentId |
-| `core_templates` | Approval form templates | fields, flowSteps |
-| `core_requests` | Approval requests | templateId, status, formData |
+| `core_templates` | Approval form templates | fields, flowSteps (assigneeType, role) |
+| `core_requests` | Approval requests | templateId, status, formData, currentStepIndex, currentAssigneeIds, currentAssigneeFirebaseUids, stepHistory |
 | `core_chats` / `core_messages` | Messenger | participants, text, timestamp |
 | `core_policies` | Policy vault | title, content (markdown) |
 | `core_it_requests` | IT helpdesk | status, description |
@@ -39,6 +39,8 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `core_audit_log` | Audit trail | action, userId, timestamp |
 | `tenant_settings` | Feature flags | doc `config` → features.messenger/approvals/vault/crm |
 | `master_templates` | Global blueprints | fields, flowSteps |
+| `client_provision_requests` | Async Core Workspace provision queue | status, clientName, tenantId, profileId |
+| `core_workspaces` | Client workspace registry | tenantId, clientName, workspaceUrl, portalAccessCode |
 
 ## Storage Paths
 
