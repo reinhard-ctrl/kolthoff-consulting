@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail as firebaseSendPasswordResetEmail, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, appId } from '../lib/firebase';
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail as firebaseSendPasswordResetEmail, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, getWorkspaceTenantId } from '../lib/firebase';
 import { FirebaseError } from 'firebase/app';
 import EmbedAuthPrompt from './EmbedAuthPrompt';
 
@@ -67,10 +67,10 @@ export default function LoginPage({
     }
   };
 
+  const tenantId = getWorkspaceTenantId() ?? '';
+
   const workspaceResetUrl = () => (
-    appId === 'kolthoff-admin-app'
-      ? `${window.location.origin}/workspace/`
-      : `${window.location.origin}/workspace/?tenant=${encodeURIComponent(appId)}`
+    `${window.location.origin}/workspace/?tenant=${encodeURIComponent(tenantId)}`
   );
 
   const handlePasswordRequest = async (e: React.FormEvent) => {
@@ -85,7 +85,7 @@ export default function LoginPage({
     }
     try {
       const requestReset = httpsCallable(functions, 'requestWorkspacePasswordReset');
-      const result = await requestReset({ email: normalized, tenantId: appId });
+      const result = await requestReset({ email: normalized, tenantId });
       const message = (result.data as { message?: string })?.message;
       setInfo(message || 'If that email is registered, a reset link has been sent.');
     } catch (err: unknown) {
@@ -135,34 +135,6 @@ export default function LoginPage({
     setPassword('');
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError('');
-    setInfo('');
-    try {
-      const { signInWithGoogleStaff } = await import('../lib/staff-sso');
-      await signInWithGoogleStaff();
-      const email = auth.currentUser?.email?.trim().toLowerCase() || '';
-      const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', email)));
-      const match = snap.empty
-        ? {
-            id: auth.currentUser!.uid,
-            email,
-            name: auth.currentUser!.displayName || email.split('@')[0],
-            role: 'kolthoff_admin',
-          }
-        : (snap.docs[0].data() as CoreUser);
-      await logAudit('workspace_login', { email: match.email, provider: 'google' });
-      onLogin(match);
-    } catch (err: unknown) {
-      if (err instanceof Error && err.message === 'REDIRECT_STARTED') return;
-      const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (embedded) {
     return <EmbedAuthPrompt />;
   }
@@ -209,23 +181,6 @@ export default function LoginPage({
       <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
         <h1 className="text-2xl font-bold text-white text-center mb-2">Team Portal</h1>
         <p className="text-sm text-slate-400 text-center mb-6">Sign in with your organizational email</p>
-        {appId === 'kolthoff-admin-app' && (
-          <>
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full py-3 mb-3 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-100 disabled:opacity-50 text-sm"
-            >
-              Sign in with Google Workspace
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-slate-600" />
-              <span className="text-[10px] uppercase tracking-widest text-slate-500">or email</span>
-              <div className="flex-1 h-px bg-slate-600" />
-            </div>
-          </>
-        )}
         <input
           type="email"
           value={email}

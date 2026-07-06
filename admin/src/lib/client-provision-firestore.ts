@@ -46,7 +46,10 @@ async function waitForProvision(
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
-      reject(new Error('Client workspace provisioning timed out. Deploy Cloud Functions and Firestore rules, then retry.'));
+      reject(new Error(
+        'Client workspace provisioning timed out waiting for the server trigger. '
+        + 'Retry Quick provision — direct Firestore provisioning should run first after the latest deploy.',
+      ));
     }, timeoutMs);
 
     const unsub = onSnapshot(

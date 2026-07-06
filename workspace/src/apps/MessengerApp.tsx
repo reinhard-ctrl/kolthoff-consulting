@@ -9,7 +9,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, tenantCol, tenantDoc, logAudit, appId, storage } from '../lib/firebase';
+import { db, tenantCol, tenantDoc, logAudit, getWorkspaceTenantId, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 
@@ -71,8 +71,10 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
       setMessages([]);
       return;
     }
+    const tenantId = getWorkspaceTenantId();
+    if (!tenantId) return;
     const q = query(
-      collection(db, 'artifacts', appId, 'public', 'data', 'core_messages'),
+      collection(db, 'artifacts', tenantId, 'public', 'data', 'core_messages'),
       where('chatId', '==', activeChat),
       orderBy('timestamp', 'asc'),
     );
@@ -173,7 +175,9 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
     setUploading(true);
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-      const path = `artifacts/${appId}/files/messenger/${activeChat}/${Date.now()}_${safeName}`;
+      const tenantId = getWorkspaceTenantId();
+      if (!tenantId) return;
+      const path = `artifacts/${tenantId}/files/messenger/${activeChat}/${Date.now()}_${safeName}`;
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, file);
       const fileUrl = await getDownloadURL(storageRef);

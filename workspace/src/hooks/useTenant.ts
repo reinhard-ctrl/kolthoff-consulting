@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, getWorkspaceTenantId } from '../lib/firebase';
 
 interface TenantFeatures {
   messenger: boolean;
@@ -15,7 +15,13 @@ export function useTenantFeatures() {
   const [features, setFeatures] = useState<TenantFeatures>(defaults);
 
   useEffect(() => {
-    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'tenant_settings', 'config');
+    const tenantId = getWorkspaceTenantId();
+    if (!tenantId) {
+      setFeatures(defaults);
+      return;
+    }
+
+    const ref = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
     return onSnapshot(ref, (snap) => {
       if (snap.exists() && snap.data().features) setFeatures(snap.data().features);
       else setFeatures(defaults);

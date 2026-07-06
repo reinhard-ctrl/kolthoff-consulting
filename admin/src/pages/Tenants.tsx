@@ -25,6 +25,7 @@ import {
   isWorkspaceTenantCancelled,
   workspaceStatusLabel,
 } from '../lib/workspace-tenant-status';
+import { unregisterInternalWorkspace } from '../lib/unregister-internal-workspace';
 
 interface TenantUser {
   id: string;
@@ -145,6 +146,7 @@ export default function Tenants() {
   const [toast, setToast] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<WorkspaceInstance | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [unregisteringInternal, setUnregisteringInternal] = useState(false);
 
   const setTab = (tab: WorkspaceTab) => {
     const tenant = searchParams.get('tenant');
@@ -271,6 +273,25 @@ export default function Tenants() {
   const openOnboardForProfile = (profileId: string) => {
     setOnboardProfileId(profileId);
     setTab('onboard');
+  };
+
+  const runUnregisterInternalWorkspace = async () => {
+    if (!window.confirm(
+      'Remove the internal Kolthoff workspace from the client registry?\n\n'
+      + 'This does not delete admin console data. /workspace/ will stop loading the internal tenant.',
+    )) {
+      return;
+    }
+    setUnregisteringInternal(true);
+    try {
+      await bootstrapAuth();
+      const result = await unregisterInternalWorkspace();
+      showToast(result.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not remove internal workspace');
+    } finally {
+      setUnregisteringInternal(false);
+    }
   };
 
   const showToast = (msg: string) => {
@@ -440,15 +461,14 @@ export default function Tenants() {
     setInviteStatus('');
     try {
       await bootstrapAuth();
-      const prepare = httpsCallable(functions, 'prepareClientWorkspace');
-      const result = await prepare({
+      const data = await prepareClientWorkspace({
         clientName: activeWorkspace.clientName,
         tenantId,
         portalAccessCode: activeWorkspace.portalAccessCode || derivePortalCodeFromName(activeWorkspace.clientName, tenantId),
         deliverViaPortal: true,
         inviteContact: false,
+        deployStarterTemplates: false,
       });
-      const data = result.data as PrepareResult;
       setPrepareResult(data);
       setInviteStatus(data.message);
     } catch (err) {
@@ -606,6 +626,14 @@ export default function Tenants() {
         </div>
         {activeTab === 'instances' && (
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={runUnregisterInternalWorkspace}
+              disabled={unregisteringInternal}
+              className="px-4 py-2 border border-rose-500/40 text-rose-300 rounded-lg text-xs font-bold uppercase disabled:opacity-50"
+            >
+              {unregisteringInternal ? 'Removing…' : 'Remove internal workspace'}
+            </button>
             <button
               type="button"
               onClick={() => setTab('onboard')}
