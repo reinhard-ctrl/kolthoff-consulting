@@ -11,6 +11,7 @@ import {
   seedMasterTemplates,
 } from '../lib/approval-starter-templates';
 import { cancelWorkspaceTenant } from '../lib/workspace-cancel';
+import { deleteWorkspaceTenant } from '../lib/workspace-delete';
 import {
   coreWorkspaceProvisionUiState,
   isCoreWorkspaceProfile,
@@ -155,6 +156,9 @@ export default function Tenants() {
   const [toast, setToast] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<WorkspaceInstance | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WorkspaceInstance | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const setTab = (tab: WorkspaceTab) => {
     const tenant = searchParams.get('tenant');
@@ -370,6 +374,30 @@ export default function Tenants() {
       showToast(err instanceof Error ? err.message : 'Cancellation failed');
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const openDeleteWorkspace = (workspace: WorkspaceInstance) => {
+    setDeleteConfirmText('');
+    setDeleteTarget(workspace);
+  };
+
+  const runDeleteWorkspace = async () => {
+    if (!deleteTarget || deleteConfirmText.trim() !== deleteTarget.tenantId) return;
+    setDeletingId(deleteTarget.tenantId);
+    try {
+      await bootstrapAuth();
+      const data = await deleteWorkspaceTenant({ tenantId: deleteTarget.tenantId });
+      if (tenantId === deleteTarget.tenantId) {
+        setTenantId('');
+      }
+      setDeleteTarget(null);
+      setDeleteConfirmText('');
+      showToast(data.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Deletion failed');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -846,6 +874,15 @@ export default function Tenants() {
                           Cancel account
                         </button>
                       )}
+                      {isWorkspaceTenantCancelled(ws) && (
+                        <button
+                          type="button"
+                          onClick={() => openDeleteWorkspace(ws)}
+                          className="text-slate-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -960,6 +997,7 @@ export default function Tenants() {
               <h2 className="font-bold text-rose-400 mb-2">Account actions</h2>
               <p className="text-xs text-slate-500 mb-4">
                 <strong className="text-slate-400">Cancel account</strong> disables client access but keeps the registry row.
+                <strong className="text-slate-400"> Delete</strong> permanently removes a cancelled workspace from the registry.
                 Use <strong className="text-slate-400">Clear tenant workspace data</strong> on the IT Support tab to wipe users and modules if needed.
               </p>
               <div className="flex flex-wrap gap-2">
@@ -971,6 +1009,16 @@ export default function Tenants() {
                     className="px-4 py-2 text-rose-400 border border-rose-500/30 rounded text-xs font-bold uppercase disabled:opacity-50"
                   >
                     Cancel account
+                  </button>
+                )}
+                {isWorkspaceTenantCancelled(activeWorkspace) && (
+                  <button
+                    type="button"
+                    onClick={() => openDeleteWorkspace(activeWorkspace)}
+                    disabled={deletingId === activeWorkspace.tenantId}
+                    className="px-4 py-2 text-slate-400 border border-rose-500/30 rounded text-xs font-bold uppercase disabled:opacity-50"
+                  >
+                    Delete permanently
                   </button>
                 )}
               </div>
@@ -1122,6 +1170,49 @@ export default function Tenants() {
             </div>
           </div>
         </div>
+      )}
+
+      {deleteTarget && createPortal(
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
+            <h3 className="font-bold text-lg mb-2 text-rose-300">Delete workspace account</h3>
+            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+              Permanently delete <strong className="text-white">{deleteTarget.clientName}</strong> ({deleteTarget.tenantId})?
+              This removes the workspace from Workspace Admin and clears its portal link. Use this for cancelled test accounts.
+            </p>
+            <label className="text-[10px] uppercase text-slate-500 block mb-1">
+              Type <span className="font-mono text-slate-300">{deleteTarget.tenantId}</span> to confirm
+            </label>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-xs mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteConfirmText('');
+                }}
+                disabled={deletingId === deleteTarget.tenantId}
+                className="px-4 py-2 bg-brandNavy-800 rounded text-sm"
+              >
+                Keep
+              </button>
+              <button
+                type="button"
+                onClick={runDeleteWorkspace}
+                disabled={deletingId === deleteTarget.tenantId || deleteConfirmText.trim() !== deleteTarget.tenantId}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
+              >
+                {deletingId === deleteTarget.tenantId ? 'Deleting…' : 'Delete permanently'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
 
       {cancelTarget && createPortal(

@@ -1,4 +1,4 @@
-import { deleteDoc, deleteField, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { auth, db, adminAppId } from './firebase';
 import { INTERNAL_WORKSPACE_TENANT } from './workspace-tenant-status';
 
@@ -10,6 +10,7 @@ export interface DeleteWorkspaceTenantResult {
   tenantId: string;
   clientName: string;
   portalAccessCode?: string | null;
+  profileId?: string | null;
   message: string;
 }
 
@@ -43,7 +44,24 @@ export async function deleteWorkspaceTenant(
   const registry = registrySnap.data() as Record<string, unknown>;
   const clientName = String(registry.clientName || tenantId);
   const portalAccessCode = (registry.portalAccessCode as string | undefined) || null;
+  const registryProfileId = (registry.profileId as string | undefined) || null;
   const now = Date.now();
+
+  let profileId = registryProfileId;
+  if (!profileId) {
+    try {
+      const profileQuery = query(
+        collection(db, 'artifacts', adminAppId, 'public', 'data', 'workbook_profiles'),
+        where('coreWorkspaceTenantId', '==', tenantId),
+      );
+      const profileSnaps = await getDocs(profileQuery);
+      if (!profileSnaps.empty) {
+        profileId = profileSnaps.docs[0].id;
+      }
+    } catch (err) {
+      console.warn(`Could not look up workbook profile for ${tenantId}:`, err);
+    }
+  }
 
   await deleteDoc(registryRef);
 
@@ -67,10 +85,24 @@ export async function deleteWorkspaceTenant(
     }
   }
 
+  if (profileId) {
+    try {
+      await setDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'workbook_profiles', profileId), {
+        coreWorkspaceTenantId: deleteField(),
+        provisioningStatus: deleteField(),
+        provisioningError: deleteField(),
+        updatedAt: now,
+      }, { merge: true });
+    } catch (err) {
+      console.warn(`Could not clear workbook profile link for ${tenantId}:`, err);
+    }
+  }
+
   return {
     tenantId,
     clientName,
     portalAccessCode,
+    profileId,
     message: `Deleted workspace ${clientName} (${tenantId}).`,
   };
 }
