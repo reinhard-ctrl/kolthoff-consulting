@@ -26,7 +26,8 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `core_departments` | Org structure | name, parentId |
 | `core_templates` | Approval form templates | fields, flowSteps (assigneeType, role) |
 | `core_requests` | Approval requests | templateId, status, formData, currentStepIndex, currentAssigneeIds, currentAssigneeFirebaseUids, stepHistory |
-| `core_chats` / `core_messages` | Messenger | participants, text, timestamp |
+| `core_chats` / `core_messages` | Messenger | participants, text, timestamp, type, fileUrl, fileName |
+| `core_notifications` | In-app alerts (Cloud Function) | userId, type, title, body, requestId, read |
 | `core_policies` | Policy vault | title, content (markdown) |
 | `core_it_requests` | IT helpdesk | status, description |
 | `crm_deals` | CRM pipeline | pipelineStatus, estValue, company, status |
@@ -46,6 +47,7 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 
 ```
 artifacts/{tenantId}/files/{clientId}/{filename}
+artifacts/{tenantId}/files/messenger/{chatId}/{filename}
 ```
 
 ## Auth Custom Claims

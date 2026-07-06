@@ -87,7 +87,27 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 ---
 
+## D — Core Workspace pilot (MOD / PRO 2)
 
+Use a test MOD engagement or `/admin/onboard` wizard after deploy.
+
+| Step | Action | Pass? |
+|------|--------|-------|
+| D1 | **Client Onboarding** (`/admin/onboard`): select SOW profile → provision → workspace URL + portal code returned | ☐ |
+| D2 | **Workspace Admin** (`/admin/tenants`): tenant appears; deploy starter approval templates if not auto-deployed | ☐ |
+| D3 | Open Core Workspace (`/workspace/?tenant=client-*`) → **Approvals**: submit request → appears in assignee's "Pending My Approval" | ☐ |
+| D4 | Assignee approves/rejects with comment → requester sees updated status + history | ☐ |
+| D5 | Sidebar badge on Approvals clears after opening the pending request | ☐ |
+| D6 | **Messenger**: create chat, send message, attach file → recipient sees unread badge | ☐ |
+| D7 | (Optional) Sign MOD contract in incognito → `client_provision_requests` completes → portal shows Core Workspace link | ☐ |
+
+**Notes / failures:**
+
+```
+(date, tester, step, what happened)
+```
+
+---
 
 ## Common blockers
 
@@ -108,10 +128,11 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 ## Sign-off
 
-When A + B + C pass on `kolthoff-consulting.com`:
+When A + B + C + D pass on `kolthoff-consulting.com`:
 
-- [x] P4 consulting complete
-- [x] P4 PRO 1 complete
-- [x] Documented in team channel / audit log
+- [ ] P4 consulting complete
+- [ ] P4 PRO 1 complete
+- [ ] Core Workspace pilot complete
+- [ ] Documented in team channel / audit log
 
 Then shift primary focus to **Phase 4 content** (SOW library, CRM playbooks, portal defaults) per `docs/migration-roadmap.md`.

@@ -265,6 +265,15 @@ service cloud.firestore {
       allow delete: if isTenantAdmin(tenantId) || isKolthoffFirmAdmin();
     }
 
+    // In-app notifications (created by Cloud Functions)
+    match /artifacts/{tenantId}/public/data/core_notifications/{notifId} {
+      allow read: if isTenantMember(tenantId);
+      allow update: if isTenantMember(tenantId) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isTenantAdmin(tenantId) || isKolthoffFirmAdmin();
+    }
+
     // Tenant-scoped collections
     match /artifacts/{tenantId}/public/data/{collection}/{docId} {
       allow read, write: if isTenantMember(tenantId);

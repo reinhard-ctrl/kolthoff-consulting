@@ -9,7 +9,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db, tenantCol, tenantDoc, logAudit, appId } from '../lib/firebase';
+import { db, tenantCol, tenantDoc, logAudit, appId, storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 
 interface Message {
@@ -18,6 +19,9 @@ interface Message {
   senderId: string;
   senderName?: string;
   text: string;
+  type?: string;
+  fileUrl?: string;
+  fileName?: string;
   timestamp: number;
 }
 
@@ -46,6 +50,7 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [groupTitle, setGroupTitle] = useState('');
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const userNameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -126,22 +131,26 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
     }
   };
 
-  const send = async () => {
-    if (!text.trim() || !activeChat) return;
+  const send = async (payload?: { text?: string; type?: string; fileUrl?: string; fileName?: string }) => {
+    const messageText = payload?.text ?? text;
+    if ((!messageText?.trim() && !payload?.fileUrl) || !activeChat) return;
     const chat = chats.find((c) => c.id === activeChat);
     if (!chat) return;
 
     const senderName = userNameById.get(currentUserId) || 'User';
-    const payload = {
+    const body = {
       id: `m_${Date.now()}`,
       chatId: activeChat,
       senderId: currentUserId,
       senderName,
-      text: text.trim(),
+      text: messageText?.trim() || payload?.fileName || 'Attachment',
+      type: payload?.type || 'text',
+      fileUrl: payload?.fileUrl || null,
+      fileName: payload?.fileName || null,
       timestamp: Date.now(),
     };
 
-    await addDoc(tenantCol('core_messages'), payload);
+    await addDoc(tenantCol('core_messages'), body);
 
     const unreadCounts = { ...(chat.unreadCounts || {}) };
     chat.participants.forEach((p) => {
@@ -152,11 +161,26 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
     unreadCounts[currentUserId] = 0;
 
     await updateDoc(tenantDoc('core_chats', activeChat), {
-      lastMessage: { text: payload.text, senderId: currentUserId, timestamp: payload.timestamp },
+      lastMessage: { text: body.text, senderId: currentUserId, timestamp: body.timestamp },
       unreadCounts,
     });
-    await logAudit('messenger_send', { chatId: activeChat });
+    await logAudit('messenger_send', { chatId: activeChat, type: body.type });
     setText('');
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!activeChat || !file) return;
+    setUploading(true);
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+      const path = `artifacts/${appId}/files/messenger/${activeChat}/${Date.now()}_${safeName}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const fileUrl = await getDownloadURL(storageRef);
+      await send({ type: 'file', fileUrl, fileName: file.name, text: file.name });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const toggleParticipant = (userId: string) => {
@@ -223,6 +247,16 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
                       <div className="text-[10px] opacity-70 mb-0.5">{m.senderName || m.senderId}</div>
                     )}
                     <div>{m.text}</div>
+                    {m.type === 'file' && m.fileUrl && (
+                      <a
+                        href={m.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`text-xs underline mt-1 block ${m.senderId === currentUserId ? 'text-blue-100' : 'text-blue-600'}`}
+                      >
+                        {m.fileName || 'Download file'}
+                      </a>
+                    )}
                     <div className={`text-[10px] mt-1 ${m.senderId === currentUserId ? 'text-blue-100' : 'text-slate-400'}`}>
                       {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -230,7 +264,20 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
                 </div>
               ))}
             </div>
-            <div className="p-3 border-t flex gap-2 bg-white">
+            <div className="p-3 border-t flex gap-2 bg-white items-center">
+              <label className="px-2 py-2 border rounded-lg text-sm cursor-pointer hover:bg-slate-50 shrink-0">
+                📎
+                <input
+                  type="file"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadFile(file);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -238,7 +285,9 @@ export default function MessengerApp({ currentUserId }: { currentUserId: string 
                 className="flex-1 p-2 border rounded-lg text-sm"
                 placeholder="Type a message…"
               />
-              <button type="button" onClick={send} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Send</button>
+              <button type="button" onClick={() => send()} disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm disabled:opacity-50">
+                {uploading ? '…' : 'Send'}
+              </button>
             </div>
           </>
         ) : (

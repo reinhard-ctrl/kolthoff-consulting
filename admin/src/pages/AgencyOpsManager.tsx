@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
@@ -84,6 +85,7 @@ export default function AgencyOpsManager() {
   const [activeTenantId, setActiveTenantIdState] = useState(() => getActiveAgencyOpsTenantId() || '');
   const [resetPasscodeTarget, setResetPasscodeTarget] = useState<AgencyOpsTenant | null>(null);
   const [resettingPasscodeId, setResettingPasscodeId] = useState<string | null>(null);
+  const [registrySearch, setRegistrySearch] = useState('');
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -154,6 +156,26 @@ export default function AgencyOpsManager() {
     () => tenants.filter((t) => !isAgencyOpsTenantCancelled(t)),
     [tenants],
   );
+
+  const filteredTenants = useMemo(() => {
+    const q = registrySearch.trim().toLowerCase();
+    if (!q) return tenants;
+    return tenants.filter((t) => {
+      const haystack = [
+        t.clientName,
+        t.tenantId,
+        t.quoteId,
+        t.profileId,
+        t.provisioningStatus,
+        t.status,
+        agencyOpsStatusLabel(t),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [tenants, registrySearch]);
 
   const activeTenant = useMemo(
     () => activeTenants.find((t) => t.tenantId === activeTenantId) || null,
@@ -468,6 +490,25 @@ export default function AgencyOpsManager() {
       )}
 
       <div className="glass-panel overflow-hidden">
+        <div className="flex flex-wrap items-end justify-between gap-3 p-4 border-b border-brandNavy-800">
+          <div className="min-w-[12rem] flex-1">
+            <label className="text-[10px] uppercase tracking-wide text-slate-500 block mb-1">
+              Search tenants
+            </label>
+            <input
+              type="search"
+              value={registrySearch}
+              onChange={(e) => setRegistrySearch(e.target.value)}
+              placeholder="Client, tenant ID, quote, status…"
+              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm"
+            />
+          </div>
+          <p className="text-xs text-slate-500 shrink-0">
+            {filteredTenants.length === tenants.length
+              ? `${tenants.length} tenant${tenants.length === 1 ? '' : 's'}`
+              : `${filteredTenants.length} of ${tenants.length} tenants`}
+          </p>
+        </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
             <tr>
@@ -480,11 +521,23 @@ export default function AgencyOpsManager() {
             </tr>
           </thead>
           <tbody className="divide-y divide-brandNavy-800">
-            {tenants.map((t) => (
+            {filteredTenants.map((t) => (
               <tr key={t.tenantId} className="hover:bg-brandNavy-800/30">
                 <td className="p-4 font-bold">{t.clientName}</td>
                 <td className="p-4 font-mono text-xs text-slate-400">{t.tenantId}</td>
-                <td className="p-4 font-mono text-xs text-slate-500">{t.quoteId || '—'}</td>
+                <td className="p-4 font-mono text-xs text-slate-500">
+                  {t.profileId ? (
+                    <Link
+                      to={`/app/project-planner?profile=${encodeURIComponent(t.profileId)}`}
+                      className="text-brandTeal-400 hover:underline"
+                      title="Open SOW in Project Planner"
+                    >
+                      {t.quoteId || t.profileId}
+                    </Link>
+                  ) : (
+                    t.quoteId || '—'
+                  )}
+                </td>
                 <td className="p-4">
                   <span className={`${tenantStatusClass(t)} text-xs uppercase font-bold`}>
                     {agencyOpsStatusLabel(t)}
@@ -561,6 +614,9 @@ export default function AgencyOpsManager() {
             No Agency Ops tenants yet. After a PRO 1 contract is signed, use the action panel above or
             {' '}<button type="button" onClick={() => openProvision()} className="text-brandTeal-400 underline">Provision Tenant</button>.
           </p>
+        )}
+        {tenants.length > 0 && filteredTenants.length === 0 && (
+          <p className="p-6 text-slate-500 italic">No tenants match your search.</p>
         )}
         {tenants.length === 0 && actionRequiredProfiles.length > 0 && (
           <p className="p-6 text-slate-500 italic">Tenant registry empty — use Provision / Retry in the panel above.</p>

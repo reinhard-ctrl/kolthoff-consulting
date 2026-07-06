@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
 import { provisionClientWorkspaceViaFirestore } from '../lib/client-provision-firestore';
@@ -560,13 +560,21 @@ export default function Tenants() {
           </p>
         </div>
         {activeTab === 'instances' && (
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase shadow-sm"
-          >
-            Provision Workspace
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to="/onboard"
+              className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
+            >
+              Onboarding Wizard
+            </Link>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase shadow-sm"
+            >
+              Provision Workspace
+            </button>
+          </div>
         )}
       </div>
 
