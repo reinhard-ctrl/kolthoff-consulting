@@ -7,7 +7,8 @@
     "seed": "node seed.mjs",
     "seed:dry": "node seed.mjs --dry-run",
     "reset-diagnosis": "node reset-diagnosis-slices.mjs",
-    "reset-diagnosis:dry": "node reset-diagnosis-slices.mjs --dry-run"
+    "reset-diagnosis:dry": "node reset-diagnosis-slices.mjs --dry-run",
+    "delete-agency-ops-tenant": "node delete-agency-ops-tenant.mjs"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0"
