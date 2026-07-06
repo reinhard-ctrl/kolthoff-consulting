@@ -139,16 +139,16 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 **Platform roadmap (stable · fast · optimized):** [`docs/migration-roadmap.md`](migration-roadmap.md)
 
-North star: P4 verified on production → App Check enforced → React migration (P6) → Kolthoff MOD onboarding wizard (P7). Your primary focus after P4 is **Phase 4 content** (SOWs, playbooks, portal defaults).
+North star: P4 ✅ verified on production (6 Jul 2026). Optional eng: App Check (P5), React migration (P6). **Your focus:** **Phase 4 content** (SOWs, playbooks, portal defaults) and first PRO 1 client handoff.
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **2.5** | Ops hardening — portal auth, workspace, embeds, CRM sync | **Complete on `main`** — P4 smoke test remains |
-| **3** | SSO ✅, App Check, React migration, tenant provisioning | **In progress** — PRO 1 lead-to-cash live; P6/P7 remain |
-| **4** | Content, templates, delivery automation (**your focus**) | After P4 verify |
+| **2.5** | Ops hardening — portal auth, workspace, embeds, CRM sync | ✅ **Complete** — P4 verified |
+| **3** | SSO, workspace provision, Agency Ops PRO, onboard wizard | ✅ **Eng complete** — App Check + P6 optional |
+| **4** | Content, templates, delivery automation (**your focus**) | 🔶 **Active** |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
-Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), analytics/workspace sidebars in iframe (#166, #173), Agency Ops Firestore provisioning (#165, #168), admin nav org defaults (#170), SSO cold-start (#175–176).
+Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), Agency Ops Firestore provisioning (#165–#217), SSO cold-start (#175–176), P4 verified (#213–#216), direct workspace provision (#217).
 
 ---
 
