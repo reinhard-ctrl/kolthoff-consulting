@@ -99,7 +99,7 @@ If bindings fail with `FAILED_PRECONDITION` / organization policy, **ignore them
 
 ## Cloud Functions deploy: HTTPS → Firestore trigger
 
-If deploy fails with `Changing from an HTTPS function to a background triggered function` for `onAgencyOpsProvisionRequest`, delete the orphaned HTTPS version once, then redeploy:
+If deploy fails with `Changing from an HTTPS function to a background triggered function` for `onAgencyOpsProvisionRequest`, delete the orphaned HTTPS version once, then redeploy. The live Firestore trigger is named **`processAgencyOpsProvisionRequest`** (renamed to avoid trigger-type conflicts).
 
 ```bash
 gcloud functions delete onAgencyOpsProvisionRequest \
@@ -107,8 +107,14 @@ gcloud functions delete onAgencyOpsProvisionRequest \
   --project=kolthoff-portal \
   --gen2 \
   --quiet
+gcloud functions delete onAgencyOpsProvisionRequest \
+  --region=asia-southeast1 \
+  --project=kolthoff-portal \
+  --quiet
+npx firebase functions:delete onAgencyOpsProvisionRequest \
+  --region asia-southeast1 --project kolthoff-portal --force
 ```
 
-CI on `main` runs this automatically before each functions deploy.
+CI on `main` runs multi-path cleanup automatically before each functions deploy.
 
 To temporarily allow public bindings, an org admin may need to relax **Domain restricted sharing** under IAM & Admin → Organization policies.

@@ -92,7 +92,7 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 | S2 | Admin SPA asset rewrites | ✅ | JS/CSS not served as HTML (#145) |
 | S3 | Google SSO redirect-first | ✅ | No COOP popup hang (#141) |
 | S4 | Workspace + analytics embed sidebars | ✅ | #173, #166 |
-| S5 | Agency Ops provision (no public CORS) | ✅ | Firestore trigger `onAgencyOpsProvisionRequest` (#165) |
+| S5 | Agency Ops provision (no public CORS) | ✅ | Firestore trigger `processAgencyOpsProvisionRequest` (#165) |
 | S6 | Functions deploy type conflicts | ✅ | CI deletes orphaned HTTPS functions (#168) |
 | S7 | Staff SSO cold-start timeout | ✅ | Firestore-only provision path (#175–176) |
 | S8 | **P4 production verification** | ⏳ | You — consulting + PRO paths |
@@ -289,7 +289,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **Google SSO polish** | Redirect-first login (#141) — avoids COOP popup failures |
 | **Agency Ops PRO** | PRO 1 catalog, SLA template, marketing section, client demo branding |
 | **Agency Ops Phase 2** | `prepareAgencyOpsTenant`, Agency Ops Manager UI, contract-sign hook |
-| **Agency Ops provision** | Firestore trigger `onAgencyOpsProvisionRequest`; CI deletes orphaned HTTPS fn (#165, #168) |
+| **Agency Ops provision** | Firestore trigger `processAgencyOpsProvisionRequest`; CI deletes orphaned HTTPS fn `onAgencyOpsProvisionRequest` (#165, #168) |
 | **Embed sidebars** | Analytics + workspace module nav visible in admin iframe (#166, #173) |
 | **Admin nav defaults** | Project Management / Deliverables / Product groups; org-wide layout on Customize → Done (#170) |
 | **Staff SSO resilience** | Firestore-only provision path; cold-start timeout handling (#175–176) |

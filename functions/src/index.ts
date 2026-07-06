@@ -1290,7 +1290,7 @@ export const prepareAgencyOpsTenant = onCall({ invoker: 'public', cors: true }, 
 });
 
 /** Firestore path when org policy blocks public Cloud Function invoke (same as staff SSO) */
-export const onAgencyOpsProvisionRequest = onDocumentWritten(
+export const processAgencyOpsProvisionRequest = onDocumentWritten(
   `artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/{requestId}`,
   async (event) => {
     const afterSnap = event.data?.after;
@@ -1326,10 +1326,10 @@ export const onAgencyOpsProvisionRequest = onDocumentWritten(
         ...response,
         completedAt: Date.now(),
       });
-      console.log('onAgencyOpsProvisionRequest complete', requestId, response.tenantId);
+      console.log('processAgencyOpsProvisionRequest complete', requestId, response.tenantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
-      console.error('onAgencyOpsProvisionRequest failed', requestId, err);
+      console.error('processAgencyOpsProvisionRequest failed', requestId, err);
       await ref.update({
         status: 'error',
         error: message,
