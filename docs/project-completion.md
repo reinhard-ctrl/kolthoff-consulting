@@ -137,25 +137,18 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 ## After go-live — see full roadmap
 
-**Holistic migration plan (Phases 2.5 → 5):** [`docs/migration-roadmap.md`](migration-roadmap.md)
+**Platform roadmap (stable · fast · optimized):** [`docs/migration-roadmap.md`](migration-roadmap.md)
 
-Quick summary of what remains:
+North star: P4 verified on production → App Check enforced → React migration (P6) → Kolthoff MOD onboarding wizard (P7). Your primary focus after P4 is **Phase 4 content** (SOWs, playbooks, portal defaults).
 
 | Phase | Focus | Status |
 |-------|--------|--------|
-| **2.5** | Ops hardening — client sign/portal, workspace, embeds | **Complete on `main`** — verify on production (Package P4) |
-| **3** | SSO ✅, App Check, React migration, tenant provisioning | **In progress** — Agency Ops PRO Phase 1–2 done; Kolthoff wizard + P6 remain |
+| **2.5** | Ops hardening — portal auth, workspace, embeds, CRM sync | **Complete on `main`** — P4 smoke test remains |
+| **3** | SSO ✅, App Check, React migration, tenant provisioning | **In progress** — PRO 1 lead-to-cash live; P6/P7 remain |
 | **4** | Content, templates, delivery automation (**your focus**) | After P4 verify |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
-Legacy bullet list (superseded by migration-roadmap.md):
-
-- ~~Google Workspace SSO~~ ✅ live (redirect-first)
-- App Check + reCAPTCHA (optional enforcement)
-- Master Admin blueprint visual designer
-- Migrate delivery/ops/analytics HTML apps into React
-- ~~Portal custom-token auth~~ ✅
-- ~~Workspace deploy + admin embed~~ ✅
+Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), analytics/workspace sidebars in iframe (#166, #173), Agency Ops Firestore provisioning (#165, #168), admin nav org defaults (#170), SSO cold-start (#175–176).
 
 ---
 
