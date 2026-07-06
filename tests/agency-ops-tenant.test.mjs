@@ -56,4 +56,22 @@ assert.equal(isPro1AgencyOpsProfile({ selectedPackageId: 'pro1-agency-ops-starte
 assert.equal(isPro1AgencyOpsProfile({ engagementType: 'product', productId: 'pro2' }), false);
 assert.equal(isPro1AgencyOpsProfile({ engagementType: 'service' }), false);
 
+function isAgencyOpsTenantCancelled(data) {
+  if (!data) return false;
+  const status = data.status ?? data.accountStatus ?? data.provisioningStatus;
+  return status === 'cancelled';
+}
+
+function agencyOpsStatusLabel(data) {
+  if (isAgencyOpsTenantCancelled(data)) return 'cancelled';
+  const status = data?.provisioningStatus ?? data?.status ?? data?.accountStatus;
+  return typeof status === 'string' && status ? status : 'active';
+}
+
+assert.equal(isAgencyOpsTenantCancelled({ status: 'cancelled' }), true);
+assert.equal(isAgencyOpsTenantCancelled({ accountStatus: 'cancelled' }), true);
+assert.equal(isAgencyOpsTenantCancelled({ provisioningStatus: 'ready' }), false);
+assert.equal(agencyOpsStatusLabel({ provisioningStatus: 'ready' }), 'ready');
+assert.equal(agencyOpsStatusLabel({ status: 'cancelled' }), 'cancelled');
+
 console.log('agency-ops-tenant.test.mjs — all passed');

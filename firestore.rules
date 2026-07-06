@@ -218,6 +218,12 @@ service cloud.firestore {
       allow update: if isStaffMember() || (isAuthenticated() && isClientContractSigningUpdate());
     }
 
+    // Agency Ops tenant registry — clients may read their own row to detect cancellation
+    match /artifacts/kolthoff-admin-app/public/data/agency_ops_tenants/{tenantId} {
+      allow get: if isAuthenticated();
+      allow list, create, update, delete: if isStaffMember();
+    }
+
     match /artifacts/kolthoff-admin-app/public/data/{collection}/{docId} {
       allow read, write: if isStaffMember();
     }

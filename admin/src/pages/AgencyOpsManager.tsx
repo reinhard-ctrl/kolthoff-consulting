@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
+import { cancelAgencyOpsTenant } from '../lib/agency-ops-cancel';
 import {
   agencyOpsProvisionUiState,
   isPro1AgencyOpsProfile,
   needsAgencyOpsTenant,
   type AgencyOpsProfileFields,
 } from '../lib/agency-ops-profiles';
+import { AGENCY_OPS_DEMO_TENANT, agencyOpsStatusLabel, isAgencyOpsTenantCancelled } from '../lib/agency-ops-tenant-status';
 
 interface AgencyOpsTenant {
   tenantId: string;
@@ -66,6 +68,8 @@ export default function AgencyOpsManager() {
   const [result, setResult] = useState<PrepareResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<AgencyOpsTenant | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -196,6 +200,28 @@ export default function AgencyOpsManager() {
     showToast('Handoff copied to clipboard.');
   };
 
+  const runCancelTenant = async () => {
+    if (!cancelTarget) return;
+    setCancellingId(cancelTarget.tenantId);
+    try {
+      await bootstrapAuth();
+      const data = await cancelAgencyOpsTenant({ tenantId: cancelTarget.tenantId });
+      setCancelTarget(null);
+      showToast(data.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Cancellation failed');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const tenantStatusClass = (tenant: AgencyOpsTenant) => {
+    const label = agencyOpsStatusLabel(tenant);
+    if (label === 'cancelled') return 'text-rose-400';
+    if (label === 'ready' || label === 'active') return 'text-emerald-400';
+    return 'text-brandAmber-300';
+  };
+
   return (
     <div>
       {toast && (
@@ -275,7 +301,7 @@ export default function AgencyOpsManager() {
               <th className="p-4">SOW Ref</th>
               <th className="p-4">Status</th>
               <th className="p-4">Passcode</th>
-              <th className="p-4 text-right">Console</th>
+              <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-brandNavy-800">
@@ -285,13 +311,15 @@ export default function AgencyOpsManager() {
                 <td className="p-4 font-mono text-xs text-slate-400">{t.tenantId}</td>
                 <td className="p-4 font-mono text-xs text-slate-500">{t.quoteId || '—'}</td>
                 <td className="p-4">
-                  <span className="text-emerald-400 text-xs uppercase font-bold">{t.provisioningStatus || t.status || 'active'}</span>
-                  {t.provisioningMethod === 'auto' && (
+                  <span className={`${tenantStatusClass(t)} text-xs uppercase font-bold`}>
+                    {agencyOpsStatusLabel(t)}
+                  </span>
+                  {t.provisioningMethod === 'auto' && !isAgencyOpsTenantCancelled(t) && (
                     <span className="block text-[10px] text-slate-500 mt-0.5">Auto on sign</span>
                   )}
                 </td>
                 <td className="p-4 font-mono text-xs">
-                  {t.initialPasscode ? (
+                  {t.initialPasscode && !isAgencyOpsTenantCancelled(t) ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -308,11 +336,22 @@ export default function AgencyOpsManager() {
                   )}
                 </td>
                 <td className="p-4 text-right">
-                  {t.consoleUrl && (
-                    <a href={t.consoleUrl} target="_blank" rel="noreferrer" className="text-brandTeal-400 text-xs font-bold hover:underline">
-                      Open console
-                    </a>
-                  )}
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {t.consoleUrl && !isAgencyOpsTenantCancelled(t) && (
+                      <a href={t.consoleUrl} target="_blank" rel="noreferrer" className="text-brandTeal-400 text-xs font-bold hover:underline">
+                        Open console
+                      </a>
+                    )}
+                    {t.tenantId !== AGENCY_OPS_DEMO_TENANT && !isAgencyOpsTenantCancelled(t) && (
+                      <button
+                        type="button"
+                        onClick={() => setCancelTarget(t)}
+                        className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
+                      >
+                        Cancel account
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -328,6 +367,36 @@ export default function AgencyOpsManager() {
           <p className="p-6 text-slate-500 italic">Tenant registry empty — use Provision / Retry in the panel above.</p>
         )}
       </div>
+
+      {cancelTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
+            <h3 className="font-bold text-lg mb-2 text-rose-300">Cancel Agency Ops account</h3>
+            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+              Cancel <strong className="text-white">{cancelTarget.clientName}</strong> ({cancelTarget.tenantId})?
+              Console access and the passcode will be disabled. Tenant data is retained so you can re-provision later.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setCancelTarget(null)}
+                disabled={cancellingId === cancelTarget.tenantId}
+                className="px-4 py-2 bg-brandNavy-800 rounded text-sm"
+              >
+                Keep active
+              </button>
+              <button
+                type="button"
+                onClick={runCancelTenant}
+                disabled={cancellingId === cancelTarget.tenantId}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
+              >
+                {cancellingId === cancelTarget.tenantId ? 'Cancelling…' : 'Cancel account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
