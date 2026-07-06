@@ -106,6 +106,33 @@ check_post_api() {
 }
 check_post_api "/api/generatePortalToken"
 
+check_provision_api() {
+  local path="/api/prepareClientWorkspace"
+  local url="${BASE}${path}"
+  local body
+  local code
+  body=$(curl -sS -X POST "$url" \
+    -H 'Content-Type: application/json' \
+    -d '{"clientName":"Smoke Test Client"}' 2>/dev/null || echo "")
+  code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$url" \
+    -H 'Content-Type: application/json' \
+    -d '{"clientName":"Smoke Test Client"}' 2>/dev/null || echo "000")
+  if echo "$body" | rg -q '"code"[[:space:]]*:[[:space:]]*"unauthenticated"'; then
+    echo "OK  401 JSON (provision API live)  $url"
+    PASS=$((PASS + 1))
+  elif [[ "$code" == "403" ]]; then
+    echo "WARN 403 (private invoker — direct Firestore provision is primary path)  $url"
+    PASS=$((PASS + 1))
+  elif echo "$body" | rg -qi 'Page Not Found|<!doctype html>'; then
+    echo "FAIL rewrite missing (Hosting 404 HTML — deploy functions + hosting)  $url"
+    FAIL=$((FAIL + 1))
+  else
+    echo "WARN unexpected provision API response code=$code  $url"
+    FAIL=$((FAIL + 1))
+  fi
+}
+check_provision_api
+
 # Legacy redirects
 check_redirect "/admin/legacy/index.html" "/admin"
 check_redirect "/crm_pipeline.html" "crm_pipeline"
