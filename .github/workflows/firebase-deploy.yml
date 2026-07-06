@@ -143,7 +143,11 @@ jobs:
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal
-          ORPHANS=(validateWorkbookProfile onAgencyOpsProvisionRequest)
+          ORPHANS=(
+            validateWorkbookProfile
+            onAgencyOpsProvisionRequest
+            processClientProvisionRequest
+          )
           for FN in "${ORPHANS[@]}"; do
             echo "=== Removing orphaned function: $FN ==="
             gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --gen2 --quiet 2>&1 || true
@@ -207,9 +211,19 @@ jobs:
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal
-          for FN in onAgencyOpsProvisionRequest validateWorkbookProfile; do
+          ORPHANS=(
+            validateWorkbookProfile
+            onAgencyOpsProvisionRequest
+            processClientProvisionRequest
+          )
+          for FN in "${ORPHANS[@]}"; do
+            echo "=== Removing orphaned function before retry: $FN ==="
             gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --gen2 --quiet 2>&1 || true
             gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --quiet 2>&1 || true
+            gcloud run services delete "$(echo "$FN" | tr '[:upper:]' '[:lower:]')" \
+              --region="$REGION" --project="$PROJECT" --quiet 2>&1 || true
+            npx --yes firebase-tools@15.22.3 functions:delete "$FN" \
+              --region "$REGION" --project "$PROJECT" --force --non-interactive 2>&1 || true
           done
           npx --yes firebase-tools@15.22.3 deploy \
             --only functions \
