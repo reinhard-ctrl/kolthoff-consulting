@@ -147,6 +147,7 @@ jobs:
             validateWorkbookProfile
             onAgencyOpsProvisionRequest
             processClientProvisionRequest
+            onApprovalRequestWritten
           )
           for FN in "${ORPHANS[@]}"; do
             echo "=== Removing orphaned function: $FN ==="
@@ -215,6 +216,7 @@ jobs:
             validateWorkbookProfile
             onAgencyOpsProvisionRequest
             processClientProvisionRequest
+            onApprovalRequestWritten
           )
           for FN in "${ORPHANS[@]}"; do
             echo "=== Removing orphaned function before retry: $FN ==="
