@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** Core platform is **live and stable on `main`**. **Platform engineering for Phases 2.5 + 3A/P7 is complete** (#198–#210): Agency Ops PRO 1, Core Workspace pilot, unified onboard tabs, CI deploy fixes, nav cleanup. Automated smoke: **24/24** on `kolthoff-consulting.com`. **Showstopper:** P4 manual sign-off only — run `docs/p4-verification.md` sections A–D (~45 min), then Phase 4 content.
+**You are here:** Core platform is **live and stable on `main`**. **Platform engineering for Phases 2.5 + 3A/P7 is complete** (#198–#210): Agency Ops PRO 1, Core Workspace pilot, unified onboard tabs, CI deploy fixes, nav cleanup. Automated smoke: **26/26** on `kolthoff-consulting.com`. **Showstopper:** P4 manual sign-off only — run `docs/p4-verification.md` sections A–D (~45 min), then Phase 4 content.
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -34,7 +34,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Client UX (passcode embeds, `?tenant=`, branding, empty planner) | ✅ |
 | PRO Subscriptions billing in Collections | ✅ |
 | Single sidebar entry: **Agency Ops Manager** | ✅ |
-| Production smoke routes | ✅ 24/24 on `kolthoff-consulting.com` |
+| Production smoke routes | ✅ 26/26 on `kolthoff-consulting.com` |
 
 **Not engineering:** P4 sign-off (sections B1–B7), first paying client handoff, Phase 4 content (SOW library, CRM playbooks).
 
@@ -579,4 +579,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — Platform engineering complete through #210 (unified onboard wizard, Agency Ops plan closure). Smoke **24/24**. **Showstopper:** P4 sign-off (you). Then Phase 4 content; eng backlog: App Check (optional) + P6.*
+*Last updated: 6 July 2026 — Platform engineering complete through #210. Smoke **26/26** (includes P4 section C embed routes). **Showstopper:** P4 sign-off sections A–D (you, ~45 min). Then Phase 4 content; eng backlog: App Check (optional) + P6.*

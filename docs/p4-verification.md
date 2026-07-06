@@ -11,6 +11,18 @@ Hard-refresh staff apps after deploy: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Win
 
 ---
 
+## Showstopper (what blocks “plan complete”)
+
+| Blocker | Owner | Why engineering cannot close it |
+|---------|-------|----------------------------------|
+| **P4 manual sign-off (sections A–D)** | **You** | Requires staff Google SSO, incognito contract sign, client passcodes, and real Firestore data — no automated substitute |
+| First paying PRO 1 client handoff | **You** | Business decision after P4 B passes |
+| Phase 4 content (SOW library, CRM playbooks) | **You** | Delivery content, not code |
+
+**Not showstoppers:** App Check (optional), React migration (P6), bundle size, PRO 2 product sale (on hold by choice). Automated smoke is **26/26** including admin embed shells (section C routes only — does not replace A/B/D).
+
+---
+
 ## Automated pre-check (engineering)
 
 From repo root:
@@ -20,7 +32,9 @@ bash scripts/smoke-test.sh https://kolthoff-portal.web.app
 bash scripts/smoke-test.sh https://kolthoff-consulting.com
 ```
 
-Expect **0 failures** (24 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
+Expect **0 failures** (26 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
+
+Section **C** embed routes are covered by smoke; sections **A**, **B**, and **D** still require manual walkthrough below.
 
 ---
 
