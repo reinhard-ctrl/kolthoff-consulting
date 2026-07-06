@@ -24,6 +24,20 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 **You are here:** Core platform is **live and stable on `main`**. **Agency Ops PRO 1 engineering is complete** — lead-to-cash, multi-tenant manager, client self-service, and staff ops (provision, handoff, passcode reset, cancel/delete). **Your gate:** run P4 on production (`docs/p4-verification.md`), then sell first PRO 1 client.
 
+### PRO 1 · Agency Ops — plan closed (engineering)
+
+| Deliverable | Status |
+|-------------|--------|
+| Product catalog + engagement packages + PRO PDF labels | ✅ |
+| Auto-provision on contract sign + CRM Won | ✅ |
+| Agency Ops Manager (provision, retry, search, handoff, passcode reset, cancel/delete) | ✅ |
+| Client UX (passcode embeds, `?tenant=`, branding, empty planner) | ✅ |
+| PRO Subscriptions billing in Collections | ✅ |
+| Single sidebar entry: **Agency Ops Manager** | ✅ |
+| Production smoke routes | ✅ 23/23 on `kolthoff-consulting.com` |
+
+**Not engineering:** P4 sign-off (sections B1–B7), first paying client handoff, Phase 4 content (SOW library, CRM playbooks).
+
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform shell** | ✅ **Stable on `main`** | Admin, workspace, hosting rewrites, CI deploys, Google redirect SSO |
@@ -126,9 +140,9 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 | **Delivery tools** | Diagnosis, Policy→Vault, Workflow tabs | HTML embeds — migrate in P6 |
 | **Analytics** | Firm, Capacity, Time | Manual entry; planner baselines exist |
 | **Workspace** | SSO embed, module nav | Approvals/Messenger depth |
-| **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | **P4 verify B5–B6** on live tenant; delete old demo workspaces if still present |
-| **PRO 2 Workspace** | Product SKU | Not started |
-| **Kolthoff onboarding** | New MOD client wizard | P7 — PRO path is template |
+| **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | ✅ **Eng complete** — **P4 verify B1–B7** |
+| **PRO 2 Workspace** | Auto-provision on sign, Approvals/Messenger v1, onboard wizard | ✅ Pilot path on `main` — **P4 section D**; product sale **on hold** |
+| **Kolthoff onboarding** | New MOD client wizard | ✅ `/admin/onboard` shipped (#202) |
 
 ---
 
@@ -239,9 +253,9 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C + Core Workspace D) | ⏳ **You** — after #202 merge |
+| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C + Core Workspace D) | ⏳ **You** — `docs/p4-verification.md` (~30 min) |
 | **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **SSO done** — App Check optional |
-| **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning) | ✅ Phase 1–2 on `main`; Phase 3 draft (#159) |
+| **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning, Manager, client UX) | ✅ **Complete** (#159–#204) |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
 | **P7** | Phase 3C: Blueprint designer + client provisioning wizard | 🔶 **Wizard shipped** (#202) — visual blueprint designer deferred |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
@@ -510,23 +524,24 @@ flowchart TB
 5. ~~CRM won/lost → planner sync~~ ✅
 6. ~~Embed polish, App Check bootstrap, config centralization, analytics baselines~~ ✅
 7. ~~Workspace deploy + admin embed~~ ✅ (#146, #152)
-8. **Verify** full client journey on production domain (sign → portal → org chart → upload)
+8. ~~Agency Ops PRO lead-to-cash + Manager + client UX~~ ✅ (#159–#204)
+9. **Verify** full client journey on production domain — `docs/p4-verification.md` sections A + B + C (+ D for workspace pilot)
 
 ### Should do (Phase 3 — Package P5–P7)
-9. ~~Google Workspace SSO~~ ✅ — redirect-first login merged (#141)
-10. App Check enforcement — **you:** set `RECAPTCHA_SITE_KEY` secret, then enable in Firebase Console
-11. Agency Ops Phase 3 — auto-provision on CRM Won (#159, draft)
-12. React migration (delivery → ops → analytics → client)
-13. Master Admin blueprint CRUD
-14. Kolthoff client workspace provisioning wizard (MOD engagements — PRO path partially done)
-15. Planner: exclude flat retainer lines from friction buffer when matching signed PDF totals
+10. ~~Google Workspace SSO~~ ✅ — redirect-first login merged (#141)
+11. App Check enforcement — **you:** set `RECAPTCHA_SITE_KEY` secret, then enable in Firebase Console
+12. ~~Agency Ops auto-provision on contract sign + CRM Won~~ ✅ (#159, #165, #184–#204)
+13. React migration (delivery → ops → analytics → client)
+14. Master Admin blueprint CRUD (visual designer — wizard shipped at `/admin/onboard`)
+15. ~~Kolthoff client workspace provisioning wizard~~ ✅ (#202)
+16. Planner: exclude flat retainer lines from friction buffer when matching signed PDF totals
 
 ### Can wait (Phase 4–5)
-16. Full workspace module depth (Messenger, Approvals workflows)
-17. Analytics auto-seed from planner
-18. Google Drive API integration
-19. Marketing site CMS
-20. White-label portal branding
+17. Deeper workspace module parity (Messenger/Approvals beyond v1)
+18. Analytics auto-seed from planner
+19. Google Drive API integration
+20. Marketing site CMS
+21. White-label portal branding
 
 ---
 
