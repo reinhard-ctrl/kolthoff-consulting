@@ -3,8 +3,8 @@ import type { User } from 'firebase/auth';
 import { db } from './firebase';
 
 const ADMIN_APP = 'kolthoff-admin-app';
-const PROVISION_TIMEOUT_MS = 45000;
-const RETRY_WAIT_MS = 30000;
+const PROVISION_TIMEOUT_MS = 90000;
+const RETRY_WAIT_MS = 60000;
 
 function staffSsoRequestRef(uid: string) {
   return doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'staff_sso_requests', uid);

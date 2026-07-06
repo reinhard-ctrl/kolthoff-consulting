@@ -1306,14 +1306,16 @@ export const processAgencyOpsProvisionRequest = onDocumentWritten(
     const ref = afterSnap.ref;
 
     try {
+      const autoProvisioned = Boolean(data.autoProvisioned);
+      const profileId = typeof data.profileId === 'string' ? data.profileId.trim() : undefined;
       const result = await provisionAgencyOpsForProfile({
-        profileId: typeof data.profileId === 'string' ? data.profileId.trim() : undefined,
+        profileId,
         clientName: String(data.clientName || '').trim(),
         requestedTenantId: typeof data.tenantId === 'string' ? data.tenantId.trim() : undefined,
         createdBy: typeof data.requestedBy === 'string' ? data.requestedBy : null,
         passcode: typeof data.passcode === 'string' ? data.passcode.trim() : undefined,
         throwIfExists: Boolean(data.throwIfExists),
-        autoProvisioned: false,
+        autoProvisioned,
       });
 
       const response = buildAgencyOpsProvisionResponse(
@@ -1326,6 +1328,17 @@ export const processAgencyOpsProvisionRequest = onDocumentWritten(
         ...response,
         completedAt: Date.now(),
       });
+
+      if (autoProvisioned && profileId) {
+        const contractId = `contract-${profileId}`;
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/contracts_ledger/${contractId}`).set({
+          agencyOpsAutoProvisioned: true,
+          agencyOpsTenantId: response.tenantId,
+          agencyOpsProvisionedAt: Date.now(),
+          agencyOpsAutoProvisionError: admin.firestore.FieldValue.delete(),
+        }, { merge: true });
+      }
+
       console.log('processAgencyOpsProvisionRequest complete', requestId, response.tenantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
@@ -1335,6 +1348,20 @@ export const processAgencyOpsProvisionRequest = onDocumentWritten(
         error: message,
         failedAt: Date.now(),
       });
+
+      const profileId = typeof data.profileId === 'string' ? data.profileId.trim() : undefined;
+      if (profileId) {
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).set({
+          provisioningStatus: 'failed',
+          provisioningError: message,
+          updatedAt: Date.now(),
+        }, { merge: true });
+        const contractId = `contract-${profileId}`;
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/contracts_ledger/${contractId}`).set({
+          agencyOpsAutoProvisionError: message,
+          agencyOpsAutoProvisionFailedAt: Date.now(),
+        }, { merge: true });
+      }
     }
   },
 );
@@ -1392,22 +1419,24 @@ export const onContractLedgerWritten = onDocumentWritten(
     }
 
     try {
+      const clientName =
+        (profile.clientCompany as string) ||
+        (profile.clientName as string) ||
+        profileId;
+      const requestId = `auto-${profileId}-${Date.now()}`;
       await profileRef.set({ provisioningStatus: 'provisioning', updatedAt: Date.now() }, { merge: true });
-      const result = await provisionAgencyOpsForProfile({
+      await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/${requestId}`).set({
+        status: 'pending',
         profileId,
-        profile,
-        createdBy: null,
+        clientName,
         autoProvisioned: true,
+        requestedAt: Date.now(),
+        requestedBy: 'system-contract-sign',
       });
-      await event.data!.after!.ref.set({
-        agencyOpsAutoProvisioned: true,
-        agencyOpsTenantId: result.tenantId,
-        agencyOpsProvisionedAt: Date.now(),
-      }, { merge: true });
-      console.log('Auto-provisioned Agency Ops tenant', result.tenantId, 'for profile', profileId);
+      console.log('Queued Agency Ops auto-provision', requestId, 'for profile', profileId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
-      console.error('Auto-provision failed for profile', profileId, err);
+      console.error('Auto-provision queue failed for profile', profileId, err);
       await profileRef.set({
         provisioningStatus: 'failed',
         provisioningError: message,
