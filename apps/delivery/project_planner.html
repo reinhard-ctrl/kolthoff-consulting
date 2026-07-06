@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' stop-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' stop-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
   
   <!-- Firebase + auth gate (auth-gate imports firebase-init) -->
-      <script type="module" src="../../shared/auth-gate.js?v=20250707-tenant-nav-v1"></script>
+      <script type="module" src="../../shared/auth-gate.js?v=20250707-empty-planner-v1"></script>
     <script src="../../shared/firebase-errors.js"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1136,6 +1136,120 @@
       }
     ];
 
+    const EMPTY_AGENCY_WORKSPACE_STUB = {
+      id: '',
+      workspaceName: '',
+      clientCompany: '',
+      clientRep: '',
+      clientAddress: '',
+      clientTin: '',
+      quoteId: '',
+      quoteDate: getTodayDateString(),
+      quoteValidity: '30 Days',
+      staffCount: 0,
+      monthlySalary: 0,
+      wastedHours: 0,
+      includeTax: false,
+      preparerTitle: '',
+      targetStartDate: '',
+      proposalObjectives: '',
+      proposalSponsor: '',
+      preDiagnosticList: '',
+      frictionBuffer: 10,
+      principalToSeniorDelegate: 20,
+      seniorToAssociateDelegate: 40,
+      overrideTimeline: '',
+      weeklyHours: 16,
+      clientReviewWeeks: 1,
+      discountPercent: 0,
+      subscriptionMonths: 6,
+      printSow: true,
+      printTimeline: true,
+      printSla: true,
+      printQuote: true,
+      printCover: false,
+      milestoneSplit: 'auto',
+      customSplit1: 40,
+      customSplit2: 40,
+      customSplit3: 20,
+      ndaEffectiveDate: getTodayDateString(),
+      ndaPurpose: '',
+      ndaTerm: '5 (Five) Years',
+      ndaJurisdiction: '',
+      invoiceMilestone: 'full',
+      customInvoiceAmount: 0,
+      invoiceNumberSuffix: '01',
+      invoiceDueDate: '',
+      tasks: [],
+      selectedPackageId: 'custom',
+      packageCustomized: true,
+      packageAppliedAt: null,
+      engagementType: 'service',
+      productId: null,
+      slaContent: '',
+      ...H.DEFAULT_RATES,
+    };
+
+    const buildNewAgencyWorkspace = (newId) => ({
+      id: newId,
+      workspaceName: 'New Quote',
+      clientCompany: '',
+      clientRep: '',
+      clientAddress: '',
+      clientTin: '',
+      quoteId: `Q-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
+      quoteDate: getTodayDateString(),
+      quoteValidity: '30 Days',
+      staffCount: 0,
+      monthlySalary: 0,
+      wastedHours: 0,
+      annualOperationalLeakage: 0,
+      includeTax: false,
+      preparerTitle: '',
+      preparerTin: '',
+      targetStartDate: '',
+      proposalObjectives: '',
+      proposalSponsor: '',
+      preDiagnosticList: '',
+      frictionBuffer: 10,
+      principalToSeniorDelegate: 20,
+      seniorToAssociateDelegate: 40,
+      overrideTimeline: '',
+      weeklyHours: 16,
+      clientReviewWeeks: 1,
+      discountPercent: 0,
+      dpaRetentionDays: 14,
+      slaCureDays: 30,
+      slaRecurrenceMonths: 3,
+      subscriptionMonths: 6,
+      slaContent: defaultAgencySlaContent(),
+      printSow: true,
+      printTimeline: true,
+      printSla: true,
+      printQuote: true,
+      printCover: false,
+      milestoneSplit: 'auto',
+      customSplit1: 40,
+      customSplit2: 40,
+      customSplit3: 20,
+      ndaEffectiveDate: getTodayDateString(),
+      ndaPurpose: '',
+      ndaTerm: '5 (Five) Years',
+      ndaJurisdiction: '',
+      invoiceMilestone: 'full',
+      customInvoiceAmount: 0,
+      invoiceNumberSuffix: '01',
+      invoiceDueDate: '',
+      tasks: [],
+      selectedPackageId: 'custom',
+      packageCustomized: true,
+      packageAppliedAt: Date.now(),
+      engagementType: 'service',
+      productId: null,
+      ...H.DEFAULT_RATES,
+      updatedAt: Date.now(),
+    });
+
     // --- UI ICONS ---
     const IconCheckSquare = () => <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brandTeal-500"><path d="m9 11 3 3 7-7"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg>;
     const IconSquare = () => <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>;
@@ -1283,6 +1397,10 @@
       const [crmDeals, setCrmDeals] = useState([]);
       const [isSaving, setIsSaving] = useState(false);
       const [view, setView] = useState('sandbox');
+
+      useEffect(() => {
+        if (STARTER_UI && view === 'packages') setView('sandbox');
+      }, [view]);
       const [brand, setBrand] = useState(defaultBrand);
 
       useEffect(() => {
@@ -1322,8 +1440,8 @@
       };
 
       // --- CLIENT PROFILES LIST STATE ---
-      const [profiles, setProfiles] = useState(DEFAULT_CLIENTS);
-      const [activeProfileId, setActiveProfileId] = useState(DEFAULT_CLIENTS[0].id);
+      const [profiles, setProfiles] = useState(STARTER_UI ? [] : DEFAULT_CLIENTS);
+      const [activeProfileId, setActiveProfileId] = useState(STARTER_UI ? '' : DEFAULT_CLIENTS[0].id);
 
       // --- FIREBASE INITIALIZATION & SYNC ---
       useEffect(() => {
@@ -1387,7 +1505,7 @@
 
         const profilesRef = window.collection(db, 'artifacts', appId, 'public', 'data', 'workbook_profiles');
         const unsubProfiles = window.onSnapshot(profilesRef, (snap) => {
-          if (snap.empty && !profilesSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED) {
+          if (snap.empty && !profilesSeeded && !window.KOLTHOFF_DISABLE_CLIENT_SEED && !STARTER_UI) {
             profilesSeeded = true;
             DEFAULT_CLIENTS.forEach(p => {
               window.firestoreSetDoc(window.firestoreDoc(profilesRef, p.id), p);
@@ -1395,12 +1513,14 @@
           } else {
             const fetchedProfiles = [];
             snap.forEach((snapDoc) => fetchedProfiles.push(snapDoc.data()));
+            setProfiles(fetchedProfiles);
             if (fetchedProfiles.length > 0) {
-              setProfiles(fetchedProfiles);
               setActiveProfileId(currId => {
                 if (!fetchedProfiles.find(p => p.id === currId)) return fetchedProfiles[0].id;
                 return currId;
               });
+            } else if (STARTER_UI) {
+              setActiveProfileId('');
             }
           }
         }, console.error);
@@ -1409,7 +1529,9 @@
       }, [isAuthed]);
 
       const activeProfile = useMemo(() => {
-        return profiles.find(p => p.id === activeProfileId) || profiles[0] || DEFAULT_CLIENTS[0];
+        const match = profiles.find(p => p.id === activeProfileId) || profiles[0];
+        if (match) return match;
+        return STARTER_UI ? EMPTY_AGENCY_WORKSPACE_STUB : DEFAULT_CLIENTS[0];
       }, [profiles, activeProfileId]);
 
       const getWorkspaceLabel = H.getWorkspaceLabel;
@@ -1470,7 +1592,9 @@
       }, [annualOperationalLeakage]);
 
       // --- SOW SELECTION ---
-      const [tasks, setTasks] = useState(activeProfile.tasks || PRODUCT_TASK_CATALOG);
+      const [tasks, setTasks] = useState(
+        STARTER_UI ? (activeProfile.tasks ?? []) : (activeProfile.tasks || PRODUCT_TASK_CATALOG)
+      );
       const [moduleBundleNames, setModuleBundleNames] = useState(() => ({
         ...defaultAgencyModuleBundleNames(),
         ...(activeProfile.moduleBundleNames || {}),
@@ -1665,8 +1789,8 @@
       );
 
       useEffect(() => {
-        const p = profiles.find(profile => profile.id === activeProfileId) || profiles[0] || DEFAULT_CLIENTS[0];
-        if (!p) return;
+        const p = profiles.find(profile => profile.id === activeProfileId) || profiles[0] || (STARTER_UI ? null : DEFAULT_CLIENTS[0]);
+        if (!p || !p.id) return;
         const profileSwitch = lastHydratedProfileIdRef.current !== activeProfileId;
         if (!profileSwitch && isDirtyRef.current) return;
         const profileStaffCount = p.staffCount !== undefined ? p.staffCount : 15;
@@ -1682,7 +1806,7 @@
           frictionBuffer: p.frictionBuffer, principalToSeniorDelegate: p.principalToSeniorDelegate,
           seniorToAssociateDelegate: p.seniorToAssociateDelegate, overrideTimeline: p.overrideTimeline || '',
           weeklyHours: p.weeklyHours || 16, clientReviewWeeks: p.clientReviewWeeks !== undefined ? p.clientReviewWeeks : 1,
-          tasks: (STARTER_UI ? (p.tasks || PRODUCT_TASK_CATALOG).map((t) => H.normalizeAgencyLineItemTask(t, bundleNames)) : (p.tasks || PRODUCT_TASK_CATALOG)), discountPercent: p.discountPercent || 0,
+          tasks: (STARTER_UI ? (p.tasks ?? []).map((t) => H.normalizeAgencyLineItemTask(t, bundleNames)) : (p.tasks || PRODUCT_TASK_CATALOG)), discountPercent: p.discountPercent || 0,
           moduleBundleNames: bundleNames,
           subscriptionMonths: p.subscriptionMonths !== undefined ? p.subscriptionMonths : 6,
           dpaRetentionDays: p.dpaRetentionDays !== undefined ? p.dpaRetentionDays : 14,
@@ -1705,7 +1829,7 @@
           staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
-          selectedPackageId: p.selectedPackageId ?? 'leak-scan',
+          selectedPackageId: p.selectedPackageId ?? (STARTER_UI ? 'custom' : 'leak-scan'),
           packageCustomized: p.packageCustomized ?? false,
           packageAppliedAt: p.packageAppliedAt ?? null,
           engagementType: p.engagementType ?? 'service',
@@ -2003,9 +2127,11 @@
         const newId = `client-crm-${deal.id || Date.now()}`;
         const base = buildCurrentPayload();
         const suggestedPackage = EP?.resolvePackageFromCrmDeal?.(deal) || EP?.suggestPackageFromText?.(deal.notes || '') || 'leak-scan';
-        const packageResult = H.applyPackageToTasks(suggestedPackage, INITIAL_TASKS.map(t => ({ ...t })), catalogTasksRef.current);
+        const packageResult = STARTER_UI
+          ? { tasks: [], defaults: {}, package: null }
+          : H.applyPackageToTasks(suggestedPackage, INITIAL_TASKS.map(t => ({ ...t })), catalogTasksRef.current);
         const defs = packageResult.defaults || {};
-        const isProductPkg = EP?.isProductPackage?.(packageResult.package);
+        const isProductPkg = !STARTER_UI && EP?.isProductPackage?.(packageResult.package);
         const payload = {
           ...base,
           id: newId,
@@ -2015,8 +2141,8 @@
           proposalSponsor: deal.titleRole ? `${deal.leadName} (${deal.titleRole})` : deal.leadName,
           quoteId: deal.id,
           tasks: packageResult.tasks,
-          selectedPackageId: suggestedPackage,
-          packageCustomized: false,
+          selectedPackageId: STARTER_UI ? 'custom' : suggestedPackage,
+          packageCustomized: STARTER_UI ? true : false,
           packageAppliedAt: Date.now(),
           engagementType: isProductPkg ? 'product' : 'service',
           productId: isProductPkg ? (packageResult.package?.productId || defs.productId || null) : null,
@@ -2033,12 +2159,13 @@
         if (isAuthed) {
           await window.firestoreSetDoc(window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId), payload);
           setActiveProfileId(newId);
+          if (STARTER_UI) setView('sandbox');
         }
       };
 
       const handleCreateNewWorkspace = () => {
         const newId = `client-${Date.now()}`;
-        const newClientObj = {
+        const newClientObj = STARTER_UI ? buildNewAgencyWorkspace(newId) : {
           id: newId, clientCompany: 'New Workspace Corp.', clientRep: 'Representative Name', clientAddress: 'Registered Business Address',
           clientTin: '000-000-000-000', quoteId: `KC-${new Date().getFullYear()}-NEW`, quoteDate: getTodayDateString(), quoteValidity: '30 Days',
           staffCount: 15, monthlySalary: 25000, wastedHours: 2.0, annualOperationalLeakage: 1125000, includeTax: false, preparerTitle: 'Chief Operations Strategist', preparerTin: '337-945-806-000',
@@ -2046,7 +2173,7 @@
           proposalSponsor: 'Representative (Director)', preDiagnosticList: "• Standard active staff directory\n• Samples of current invoices and transaction flows",
           frictionBuffer: 10, principalToSeniorDelegate: 20, seniorToAssociateDelegate: 40, overrideTimeline: '', weeklyHours: 16, clientReviewWeeks: 1,
           discountPercent: 0, dpaRetentionDays: 14, slaCureDays: 30, slaRecurrenceMonths: 3, subscriptionMonths: 6,
-          slaContent: STARTER_UI ? defaultAgencySlaContent() : '',
+          slaContent: '',
           printSow: true, printTimeline: true, printSla: true, printQuote: true, printCover: false,
           milestoneSplit: 'auto', customSplit1: 40, customSplit2: 40, customSplit3: 20, ndaEffectiveDate: getTodayDateString(), ndaPurpose: 'Analyzing current process layouts, standardizing operational guidelines, and auditing software billing assets.',
           ndaTerm: '5 (Five) Years', ndaJurisdiction: 'Taytay, Rizal, Philippines', invoiceMilestone: 'full', customInvoiceAmount: 100000,
@@ -2055,7 +2182,10 @@
           ...H.DEFAULT_RATES, updatedAt: Date.now()
         };
         const docRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', newId);
-        window.firestoreSetDoc(docRef, newClientObj).then(() => { setActiveProfileId(newId); setView('packages'); });
+        window.firestoreSetDoc(docRef, newClientObj).then(() => {
+          setActiveProfileId(newId);
+          setView(STARTER_UI ? 'sandbox' : 'packages');
+        });
       };
 
       const handleCloneCurrentWorkspace = () => {
@@ -4680,6 +4810,38 @@
         );
       }
 
+      if (STARTER_UI && isAuthed && profiles.length === 0) {
+        return (
+          <div className="font-sans h-full min-h-screen flex flex-col animate-fade-in starter-app-root text-slate-600 bg-slate-100">
+            <header className="planner-main-header border-b sticky top-0 z-50 no-print shrink-0">
+              <div className="planner-header-inner max-w-[1600px] mx-auto px-4 sm:px-6 flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
+                <div data-app-chrome className="flex items-center gap-2">
+                  {renderPlannerHeaderLogo(brand)}
+                  <div className="text-left font-sans font-bold">
+                    <span className="starter-page-title font-sans text-xs sm:text-sm block leading-none">{renderPlannerHeaderTitle(brand)}</span>
+                    <span className="starter-page-subtitle text-[10px] block mt-1 font-sans" style={{ color: 'var(--starter-text-muted)' }}>{brand.plannerSubtitle || brand.tagline || 'Quotes'}</span>
+                  </div>
+                </div>
+              </div>
+            </header>
+            <main className="flex-1 flex items-center justify-center p-6">
+              <div className="max-w-md w-full bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center">
+                <h2 className="text-lg font-semibold text-slate-800 mb-2">Start your first quote</h2>
+                <p className="text-sm text-slate-500 mb-6">Create a blank quote workspace and add line items in the Planner.</p>
+                <button
+                  type="button"
+                  onClick={handleCreateNewWorkspace}
+                  disabled={!isAuthed}
+                  className="starter-sow-btn-primary px-5 py-2.5 text-sm font-semibold rounded-lg disabled:opacity-50"
+                >
+                  Create quote
+                </button>
+              </div>
+            </main>
+          </div>
+        );
+      }
+
       return (
         <div className={STARTER_UI ? "font-sans h-full min-h-0 overflow-hidden flex flex-col animate-fade-in starter-app-root text-slate-600 bg-slate-100" : "font-sans h-full min-h-0 overflow-hidden text-slate-300 bg-brandNavy-955 flex flex-col animate-fade-in font-sans"}>
           <header className={STARTER_UI ? "planner-main-header border-b sticky top-0 z-50 no-print shrink-0" : "planner-main-header border-b border-brandNavy-700/50 bg-brandNavy-950/95 sticky top-0 z-50 backdrop-blur-md no-print shrink-0"}>
@@ -4853,8 +5015,8 @@
             </div>
           )}
 
-          <main id="app-main" className={`max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans ${view === 'packages' ? 'p-2 lg:p-3' : view === 'sandbox' || view === 'package' ? 'p-2 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'}`}>
-            {view === 'packages' ? (
+          <main id="app-main" className={`max-w-[1600px] mx-auto w-full flex-1 min-h-0 overflow-hidden font-sans ${view === 'packages' && !STARTER_UI ? 'p-2 lg:p-3' : view === 'sandbox' || view === 'package' ? 'p-2 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'}`}>
+            {view === 'packages' && !STARTER_UI ? (
               <div className="packages-view no-print animate-fade-in font-sans text-left">
                 <div className="packages-view-header mb-2 lg:mb-3">
                   <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-1 lg:gap-4">
