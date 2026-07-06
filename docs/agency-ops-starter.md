@@ -124,3 +124,18 @@ node seed.mjs --tenant agency-ops-demo --data-dir agency-ops --force
 ```
 
 Paid client tenants are **not** seeded — they start empty (see provisioning above).
+
+## Production checklist (engineering complete)
+
+| Area | Status |
+|------|--------|
+| Lead-to-cash auto-provision on contract sign | ✅ |
+| Agency Ops Manager (provision, retry, search, handoff, passcode reset) | ✅ |
+| Tenant cancel / delete (test accounts) | ✅ |
+| Client passcode login + Sales/Quotes embeds + `?tenant=` persistence | ✅ |
+| Paid branding (single form); demo-only appearance toggle | ✅ |
+| Empty client planner (no Engagement Packages tab) | ✅ |
+| PRO Subscriptions billing in Kolthoff OS Collections | ✅ |
+| Smoke routes `/agency-ops/`, `/admin/agency-ops-manager` | ✅ |
+
+**Your sign-off:** Run `docs/p4-verification.md` sections **B1–B7** on `kolthoff-consulting.com` after deploy.

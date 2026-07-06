@@ -440,7 +440,7 @@ export default function AgencyOpsManager() {
           </>
         ) : (
           <p className="text-sm text-slate-500 mt-2">
-            No active tenants yet. Provision a client to enable the sidebar Agency Ops link.
+            No active tenants yet. Provision a client to enable console access and handoff.
           </p>
         )}
       </div>

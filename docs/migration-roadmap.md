@@ -22,16 +22,16 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** Core platform is **live and stable on `main`**. Agency Ops client self-service is largely complete (passcode login, tenant nav, single branding form, empty planner). Remaining work splits into **deploy + P4 verify (you)**, **harden security/perf (eng)**, and **fill content/templates (you)**.
+**You are here:** Core platform is **live and stable on `main`**. **Agency Ops PRO 1 engineering is complete** — lead-to-cash, multi-tenant manager, client self-service, and staff ops (provision, handoff, passcode reset, cancel/delete). **Your gate:** run P4 on production (`docs/p4-verification.md`), then sell first PRO 1 client.
 
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform shell** | ✅ **Stable on `main`** | Admin, workspace, hosting rewrites, CI deploys, Google redirect SSO |
 | **Admin embeds** | ✅ **Fixed** | Core Workspace + analytics sidebars visible in iframe (#173, #166); stale asset rewrites (#145) |
-| **Agency Ops PRO** | ✅ **Phase 1–2 + billing + client UX** | Provision trigger (#184), cancel tenant (#185), client passcode embeds (#186), tenant URL nav (#187), paid branding (#188), empty planner — no Engagement Packages (#189) |
+| **Agency Ops PRO** | ✅ **Production-ready (eng)** | Auto + manual provision, Manager (search, SOW links, active tenant, passcode reset, cancel/delete), client UX (#186–#189), staff UX (#196, #201); single sidebar entry **Agency Ops Manager** |
 | **Staff SSO** | ✅ **Improved** | Firestore-only staff provisioning path; cold-start timeout handling (#175–176) |
 | **Admin UX** | ✅ **Updated** | Sidebar defaults: Command → Project Management → Deliverables → Product → Analytics → Client (#170); Customize → Done saves org default to Firestore |
-| **P4 Verification** | ⏳ **Your turn** | End-to-end client journey on production domain (~30 min) — **deploy hosting first**, then run `docs/p4-verification.md` |
+| **P4 Verification** | ⏳ **Your turn** | End-to-end on `kolthoff-consulting.com` (~30 min) — `docs/p4-verification.md` sections A + B + C |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
 | **P7 MOD onboarding** | ✅ **Wizard shipped** | `/admin/onboard` — link SOW profile → Core Workspace + portal + templates; MOD auto-provision on contract sign |
@@ -74,7 +74,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 | SKU | Lead-to-cash | Status |
 |-----|--------------|--------|
-| **PRO 1 · Agency Ops** | CRM → blank Planner quote → Sign → auto-provision → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ On `main` (#186–#189) — **verify P4 PRO path (B5–B6)** |
+| **PRO 1 · Agency Ops** | CRM → Planner package → Sign → auto-provision → Manager handoff → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ **Eng complete** — **verify P4 B1–B7** |
 | **PRO 2 · Core Workspace** | CRM → Sign → auto-provision Core Workspace → client portal + Approvals/Messenger | ✅ Auto-provision on contract sign (MOD + PRO 2 profiles) — **pilot verify section D** |
 
 See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.

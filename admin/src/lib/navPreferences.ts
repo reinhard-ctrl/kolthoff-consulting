@@ -9,7 +9,7 @@ function navStorageKey(): string {
   return getProductConfig().navStorageKey;
 }
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-export const NAV_PREFS_VERSION = 7;
+export const NAV_PREFS_VERSION = 8;
 
 /** Map legacy group ids from older saved layouts. */
 export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
