@@ -38,8 +38,8 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ### Your checklist (priority order)
 
-1. **P4 smoke test (consulting)** — Contract sign → portal login → org chart in portal → file upload on `kolthoff-consulting.com`. Document any failure.
-2. **P4 smoke test (PRO 1)** — CRM product deal → Agency Ops Starter package → sign → verify tenant in Agency Ops Manager → issue setup + monthly invoice in Collections PRO tab.
+1. **P4 smoke test (consulting)** — Contract sign → portal login → org chart in portal → file upload on `kolthoff-consulting.com`. Document any failure. **Runbook:** `docs/p4-verification.md`
+2. **P4 smoke test (PRO 1)** — CRM product deal → Agency Ops Starter package → sign → verify tenant in Agency Ops Manager → issue setup + monthly invoice in Collections PRO tab. **Runbook:** `docs/p4-verification.md`
 3. **Hard refresh after deploys** — `Cmd+Shift+R` on `/admin/` if assets look stale or embeds 404.
 4. **App Check (optional, recommended)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last. See `docs/app-check-sso.md`.
 5. **Content & templates (Phase 4)** — SOW library, CRM playbooks, portal defaults — your primary focus once P4 passes.
@@ -547,6 +547,7 @@ flowchart TB
 
 | Doc | Purpose |
 |-----|---------|
+| `docs/p4-verification.md` | P4 production smoke tests — consulting + PRO 1 checklist |
 | `docs/project-completion.md` | Go-live checklist (Phases 1–2) |
 | `docs/data-model.md` | Firestore collections |
 | `docs/content-model.md` | Engagement hub (`workbook_profiles`) schema |

@@ -180,7 +180,7 @@ jobs:
         run: |
           REGION=asia-southeast1
           PROJECT=kolthoff-portal
-          for FN in verifyAdminPasscode generatePortalToken provisionGoogleStaff prepareAgencyOpsTenant; do
+          for FN in verifyAdminPasscode verifyAdminPasscodeHttp generatePortalToken generatePortalTokenHttp provisionGoogleStaff prepareAgencyOpsTenant; do
             gcloud functions add-iam-policy-binding "$FN" \
               --gen2 --region="$REGION" --project="$PROJECT" \
               --member="allUsers" \
