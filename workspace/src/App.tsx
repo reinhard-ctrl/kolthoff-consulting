@@ -36,7 +36,7 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 
   return (
     <div className="flex h-screen">
-      <aside data-app-sidebar className="w-16 md:w-56 bg-slate-900 flex flex-col items-center md:items-stretch py-4 shrink-0">
+      <aside data-workspace-sidebar className="w-16 md:w-56 bg-slate-900 flex flex-col items-center md:items-stretch py-4 shrink-0">
         <div className="hidden md:block px-4 mb-6">
           <div className="text-white font-bold text-sm">Workspace</div>
           <div className="text-slate-400 text-xs truncate">{user.name}</div>
