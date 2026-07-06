@@ -1,10 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { getNavItem } from '../lib/navPreferences';
 import { useProduct } from '../lib/product-context';
 import { useDemoAppearance } from '../lib/demo-appearance-context';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250707-tenant-nav-v1';
+const EMBED_CACHE_VERSION = '20250707-planner-profile-v1';
 
 function buildEmbedSrc(href: string, embedParams: Record<string, string>): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);
@@ -18,6 +18,7 @@ function buildEmbedSrc(href: string, embedParams: Record<string, string>): strin
 
 export default function EmbedApp({ appId }: { appId: string }) {
   const product = useProduct();
+  const location = useLocation();
   const { appearance, isLight } = useDemoAppearance();
   const item = getNavItem(appId);
 
@@ -36,6 +37,10 @@ export default function EmbedApp({ appId }: { appId: string }) {
     ...product.embedParams,
     ...(appearance ? { appearance } : {}),
   };
+  const profileFromRoute = new URLSearchParams(location.search).get('profile');
+  if (profileFromRoute) {
+    embedParams.profile = profileFromRoute;
+  }
   const src = buildEmbedSrc(item.href, embedParams);
 
   return (

@@ -1451,6 +1451,7 @@
       const dismissedDraftsRef = useRef({});
       const importFileRef = useRef(null);
       const lastHydratedProfileIdRef = useRef(null);
+      const profileUrlAppliedRef = useRef(false);
 
       const syncSavedFingerprint = (fp) => {
         lastSavedFingerprintRef.current = fp;
@@ -1532,7 +1533,15 @@
             const fetchedProfiles = [];
             snap.forEach((snapDoc) => fetchedProfiles.push(snapDoc.data()));
             setProfiles(fetchedProfiles);
-            if (fetchedProfiles.length > 0) {
+            const profileFromUrl = new URLSearchParams(window.location.search).get('profile');
+            if (
+              !profileUrlAppliedRef.current &&
+              profileFromUrl &&
+              fetchedProfiles.some((p) => p.id === profileFromUrl)
+            ) {
+              profileUrlAppliedRef.current = true;
+              setActiveProfileId(profileFromUrl);
+            } else if (fetchedProfiles.length > 0) {
               setActiveProfileId(currId => {
                 if (!fetchedProfiles.find(p => p.id === currId)) return fetchedProfiles[0].id;
                 return currId;
