@@ -23,7 +23,7 @@ Staff can sign in with **@kolthoff-consulting.com** Google accounts on:
 4. Cloud Function trigger `onStaffSsoProvisionRequest` sets `role` + `tenantId` claims and upserts `core_users`
 5. Embedded HTML apps inherit the same Auth session and pass `auth-gate.js` via claims or kolthoff Google email
 
-This Firestore path works when your GCP org policy blocks public Cloud Function invoke (same constraint as passcode login). Callable `provisionGoogleStaff` remains as a fallback where public invoke is allowed.
+This Firestore path works when your GCP org policy blocks public Cloud Function invoke (same constraint as passcode login). The callable `provisionGoogleStaff` remains deployed for ops/scripts but is not invoked from the web app (public invoke is blocked and surfaces as CORS errors in the browser).
 
 Passcode login still works for break-glass and environments where Google popup is blocked.
 
