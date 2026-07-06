@@ -1,6 +1,7 @@
 import { deleteField, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { auth, db, adminAppId } from './firebase';
 import type { AgencyOpsProvisionInput, AgencyOpsProvisionResult } from './agency-ops-provision-firestore';
+import { isAgencyOpsTenantCancelled } from './agency-ops-tenant-status';
 
 const AGENCY_OPS_DEMO_TENANT = 'agency-ops-demo';
 const DEFAULT_AGENCY_OPS_URL = 'https://kolthoff-consulting.com/agency-ops/';
@@ -74,6 +75,10 @@ export async function provisionAgencyOpsDirect(
     }
   }
 
+  const registryData = registrySnap.exists() ? (registrySnap.data() as Record<string, unknown>) : null;
+  const configData = configSnap.exists() ? (configSnap.data() as Record<string, unknown>) : null;
+  const isCancelled = isAgencyOpsTenantCancelled(registryData) || isAgencyOpsTenantCancelled(configData);
+
   if (!configSnap.exists() && !registrySnap.exists()) {
     const now = Date.now();
     const branding = {
@@ -87,6 +92,7 @@ export async function provisionAgencyOpsDirect(
       id: 'config',
       productId: 'agency-ops-starter',
       clientName,
+      accountStatus: 'active',
       features: { messenger: false, approvals: false, vault: false, crm: false },
       branding,
       activeBrandingPresetId: 'default',
@@ -120,6 +126,51 @@ export async function provisionAgencyOpsDirect(
     });
     await batch.commit();
     created = true;
+  } else if (isCancelled) {
+    const now = Date.now();
+    const existingBranding = (configData?.branding as Record<string, unknown> | undefined) || {};
+    const branding = {
+      companyName: clientName,
+      tagline: String(existingBranding.tagline || 'Creative & Digital Services'),
+      primaryColor: String(existingBranding.primaryColor || '#4f46e5'),
+      logoUrl: String(existingBranding.logoUrl || ''),
+    };
+    const batch = writeBatch(db);
+    batch.set(configRef, {
+      clientName,
+      accountStatus: 'active',
+      status: 'active',
+      branding,
+      cancelledAt: deleteField(),
+      cancelledBy: deleteField(),
+      cancellationReason: deleteField(),
+      reactivatedAt: now,
+      reactivatedBy: auth.currentUser.uid,
+      updatedAt: now,
+    }, { merge: true });
+    batch.set(doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_credentials', passcode), {
+      role: 'kolthoff_admin',
+      note: `Agency Ops tenant ${tenantId}`,
+      createdAt: now,
+      reactivatedAt: now,
+    });
+    batch.set(registryRef, {
+      clientName,
+      status: 'active',
+      consoleUrl,
+      provisioningStatus: 'ready',
+      profileId,
+      quoteId,
+      initialPasscode: passcode,
+      initialPasscodeSetAt: now,
+      cancelledAt: deleteField(),
+      cancelledBy: deleteField(),
+      cancellationReason: deleteField(),
+      reactivatedAt: now,
+      reactivatedBy: auth.currentUser.uid,
+      updatedAt: now,
+    }, { merge: true });
+    await batch.commit();
   }
 
   if (profileId) {
@@ -154,6 +205,8 @@ export async function provisionAgencyOpsDirect(
     created,
     message: created
       ? `Provisioned Agency Ops for ${clientName}. Share the console URL and passcode with the client.`
-      : `Agency Ops tenant ${tenantId} already exists — credentials shown below.`,
+      : isCancelled
+        ? `Reactivated Agency Ops for ${clientName}. Share the new passcode with the client.`
+        : `Agency Ops tenant ${tenantId} already exists — credentials shown below.`,
   };
 }

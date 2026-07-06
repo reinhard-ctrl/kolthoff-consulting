@@ -3,7 +3,8 @@ import { getAuth, signInAnonymously, signInWithEmailAndPassword, GoogleAuthProvi
 import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
-import { getAdminTenantId } from './product-config';
+import { getAdminTenantId, isAgencyOpsStarter } from './product-config';
+import { getAgencyOpsTenantAccessBlockReason } from './agency-ops-tenant-access';
 
 import { resolveAuthDomain } from './auth-domain';
 
@@ -101,28 +102,39 @@ export async function hasAdminSession(): Promise<boolean> {
     const user = auth.currentUser;
     if (!user) return false;
 
+    let hasSession = false;
+
     if (user.isAnonymous) {
       const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
       const snap = await getDoc(sessionRef);
-      return snap.exists();
+      hasSession = snap.exists();
+    } else {
+      const token = await user.getIdTokenResult();
+      if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
+        hasSession = true;
+      } else if (isKolthoffStaffEmail(user.email) && user.providerData.some((p) => p.providerId === 'google.com')) {
+        hasSession = true;
+      } else {
+        const googleSessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'google_admin_sessions', user.uid);
+        const googleSnap = await getDoc(googleSessionRef);
+        if (googleSnap.exists()) {
+          hasSession = true;
+        } else {
+          const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
+          const snap = await getDoc(sessionRef);
+          hasSession = snap.exists();
+        }
+      }
     }
 
-    const token = await user.getIdTokenResult();
-    if (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') {
-      return true;
+    if (!hasSession) return false;
+
+    if (isAgencyOpsStarter()) {
+      const blockReason = await getAgencyOpsTenantAccessBlockReason();
+      if (blockReason) return false;
     }
 
-    if (isKolthoffStaffEmail(user.email) && user.providerData.some((p) => p.providerId === 'google.com')) {
-      return true;
-    }
-
-    const googleSessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'google_admin_sessions', user.uid);
-    const googleSnap = await getDoc(googleSessionRef);
-    if (googleSnap.exists()) return true;
-
-    const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
-    const snap = await getDoc(sessionRef);
-    return snap.exists();
+    return true;
   } catch (err) {
     console.warn('hasAdminSession failed:', err);
     return false;

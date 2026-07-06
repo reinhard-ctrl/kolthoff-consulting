@@ -1,7 +1,5 @@
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, adminAppId } from './firebase';
-
-import type { AgencyOpsProvisionInput, AgencyOpsProvisionResult } from './agency-ops-provision-firestore';
 import { provisionAgencyOpsDirect } from './agency-ops-provision-direct';
 
 const TRIGGER_TIMEOUT_MS = 90000;

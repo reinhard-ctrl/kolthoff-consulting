@@ -17,6 +17,7 @@ import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
 import { useProduct } from './lib/product-context';
 import { isAgencyOpsStarter } from './lib/product-config';
+import { getAgencyOpsTenantAccessBlockReason } from './lib/agency-ops-tenant-access';
 import { useDemoAppearance } from './lib/demo-appearance-context';
 import DemoAppearanceToggle from './components/DemoAppearanceToggle';
 
@@ -254,6 +255,7 @@ function AppRoutes() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [bootError, setBootError] = useState('');
   const [googleSsoError, setGoogleSsoError] = useState('');
+  const [accountBlockReason, setAccountBlockReason] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -271,6 +273,12 @@ function AppRoutes() {
         if (cancelled) return;
         if (user) {
           window.clearTimeout(safetyTimer);
+          const blockReason = await getAgencyOpsTenantAccessBlockReason();
+          if (blockReason) {
+            setAccountBlockReason(blockReason);
+            setAuthed(false);
+            return;
+          }
           const returnUrl = getReturnUrl();
           if (returnUrl) {
             window.location.href = returnUrl;
@@ -287,6 +295,15 @@ function AppRoutes() {
       }
 
       try {
+        const blockReason = await getAgencyOpsTenantAccessBlockReason();
+        if (cancelled) return;
+        if (blockReason) {
+          window.clearTimeout(safetyTimer);
+          setAccountBlockReason(blockReason);
+          setAuthed(false);
+          return;
+        }
+
         const ok = await hasAdminSession();
         if (cancelled) return;
         window.clearTimeout(safetyTimer);
@@ -314,6 +331,24 @@ function AppRoutes() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!authed || !isAgencyOpsStarter()) return;
+
+    let cancelled = false;
+    const interval = window.setInterval(() => {
+      void getAgencyOpsTenantAccessBlockReason().then((reason) => {
+        if (cancelled || !reason) return;
+        setAccountBlockReason(reason);
+        setAuthed(false);
+      });
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [authed]);
+
   if (authed === null) {
     return (
       <div className="min-h-screen flex items-center justify-center text-slate-300 bg-brandNavy-955">
@@ -330,7 +365,16 @@ function AppRoutes() {
             {bootError}
           </div>
         )}
-        <LoginGate onAuth={() => setAuthed(true)} initialError={googleSsoError} />
+        {accountBlockReason ? (
+          <div className="min-h-screen flex items-center justify-center p-4 bg-brandNavy-955">
+            <div className="glass-panel p-8 w-full max-w-md text-center">
+              <h1 className="text-xl font-bold text-rose-300 mb-3">Account cancelled</h1>
+              <p className="text-slate-300 text-sm leading-relaxed">{accountBlockReason}</p>
+            </div>
+          </div>
+        ) : (
+          <LoginGate onAuth={() => setAuthed(true)} initialError={googleSsoError} />
+        )}
       </>
     );
   }
