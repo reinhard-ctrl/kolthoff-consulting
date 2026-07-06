@@ -8,6 +8,7 @@ export interface OrgChartMember {
 
 export interface OrgChartData {
   members: OrgChartMember[];
+  drawioXml?: string;
   updatedAt?: string;
 }
 
@@ -49,7 +50,7 @@ export function migrateRolesToOrgChart(roles?: LegacyRoleRow[]): OrgChartMember[
 
 export function normalizeOrgChart(raw: unknown): OrgChartData {
   if (!raw || typeof raw !== 'object') return { members: [] };
-  const data = raw as { members?: unknown; updatedAt?: string };
+  const data = raw as { members?: unknown; drawioXml?: string; updatedAt?: string };
   const members = Array.isArray(data.members)
     ? data.members
         .filter((m): m is OrgChartMember => Boolean(m && typeof m === 'object'))
@@ -61,7 +62,11 @@ export function normalizeOrgChart(raw: unknown): OrgChartData {
           managerId: (m as OrgChartMember).managerId ? String((m as OrgChartMember).managerId) : null,
         }))
     : [];
-  return { members, updatedAt: data.updatedAt };
+  return {
+    members,
+    drawioXml: typeof data.drawioXml === 'string' ? data.drawioXml : undefined,
+    updatedAt: data.updatedAt,
+  };
 }
 
 export function resolveOrgChartFromProfile(profile: {
