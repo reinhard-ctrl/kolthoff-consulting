@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
+import { provisionClientWorkspaceViaFirestore } from '../lib/client-provision-firestore';
+import {
+  STARTER_APPROVAL_TEMPLATES,
+  deployStarterPackToTenant,
+  deployTemplateToTenant,
+  seedMasterTemplates,
+} from '../lib/approval-starter-templates';
 import { cancelWorkspaceTenant } from '../lib/workspace-cancel';
 import { deleteWorkspaceTenant } from '../lib/workspace-delete';
 import {
@@ -112,7 +119,7 @@ export default function Tenants() {
   const [tenantId, setTenantId] = useState(INTERNAL_WORKSPACE_TENANT);
   const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
   const [users, setUsers] = useState<TenantUser[]>([]);
-  const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: false, crm: false });
+  const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: true, crm: false });
   const [templates, setTemplates] = useState<MasterTemplate[]>([]);
   const [tickets, setTickets] = useState<ItTicket[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -131,9 +138,11 @@ export default function Tenants() {
   const [newRepEmail, setNewRepEmail] = useState('');
   const [deliverViaPortal, setDeliverViaPortal] = useState(true);
   const [inviteContact, setInviteContact] = useState(true);
+  const [deployStarterTemplates, setDeployStarterTemplates] = useState(true);
   const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [publishingPortal, setPublishingPortal] = useState(false);
+  const [blueprintBusy, setBlueprintBusy] = useState<string | null>(null);
   const [nukeBusy, setNukeBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<WorkspaceInstance | null>(null);
@@ -349,8 +358,7 @@ export default function Tenants() {
     setPrepareResult(null);
     try {
       await bootstrapAuth();
-      const prepare = httpsCallable(functions, 'prepareClientWorkspace');
-      const result = await prepare({
+      const input = {
         clientName: newClientName.trim(),
         tenantId: newTenantId.trim() || undefined,
         portalAccessCode: newPortalCode.trim() || undefined,
@@ -358,8 +366,24 @@ export default function Tenants() {
         repEmail: newRepEmail.trim() || undefined,
         deliverViaPortal,
         inviteContact: inviteContact && !!newRepEmail.trim(),
-      });
-      const data = result.data as PrepareResult;
+        deployStarterTemplates,
+      };
+
+      let data: PrepareResult;
+      try {
+        data = await provisionClientWorkspaceViaFirestore(input);
+      } catch (firestoreErr) {
+        const prepare = httpsCallable(functions, 'prepareClientWorkspace');
+        const result = await prepare({
+          ...input,
+          deployStarterTemplates,
+        });
+        data = result.data as PrepareResult;
+        if (firestoreErr instanceof Error && firestoreErr.message.includes('timed out')) {
+          console.warn('Firestore provision timed out; callable fallback succeeded');
+        }
+      }
+
       setTenantId(data.tenantId);
       setPrepareResult(data);
       setInviteStatus(data.message);
@@ -410,8 +434,59 @@ export default function Tenants() {
   };
 
   const deleteTemplate = async (id: string) => {
+    if (!window.confirm('Delete this master blueprint?')) return;
     await deleteDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'master_templates', id));
     setInviteStatus('Blueprint deleted.');
+  };
+
+  const handleSeedMasterTemplates = async () => {
+    setBlueprintBusy('seed');
+    try {
+      await bootstrapAuth();
+      const count = await seedMasterTemplates();
+      showToast(`Seeded ${count} master approval templates.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Seed failed');
+    } finally {
+      setBlueprintBusy(null);
+    }
+  };
+
+  const handleDeployTemplate = async (templateId: string) => {
+    if (tenantId === INTERNAL_WORKSPACE_TENANT) {
+      showToast('Select a client tenant before deploying templates.');
+      return;
+    }
+    const tmpl = templates.find((t) => t.id === templateId)
+      || STARTER_APPROVAL_TEMPLATES.find((t) => t.id === templateId);
+    if (!tmpl) return;
+    setBlueprintBusy(templateId);
+    try {
+      await bootstrapAuth();
+      await deployTemplateToTenant(tenantId, tmpl);
+      showToast(`Deployed "${tmpl.name || tmpl.id}" to ${tenantId}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Deploy failed');
+    } finally {
+      setBlueprintBusy(null);
+    }
+  };
+
+  const handleDeployStarterPack = async () => {
+    if (tenantId === INTERNAL_WORKSPACE_TENANT) {
+      showToast('Select a client tenant before deploying templates.');
+      return;
+    }
+    setBlueprintBusy('pack');
+    try {
+      await bootstrapAuth();
+      const count = await deployStarterPackToTenant(tenantId);
+      showToast(`Deployed ${count} approval templates to ${tenantId}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Deploy failed');
+    } finally {
+      setBlueprintBusy(null);
+    }
   };
 
   const nukeTenantData = async () => {
@@ -811,17 +886,49 @@ export default function Tenants() {
 
       {activeTab === 'blueprints' && (
         <div className="space-y-3">
-          <p className="text-xs text-slate-500 mb-2">Global master blueprints stored on the admin tenant. Deploy-to-tenant designer is planned.</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              type="button"
+              onClick={handleSeedMasterTemplates}
+              disabled={blueprintBusy === 'seed'}
+              className="px-3 py-1.5 text-xs rounded border border-brandNavy-700 text-slate-300 disabled:opacity-50"
+            >
+              {blueprintBusy === 'seed' ? 'Seeding…' : 'Seed starter master templates'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDeployStarterPack}
+              disabled={blueprintBusy === 'pack' || tenantId === INTERNAL_WORKSPACE_TENANT}
+              className="px-3 py-1.5 text-xs rounded bg-brandTeal-500 text-brandNavy-955 font-bold disabled:opacity-50"
+            >
+              {blueprintBusy === 'pack' ? 'Deploying…' : `Deploy starter pack → ${tenantId}`}
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mb-2">
+            Global master blueprints on the admin tenant. Deploy copies to the selected client tenant&apos;s <code className="text-brandTeal-400">core_templates</code>.
+          </p>
           {templates.map((tmpl) => (
-            <div key={tmpl.id} className="glass-panel p-4 flex justify-between items-center">
+            <div key={tmpl.id} className="glass-panel p-4 flex justify-between items-center gap-3">
               <div>
                 <div className="font-bold">{tmpl.name || tmpl.id}</div>
                 <div className="text-xs text-slate-500">{tmpl.type || 'template'} · {tmpl.fields?.length || 0} fields</div>
               </div>
-              <button type="button" onClick={() => deleteTemplate(tmpl.id)} className="text-red-400 text-xs">Delete</button>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleDeployTemplate(tmpl.id)}
+                  disabled={blueprintBusy === tmpl.id || tenantId === INTERNAL_WORKSPACE_TENANT}
+                  className="text-brandTeal-400 text-xs disabled:opacity-50"
+                >
+                  {blueprintBusy === tmpl.id ? 'Deploying…' : 'Deploy'}
+                </button>
+                <button type="button" onClick={() => deleteTemplate(tmpl.id)} className="text-red-400 text-xs">Delete</button>
+              </div>
             </div>
           ))}
-          {templates.length === 0 && <p className="text-slate-500 italic">No master blueprints yet.</p>}
+          {templates.length === 0 && (
+            <p className="text-slate-500 italic">No master blueprints yet — click &quot;Seed starter master templates&quot;.</p>
+          )}
         </div>
       )}
 
@@ -1023,6 +1130,14 @@ export default function Tenants() {
                       disabled={!newRepEmail.trim()}
                     />
                     Invite primary contact and email password setup link
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={deployStarterTemplates}
+                      onChange={(e) => setDeployStarterTemplates(e.target.checked)}
+                    />
+                    Deploy starter approval templates (leave, expense, access, document)
                   </label>
                 </div>
 
