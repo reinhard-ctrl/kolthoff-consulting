@@ -22,14 +22,28 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app, 'asia-southeast1');
 
-export const appId = new URLSearchParams(window.location.search).get('tenant') || 'kolthoff-admin-app';
+export const INTERNAL_WORKSPACE_TENANT = 'kolthoff-admin-app';
+
+export function getWorkspaceTenantId(): string | null {
+  const raw = new URLSearchParams(window.location.search).get('tenant')?.trim();
+  if (!raw || raw === INTERNAL_WORKSPACE_TENANT) return null;
+  return raw;
+}
+
+function requireWorkspaceTenantId(): string {
+  const tenantId = getWorkspaceTenantId();
+  if (!tenantId) {
+    throw new Error('Workspace tenant ID is required in the URL (?tenant=client-...).');
+  }
+  return tenantId;
+}
 
 export function tenantCol(name: string) {
-  return collection(db, 'artifacts', appId, 'public', 'data', name);
+  return collection(db, 'artifacts', requireWorkspaceTenantId(), 'public', 'data', name);
 }
 
 export function tenantDoc(name: string, id: string) {
-  return doc(db, 'artifacts', appId, 'public', 'data', name, id);
+  return doc(db, 'artifacts', requireWorkspaceTenantId(), 'public', 'data', name, id);
 }
 
 export async function bootstrapAuth() {

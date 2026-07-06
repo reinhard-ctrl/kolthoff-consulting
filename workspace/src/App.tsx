@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { signOut, auth, logAudit, hasAdminStaffSession, waitForAdminStaffSession } from './lib/firebase';
+import { signOut, auth, logAudit, hasAdminStaffSession, waitForAdminStaffSession, getWorkspaceTenantId } from './lib/firebase';
 import { useAuth } from './hooks/useAuth';
 import { useTenantFeatures } from './hooks/useTenant';
 import { useWorkspaceBadges } from './hooks/useWorkspaceBadges';
@@ -8,6 +8,7 @@ import { isEmbeddedView, initEmbedMode } from './lib/embed-mode';
 import { resolveCoreUserFromAuthUser, resolveCoreUserFromCurrentAuth, type CoreUser } from './lib/core-user';
 import LoginPage from './components/LoginPage';
 import EmbedAuthPrompt from './components/EmbedAuthPrompt';
+import WorkspaceTenantLanding from './components/WorkspaceTenantLanding';
 import MessengerApp from './apps/MessengerApp';
 import ApprovalsApp from './apps/ApprovalsApp';
 import VaultApp from './apps/VaultApp';
@@ -79,6 +80,7 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
 
 export default function App() {
   const embedded = isEmbeddedView();
+  const workspaceTenantId = getWorkspaceTenantId();
   const { user: authUser, loading } = useAuth();
   const [user, setUser] = useState<CoreUser | null>(null);
   const [checkingStaff, setCheckingStaff] = useState(true);
@@ -95,6 +97,12 @@ export default function App() {
 
     (async () => {
       try {
+        if (!workspaceTenantId) {
+          setCheckingStaff(false);
+          setRestoringSession(false);
+          return;
+        }
+
         if (!embedded) {
           const { completeGoogleStaffRedirect } = await import('./lib/staff-sso');
           const googleUser = await completeGoogleStaffRedirect();
@@ -139,7 +147,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [embedded]);
+  }, [embedded, workspaceTenantId]);
 
   useEffect(() => {
     if (loading || checkingStaff || user) {
@@ -169,6 +177,10 @@ export default function App() {
     setUser(null);
     if (embedded) setEmbedAuthRequired(true);
   };
+
+  if (!embedded && !workspaceTenantId) {
+    return <WorkspaceTenantLanding />;
+  }
 
   if (loading || checkingStaff || restoringSession) {
     return (
