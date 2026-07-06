@@ -17,6 +17,7 @@
       { "source": "/admin/app/**", "destination": "/admin/index.html" },
       { "source": "/admin/tenants", "destination": "/admin/index.html" },
       { "source": "/admin/tenants/**", "destination": "/admin/index.html" },
+      { "source": "/admin/onboard", "destination": "/admin/index.html" },
       { "source": "/admin/org-chart", "destination": "/admin/index.html" },
       { "source": "/admin/intake", "destination": "/admin/index.html" },
       { "source": "/admin/portals", "destination": "/admin/index.html" },
