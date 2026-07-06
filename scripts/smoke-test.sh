@@ -62,6 +62,8 @@ check "/admin/master"
 check "/admin/tenants"
 check "/admin/onboard"
 check "/admin/agency-ops-manager"
+check "/admin/app/resource-capacity"
+check "/admin/app/project-planner"
 check "/workspace/"
 check "/agency-ops/"
 
