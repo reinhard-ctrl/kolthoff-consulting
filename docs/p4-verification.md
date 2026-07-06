@@ -20,7 +20,7 @@ bash scripts/smoke-test.sh https://kolthoff-portal.web.app
 bash scripts/smoke-test.sh https://kolthoff-consulting.com
 ```
 
-Expect **0 failures** (26 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
+Expect **0 failures** (27 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
 
 Section **C** embed shell routes (`/admin/app/resource-capacity`, `/admin/app/project-planner`) are covered by smoke. Sections **A**, **B**, and **D** remain manual regression checks after major deploys.
 
@@ -83,6 +83,7 @@ Use a test MOD engagement or **Workspace Admin → Onboard** tab.
 
 | Step | Action | Pass? |
 |------|--------|-------|
+| D0 | **Quick provision** (`/admin/tenants` → Instances): create test tenant → completes in seconds (direct Firestore; no CORS/timeout) | ☑ |
 | D1 | **Workspace Admin** → **Onboard** tab: select SOW profile → provision → workspace URL + portal code returned | ☑ |
 | D2 | **Workspace Admin** (`/admin/tenants`): tenant appears; deploy starter approval templates if not auto-deployed | ☑ |
 | D3 | Open Core Workspace (`/workspace/?tenant=client-*`) → **Approvals**: submit request → appears in assignee's "Pending My Approval" | ☑ |
@@ -108,6 +109,8 @@ Use a test MOD engagement or **Workspace Admin → Onboard** tab.
 | Google SSO stuck | Add authorized domain + OAuth redirect URI — see `docs/app-check-sso.md` |
 | Stale admin / 404 embed | Hard refresh; check CI build did not skip workspace |
 | Console: staff SSO / provisioning timeout | Harmless — Google admin session still works; ignore or hard refresh |
+| Quick provision CORS / timeout | Hard refresh after deploy #217+; uses direct Firestore first — no callable required |
+| `/workspace/` shows landing only | Expected — open `/workspace/?tenant=client-*` from provision success modal |
 | Agency Ops tenant missing after 2 min | Agency Ops Manager → **Retry provision** on failed deal, or **Provision** manually |
 
 ---

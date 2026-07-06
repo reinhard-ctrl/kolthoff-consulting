@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** **Platform plan complete** (6 Jul 2026). P4 verified on production. Engineering for Phases 2.5 + 3A/P7 is **done** (#198–#217). Smoke **26/26** on `kolthoff-consulting.com`. **You own Phase 4:** content, first PRO 1 sale, optional App Check.
+**You are here:** **Platform plan complete** (6 Jul 2026). P4 verified on production. **Core Workspace engineering closed** (#198–#217): Quick provision via direct Firestore, unified Onboard wizard, internal workspace removed from `/workspace/` default. Automated smoke: **27/27** on `kolthoff-consulting.com`. **You own Phase 4:** content, first PRO 1 sale, optional App Check.
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -34,16 +34,29 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Client UX (passcode embeds, `?tenant=`, branding, empty planner) | ✅ |
 | PRO Subscriptions billing in Collections | ✅ |
 | Single sidebar entry: **Agency Ops Manager** | ✅ |
-| Production smoke routes | ✅ 26/26 on `kolthoff-consulting.com` |
+| Production smoke routes | ✅ 27/27 on `kolthoff-consulting.com` |
 
 **Not engineering:** First paying PRO client handoff, Phase 4 content (SOW library, CRM playbooks).
+
+### PRO 2 · Core Workspace — plan closed (engineering)
+
+| Deliverable | Status |
+|-------------|--------|
+| MOD auto-provision on contract sign | ✅ #198 |
+| Unified Onboard wizard (Workspace Admin + Agency Ops Manager tabs) | ✅ #210 |
+| Quick provision modal + direct Firestore path (no Cloud Functions required) | ✅ #214–#217 |
+| Internal workspace removed from `/workspace/` default + unregister script | ✅ #217 |
+| Approvals/Messenger v1 + attachments + notifications | ✅ #198, #202 |
+| P4 section D verified on production | ✅ 6 Jul 2026 |
+
+**Not engineering:** PRO 2 product sale on hold; Phase 4 content; visual blueprint designer (P7).
 
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform shell** | ✅ **Stable on `main`** | Admin, workspace, hosting rewrites, CI deploys, Google redirect SSO |
 | **Admin embeds** | ✅ **Fixed** | Core Workspace + analytics sidebars visible in iframe (#173, #166); stale asset rewrites (#145) |
 | **Agency Ops PRO** | ✅ **Production-ready (eng)** | Auto + manual provision, Manager (search, SOW links, active tenant, passcode reset, cancel/delete), client UX (#186–#189), staff UX (#196, #201); single sidebar entry **Agency Ops Manager** (#203–#204) |
-| **Core Workspace** | ✅ **Pilot verified** | Approvals/Messenger v1, onboard tab in Workspace Admin, MOD auto-provision on sign (#198, #202, #210) |
+| **Core Workspace** | ✅ **Plan closed (eng)** | Direct Firestore Quick provision (#217), onboard tab, MOD auto-provision, P4 section D verified |
 | **Staff SSO** | ✅ **Improved** | Firestore-only staff provisioning path; cold-start timeout handling (#175–176) |
 | **Admin UX** | ✅ **Updated** | Sidebar defaults: Command → Project Management → Deliverables → Product → Analytics → Client (#170); Customize → Done saves org default to Firestore |
 | **P4 Verification** | ✅ **Complete** | Sections A–D signed off — `docs/p4-verification.md` |
@@ -552,7 +565,7 @@ flowchart TB
 | Portal progress accuracy | Matches planner module state without manual edit |
 | Staff apps in React / admin shell | 100% of delivery + ops |
 | Time to provision new client tenant | <15 minutes via admin |
-| Smoke tests | 26/26 on custom domain in CI |
+| Smoke tests | 27/27 on custom domain in CI |
 | Zero critical Firestore rule gaps for client flows | Rules test coverage |
 
 ---
@@ -575,4 +588,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — **Platform plan complete.** P4 signed off; smoke 26/26. Phase 4 content + first PRO sale are yours. Eng backlog (optional): App Check, P6 React migration.*
+*Last updated: 6 July 2026 — **Platform plan complete.** P4 signed off; Core Workspace + Agency Ops engineering closed (#217). Smoke **27/27**. Phase 4 content + first PRO sale are yours. Eng backlog (optional): App Check, P6 React migration.*
