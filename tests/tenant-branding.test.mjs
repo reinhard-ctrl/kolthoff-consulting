@@ -82,7 +82,8 @@ describe('branding presets', () => {
   });
 });
 
-function shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent) {
+function shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent, isDemoTenant = true) {
+  if (!isDemoTenant) return false;
   const DEMO_IDS = ['studio-north', 'meridian-creative', 'harbor-digital'];
   const demoPresets = presets.filter((preset) => DEMO_IDS.includes(preset.id));
   if (!presetsFieldPresent || demoPresets.length === 0) return true;
@@ -90,6 +91,11 @@ function shouldRestoreDemoBrandingPresets(presets, presetsFieldPresent) {
 }
 
 describe('demo branding preset restore', () => {
+  it('never restores bundled demos on paid client tenants', () => {
+    assert.equal(shouldRestoreDemoBrandingPresets([], false, false), false);
+    assert.equal(shouldRestoreDemoBrandingPresets([], true, false), false);
+  });
+
   it('restores when presets field is missing', () => {
     assert.equal(shouldRestoreDemoBrandingPresets([], false), true);
   });

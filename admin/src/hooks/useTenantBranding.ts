@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { deleteField, doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
-import { db, adminAppId } from '../lib/firebase';
+import { db, getAdminAppId } from '../lib/firebase';
 import { getProductConfig, isAgencyOpsStarter } from '../lib/product-config';
 import {
   CLIENT_DEMO_SETUP_VERSION,
@@ -37,7 +37,7 @@ function brandingPayload(config: TenantBrandingConfig) {
 }
 
 function tenantConfigRef() {
-  return doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
+  return doc(db, 'artifacts', getAdminAppId(), 'public', 'data', 'tenant_settings', 'config');
 }
 
 function isDeleteFieldValue(value: unknown): boolean {
@@ -77,6 +77,7 @@ async function writeClientDemoPresets(presets: BrandingPreset[]) {
 export function useTenantBranding() {
   const product = getProductConfig();
   const agencyOps = isAgencyOpsStarter(product.id);
+  const paidClient = agencyOps && !product.isDemo;
   const [branding, setBranding] = useState<TenantBrandingConfig>(() =>
     mergeTenantBranding(null, product.branding, product.id),
   );
@@ -92,8 +93,9 @@ export function useTenantBranding() {
   const demoPresetsRestoreAttempted = useRef(false);
   const customPresetMigrationAttempted = useRef(false);
   const clientDemoResetAttempted = useRef(false);
+  const paidDemoCleanupAttempted = useRef(false);
 
-  const presets = [...demoPresets, ...clientDemoPresets];
+  const presets = paidClient ? [] : [...demoPresets, ...clientDemoPresets];
 
   useEffect(() => {
     if (!agencyOps) {
@@ -151,7 +153,45 @@ export function useTenantBranding() {
         applyTenantBrandingCss(merged);
         setLoading(false);
 
-        if (setupVersion < CLIENT_DEMO_SETUP_VERSION && !clientDemoResetAttempted.current) {
+        if (
+          paidClient &&
+          !paidDemoCleanupAttempted.current &&
+          (bundled.length > 0 || firestoreClientDemos.length > 0)
+        ) {
+          paidDemoCleanupAttempted.current = true;
+          const customPresets = firestorePresets.filter(
+            (preset) => !isBundledDemoBrandingPresetId(preset.id),
+          );
+          const defaultPreset =
+            customPresets.find((preset) => preset.id === 'default') ||
+            (merged.companyName
+              ? presetFromConfig('default', merged.companyName, merged)
+              : null);
+          void (async () => {
+            try {
+              const patch: Record<string, unknown> = {
+                clientDemoPresets: {},
+                activeClientDemoPresetId: deleteField(),
+                activeBrandingPresetId: 'default',
+              };
+              if (defaultPreset) {
+                patch.brandingPresets = { default: defaultPreset };
+              } else {
+                for (const preset of firestorePresets) {
+                  patch[`brandingPresets.${preset.id}`] = deleteField();
+                }
+              }
+              for (const preset of bundled) {
+                patch[`brandingPresets.${preset.id}`] = deleteField();
+              }
+              await writeTenantConfig(patch);
+            } catch {
+              paidDemoCleanupAttempted.current = false;
+            }
+          })();
+        }
+
+        if (setupVersion < CLIENT_DEMO_SETUP_VERSION && !clientDemoResetAttempted.current && !paidClient) {
           clientDemoResetAttempted.current = true;
           setClientDemoPresets([]);
           setAppliedClientDemoId(null);
@@ -171,7 +211,7 @@ export function useTenantBranding() {
           return;
         }
 
-        if (leakedCustom.length > 0 && !customPresetMigrationAttempted.current) {
+        if (leakedCustom.length > 0 && !customPresetMigrationAttempted.current && !paidClient) {
           customPresetMigrationAttempted.current = true;
           const migrated = mergeClientDemoBrandingPresets(firestoreClientDemos, leakedCustom);
           setClientDemoPresets(migrated);
@@ -200,9 +240,9 @@ export function useTenantBranding() {
   }, [agencyOps, product.branding, product.id]);
 
   useEffect(() => {
-    if (loading || !isAgencyOpsStarter(product.id)) return;
+    if (loading || !isAgencyOpsStarter(product.id) || paidClient) return;
     if (demoPresetsRestoreAttempted.current) return;
-    if (!shouldRestoreDemoBrandingPresets(demoPresets, presetsFieldPresent)) return;
+    if (!shouldRestoreDemoBrandingPresets(demoPresets, presetsFieldPresent, product.isDemo)) return;
     demoPresetsRestoreAttempted.current = true;
 
     void (async () => {
@@ -217,7 +257,28 @@ export function useTenantBranding() {
         setSaving(false);
       }
     })();
-  }, [loading, demoPresets, presetsFieldPresent, product.id]);
+  }, [loading, demoPresets, presetsFieldPresent, product.id, paidClient, product.isDemo]);
+
+  const saveClientBranding = async (next: TenantBrandingConfig) => {
+    setSaving(true);
+    try {
+      const name = next.companyName.trim() || 'My agency';
+      const preset = presetFromConfig('default', name, next);
+      await writeTenantConfig({
+        branding: brandingPayload(next),
+        brandingPresets: { default: preset },
+        activeBrandingPresetId: 'default',
+        activeClientDemoPresetId: deleteField(),
+        clientDemoPresets: {},
+      });
+      applyTenantBrandingCss(next);
+      return true;
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Could not save branding.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setAppliedClientDemo = (presetId: string | null) => {
     setAppliedClientDemoId(presetId);
@@ -378,9 +439,11 @@ export function useTenantBranding() {
     clientDemoPresets,
     activePresetId,
     appliedClientDemoId,
+    paidClient,
     loading,
     saving,
     saveBranding,
+    saveClientBranding,
     savePreset,
     applyPreset,
     deletePreset,

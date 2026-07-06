@@ -86,7 +86,9 @@ export function brandingPresetsToMap(presets: BrandingPreset[]): Record<string, 
 export function shouldRestoreDemoBrandingPresets(
   presets: BrandingPreset[],
   presetsFieldPresent: boolean,
+  isDemoTenant = true,
 ): boolean {
+  if (!isDemoTenant) return false;
   const demoPresets = filterBundledDemoBrandingPresets(presets);
   if (!presetsFieldPresent || demoPresets.length === 0) return true;
   return DEMO_AGENCY_OPS_BRANDING_PRESETS.some(
