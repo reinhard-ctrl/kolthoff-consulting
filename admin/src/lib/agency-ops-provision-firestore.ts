@@ -1,7 +1,11 @@
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, adminAppId } from './firebase';
 
-const PROVISION_TIMEOUT_MS = 120000;
+import type { AgencyOpsProvisionInput, AgencyOpsProvisionResult } from './agency-ops-provision-firestore';
+import { provisionAgencyOpsDirect } from './agency-ops-provision-direct';
+
+const TRIGGER_TIMEOUT_MS = 90000;
+const PROVISION_TIMEOUT_MS = 180000;
 
 export interface AgencyOpsProvisionInput {
   clientName: string;
@@ -38,7 +42,7 @@ async function waitForProvision(requestId: string, timeoutMs: number): Promise<A
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
-      reject(new Error('Agency Ops provisioning timed out. Deploy Cloud Functions and Firestore rules, then retry.'));
+      reject(new Error('Cloud Function provisioning timed out. Retrying direct provision…'));
     }, timeoutMs);
 
     const unsub = onSnapshot(
@@ -97,17 +101,34 @@ async function enqueueProvisionRequest(input: AgencyOpsProvisionInput): Promise<
   return requestId;
 }
 
-/** Provision via Firestore trigger — works when Cloud Functions are not publicly invokable */
+/** Provision Agency Ops tenant — direct Firestore first (fast), Cloud Function trigger as fallback */
 export async function provisionAgencyOpsViaFirestore(
   input: AgencyOpsProvisionInput,
-  options?: { timeoutMs?: number },
+  options?: { timeoutMs?: number; preferTrigger?: boolean },
 ): Promise<AgencyOpsProvisionResult> {
+  if (!options?.preferTrigger) {
+    try {
+      return await provisionAgencyOpsDirect(input);
+    } catch (directErr) {
+      const message = directErr instanceof Error ? directErr.message : String(directErr);
+      if (!message.includes('permission-denied') && !message.includes('Missing or insufficient permissions')) {
+        throw directErr;
+      }
+    }
+  }
+
   const requestId = await enqueueProvisionRequest(input);
-  return waitForProvision(requestId, options?.timeoutMs ?? PROVISION_TIMEOUT_MS);
+  return waitForProvision(requestId, options?.timeoutMs ?? TRIGGER_TIMEOUT_MS);
 }
 
 /** Retry a failed request by bumping requestedAt */
 export async function retryProvisionRequest(requestId: string, input: AgencyOpsProvisionInput): Promise<AgencyOpsProvisionResult> {
+  try {
+    return await provisionAgencyOpsDirect(input);
+  } catch {
+    /* fall through to trigger retry */
+  }
+
   await auth.authStateReady();
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Sign in required.');
