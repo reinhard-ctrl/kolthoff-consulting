@@ -74,6 +74,27 @@ async function getRedirectResultWithTimeout() {
   ]);
 }
 
+const ADMIN_APP = 'kolthoff-admin-app';
+
+async function logBackgroundProvisionFailure(user: User, err: unknown): Promise<void> {
+  try {
+    await user.getIdToken(true);
+    const token = await user.getIdTokenResult();
+    if (
+      (token.claims.role === 'kolthoff_admin' || token.claims.role === 'admin') &&
+      token.claims.tenantId === ADMIN_APP
+    ) {
+      return;
+    }
+  } catch {
+    /* session still grants access via google_admin_sessions */
+  }
+  console.warn(
+    'Background staff provisioning failed (Google admin session still grants access):',
+    err,
+  );
+}
+
 async function finalizeGoogleStaffUser(
   user: User,
   options?: { backgroundProvision?: boolean },
@@ -83,12 +104,10 @@ async function finalizeGoogleStaffUser(
     throw new Error('Use your @kolthoff-consulting.com Google Workspace account.');
   }
   await recordGoogleAdminSession(user);
-  const provision = provisionGoogleStaffViaFirestore(user, {
-    timeoutMs: options?.backgroundProvision ? 8000 : 15000,
-  });
+  const provision = provisionGoogleStaffViaFirestore(user);
   if (options?.backgroundProvision !== false) {
     provision.catch((err) => {
-      console.warn('Background staff provisioning failed:', err);
+      void logBackgroundProvisionFailure(user, err);
     });
   } else {
     try {
