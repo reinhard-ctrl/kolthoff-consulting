@@ -3993,7 +3993,9 @@
               </div>
               )}
             </div>
-            
+
+            {!STARTER_UI && (
+            <>
             <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-4 font-bold text-left font-sans">2. {getModuleCardsHeading()}</h4>
             {renderEngagementPackageCallout()}
             
@@ -4047,7 +4049,9 @@
                 </article>
               ))}
             </div>
-            <div className="mb-8 text-left font-sans"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans font-bold">3. What we need from you</h4><div className="text-xs bg-slate-50 p-5 rounded border border-slate-200 whitespace-pre-wrap font-semibold text-slate-800 text-left font-sans">{preDiagnosticList}</div></div>
+            </>
+            )}
+            <div className="mb-8 text-left font-sans"><h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-2 font-bold text-left font-sans font-bold">{STARTER_UI ? '2' : '3'}. What we need from you</h4><div className="text-xs bg-slate-50 p-5 rounded border border-slate-200 whitespace-pre-wrap font-semibold text-slate-800 text-left font-sans">{preDiagnosticList}</div></div>
             <div className="mb-8 text-left font-sans print-avoid-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
               <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-4 text-left font-sans font-bold">Appendix A — Deliverable specifications</h4>
               <div className="space-y-4 font-medium text-left font-sans">
