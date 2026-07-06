@@ -2,7 +2,7 @@
   "name": "kolthoff-rules-tests",
   "private": true,
   "scripts": {
-    "test": "node rules.test.js && node nav-preferences.test.mjs && node quick-action-preferences.test.mjs && node engagement-config.test.mjs && node workflow-tabs.test.mjs && node org-chart.test.mjs && node portal-sync.test.mjs && node firebase-errors.test.mjs && node firebase-init-exports.test.mjs && node package-pricing-display.test.mjs && node engagement-packages.test.mjs && node invoice-bill-to.test.mjs && node crm-planner-sync.test.mjs && node analytics-baseline.test.mjs && node staff-domain.test.mjs && node planner-preserved-slices.test.mjs && node auth-domain.test.mjs && node tenant-branding.test.mjs && node approval-workflow.test.mjs"
+    "test": "node rules.test.js && node nav-preferences.test.mjs && node quick-action-preferences.test.mjs && node engagement-config.test.mjs && node workflow-tabs.test.mjs && node org-chart.test.mjs && node portal-sync.test.mjs && node firebase-errors.test.mjs && node firebase-init-exports.test.mjs && node package-pricing-display.test.mjs && node engagement-packages.test.mjs && node invoice-bill-to.test.mjs && node crm-planner-sync.test.mjs && node analytics-baseline.test.mjs && node staff-domain.test.mjs && node planner-preserved-slices.test.mjs && node auth-domain.test.mjs && node tenant-branding.test.mjs && node approval-workflow.test.mjs && node core-workspace-auto-provision.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1"

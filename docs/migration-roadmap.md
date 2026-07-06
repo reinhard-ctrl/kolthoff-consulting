@@ -34,7 +34,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **P4 Verification** | ⏳ **Your turn** | End-to-end client journey on production domain (~30 min) — **deploy hosting first**, then run `docs/p4-verification.md` |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
-| **P7 MOD onboarding** | ⏳ **Planned** | One-click new Kolthoff client: portal + workspace + org chart (PRO path partially done) |
+| **P7 MOD onboarding** | ✅ **Wizard shipped** | `/admin/onboard` — link SOW profile → Core Workspace + portal + templates; MOD auto-provision on contract sign |
 
 ### Your checklist (priority order)
 
@@ -68,14 +68,14 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Deliver | Org Chart, Diagnosis, Policy, Workflow | ✅ Production (HTML embeds) |
 | Client view | Portal, org chart sync | ✅ Production — **verify P4** |
 | Bill | Collections (milestones + care plan) | ✅ Production |
-| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | 🔶 Shell stable; modules MVP |
+| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ Approvals v1 + Messenger v1 + onboarding wizard on `main` — **pilot verify section D** |
 
 ### Lane B — PRO products (subscription software)
 
 | SKU | Lead-to-cash | Status |
 |-----|--------------|--------|
 | **PRO 1 · Agency Ops** | CRM → blank Planner quote → Sign → auto-provision → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ On `main` (#186–#189) — **verify P4 PRO path (B5–B6)** |
-| **PRO 2 · Core Workspace** | Planned product SKU | ⏳ Catalog placeholder only |
+| **PRO 2 · Core Workspace** | CRM → Sign → auto-provision Core Workspace → client portal + Approvals/Messenger | ✅ Auto-provision on contract sign (MOD + PRO 2 profiles) — **pilot verify section D** |
 
 See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 

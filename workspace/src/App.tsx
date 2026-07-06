@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { signOut, auth, logAudit, hasAdminStaffSession, waitForAdminStaffSession } from './lib/firebase';
 import { useAuth } from './hooks/useAuth';
 import { useTenantFeatures } from './hooks/useTenant';
+import { useWorkspaceBadges } from './hooks/useWorkspaceBadges';
 import { isEmbeddedView, initEmbedMode } from './lib/embed-mode';
 import { resolveCoreUserFromAuthUser, resolveCoreUserFromCurrentAuth, type CoreUser } from './lib/core-user';
 import LoginPage from './components/LoginPage';
@@ -21,8 +22,15 @@ const NAV = [
 
 function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
   const features = useTenantFeatures();
+  const { pendingApprovals, unreadMessages } = useWorkspaceBadges(user.id);
   const [active, setActive] = useState('messenger');
   const enabledNav = NAV.filter((n) => features[n.feature]);
+
+  const badgeFor = (key: string) => {
+    if (key === 'approvals' && pendingApprovals > 0) return pendingApprovals;
+    if (key === 'messenger' && unreadMessages > 0) return unreadMessages;
+    return 0;
+  };
 
   const renderApp = () => {
     switch (active) {
@@ -42,13 +50,21 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
           <div className="text-slate-400 text-xs truncate">{user.name}</div>
         </div>
         <nav className="flex-1 space-y-1 px-2">
-          {enabledNav.map((n) => (
+          {enabledNav.map((n) => {
+            const badge = badgeFor(n.key);
+            return (
             <button key={n.key} onClick={() => setActive(n.key)}
               className={`w-full flex items-center gap-2 p-2 md:px-3 rounded-xl text-sm transition-colors ${active === n.key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
               <span>{n.icon}</span>
-              <span className="hidden md:inline">{n.label}</span>
+              <span className="hidden md:inline flex-1 text-left">{n.label}</span>
+              {badge > 0 && (
+                <span className="bg-amber-500 text-white text-[10px] px-1.5 rounded-full min-w-[1.1rem] text-center">
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
             </button>
-          ))}
+            );
+          })}
         </nav>
         <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white px-2 py-2">Sign out</button>
       </aside>
