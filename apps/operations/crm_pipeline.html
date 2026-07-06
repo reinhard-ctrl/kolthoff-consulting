@@ -220,7 +220,7 @@
         ];
 
         const pipelineStages = ["Lead / Prospect", "Meeting", "Proposal", "Negotiation", "Closed Won/Lost"];
-        const todayStr = "2026-06-19"; // System mock date context
+        const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local timezone
 
         function App() {
             // FIREBASE CLOUD STATE
