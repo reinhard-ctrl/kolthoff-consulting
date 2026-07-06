@@ -16,7 +16,7 @@ import EmbedApp from './pages/EmbedApp';
 import BrandHeader from './components/BrandHeader';
 import SidebarNav from './components/SidebarNav';
 import { useProduct } from './lib/product-context';
-import { isAgencyOpsStarter } from './lib/product-config';
+import { isAgencyOpsStarter, syncAgencyTenantUrl } from './lib/product-config';
 import { getAgencyOpsTenantAccessBlockReason } from './lib/agency-ops-tenant-access';
 import { useDemoAppearance } from './lib/demo-appearance-context';
 import DemoAppearanceToggle from './components/DemoAppearanceToggle';
@@ -203,6 +203,12 @@ function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isEmbed = location.pathname.startsWith('/app/');
   const [metrics, setMetrics] = useState({ clients: 0, profiles: 0, deals: 0 });
+
+  useEffect(() => {
+    if (isAgencyOpsStarter(product.id)) {
+      syncAgencyTenantUrl();
+    }
+  }, [location.pathname, location.search, product.id]);
 
   useEffect(() => {
     const cols = isAgencyOpsStarter(product.id)
