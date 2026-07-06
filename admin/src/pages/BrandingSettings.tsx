@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useProduct } from '../lib/product-context';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { app, adminAppId } from '../lib/firebase';
+import { app, getAdminAppId } from '../lib/firebase';
 import { useTenantBranding } from '../hooks/useTenantBranding';
 import { useBrandingPreview } from '../lib/branding-preview-context';
 import {
@@ -13,6 +13,206 @@ import {
 
 const storage = getStorage(app);
 
+function BrandingEditor({
+  active,
+  draft,
+  setDraft,
+  profileName,
+  setProfileName,
+  showProfileName,
+  profileNameHint,
+  onUploadLogo,
+  uploading,
+  message,
+  messageOk,
+  saving,
+  primaryActionLabel,
+  onPrimaryAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+  showReset,
+  onReset,
+}: {
+  active: TenantBrandingConfig;
+  draft: TenantBrandingConfig | null;
+  setDraft: React.Dispatch<React.SetStateAction<TenantBrandingConfig | null>>;
+  profileName?: string;
+  setProfileName?: (value: string) => void;
+  showProfileName?: boolean;
+  profileNameHint?: string;
+  onUploadLogo: (file: File) => Promise<void>;
+  uploading: boolean;
+  message: string;
+  messageOk: boolean;
+  saving: boolean;
+  primaryActionLabel: string;
+  onPrimaryAction: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  showReset?: boolean;
+  onReset?: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const display = splitCompanyDisplay(active.companyName);
+
+  const update = (patch: Partial<TenantBrandingConfig>) => {
+    setDraft((d) => ({ ...(d ?? active), ...patch }));
+  };
+
+  return (
+    <div className="ops-card glass-panel p-6 sm:p-8 space-y-6">
+      {showProfileName && setProfileName && (
+        <div>
+          <label htmlFor="brand-profile-name" className="ops-form-label">Profile name</label>
+          <input
+            id="brand-profile-name"
+            value={profileName ?? ''}
+            onChange={(e) => setProfileName(e.target.value)}
+            placeholder="e.g. Meridian Creative"
+            className="ops-input"
+          />
+          {profileNameHint && <p className="text-xs text-slate-500 mt-1.5">{profileNameHint}</p>}
+        </div>
+      )}
+
+      <div>
+        <label htmlFor="brand-company" className="ops-form-label">Company name</label>
+        <input
+          id="brand-company"
+          value={active.companyName}
+          onChange={(e) => update({ companyName: e.target.value })}
+          placeholder="Your agency name"
+          className="ops-input"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="brand-tagline" className="ops-form-label">Tagline</label>
+        <input
+          id="brand-tagline"
+          value={active.tagline ?? ''}
+          onChange={(e) => update({ tagline: e.target.value })}
+          placeholder="Creative & Digital Services"
+          className="ops-input"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="brand-color" className="ops-form-label">Brand color</label>
+        <div className="flex gap-3 items-center">
+          <input
+            type="color"
+            aria-label="Brand color picker"
+            value={active.primaryColor}
+            onChange={(e) => update({ primaryColor: e.target.value })}
+            className="h-10 w-10 rounded-md cursor-pointer border border-brandNavy-700 bg-transparent p-0.5"
+          />
+          <input
+            id="brand-color"
+            value={active.primaryColor}
+            onChange={(e) => update({ primaryColor: e.target.value })}
+            className="ops-input flex-1 font-mono text-sm"
+          />
+        </div>
+      </div>
+
+      <div>
+        <span className="ops-form-label">Logo</span>
+        <div className="flex flex-wrap gap-3 items-start">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onUploadLogo(f);
+              e.target.value = '';
+            }}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="ops-btn-secondary disabled:opacity-50"
+          >
+            {uploading ? 'Uploading…' : 'Upload logo'}
+          </button>
+          <input
+            value={active.logoUrl ?? ''}
+            onChange={(e) => update({ logoUrl: e.target.value })}
+            placeholder="Or paste logo URL"
+            className="ops-input flex-1 min-w-[200px] text-sm"
+          />
+        </div>
+        {active.logoUrl && (
+          <div className="mt-3 p-3 rounded-lg border border-brandNavy-700 bg-brandNavy-800/50 inline-block">
+            <img src={active.logoUrl} alt="Logo preview" className="h-12 w-auto object-contain" />
+          </div>
+        )}
+      </div>
+
+      <div
+        className="brand-preview-panel rounded-lg border p-5"
+        style={{ borderColor: `${active.primaryColor}33`, backgroundColor: `${active.primaryColor}0a` }}
+      >
+        <p className="text-xs font-medium text-slate-500 mb-3">Preview</p>
+        <div className="flex items-center gap-3">
+          {active.logoUrl ? (
+            <img src={active.logoUrl} alt="" className="h-10 w-auto object-contain" />
+          ) : (
+            <div
+              className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm"
+              style={{ backgroundColor: active.primaryColor }}
+            >
+              {display.line1.charAt(0)}
+            </div>
+          )}
+          <div>
+            <div className="font-semibold text-slate-900 text-sm">
+              {display.line1}
+              {display.line2 ? (
+                <span style={{ color: active.primaryColor }}> {display.line2}</span>
+              ) : null}
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">{active.tagline}</div>
+          </div>
+        </div>
+      </div>
+
+      {message && (
+        <p className={`ops-message ${messageOk ? 'ops-message-success' : ''}`}>{message}</p>
+      )}
+
+      <div className="flex flex-wrap gap-3 pt-1">
+        {secondaryActionLabel && onSecondaryAction && (
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onSecondaryAction}
+            className="ops-btn-secondary disabled:opacity-50"
+          >
+            {secondaryActionLabel}
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onPrimaryAction}
+          className="ops-btn-primary brand-primary-bg disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : primaryActionLabel}
+        </button>
+        {showReset && onReset && draft && (
+          <button type="button" onClick={onReset} className="ops-btn-secondary">
+            Reset edits
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function BrandingSettings() {
   const product = useProduct();
   const modules = product.moduleLabels;
@@ -23,9 +223,11 @@ export default function BrandingSettings() {
     presets,
     activePresetId,
     appliedClientDemoId,
+    paidClient,
     loading,
     saving,
     saveBranding,
+    saveClientBranding,
     savePreset,
     applyPreset,
     deletePreset,
@@ -42,15 +244,17 @@ export default function BrandingSettings() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageOk, setMessageOk] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const initialized = useRef(false);
 
   const active = draft ?? branding;
-  const editingPreset = editorPresetId ? presets.find((p) => p.id === editorPresetId) : null;
 
   useEffect(() => {
     if (loading || initialized.current) return;
     initialized.current = true;
+    if (paidClient) {
+      setProfileName(branding.companyName);
+      return;
+    }
     const initialProfileId =
       (activePresetId && presets.some((p) => p.id === activePresetId) && activePresetId) ||
       (appliedClientDemoId && presets.some((p) => p.id === appliedClientDemoId) && appliedClientDemoId) ||
@@ -66,9 +270,9 @@ export default function BrandingSettings() {
     } else {
       setProfileName(branding.companyName);
     }
-  }, [loading, activePresetId, appliedClientDemoId, presets, branding, setPreviewPresetId]);
+  }, [loading, activePresetId, appliedClientDemoId, presets, branding, setPreviewPresetId, paidClient]);
 
-  const update = (patch: Partial<TenantBrandingConfig>) => {
+  const updateDraft = (patch: Partial<TenantBrandingConfig>) => {
     setDraft((d) => ({ ...(d ?? branding), ...patch }));
     setMessage('');
   };
@@ -89,6 +293,54 @@ export default function BrandingSettings() {
     setDraft({ ...branding });
     setProfileName('');
     setMessage('');
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setMessageOk(false);
+      setMessage('Please choose an image file (PNG, JPG, SVG, or WebP).');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessageOk(false);
+      setMessage('Logo must be under 2 MB.');
+      return;
+    }
+    setUploading(true);
+    setMessage('');
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const slug = paidClient ? 'default' : editorPresetId || 'active';
+      const path = `artifacts/${getAdminAppId()}/files/branding-${slug}/logo.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file, { contentType: file.type });
+      const url = await getDownloadURL(storageRef);
+      if (paidClient) {
+        updateDraft({ logoUrl: url });
+      } else {
+        setDraft((d) => ({ ...(d ?? branding), logoUrl: url }));
+      }
+      setMessageOk(true);
+      setMessage(paidClient ? 'Logo uploaded. Click Save branding to apply.' : 'Logo uploaded. Save the profile to keep it.');
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Logo upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveClientBranding = async () => {
+    setMessage('');
+    try {
+      await saveClientBranding(active);
+      setDraft(null);
+      setMessageOk(true);
+      setMessage(`Branding saved. Your logo and colors now appear across ${modules.sales}, ${modules.quotes}, and Invoicing.`);
+    } catch (err) {
+      setMessageOk(false);
+      setMessage(err instanceof Error ? err.message : 'Could not save branding.');
+    }
   };
 
   const handleApplyToWorkspace = async () => {
@@ -190,39 +442,6 @@ export default function BrandingSettings() {
     }
   };
 
-  const handleLogoUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setMessageOk(false);
-      setMessage('Please choose an image file (PNG, JPG, SVG, or WebP).');
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setMessageOk(false);
-      setMessage('Logo must be under 2 MB.');
-      return;
-    }
-    setUploading(true);
-    setMessage('');
-    try {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-      const slug = editorPresetId || 'active';
-      const path = `artifacts/${adminAppId}/files/branding-${slug}/logo.${ext}`;
-      const storageRef = ref(storage, path);
-      await uploadBytes(storageRef, file, { contentType: file.type });
-      const url = await getDownloadURL(storageRef);
-      update({ logoUrl: url });
-      setMessageOk(true);
-      setMessage('Logo uploaded. Save the profile to keep it.');
-    } catch (err) {
-      setMessageOk(false);
-      setMessage(err instanceof Error ? err.message : 'Logo upload failed.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const display = splitCompanyDisplay(active.companyName);
-
   const renderPresetList = (
     items: typeof presets,
     emptyLabel: string,
@@ -299,6 +518,31 @@ export default function BrandingSettings() {
     return <p className="text-slate-400 animate-pulse">Loading branding…</p>;
   }
 
+  if (paidClient) {
+    return (
+      <div className="ops-main-inner max-w-2xl">
+        <header className="ops-page-header mb-6">
+          <h1>Company Branding</h1>
+          <p>Personalize your Agency Ops workspace — logo, colors, and company name appear in the sidebar, Sales, and Quotes.</p>
+        </header>
+        <BrandingEditor
+          active={active}
+          draft={draft}
+          setDraft={setDraft}
+          onUploadLogo={handleLogoUpload}
+          uploading={uploading}
+          message={message}
+          messageOk={messageOk}
+          saving={saving}
+          primaryActionLabel="Save branding"
+          onPrimaryAction={handleSaveClientBranding}
+          showReset={Boolean(draft)}
+          onReset={() => setDraft(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="ops-main-inner max-w-5xl">
       <header className="ops-page-header mb-6">
@@ -361,172 +605,38 @@ export default function BrandingSettings() {
           </div>
         </aside>
 
-        <div className="ops-card glass-panel p-6 sm:p-8 space-y-6">
-          <div>
-            <label htmlFor="brand-profile-name" className="ops-form-label">Profile name</label>
-            <input
-              id="brand-profile-name"
-              value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
-              placeholder="e.g. Meridian Creative"
-              className="ops-input"
-            />
-            <p className="text-xs text-slate-500 mt-1.5">
-              {editorPresetId
-                ? isBundledDemoBrandingPresetId(editorPresetId)
-                  ? 'Shared demo profile — can apply to workspace.'
-                  : 'Client demo — apply to workspace for CRM/Quotes; saved in your demo workspace.'
-                : 'New client demo — save to your workspace, then apply for your demo.'}
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="brand-company" className="ops-form-label">Company name</label>
-            <input
-              id="brand-company"
-              value={active.companyName}
-              onChange={(e) => update({ companyName: e.target.value })}
-              placeholder="Studio North Creative"
-              className="ops-input"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="brand-tagline" className="ops-form-label">Tagline</label>
-            <input
-              id="brand-tagline"
-              value={active.tagline ?? ''}
-              onChange={(e) => update({ tagline: e.target.value })}
-              placeholder="Creative & Digital Services"
-              className="ops-input"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="brand-color" className="ops-form-label">Brand color</label>
-            <div className="flex gap-3 items-center">
-              <input
-                type="color"
-                aria-label="Brand color picker"
-                value={active.primaryColor}
-                onChange={(e) => update({ primaryColor: e.target.value })}
-                className="h-10 w-10 rounded-md cursor-pointer border border-brandNavy-700 bg-transparent p-0.5"
-              />
-              <input
-                id="brand-color"
-                value={active.primaryColor}
-                onChange={(e) => update({ primaryColor: e.target.value })}
-                className="ops-input flex-1 font-mono text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <span className="ops-form-label">Logo</span>
-            <div className="flex flex-wrap gap-3 items-start">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleLogoUpload(f);
-                  e.target.value = '';
-                }}
-              />
-              <button
-                type="button"
-                disabled={uploading}
-                onClick={() => fileRef.current?.click()}
-                className="ops-btn-secondary disabled:opacity-50"
-              >
-                {uploading ? 'Uploading…' : 'Upload logo'}
-              </button>
-              <input
-                value={active.logoUrl ?? ''}
-                onChange={(e) => update({ logoUrl: e.target.value })}
-                placeholder="Or paste logo URL"
-                className="ops-input flex-1 min-w-[200px] text-sm"
-              />
-            </div>
-            {active.logoUrl && (
-              <div className="mt-3 p-3 rounded-lg border border-brandNavy-700 bg-brandNavy-800/50 inline-block">
-                <img src={active.logoUrl} alt="Logo preview" className="h-12 w-auto object-contain" />
-              </div>
-            )}
-          </div>
-
-          <div
-            className="brand-preview-panel rounded-lg border p-5"
-            style={{ borderColor: `${active.primaryColor}33`, backgroundColor: `${active.primaryColor}0a` }}
-          >
-            <p className="text-xs font-medium text-slate-500 mb-3">Preview</p>
-            <div className="flex items-center gap-3">
-              {active.logoUrl ? (
-                <img src={active.logoUrl} alt="" className="h-10 w-auto object-contain" />
-              ) : (
-                <div
-                  className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-semibold text-sm shadow-sm"
-                  style={{ backgroundColor: active.primaryColor }}
-                >
-                  {display.line1.charAt(0)}
-                </div>
-              )}
-              <div>
-                <div className="font-semibold text-slate-900 text-sm">
-                  {display.line1}
-                  {display.line2 ? (
-                    <span style={{ color: active.primaryColor }}> {display.line2}</span>
-                  ) : null}
-                </div>
-                <div className="text-xs text-slate-500 mt-0.5">{active.tagline}</div>
-              </div>
-            </div>
-          </div>
-
-          {message && (
-            <p className={`ops-message ${messageOk ? 'ops-message-success' : ''}`}>{message}</p>
-          )}
-
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleSaveProfile}
-              className="ops-btn-secondary disabled:opacity-50"
-            >
-              {saving
-                ? 'Saving…'
-                : isBundledDemoBrandingPresetId(editorPresetId)
-                  ? 'Save demo profile'
-                  : 'Save client demo'}
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleApplyToWorkspace}
-              className="ops-btn-primary brand-primary-bg disabled:opacity-50"
-            >
-              {saving ? 'Applying…' : 'Apply to workspace'}
-            </button>
-            {draft && (
-              <button
-                type="button"
-                onClick={() => {
-                  setDraft(null);
-                  if (editorPresetId) {
-                    const preset = presets.find((p) => p.id === editorPresetId);
-                    if (preset) setDraft(presetToConfig(preset));
-                  }
-                }}
-                className="ops-btn-secondary"
-              >
-                Reset edits
-              </button>
-            )}
-          </div>
-        </div>
+        <BrandingEditor
+          active={active}
+          draft={draft}
+          setDraft={setDraft}
+          profileName={profileName}
+          setProfileName={setProfileName}
+          showProfileName
+          profileNameHint={
+            editorPresetId
+              ? isBundledDemoBrandingPresetId(editorPresetId)
+                ? 'Shared demo profile — can apply to workspace.'
+                : 'Client demo — apply to workspace for CRM/Quotes; saved in your demo workspace.'
+              : 'New client demo — save to your workspace, then apply for your demo.'
+          }
+          onUploadLogo={handleLogoUpload}
+          uploading={uploading}
+          message={message}
+          messageOk={messageOk}
+          saving={saving}
+          primaryActionLabel="Apply to workspace"
+          onPrimaryAction={handleApplyToWorkspace}
+          secondaryActionLabel={saving ? 'Saving…' : isBundledDemoBrandingPresetId(editorPresetId) ? 'Save demo profile' : 'Save client demo'}
+          onSecondaryAction={handleSaveProfile}
+          showReset={Boolean(draft)}
+          onReset={() => {
+            setDraft(null);
+            if (editorPresetId) {
+              const preset = presets.find((p) => p.id === editorPresetId);
+              if (preset) setDraft(presetToConfig(preset));
+            }
+          }}
+        />
       </div>
     </div>
   );
