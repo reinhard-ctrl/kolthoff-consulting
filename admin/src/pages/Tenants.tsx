@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
@@ -126,6 +127,7 @@ export default function Tenants() {
   const [revokeAuthOnRemove, setRevokeAuthOnRemove] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalError, setCreateModalError] = useState('');
   const [newClientName, setNewClientName] = useState('');
   const [newTenantId, setNewTenantId] = useState('');
   const [newPortalCode, setNewPortalCode] = useState('');
@@ -391,9 +393,13 @@ export default function Tenants() {
   };
 
   const createClientWorkspace = async () => {
-    if (!newClientName.trim()) return;
+    if (!newClientName.trim() || !newTenantId.trim()) {
+      setCreateModalError('Client name and tenant ID are required.');
+      return;
+    }
     setCreatingWorkspace(true);
     setInviteStatus('');
+    setCreateModalError('');
     setPrepareResult(null);
     try {
       await bootstrapAuth();
@@ -428,9 +434,12 @@ export default function Tenants() {
       setInviteStatus(data.message);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Prepare failed';
-      setInviteStatus(msg.includes('permission-denied')
+      const friendly = msg.includes('permission-denied')
         ? 'Admin session required. Re-login at /admin/ and try again.'
-        : msg);
+        : msg;
+      setCreateModalError(friendly);
+      setInviteStatus(friendly);
+      showToast(friendly);
     } finally {
       setCreatingWorkspace(false);
     }
@@ -551,6 +560,11 @@ export default function Tenants() {
     }
   };
 
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateModalError('');
+  };
+
   const openCreateModal = () => {
     setNewClientName('');
     setNewTenantId('');
@@ -560,6 +574,7 @@ export default function Tenants() {
     setDeliverViaPortal(true);
     setInviteContact(true);
     setPrepareResult(null);
+    setCreateModalError('');
     setShowCreateModal(true);
   };
 
@@ -586,7 +601,7 @@ export default function Tenants() {
   return (
     <div>
       {toast && (
-        <div className="fixed top-6 right-6 z-50 bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl font-bold text-xs">
+        <div className="fixed top-6 right-6 z-[210] bg-brandTeal-600 text-white px-4 py-3 rounded-lg shadow-2xl font-bold text-xs">
           {toast}
         </div>
       )}
@@ -599,22 +614,22 @@ export default function Tenants() {
           </p>
         </div>
         {activeTab === 'instances' && (
-          <button
-            type="button"
-            onClick={() => setTab('onboard')}
-            className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
-          >
-            Onboard client
-          </button>
-        )}
-        {activeTab === 'instances' && (
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 rounded-lg text-xs font-bold uppercase border border-brandNavy-700"
-          >
-            Quick provision
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setTab('onboard')}
+              className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
+            >
+              Onboard client
+            </button>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 rounded-lg text-xs font-bold uppercase border border-brandNavy-700"
+            >
+              Quick provision
+            </button>
+          </div>
         )}
       </div>
 
@@ -1048,8 +1063,8 @@ export default function Tenants() {
         </div>
       )}
 
-      {cancelTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      {cancelTarget && createPortal(
+        <div className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4">
           <div className="glass-panel p-6 rounded-xl max-w-md w-full">
             <h3 className="font-bold text-lg mb-2 text-rose-300">Cancel workspace account</h3>
             <p className="text-sm text-slate-300 mb-4 leading-relaxed">
@@ -1075,16 +1090,23 @@ export default function Tenants() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
+      {showCreateModal && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
           <div className="glass-panel p-6 w-full max-w-2xl my-8">
             <h2 className="text-lg font-bold mb-2">Provision Workspace</h2>
             <p className="text-xs text-slate-500 mb-4">
               Creates the workspace tenant, publishes the link on the Client Portal (recommended), and optionally invites the primary contact by email.
             </p>
+
+            {createModalError && (
+              <div className="mb-4 rounded-lg border border-rose-500/40 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">
+                {createModalError}
+              </div>
+            )}
 
             {!prepareResult ? (
               <>
@@ -1173,10 +1195,16 @@ export default function Tenants() {
                   </label>
                 </div>
 
+                {(!newClientName.trim() || !newTenantId.trim()) && (
+                  <p className="text-xs text-slate-500 mb-3">
+                    Enter a client name — tenant ID is filled automatically and can be edited.
+                  </p>
+                )}
+
                 <div className="flex flex-wrap gap-2 justify-end">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={closeCreateModal}
                     className="px-4 py-2 rounded text-sm border border-brandNavy-700 text-slate-400"
                   >
                     Cancel
@@ -1226,7 +1254,7 @@ export default function Tenants() {
                 <div className="flex flex-wrap gap-2 justify-end">
                   <button
                     type="button"
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={closeCreateModal}
                     className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm"
                   >
                     Done
@@ -1235,7 +1263,8 @@ export default function Tenants() {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
