@@ -49,7 +49,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **P4 Verification** | ⏳ **Your turn** | End-to-end on `kolthoff-consulting.com` (~45 min) — `docs/p4-verification.md` sections **A + B + C + D** |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
-| **P7 MOD onboarding** | ✅ **Wizard shipped** | `/admin/onboard` — link SOW profile → Core Workspace + portal + templates; MOD auto-provision on contract sign |
+| **P7 MOD onboarding** | ✅ **Embedded in admin** | Workspace Admin + Agency Ops Manager **Onboard** tabs; `/admin/onboard` redirects |
 
 ### Your checklist (priority order)
 

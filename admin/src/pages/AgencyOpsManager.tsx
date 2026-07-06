@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
+import ProductProvisionWizard, { type WorkbookProfileRow } from '../components/ProductProvisionWizard';
+import { slugifyAgencyName } from '../lib/provision-profile-defaults';
+import { getClientDisplayName } from '../lib/engagement-config';
 import { cancelAgencyOpsTenant } from '../lib/agency-ops-cancel';
 import { deleteAgencyOpsTenant } from '../lib/agency-ops-delete';
 import {
@@ -35,11 +38,7 @@ interface AgencyOpsTenant {
 
 interface PrepareResult extends AgencyOpsProvisionResult {}
 
-interface WorkbookProfileOption extends AgencyOpsProfileFields {
-  id: string;
-  clientCompany?: string;
-  quoteId?: string;
-}
+interface WorkbookProfileOption extends WorkbookProfileRow, AgencyOpsProfileFields {}
 
 interface ContractRecord {
   id: string;
@@ -53,17 +52,15 @@ interface ActionProfile extends WorkbookProfileOption {
   contractError?: string;
 }
 
-function slugifyAgencyName(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
-  return slug ? `agency-${slug}` : '';
+type AgencyOpsTab = 'registry' | 'onboard';
+
+function parseAgencyTab(value: string | null): AgencyOpsTab {
+  return value === 'onboard' ? 'onboard' : 'registry';
 }
 
 export default function AgencyOpsManager() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = parseAgencyTab(searchParams.get('tab'));
   const [tenants, setTenants] = useState<AgencyOpsTenant[]>([]);
   const [profiles, setProfiles] = useState<WorkbookProfileOption[]>([]);
   const [contracts, setContracts] = useState<ContractRecord[]>([]);
@@ -76,7 +73,6 @@ export default function AgencyOpsManager() {
   const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<PrepareResult | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AgencyOpsTenant | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AgencyOpsTenant | null>(null);
@@ -86,6 +82,17 @@ export default function AgencyOpsManager() {
   const [resetPasscodeTarget, setResetPasscodeTarget] = useState<AgencyOpsTenant | null>(null);
   const [resettingPasscodeId, setResettingPasscodeId] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
+  const [onboardProfileId, setOnboardProfileId] = useState('');
+
+  const setTab = (tab: AgencyOpsTab) => {
+    if (tab === 'registry') setSearchParams({});
+    else setSearchParams({ tab });
+  };
+
+  useEffect(() => {
+    const profileFromUrl = searchParams.get('profile')?.trim();
+    if (profileFromUrl) setOnboardProfileId(profileFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -151,6 +158,11 @@ export default function AgencyOpsManager() {
       return rank[a.uiState] - rank[b.uiState];
     });
   }, [profiles, contracts, signedContractErrors]);
+
+  const openOnboardForProfile = (profileId: string) => {
+    setOnboardProfileId(profileId);
+    setTab('onboard');
+  };
 
   const activeTenants = useMemo(
     () => tenants.filter((t) => !isAgencyOpsTenantCancelled(t)),
@@ -240,26 +252,6 @@ export default function AgencyOpsManager() {
     setRepEmail('');
     setCustomPasscode('');
     setShowModal(true);
-  };
-
-  const runProvisionForProfile = async (profile: WorkbookProfileOption) => {
-    if (!profile.clientCompany && !profile.id) return;
-    setRetryingId(profile.id);
-    try {
-      await bootstrapAuth();
-      const data = await provisionAgencyOpsViaFirestore({
-        profileId: profile.id,
-        clientName: (profile.clientCompany || profile.id).trim(),
-        tenantId: slugifyAgencyName(profile.clientCompany || profile.id) || undefined,
-      });
-      setResult(data);
-      rememberProvisionedTenant(data.tenantId);
-      showToast(`Tenant ${data.tenantId} provisioned.`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Provisioning failed');
-    } finally {
-      setRetryingId(null);
-    }
   };
 
   const runProvision = async () => {
@@ -385,15 +377,63 @@ export default function AgencyOpsManager() {
             Console warnings about staff SSO timeout are harmless — your Google admin session still works.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => openProvision()}
-          className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase shadow-sm"
-        >
-          Provision Tenant
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {activeTab === 'registry' && (
+            <button
+              type="button"
+              onClick={() => setTab('onboard')}
+              className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
+            >
+              Onboard client
+            </button>
+          )}
+          {activeTab === 'registry' && (
+            <button
+              type="button"
+              onClick={() => openProvision()}
+              className="px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 rounded-lg text-xs font-bold uppercase border border-brandNavy-700"
+            >
+              Quick provision
+            </button>
+          )}
+        </div>
       </div>
 
+      <div className="flex flex-wrap gap-2 mb-6">
+        {([
+          { id: 'registry' as const, label: 'Registry' },
+          { id: 'onboard' as const, label: 'Onboard' },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setTab(tab.id)}
+            className={`px-3 py-1.5 rounded text-sm ${
+              activeTab === tab.id
+                ? 'bg-brandTeal-500 text-brandNavy-955 font-bold'
+                : 'bg-brandNavy-800 text-slate-400'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'onboard' && (
+        <ProductProvisionWizard
+          product="agency-ops"
+          profiles={profiles}
+          initialProfileId={onboardProfileId}
+          managePath="/agency-ops-manager"
+          onProvisioned={(id) => {
+            rememberProvisionedTenant(id);
+            setTab('registry');
+          }}
+        />
+      )}
+
+      {activeTab === 'registry' && (
+        <>
       <div className="glass-panel p-4 mb-6">
         <label className="text-sm text-slate-400">Active Agency Ops tenant</label>
         {activeTenants.length > 0 ? (
@@ -473,15 +513,10 @@ export default function AgencyOpsManager() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => runProvisionForProfile(p)}
-                  disabled={retryingId === p.id}
-                  className="shrink-0 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm disabled:opacity-50"
+                  onClick={() => openOnboardForProfile(p.id)}
+                  className="shrink-0 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
                 >
-                  {retryingId === p.id
-                    ? 'Provisioning…'
-                    : p.uiState === 'failed' || p.uiState === 'provisioning'
-                      ? 'Retry provision'
-                      : 'Provision now'}
+                  {p.uiState === 'failed' || p.uiState === 'provisioning' ? 'Retry onboard' : 'Onboard now'}
                 </button>
               </div>
             ))}
@@ -612,16 +647,18 @@ export default function AgencyOpsManager() {
         {tenants.length === 0 && actionRequiredProfiles.length === 0 && (
           <p className="p-6 text-slate-500 italic">
             No Agency Ops tenants yet. After a PRO 1 contract is signed, use the action panel above or
-            {' '}<button type="button" onClick={() => openProvision()} className="text-brandTeal-400 underline">Provision Tenant</button>.
+            {' '}<button type="button" onClick={() => setTab('onboard')} className="text-brandTeal-400 underline">Onboard client</button>.
           </p>
         )}
         {tenants.length > 0 && filteredTenants.length === 0 && (
           <p className="p-6 text-slate-500 italic">No tenants match your search.</p>
         )}
         {tenants.length === 0 && actionRequiredProfiles.length > 0 && (
-          <p className="p-6 text-slate-500 italic">Tenant registry empty — use Provision / Retry in the panel above.</p>
+          <p className="p-6 text-slate-500 italic">Tenant registry empty — use Onboard in the panel above.</p>
         )}
       </div>
+        </>
+      )}
 
       {resetPasscodeTarget && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
