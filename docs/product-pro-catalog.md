@@ -9,7 +9,7 @@ Implementation source: `shared/product-catalog.js`, `shared/engagement-packages.
 | SKU | ID | Category | Status |
 |-----|-----|----------|--------|
 | PRO 1 · Agency Ops | `pro1` | PRO 1 - Agency Ops Platform | Active |
-| PRO 2 · Core Workspace | `pro2` | PRO 2 - Core Workspace Platform | Planned |
+| PRO 2 · Core Workspace | `pro2` | PRO 2 - Core Workspace Platform | Active (pilot) |
 
 ## Lead-to-cash (Kolthoff OS)
 
