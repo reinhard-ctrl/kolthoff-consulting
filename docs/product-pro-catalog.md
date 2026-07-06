@@ -43,6 +43,23 @@ Workbook profile fields after provisioning:
 
 Console URL pattern: `https://kolthoff-consulting.com/agency-ops/?tenant=agency-{slug}`
 
+## Staff handoff (PRO 1 sold client)
+
+All client delivery happens from **Agency Ops Manager** (`/admin/agency-ops-manager`):
+
+| Step | Action |
+|------|--------|
+| 1 | Confirm tenant **ready** (auto on sign or **Provision now** / **Retry**) |
+| 2 | Select client in **Active Agency Ops tenant** |
+| 3 | **Copy handoff** (URL + passcode) or **Email client** |
+| 4 | **Open Agency Ops console** for training/support |
+| 5 | **Reset passcode** if client loses access |
+| 6 | **Collections → PRO Subscriptions** — issue setup + monthly invoices |
+
+Contract Ledger shows provision status and console link; use Manager for passcode, reset, cancel, and search.
+
+Do **not** hand off `agency-ops-demo` or `demostart2026` to paying clients.
+
 ## Collections — PRO subscription rhythm
 
 In Kolthoff OS (`/admin/collections`), the **PRO Subscriptions** tab lists signed PRO 1 contracts:

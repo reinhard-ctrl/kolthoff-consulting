@@ -91,7 +91,7 @@ Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` 
 2. Planner → apply **Agency Ops Starter** package → generate contract
 3. Client signs → auto-provision on e-sign (`onContractLedgerWritten`)
 4. **Agency Ops Manager** (`/admin/agency-ops-manager`) → verify tenant **ready**, copy handoff
-5. Select tenant in **Active Agency Ops tenant** → sidebar **Agency Ops** opens client console for support
+5. Select tenant in **Active Agency Ops tenant** → **Open Agency Ops console** for support
 6. Client: passcode → branding → first deal (empty planner by design)
 
 **Manual / retry:** Agency Ops Manager **Provision now** or **Retry provision** (instant direct Firestore path). Contract Ledger shows status + console link.
@@ -124,3 +124,18 @@ node seed.mjs --tenant agency-ops-demo --data-dir agency-ops --force
 ```
 
 Paid client tenants are **not** seeded — they start empty (see provisioning above).
+
+## Production checklist (engineering complete)
+
+| Area | Status |
+|------|--------|
+| Lead-to-cash auto-provision on contract sign | ✅ |
+| Agency Ops Manager (provision, retry, search, handoff, passcode reset) | ✅ |
+| Tenant cancel / delete (test accounts) | ✅ |
+| Client passcode login + Sales/Quotes embeds + `?tenant=` persistence | ✅ |
+| Paid branding (single form); demo-only appearance toggle | ✅ |
+| Empty client planner (no Engagement Packages tab) | ✅ |
+| PRO Subscriptions billing in Kolthoff OS Collections | ✅ |
+| Smoke routes `/agency-ops/`, `/admin/agency-ops-manager` | ✅ |
+
+**Your sign-off:** Run `docs/p4-verification.md` sections **B1–B7** on `kolthoff-consulting.com` after deploy.

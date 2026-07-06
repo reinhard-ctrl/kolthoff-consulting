@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
-import { subscribeActiveAgencyOpsTenant } from '../lib/agency-ops-active-tenant';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import { useProduct } from '../lib/product-context';
@@ -202,7 +201,6 @@ function NavItemCard({
 export default function SidebarNav() {
   const product = useProduct();
   const starter = isAgencyOpsStarter(product.id);
-  const [, setActiveTenantTick] = useState(0);
   const [customizing, setCustomizing] = useState(false);
   const [baselineGroups, setBaselineGroups] = useState<NavGroup[]>(() => getDefaultNavGroups());
   const [groups, setGroups] = useState<NavGroup[]>(() => getEffectiveNavGroups());
@@ -223,11 +221,6 @@ export default function SidebarNav() {
     return () => {
       cancelled = true;
     };
-  }, [starter]);
-
-  useEffect(() => {
-    if (starter) return;
-    return subscribeActiveAgencyOpsTenant(() => setActiveTenantTick((n) => n + 1));
   }, [starter]);
 
   const { shellRef, contentRef } = useSidebarFit(groups, customizing);

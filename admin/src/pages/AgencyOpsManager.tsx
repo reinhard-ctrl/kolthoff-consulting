@@ -435,12 +435,12 @@ export default function AgencyOpsManager() {
               )}
             </div>
             <p className="text-[11px] text-slate-500 mt-2">
-              Sidebar <strong className="text-slate-400">Agency Ops</strong> opens this tenant in a new tab.
+              Use <strong className="text-slate-400">Open Agency Ops console</strong> above to support the selected client.
             </p>
           </>
         ) : (
           <p className="text-sm text-slate-500 mt-2">
-            No active tenants yet. Provision a client to enable the sidebar Agency Ops link.
+            No active tenants yet. Provision a client to enable console access and handoff.
           </p>
         )}
       </div>
