@@ -232,7 +232,7 @@
 
     return React.createElement(
       'div',
-      { id: 'addendum-print-area', className: 'xl:col-span-8 planner-split-panel print:w-full print-section text-left font-sans' },
+      { id: 'addendum-print-area', className: `xl:col-span-8 planner-split-panel print:w-full print-section text-left font-sans${starterUi ? ' starter-pdf-neutral' : ''}` },
       React.createElement(
         'section',
         { className: 'print-card bg-white text-slate-900 p-8 rounded-xl border border-slate-200 print:rounded-none print:border-0 print:p-0 space-y-6' },
