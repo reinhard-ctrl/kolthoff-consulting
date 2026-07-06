@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** Core platform is **live and stable on `main`**. **Platform engineering for Phases 2.5 + 3A/P7 is complete** (#198–#207): Agency Ops PRO 1, Core Workspace pilot (Approvals/Messenger v1, onboarding wizard), CI deploy fixes, and nav cleanup. Automated smoke: **24/24** on `kolthoff-consulting.com`. **Your gate:** run P4 on production (`docs/p4-verification.md` sections A–D), sign off, then shift to Phase 4 content.
+**You are here:** P4 **verified on production** (6 Jul 2026). Platform engineering for Phases 2.5 + 3A/P7 is **complete** (#198–#210). Automated smoke: **26/26** on `kolthoff-consulting.com`. **Primary focus:** Phase 4 content (SOW library, CRM playbooks, portal defaults).
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -34,35 +34,31 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Client UX (passcode embeds, `?tenant=`, branding, empty planner) | ✅ |
 | PRO Subscriptions billing in Collections | ✅ |
 | Single sidebar entry: **Agency Ops Manager** | ✅ |
-| Production smoke routes | ✅ 23/23 on `kolthoff-consulting.com` |
+| Production smoke routes | ✅ 26/26 on `kolthoff-consulting.com` |
 
-**Not engineering:** P4 sign-off (sections B1–B7), first paying client handoff, Phase 4 content (SOW library, CRM playbooks).
+**Not engineering:** First paying PRO client handoff, Phase 4 content (SOW library, CRM playbooks).
 
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform shell** | ✅ **Stable on `main`** | Admin, workspace, hosting rewrites, CI deploys, Google redirect SSO |
 | **Admin embeds** | ✅ **Fixed** | Core Workspace + analytics sidebars visible in iframe (#173, #166); stale asset rewrites (#145) |
 | **Agency Ops PRO** | ✅ **Production-ready (eng)** | Auto + manual provision, Manager (search, SOW links, active tenant, passcode reset, cancel/delete), client UX (#186–#189), staff UX (#196, #201); single sidebar entry **Agency Ops Manager** (#203–#204) |
-| **Core Workspace** | ✅ **Pilot-ready (eng)** | Approvals/Messenger v1, onboarding wizard `/admin/onboard`, MOD auto-provision on sign (#198, #202); Functions deploy fix (#205), hosting rewrite (#206) |
+| **Core Workspace** | ✅ **Pilot verified** | Approvals/Messenger v1, onboard tab in Workspace Admin, MOD auto-provision on sign (#198, #202, #210) |
 | **Staff SSO** | ✅ **Improved** | Firestore-only staff provisioning path; cold-start timeout handling (#175–176) |
 | **Admin UX** | ✅ **Updated** | Sidebar defaults: Command → Project Management → Deliverables → Product → Analytics → Client (#170); Customize → Done saves org default to Firestore |
-| **P4 Verification** | ⏳ **Your turn** | End-to-end on `kolthoff-consulting.com` (~45 min) — `docs/p4-verification.md` sections **A + B + C + D** |
+| **P4 Verification** | ✅ **Complete** | Sections A–D signed off — `docs/p4-verification.md` |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
 | **P7 MOD onboarding** | ✅ **Embedded in admin** | Workspace Admin + Agency Ops Manager **Onboard** tabs; `/admin/onboard` redirects |
 
 ### Your checklist (priority order)
 
-1. ~~**Deploy hosting**~~ — CI deploys on merge to `main`; latest deploy verified (smoke **24/24**). Hard-refresh if assets look stale.
-2. **P4 smoke test (consulting)** — Contract sign → portal login → org chart in portal → file upload. **Runbook:** `docs/p4-verification.md` section **A**.
-3. **P4 smoke test (PRO 1 / Agency Ops)** — Client passcode → blank planner → sign → tenant ready → Collections PRO invoices. **Runbook:** section **B**.
-4. **P4 smoke test (Core Workspace pilot)** — Onboard wizard → Approvals flow → Messenger badges. **Runbook:** section **D**.
-5. **P4 embed sanity** — Resource Capacity + Project Planner in admin iframe. **Runbook:** section **C** (~2 min).
-6. **App Check (optional, recommended)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last. See `docs/app-check-sso.md`.
-7. **Content & templates (Phase 4)** — SOW library, CRM playbooks, portal defaults — **primary focus once P4 passes**.
-8. **Stop worrying about infra** unless something breaks — engineering owns P6 and performance backlog.
+1. **Phase 4 content** — SOW library (`workbook_profiles` templates), CRM playbooks, portal defaults, policy packs — **primary focus now**.
+2. **First PRO 1 sale** — Use Agency Ops Manager handoff flow on a live client.
+3. **App Check (optional)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → enforce in Console. See `docs/app-check-sso.md`.
+4. **Stop worrying about infra** unless something breaks — engineering owns P6 and performance backlog.
 
-### Engineering owns (unless P4 finds gaps)
+### Engineering owns (Phase 4 support + backlog)
 
 - React migration waves (P6): planner → CRM/ops → analytics → client apps
 - Bundle/code-split admin + workspace SPAs (&lt;500KB chunks)
@@ -82,16 +78,16 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Sell | CRM Pipeline, Project Planner | ✅ Production |
 | Contract | Contract Ledger, `contract_sign.html` | ✅ Production |
 | Deliver | Org Chart, Diagnosis, Policy, Workflow | ✅ Production (HTML embeds) |
-| Client view | Portal, org chart sync | ✅ Production — **verify P4** |
+| Client view | Portal, org chart sync | ✅ Production — P4 verified |
 | Bill | Collections (milestones + care plan) | ✅ Production |
-| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ Approvals v1 + Messenger v1 + onboarding wizard on `main` — **pilot verify section D** |
+| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ P4 section D verified |
 
 ### Lane B — PRO products (subscription software)
 
 | SKU | Lead-to-cash | Status |
 |-----|--------------|--------|
-| **PRO 1 · Agency Ops** | CRM → Planner package → Sign → auto-provision → Manager handoff → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ **Eng complete** — **verify P4 B1–B7** |
-| **PRO 2 · Core Workspace** | CRM → Sign → auto-provision Core Workspace → client portal + Approvals/Messenger | ✅ Auto-provision on contract sign (MOD + PRO 2 profiles) — **pilot verify section D** |
+| **PRO 1 · Agency Ops** | CRM → Planner package → Sign → auto-provision → Manager handoff → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ **P4 verified** |
+| **PRO 2 · Core Workspace** | CRM → Sign → auto-provision Core Workspace → client portal + Approvals/Messenger | ✅ P4 section D verified |
 
 See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 
@@ -112,7 +108,7 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 | S5 | Agency Ops provision (no public CORS) | ✅ | Firestore trigger `processAgencyOpsProvisionRequest` (#165) |
 | S6 | Functions deploy type conflicts | ✅ | CI deletes orphaned HTTPS functions (#168) |
 | S7 | Staff SSO cold-start timeout | ✅ | Firestore-only provision path (#175–176) |
-| S8 | **P4 production verification** | ⏳ | You — consulting + PRO paths |
+| S8 | **P4 production verification** | ✅ | Signed off 6 Jul 2026 — sections A–D |
 | S9 | App Check enforcement | ⏳ | After monitoring period |
 | S10 | Error monitoring / alerts | ⏳ | Firebase Console alerts on Function failures |
 
@@ -137,13 +133,13 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 
 | Area | Must work | Gap |
 |------|-----------|-----|
-| **Consulting sell→cash** | CRM, Planner, Contract, Collections | Planner buffer vs signed quote; P4 verify |
-| **Client experience** | Portal token auth, org chart, uploads | P4 verify on custom domain |
+| **Consulting sell→cash** | CRM, Planner, Contract, Collections | Planner buffer vs signed quote |
+| **Client experience** | Portal token auth, org chart, uploads | ✅ P4 verified |
 | **Delivery tools** | Diagnosis, Policy→Vault, Workflow tabs | HTML embeds — migrate in P6 |
 | **Analytics** | Firm, Capacity, Time | Manual entry; planner baselines exist |
 | **Workspace** | SSO embed, module nav | Approvals/Messenger depth |
-| **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | ✅ **Eng complete** — **P4 verify B1–B7** |
-| **PRO 2 Workspace** | Auto-provision on sign, Approvals/Messenger v1, onboard wizard | ✅ Pilot path on `main` — **P4 section D**; product sale **on hold** |
+| **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | ✅ P4 verified |
+| **PRO 2 Workspace** | Auto-provision on sign, Approvals/Messenger v1, onboard wizard | ✅ P4 section D verified |
 | **Kolthoff onboarding** | New MOD client wizard | ✅ `/admin/onboard` shipped (#202) |
 
 ---
@@ -239,9 +235,9 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 |-------|------|--------|------------|
 | **0–1** | Platform migration + auth | ✅ **Complete** | — |
 | **2** | Go-live + live data + DNS | ✅ **Complete** | Content in planner/CRM/portals |
-| **2.5** | Ops hardening | ✅ **Complete** on `main` | P4 verify client journeys on production |
-| **3** | Platform maturity (security + unified UI) | 🔶 **In progress** (3A code done; Console + P6/P7 remain) | Minimal until P4 verified |
-| **4** | Delivery excellence (content + automation) | ⏳ After 2.5/3 | **Primary focus** |
+| **2.5** | Ops hardening | ✅ **Complete** | P4 verified on production |
+| **3** | Platform maturity (security + unified UI) | 🔶 **In progress** (3A done; App Check optional + P6 remain) | Minimal — Phase 4 is primary |
+| **4** | Delivery excellence (content + automation) | 🔶 **In progress** | **Primary focus** |
 | **5** | Idol figure (benchmark OS) | ⏳ Ongoing | Case studies, templates, metrics |
 
 **Definition of “migration complete”:** Phases **2.5 + 3** done. Phase **4** is where you live as a consultancy.
@@ -255,7 +251,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C + Core Workspace D) | ⏳ **You** — eng complete; run `docs/p4-verification.md` on `kolthoff-consulting.com` (~30 min) |
+| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C + Core Workspace D) | ✅ **Complete** (6 Jul 2026) |
 | **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **SSO done** — App Check optional |
 | **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning, Manager, client UX) | ✅ **Complete** (#159–#204) |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
@@ -316,7 +312,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 
 ## ✅ Phase 2.5 — Ops hardening (complete on `main`)
 
-**Goal:** Close the last gaps so every workflow is reliable before SSO and full React migration. **Code complete** — only P4 production verification (sections A–D) remains.
+**Goal:** Close the last gaps so every workflow is reliable before SSO and full React migration. **Complete** — P4 verified 6 Jul 2026.
 
 ### 2.5A — Still open (client & security)
 
@@ -354,7 +350,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 - [x] Portal custom-token auth live
 - [x] Policy → Vault publish path
 - [x] Workspace CRM aligned (ops schema; flag off by default)
-- [ ] Full client journey verified on `kolthoff-consulting.com` (contract sign → portal → org chart → upload)
+- [x] Full client journey verified on `kolthoff-consulting.com` (contract sign → portal → org chart → upload)
 
 ---
 
@@ -527,7 +523,7 @@ flowchart TB
 6. ~~Embed polish, App Check bootstrap, config centralization, analytics baselines~~ ✅
 7. ~~Workspace deploy + admin embed~~ ✅ (#146, #152)
 8. ~~Agency Ops PRO lead-to-cash + Manager + client UX~~ ✅ (#159–#204)
-9. **Verify** full client journey on production domain — `docs/p4-verification.md` sections A + B + C (+ D for workspace pilot)
+9. ~~**Verify** full client journey on production domain~~ ✅ P4 complete (6 Jul 2026)
 
 ### Should do (Phase 3 — Package P5–P7)
 10. ~~Google Workspace SSO~~ ✅ — redirect-first login merged (#141)
@@ -556,7 +552,7 @@ flowchart TB
 | Portal progress accuracy | Matches planner module state without manual edit |
 | Staff apps in React / admin shell | 100% of delivery + ops |
 | Time to provision new client tenant | <15 minutes via admin |
-| Smoke tests | 24/24 on custom domain in CI |
+| Smoke tests | 26/26 on custom domain in CI |
 | Zero critical Firestore rule gaps for client flows | Rules test coverage |
 
 ---
@@ -579,4 +575,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — Platform engineering plan complete through #207 (Agency Ops nav dedup, onboard hosting rewrite, Functions deploy fixes, workspace admin cleanup). Automated smoke **24/24** on production. **Next:** P4 verification sections A–D (you) → Phase 4 content; eng backlog: App Check (optional) + P6 React migration.*
+*Last updated: 6 July 2026 — P4 complete (sections A–D signed off). Phase 4 content is primary focus. Eng backlog: App Check (optional) + P6 React migration.*
