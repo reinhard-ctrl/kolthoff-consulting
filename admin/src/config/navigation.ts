@@ -1,10 +1,3 @@
-import {
-  getActiveAgencyOpsConsoleUrl,
-  getAgencyOpsManagerUrl,
-} from '../lib/agency-ops-active-tenant';
-
-export const AGENCY_OPS_CONSOLE_NAV_ID = 'agency-ops-console';
-
 export type NavItem = {
   id: string;
   label: string;

@@ -71,9 +71,6 @@ const ICONS: Record<string, (p: IconProps) => JSX.Element> = {
   'agency-ops-manager': ({ className }) => (
     <Svg className={className}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></Svg>
   ),
-  'agency-ops-console': ({ className }) => (
-    <Svg className={className}><rect x="3" y="4" width="18" height="14" rx="2" /><path d="M7 20h10" /><path d="M10 18v2" /><path d="M14 18v2" /><path d="M8 9h8M8 12h5" /></Svg>
-  ),
   branding: ({ className }) => (
     <Svg className={className}><circle cx="12" cy="12" r="3" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2" /></Svg>
   ),

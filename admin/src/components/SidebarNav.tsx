@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { getNavExternalUrl, getNavLink, canOpenInPanel, type NavItem } from '../config/navigation';
-import { subscribeActiveAgencyOpsTenant } from '../lib/agency-ops-active-tenant';
 import { NavIcon } from './NavIcons';
 import { useSidebarFit } from '../hooks/useSidebarFit';
 import { useProduct } from '../lib/product-context';
