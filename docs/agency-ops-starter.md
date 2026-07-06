@@ -93,6 +93,6 @@ Embedded HTML apps receive `?product=agency-ops-starter&tenant=agency-ops-demo` 
 
 Future: automate via **Agency Ops Manager** in Kolthoff OS (`/admin/agency-ops-manager`) or the **Provision Agency Ops** action on signed PRO contracts in Contract Ledger.
 
-**Provisioning path:** Admin UI writes to `agency_ops_provision_requests` → Firestore trigger `onAgencyOpsProvisionRequest` (no public Cloud Function required). Callable `prepareAgencyOpsTenant` remains as fallback where public invoke is allowed.
+**Provisioning path:** Admin UI writes to `agency_ops_provision_requests` → Firestore trigger `processAgencyOpsProvisionRequest` (no public Cloud Function required). Callable `prepareAgencyOpsTenant` remains as fallback where public invoke is allowed.
 
 **Phase 3 (live):** PRO 1 contracts auto-provision on e-sign via the `onContractLedgerWritten` Firestore trigger. Passcodes are stored on the tenant registry (`initialPasscode`) for staff retrieval. Paid clients use `/agency-ops/?tenant=agency-{slug}` — the tenant ID persists in session storage across reloads.

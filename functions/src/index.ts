@@ -449,8 +449,8 @@ export const generatePortalToken = onCall({ invoker: 'public' }, async (request)
   return createPortalTokenForAccessCode(accessCode);
 });
 
-/** Hosting rewrite endpoint — public invoker (org policies may block post-deploy IAM; match callable) */
-export const generatePortalTokenHttp = onRequest({ invoker: 'public', cors: true }, async (req: Request, res: Response) => {
+/** Hosting rewrite endpoint — private invoker; Firebase Hosting grants invoke via rewrite (public IAM blocked by org policy) */
+export const generatePortalTokenHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
@@ -1290,7 +1290,7 @@ export const prepareAgencyOpsTenant = onCall({ invoker: 'public', cors: true }, 
 });
 
 /** Firestore path when org policy blocks public Cloud Function invoke (same as staff SSO) */
-export const onAgencyOpsProvisionRequest = onDocumentWritten(
+export const processAgencyOpsProvisionRequest = onDocumentWritten(
   `artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/{requestId}`,
   async (event) => {
     const afterSnap = event.data?.after;
@@ -1326,10 +1326,10 @@ export const onAgencyOpsProvisionRequest = onDocumentWritten(
         ...response,
         completedAt: Date.now(),
       });
-      console.log('onAgencyOpsProvisionRequest complete', requestId, response.tenantId);
+      console.log('processAgencyOpsProvisionRequest complete', requestId, response.tenantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
-      console.error('onAgencyOpsProvisionRequest failed', requestId, err);
+      console.error('processAgencyOpsProvisionRequest failed', requestId, err);
       await ref.update({
         status: 'error',
         error: message,

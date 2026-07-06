@@ -136,23 +136,23 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Remove orphaned validateWorkbookProfile (wrong trigger type)
+      - name: Remove orphaned Cloud Functions (wrong trigger type)
         continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          gcloud functions delete validateWorkbookProfile \
-            --region=asia-southeast1 \
-            --project=kolthoff-portal \
-            --gen2 \
-            --quiet
-
-      - name: Remove orphaned onAgencyOpsProvisionRequest (HTTPS → Firestore trigger)
-        continue-on-error: true
-        run: |
-          gcloud functions delete onAgencyOpsProvisionRequest \
-            --region=asia-southeast1 \
-            --project=kolthoff-portal \
-            --gen2 \
-            --quiet
+          REGION=asia-southeast1
+          PROJECT=kolthoff-portal
+          ORPHANS=(validateWorkbookProfile onAgencyOpsProvisionRequest)
+          for FN in "${ORPHANS[@]}"; do
+            echo "=== Removing orphaned function: $FN ==="
+            gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --gen2 --quiet 2>&1 || true
+            gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --quiet 2>&1 || true
+            gcloud run services delete "$(echo "$FN" | tr '[:upper:]' '[:lower:]')" \
+              --region="$REGION" --project="$PROJECT" --quiet 2>&1 || true
+            npx --yes firebase-tools@15.22.3 functions:delete "$FN" \
+              --region "$REGION" --project "$PROJECT" --force --non-interactive 2>&1 || true
+          done
 
       - name: Deploy hosting and security rules
         env:
@@ -205,6 +205,12 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
+          REGION=asia-southeast1
+          PROJECT=kolthoff-portal
+          for FN in onAgencyOpsProvisionRequest validateWorkbookProfile; do
+            gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --gen2 --quiet 2>&1 || true
+            gcloud functions delete "$FN" --region="$REGION" --project="$PROJECT" --quiet 2>&1 || true
+          done
           npx --yes firebase-tools@15.22.3 deploy \
             --only functions \
             --project kolthoff-portal \

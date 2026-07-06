@@ -80,7 +80,7 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 | Symptom | Fix |
 |---------|-----|
 | Portal “access denied” | Firebase Console → Auth → enable **Anonymous** |
-| Portal auth API 403 | Deploy latest `main` (public invoker on `generatePortalTokenHttp`) |
+| Portal auth API 403 | Expected with private invoker + org policy — portal uses Firestore-direct auth |
 | Google SSO stuck | Add authorized domain + OAuth redirect URI — see `docs/app-check-sso.md` |
 | Stale admin / 404 embed | Hard refresh; check CI build did not skip workspace |
 | Agency Ops tenant missing | Agency Ops Manager → Retry provision; check Functions logs |
