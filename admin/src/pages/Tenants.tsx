@@ -617,7 +617,7 @@ export default function Tenants() {
                         <button
                           type="button"
                           onClick={() => openDeleteWorkspace(ws)}
-                          className="text-slate-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
+                          className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
                         >
                           Delete
                         </button>
@@ -716,6 +716,39 @@ export default function Tenants() {
               </div>
             ))}
           </div>
+
+          {tenantId !== INTERNAL_WORKSPACE_TENANT && activeWorkspace && (
+            <div className="glass-panel p-4 mt-6 border border-rose-900/30">
+              <h2 className="font-bold text-rose-400 mb-2">Account actions</h2>
+              <p className="text-xs text-slate-500 mb-4">
+                <strong className="text-slate-400">Cancel account</strong> disables client access but keeps the registry row.
+                <strong className="text-slate-400"> Delete permanently</strong> removes the workspace from the registry and clears portal links (for test accounts).
+                Use <strong className="text-slate-400">Clear tenant workspace data</strong> on the IT Support tab to wipe users and modules first if needed.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {!activeWorkspace.internal && !isWorkspaceTenantCancelled(activeWorkspace) && (
+                  <button
+                    type="button"
+                    onClick={() => setCancelTarget(activeWorkspace)}
+                    disabled={cancellingId === activeWorkspace.tenantId || deletingId === activeWorkspace.tenantId}
+                    className="px-4 py-2 text-rose-400 border border-rose-500/30 rounded text-xs font-bold uppercase disabled:opacity-50"
+                  >
+                    Cancel account
+                  </button>
+                )}
+                {!activeWorkspace.internal && (
+                  <button
+                    type="button"
+                    onClick={() => openDeleteWorkspace(activeWorkspace)}
+                    disabled={deletingId === activeWorkspace.tenantId || cancellingId === activeWorkspace.tenantId}
+                    className="px-4 py-2 bg-rose-950/40 text-rose-300 border border-rose-500/40 rounded text-xs font-bold uppercase disabled:opacity-50"
+                  >
+                    Delete permanently
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 
