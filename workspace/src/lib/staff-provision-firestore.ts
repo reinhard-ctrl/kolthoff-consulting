@@ -1,6 +1,6 @@
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { db, functions, httpsCallable } from './firebase';
+import { db } from './firebase';
 
 const ADMIN_APP = 'kolthoff-admin-app';
 const PROVISION_TIMEOUT_MS = 45000;
@@ -97,12 +97,6 @@ async function retryStaffProvisionRequest(user: User): Promise<void> {
   });
 }
 
-async function provisionGoogleStaffViaCallable(user: User): Promise<void> {
-  const provision = httpsCallable(functions, 'provisionGoogleStaff');
-  await provision({});
-  await user.getIdToken(true);
-}
-
 export async function provisionGoogleStaffViaFirestore(
   user: User,
   options?: { timeoutMs?: number },
@@ -136,17 +130,7 @@ export async function provisionGoogleStaffViaFirestore(
       return;
     }
 
-    try {
-      await waitForStaffProvision(user.uid, RETRY_WAIT_MS);
-    } catch (retryErr) {
-      try {
-        await provisionGoogleStaffViaCallable(user);
-        if (await hasStaffClaims(user)) return;
-      } catch {
-        /* Firestore trigger path preferred; callable may be blocked by org policy */
-      }
-      throw retryErr;
-    }
+    await waitForStaffProvision(user.uid, RETRY_WAIT_MS);
   }
 
   await user.getIdToken(true);

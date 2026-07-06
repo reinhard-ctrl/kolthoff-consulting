@@ -809,7 +809,7 @@ async function provisionKolthoffGoogleStaffUser(
 }
 
 /** Google Workspace SSO — provision @kolthoff-consulting.com staff claims + core_users */
-export const provisionGoogleStaff = onCall({ invoker: 'public' }, async (request) => {
+export const provisionGoogleStaff = onCall({ invoker: 'public', cors: true }, async (request) => {
   if (!request.auth?.uid) {
     throw new HttpsError('unauthenticated', 'Sign in required');
   }
