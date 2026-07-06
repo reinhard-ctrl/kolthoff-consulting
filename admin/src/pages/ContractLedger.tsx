@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { deleteDoc, getDocs, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore } from '../lib/agency-ops-provision-firestore';
+import { isPro1AgencyOpsProfile } from '../lib/agency-ops-profiles';
 import {
   formatCurrency,
   getBillingSchedule,
@@ -19,6 +20,7 @@ interface WorkbookProfile {
   quoteId?: string;
   engagementType?: string;
   productId?: string;
+  selectedPackageId?: string;
   agencyOpsTenantId?: string;
   provisioningStatus?: string;
   provisioningError?: string;
@@ -257,8 +259,7 @@ export default function ContractLedger() {
     }
   };
 
-  const isProProfile = (profile?: WorkbookProfile) =>
-    Boolean(profile && (profile.engagementType === 'product' || profile.productId === 'pro1'));
+  const isProProfile = (profile?: WorkbookProfile) => isPro1AgencyOpsProfile(profile);
 
   const provisioningBadge = (profile?: WorkbookProfile, contract?: ContractRecord | null) => {
     if (!profile || !isProProfile(profile)) return null;
@@ -508,14 +509,16 @@ export default function ContractLedger() {
                           <a href={clientSignUrl(item.profileId, { view: 'audit' })} target="_blank" rel="noreferrer" className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs">
                             Audit Trail
                           </a>
-                          {isProProfile(profile) && !profile?.agencyOpsTenantId && profile?.provisioningStatus !== 'provisioning' && (
+                          {isProProfile(profile) && !profile?.agencyOpsTenantId && (
                             <button
                               type="button"
                               onClick={() => { setProvisionResult(null); setProvisionTarget(profile || null); }}
                               disabled={processing}
                               className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
                             >
-                              {profile?.provisioningStatus === 'failed' ? 'Retry Provision' : 'Provision Agency Ops'}
+                              {profile?.provisioningStatus === 'failed' || profile?.provisioningStatus === 'provisioning'
+                                ? 'Retry Provision'
+                                : 'Provision Agency Ops'}
                             </button>
                           )}
                           {profile?.agencyOpsTenantId && (

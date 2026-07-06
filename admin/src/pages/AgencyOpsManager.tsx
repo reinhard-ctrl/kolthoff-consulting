@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot, collection } from 'firebase/firestore';
 import { db, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
+import {
+  agencyOpsProvisionUiState,
+  isPro1AgencyOpsProfile,
+  needsAgencyOpsTenant,
+  type AgencyOpsProfileFields,
+} from '../lib/agency-ops-profiles';
 
 interface AgencyOpsTenant {
   tenantId: string;
@@ -18,19 +24,22 @@ interface AgencyOpsTenant {
 
 interface PrepareResult extends AgencyOpsProvisionResult {}
 
-interface WorkbookProfileOption {
+interface WorkbookProfileOption extends AgencyOpsProfileFields {
   id: string;
   clientCompany?: string;
   quoteId?: string;
-  engagementType?: string;
-  productId?: string;
-  agencyOpsTenantId?: string;
-  provisioningStatus?: string;
-  provisioningError?: string;
 }
 
-function isProProfile(p: WorkbookProfileOption): boolean {
-  return p.engagementType === 'product' || p.productId === 'pro1';
+interface ContractRecord {
+  id: string;
+  profileId?: string;
+  status?: string;
+  agencyOpsAutoProvisionError?: string;
+}
+
+interface ActionProfile extends WorkbookProfileOption {
+  uiState: 'failed' | 'provisioning' | 'awaiting';
+  contractError?: string;
 }
 
 function slugifyAgencyName(name: string): string {
@@ -46,6 +55,7 @@ function slugifyAgencyName(name: string): string {
 export default function AgencyOpsManager() {
   const [tenants, setTenants] = useState<AgencyOpsTenant[]>([]);
   const [profiles, setProfiles] = useState<WorkbookProfileOption[]>([]);
+  const [contracts, setContracts] = useState<ContractRecord[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [clientName, setClientName] = useState('');
   const [tenantId, setTenantId] = useState('');
@@ -60,6 +70,7 @@ export default function AgencyOpsManager() {
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
     const profilesRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'workbook_profiles');
+    const contractsRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'contracts_ledger');
     const u1 = onSnapshot(registryRef, (snap) => {
       const list: AgencyOpsTenant[] = [];
       snap.forEach((d) => {
@@ -74,28 +85,52 @@ export default function AgencyOpsManager() {
       snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WorkbookProfileOption));
       setProfiles(list);
     });
-    return () => { u1(); u2(); };
+    const u3 = onSnapshot(contractsRef, (snap) => {
+      const list: ContractRecord[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ContractRecord));
+      setContracts(list);
+    });
+    return () => { u1(); u2(); u3(); };
   }, []);
 
-  const proProfiles = useMemo(
-    () => profiles.filter((p) =>
-      isProProfile(p)
-      && !p.agencyOpsTenantId
-      && p.provisioningStatus !== 'provisioning'
-      && p.provisioningStatus !== 'failed',
-    ),
-    [profiles],
-  );
+  const signedContractErrors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of contracts) {
+      if (c.status !== 'signed' || !c.profileId) continue;
+      if (c.agencyOpsAutoProvisionError) map.set(c.profileId, c.agencyOpsAutoProvisionError);
+    }
+    return map;
+  }, [contracts]);
 
-  const provisioningProfiles = useMemo(
-    () => profiles.filter((p) => isProProfile(p) && p.provisioningStatus === 'provisioning' && !p.agencyOpsTenantId),
-    [profiles],
-  );
+  const actionRequiredProfiles = useMemo(() => {
+    const byId = new Map<string, ActionProfile>();
 
-  const failedProfiles = useMemo(
-    () => profiles.filter((p) => isProProfile(p) && (p.provisioningStatus === 'failed' || Boolean(p.provisioningError)) && !p.agencyOpsTenantId),
-    [profiles],
-  );
+    for (const p of profiles) {
+      if (!needsAgencyOpsTenant(p)) continue;
+      const uiState = agencyOpsProvisionUiState(p) || 'awaiting';
+      byId.set(p.id, {
+        ...p,
+        uiState: signedContractErrors.has(p.id) ? 'failed' : uiState,
+        contractError: signedContractErrors.get(p.id),
+      });
+    }
+
+    for (const c of contracts) {
+      if (c.status !== 'signed' || !c.profileId || byId.has(c.profileId)) continue;
+      const p = profiles.find((x) => x.id === c.profileId);
+      if (!p || !isPro1AgencyOpsProfile(p) || p.agencyOpsTenantId) continue;
+      byId.set(c.profileId, {
+        ...p,
+        uiState: c.agencyOpsAutoProvisionError ? 'failed' : 'awaiting',
+        contractError: c.agencyOpsAutoProvisionError,
+      });
+    }
+
+    return [...byId.values()].sort((a, b) => {
+      const rank = { failed: 0, provisioning: 1, awaiting: 2 };
+      return rank[a.uiState] - rank[b.uiState];
+    });
+  }, [profiles, contracts, signedContractErrors]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -187,74 +222,43 @@ export default function AgencyOpsManager() {
         </button>
       </div>
 
-      {provisioningProfiles.length > 0 && (
-        <div className="glass-panel p-4 mb-6 border border-brandTeal-500/20">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-brandTeal-400 font-bold mb-2">
-            Provisioning in progress
+      {actionRequiredProfiles.length > 0 && (
+        <div className="glass-panel p-4 mb-6 border border-brandAmber-500/30">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-brandAmber-400 font-bold mb-2">
+            Action required — provision Agency Ops tenant
           </h2>
           <p className="text-xs text-slate-500 mb-3">
-            Auto-provision runs after contract sign. Cold Cloud Functions can take up to 2 minutes — refresh if stuck.
+            Signed PRO 1 deals without a tenant appear here. Click Provision or Retry — cold Functions can take up to 2 minutes.
           </p>
-          <div className="space-y-2">
-            {provisioningProfiles.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <div>
+          <div className="space-y-3">
+            {actionRequiredProfiles.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 text-sm border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-950/50">
+                <div className="min-w-0 flex-1">
                   <span className="font-semibold text-white">{p.clientCompany || p.id}</span>
                   {p.quoteId && <span className="text-slate-500 font-mono text-xs ml-2">{p.quoteId}</span>}
-                </div>
-                <span className="text-amber-400 text-xs uppercase font-bold animate-pulse">Provisioning…</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {failedProfiles.length > 0 && (
-        <div className="glass-panel p-4 mb-6 border border-rose-500/30">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-rose-400 font-bold mb-2">
-            Provisioning failed — retry
-          </h2>
-          <div className="space-y-2">
-            {failedProfiles.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <div>
-                  <span className="font-semibold text-white">{p.clientCompany || p.id}</span>
-                  {p.provisioningError && (
-                    <span className="block text-rose-300/80 text-xs mt-1 max-w-xl">{p.provisioningError}</span>
+                  {p.uiState === 'provisioning' && (
+                    <span className="block text-amber-400 text-xs uppercase font-bold mt-1 animate-pulse">Provisioning in progress…</span>
+                  )}
+                  {p.uiState === 'failed' && (
+                    <span className="block text-rose-300/90 text-xs mt-1 max-w-xl">
+                      {p.provisioningError || p.contractError || 'Auto-provision did not complete — retry manually.'}
+                    </span>
+                  )}
+                  {p.uiState === 'awaiting' && (
+                    <span className="block text-slate-500 text-xs mt-1">Signed contract — tenant not created yet</span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => runProvisionForProfile(p)}
                   disabled={retryingId === p.id}
-                  className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm disabled:opacity-50"
+                  className="shrink-0 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm disabled:opacity-50"
                 >
-                  {retryingId === p.id ? 'Retrying…' : 'Retry provision'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {proProfiles.length > 0 && (
-        <div className="glass-panel p-4 mb-6 border border-brandAmber-500/20">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-brandAmber-400 font-bold mb-2">
-            PRO deals awaiting provisioning
-          </h2>
-          <div className="space-y-2">
-            {proProfiles.slice(0, 8).map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <div>
-                  <span className="font-semibold text-white">{p.clientCompany || p.id}</span>
-                  {p.quoteId && <span className="text-slate-500 font-mono text-xs ml-2">{p.quoteId}</span>}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openProvision(p)}
-                  className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
-                >
-                  Provision
+                  {retryingId === p.id
+                    ? 'Provisioning…'
+                    : p.uiState === 'failed' || p.uiState === 'provisioning'
+                      ? 'Retry provision'
+                      : 'Provision now'}
                 </button>
               </div>
             ))}
@@ -314,14 +318,14 @@ export default function AgencyOpsManager() {
             ))}
           </tbody>
         </table>
-        {tenants.length === 0 && provisioningProfiles.length === 0 && failedProfiles.length === 0 && (
+        {tenants.length === 0 && actionRequiredProfiles.length === 0 && (
           <p className="p-6 text-slate-500 italic">
-            No Agency Ops tenants yet. After a PRO 1 contract is signed, a tenant should appear here within ~2 minutes.
-            If not, use &quot;Retry provision&quot; above or Provision Tenant manually.
+            No Agency Ops tenants yet. After a PRO 1 contract is signed, use the action panel above or
+            {' '}<button type="button" onClick={() => openProvision()} className="text-brandTeal-400 underline">Provision Tenant</button>.
           </p>
         )}
-        {tenants.length === 0 && (provisioningProfiles.length > 0 || failedProfiles.length > 0) && (
-          <p className="p-6 text-slate-500 italic">Tenant registry empty — check provisioning status above.</p>
+        {tenants.length === 0 && actionRequiredProfiles.length > 0 && (
+          <p className="p-6 text-slate-500 italic">Tenant registry empty — use Provision / Retry in the panel above.</p>
         )}
       </div>
 
