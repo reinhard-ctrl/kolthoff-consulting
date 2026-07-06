@@ -51,10 +51,10 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 | Step | Action | Pass? |
 |------|--------|-------|
 | B1 | CRM: create or open deal tagged as **product** (Agency Ops) | ☐ |
-| B2 | Planner: apply **Agency Ops Starter** package to profile | ☐ |
+| B2 | Planner: **Create quote** (blank workspace) — add line items in Estimate tab; no Engagement Packages screen | ☐ |
 | B3 | Contract Ledger: send sign link → sign in incognito | ☐ |
 | B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** (may take ~2 min after sign on cold Functions). If empty, check **Provisioning in progress** or **Retry provision** panel | ☐ |
-| B5 | Open `/agency-ops/?tenant=<slug>` — demo loads with client branding | ☐ |
+| B5 | Client opens `/agency-ops/?tenant=<slug>` with **passcode** (not Kolthoff admin) → Sales/Quotes loads with **your branding** and empty planner | ☐ |
 | B6 | **Collections** → **PRO Subscriptions** tab → issue setup fee + monthly invoice | ☐ |
 
 **Notes / failures:**

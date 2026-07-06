@@ -22,28 +22,29 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** Core platform is **live and mostly stable**. Recent work fixed workspace deploy/embeds, admin embed sidebars, Agency Ops Firestore provisioning, SSO cold-start timeouts, and admin nav defaults. Remaining work splits into **verify flows (you)**, **harden security/perf (eng)**, and **fill content/templates (you)**.
+**You are here:** Core platform is **live and stable on `main`**. Agency Ops client self-service is largely complete (passcode login, tenant nav, single branding form, empty planner). Remaining work splits into **deploy + P4 verify (you)**, **harden security/perf (eng)**, and **fill content/templates (you)**.
 
 | Lane | Status | What it means |
 |------|--------|---------------|
 | **Platform shell** | ✅ **Stable on `main`** | Admin, workspace, hosting rewrites, CI deploys, Google redirect SSO |
 | **Admin embeds** | ✅ **Fixed** | Core Workspace + analytics sidebars visible in iframe (#173, #166); stale asset rewrites (#145) |
-| **Agency Ops PRO** | ✅ **Phase 1–2 + billing** | Catalog, SLA, Agency Ops Manager, Firestore provision trigger, PRO Subscriptions tab, contract-sign auto-provision |
+| **Agency Ops PRO** | ✅ **Phase 1–2 + billing + client UX** | Provision trigger (#184), cancel tenant (#185), client passcode embeds (#186), tenant URL nav (#187), paid branding (#188), empty planner — no Engagement Packages (#189) |
 | **Staff SSO** | ✅ **Improved** | Firestore-only staff provisioning path; cold-start timeout handling (#175–176) |
 | **Admin UX** | ✅ **Updated** | Sidebar defaults: Command → Project Management → Deliverables → Product → Analytics → Client (#170); Customize → Done saves org default to Firestore |
-| **P4 Verification** | ⏳ **Your turn** | End-to-end client journey on production domain (~30 min) |
+| **P4 Verification** | ⏳ **Your turn** | End-to-end client journey on production domain (~30 min) — **deploy hosting first**, then run `docs/p4-verification.md` |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
 | **P7 MOD onboarding** | ⏳ **Planned** | One-click new Kolthoff client: portal + workspace + org chart (PRO path partially done) |
 
 ### Your checklist (priority order)
 
-1. **P4 smoke test (consulting)** — Contract sign → portal login → org chart in portal → file upload on `kolthoff-consulting.com`. Document any failure. **Runbook:** `docs/p4-verification.md`
-2. **P4 smoke test (PRO 1)** — CRM product deal → Agency Ops Starter package → sign → verify tenant in Agency Ops Manager → issue setup + monthly invoice in Collections PRO tab. **Runbook:** `docs/p4-verification.md`
-3. **Hard refresh after deploys** — `Cmd+Shift+R` on `/admin/` if assets look stale or embeds 404.
-4. **App Check (optional, recommended)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last. See `docs/app-check-sso.md`.
-5. **Content & templates (Phase 4)** — SOW library, CRM playbooks, portal defaults — your primary focus once P4 passes.
-6. **Stop worrying about infra** unless something breaks — engineering owns P6/P7 and performance backlog.
+1. **Deploy hosting** — After #188–#189 merge: `npm run deploy:hosting` (or wait for CI). Hard-refresh Agency Ops tenant.
+2. **P4 smoke test (consulting)** — Contract sign → portal login → org chart in portal → file upload on `kolthoff-consulting.com`. **Runbook:** `docs/p4-verification.md` section A.
+3. **P4 smoke test (PRO 1 / Agency Ops)** — Client passcode → Sales/Quotes blank planner → sign → tenant ready → Collections PRO invoices. **Runbook:** section B (updated for empty planner).
+4. **Hard refresh after deploys** — `Cmd+Shift+R` on `/admin/` and `/agency-ops/?tenant=<slug>` if assets look stale.
+5. **App Check (optional, recommended)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → monitor → enforce Firestore last. See `docs/app-check-sso.md`.
+6. **Content & templates (Phase 4)** — SOW library, CRM playbooks, portal defaults — **primary focus once P4 passes**.
+7. **Stop worrying about infra** unless something breaks — engineering owns P6/P7 and performance backlog.
 
 ### Engineering owns (unless P4 finds gaps)
 
@@ -73,7 +74,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 | SKU | Lead-to-cash | Status |
 |-----|--------------|--------|
-| **PRO 1 · Agency Ops** | CRM → Planner package → Sign → auto-provision → `/agency-ops/?tenant=` → Collections PRO tab | ✅ On `main` — **verify P4 PRO path** |
+| **PRO 1 · Agency Ops** | CRM → blank Planner quote → Sign → auto-provision → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ On `main` (#186–#189) — **verify P4 PRO path (B5–B6)** |
 | **PRO 2 · Core Workspace** | Planned product SKU | ⏳ Catalog placeholder only |
 
 See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
@@ -125,7 +126,7 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 | **Delivery tools** | Diagnosis, Policy→Vault, Workflow tabs | HTML embeds — migrate in P6 |
 | **Analytics** | Firm, Capacity, Time | Manual entry; planner baselines exist |
 | **Workspace** | SSO embed, module nav | Approvals/Messenger depth |
-| **PRO 1 Agency Ops** | Auto-provision on sign, billing rhythm | Verify + retry UX in Agency Ops Manager |
+| **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | **P4 verify B5–B6** on live tenant; delete old demo workspaces if still present |
 | **PRO 2 Workspace** | Product SKU | Not started |
 | **Kolthoff onboarding** | New MOD client wizard | P7 — PRO path is template |
 
@@ -238,7 +239,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (sign → portal → org chart) | ⏳ **You** |
+| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C) | ⏳ **You** — deploy #188–#189 first |
 | **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **SSO done** — App Check optional |
 | **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning) | ✅ Phase 1–2 on `main`; Phase 3 draft (#159) |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
@@ -561,4 +562,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — Stability pillar items S1–S7 shipped; admin embed sidebars + nav defaults live; PRO lead-to-cash on `main`. **Next:** P4 production verification (you), then App Check + P6 React migration (eng).*
+*Last updated: 6 July 2026 — Agency Ops client UX on `main` (#184–#189): passcode embeds, tenant nav, paid branding, empty planner. **Next:** deploy hosting → P4 verification (you) → Phase 4 content; eng: App Check + P6 React migration.*
