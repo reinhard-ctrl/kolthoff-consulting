@@ -3,6 +3,7 @@ import { onSnapshot, collection } from 'firebase/firestore';
 import { db, bootstrapAuth } from '../lib/firebase';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
 import { cancelAgencyOpsTenant } from '../lib/agency-ops-cancel';
+import { deleteAgencyOpsTenant } from '../lib/agency-ops-delete';
 import {
   agencyOpsProvisionUiState,
   isPro1AgencyOpsProfile,
@@ -70,6 +71,9 @@ export default function AgencyOpsManager() {
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AgencyOpsTenant | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AgencyOpsTenant | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -215,6 +219,27 @@ export default function AgencyOpsManager() {
     }
   };
 
+  const openDeleteTenant = (tenant: AgencyOpsTenant) => {
+    setDeleteConfirmText('');
+    setDeleteTarget(tenant);
+  };
+
+  const runDeleteTenant = async () => {
+    if (!deleteTarget || deleteConfirmText.trim() !== deleteTarget.tenantId) return;
+    setDeletingId(deleteTarget.tenantId);
+    try {
+      await bootstrapAuth();
+      const data = await deleteAgencyOpsTenant({ tenantId: deleteTarget.tenantId });
+      setDeleteTarget(null);
+      setDeleteConfirmText('');
+      showToast(data.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Deletion failed');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const tenantStatusClass = (tenant: AgencyOpsTenant) => {
     const label = agencyOpsStatusLabel(tenant);
     if (label === 'cancelled') return 'text-rose-400';
@@ -351,6 +376,15 @@ export default function AgencyOpsManager() {
                         Cancel account
                       </button>
                     )}
+                    {t.tenantId !== AGENCY_OPS_DEMO_TENANT && (
+                      <button
+                        type="button"
+                        onClick={() => openDeleteTenant(t)}
+                        className="text-slate-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -392,6 +426,48 @@ export default function AgencyOpsManager() {
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
               >
                 {cancellingId === cancelTarget.tenantId ? 'Cancelling…' : 'Cancel account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
+            <h3 className="font-bold text-lg mb-2 text-rose-300">Delete Agency Ops account</h3>
+            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+              Permanently delete <strong className="text-white">{deleteTarget.clientName}</strong> ({deleteTarget.tenantId})?
+              This removes the tenant from Agency Ops Manager and clears its passcode. Use this for test accounts.
+            </p>
+            <label className="text-[10px] uppercase text-slate-500 block mb-1">
+              Type <span className="font-mono text-slate-300">{deleteTarget.tenantId}</span> to confirm
+            </label>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-xs mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteConfirmText('');
+                }}
+                disabled={deletingId === deleteTarget.tenantId}
+                className="px-4 py-2 bg-brandNavy-800 rounded text-sm"
+              >
+                Keep
+              </button>
+              <button
+                type="button"
+                onClick={runDeleteTenant}
+                disabled={deletingId === deleteTarget.tenantId || deleteConfirmText.trim() !== deleteTarget.tenantId}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
+              >
+                {deletingId === deleteTarget.tenantId ? 'Deleting…' : 'Delete permanently'}
               </button>
             </div>
           </div>
