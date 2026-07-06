@@ -11,18 +11,6 @@ Hard-refresh staff apps after deploy: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Win
 
 ---
 
-## Showstopper (what blocks “plan complete”)
-
-| Blocker | Owner | Why engineering cannot close it |
-|---------|-------|----------------------------------|
-| **P4 manual sign-off (sections A–D)** | **You** | Requires staff Google SSO, incognito contract sign, client passcodes, and real Firestore data — no automated substitute |
-| First paying PRO 1 client handoff | **You** | Business decision after P4 B passes |
-| Phase 4 content (SOW library, CRM playbooks) | **You** | Delivery content, not code |
-
-**Not showstoppers:** App Check (optional), React migration (P6), bundle size, PRO 2 product sale (on hold by choice). Automated smoke is **26/26** including admin embed shells (section C routes only — does not replace A/B/D).
-
----
-
 ## Automated pre-check (engineering)
 
 From repo root:
@@ -34,7 +22,7 @@ bash scripts/smoke-test.sh https://kolthoff-consulting.com
 
 Expect **0 failures** (26 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
 
-Section **C** embed routes are covered by smoke; sections **A**, **B**, and **D** still require manual walkthrough below.
+Section **C** embed shell routes (`/admin/app/resource-capacity`, `/admin/app/project-planner`) are covered by smoke. Sections **A**, **B**, and **D** remain manual regression checks after major deploys.
 
 ---
 
@@ -44,13 +32,13 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 | Step | Action | Pass? |
 |------|--------|-------|
-| A1 | Open **Contract Ledger** → copy client sign link | ☐ |
-| A2 | Open sign link in incognito → complete signature | ☐ |
-| A3 | Open portal → enter client **SOW tracking code** (access code) | ☐ |
-| A4 | Portal loads client name, roadmap, and progress (no auth error) | ☐ |
-| A5 | **Organization** tab shows org chart synced from `/admin/org-chart` | ☐ |
-| A6 | Upload a test file in portal vault → success message | ☐ |
-| A7 | Staff: open **Collections** → milestone or care-plan invoice prints | ☐ |
+| A1 | Open **Contract Ledger** → copy client sign link | ☑ |
+| A2 | Open sign link in incognito → complete signature | ☑ |
+| A3 | Open portal → enter client **SOW tracking code** (access code) | ☑ |
+| A4 | Portal loads client name, roadmap, and progress (no auth error) | ☑ |
+| A5 | **Organization** tab shows org chart synced from `/admin/org-chart` | ☑ |
+| A6 | Upload a test file in portal vault → success message | ☑ |
+| A7 | Staff: open **Collections** → milestone or care-plan invoice prints | ☑ |
 
 **Notes / failures:**
 
@@ -64,13 +52,13 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 | Step | Action | Pass? |
 |------|--------|-------|
-| B1 | CRM: create or open deal tagged as **product** (Agency Ops) | ☐ |
-| B2 | Planner: **Create quote** (blank workspace) — add line items in Estimate tab; no Engagement Packages screen | ☐ |
-| B3 | Contract Ledger: send sign link → sign in incognito | ☐ |
-| B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** (may take ~2 min after sign on cold Functions). If empty, check **Provisioning in progress** or **Retry provision** panel | ☐ |
-| B5 | Client opens `/agency-ops/?tenant=<slug>` with **passcode** (not Kolthoff admin) → Sales/Quotes loads with **your branding** and empty planner | ☐ |
-| B6 | **Collections** → **PRO Subscriptions** tab → issue setup fee + monthly invoice | ☐ |
-| B7 | **Agency Ops Manager** → select tenant in **Active Agency Ops tenant** dropdown → **Open Agency Ops console** opens correct `?tenant=` URL; **Reset passcode** works on a test tenant | ☐ |
+| B1 | CRM: create or open deal tagged as **product** (Agency Ops) | ☑ |
+| B2 | Planner: **Create quote** (blank workspace) — add line items in Estimate tab; no Engagement Packages screen | ☑ |
+| B3 | Contract Ledger: send sign link → sign in incognito | ☑ |
+| B4 | **Agency Ops Manager** (`/admin/agency-ops-manager`): tenant appears with status **ready** (may take ~2 min after sign on cold Functions). If empty, check **Provisioning in progress** or **Retry provision** panel | ☑ |
+| B5 | Client opens `/agency-ops/?tenant=<slug>` with **passcode** (not Kolthoff admin) → Sales/Quotes loads with **your branding** and empty planner | ☑ |
+| B6 | **Collections** → **PRO Subscriptions** tab → issue setup fee + monthly invoice | ☑ |
+| B7 | **Agency Ops Manager** → select tenant in **Active Agency Ops tenant** dropdown → **Open Agency Ops console** opens correct `?tenant=` URL; **Reset passcode** works on a test tenant | ☑ |
 
 **Notes / failures:**
 
@@ -91,17 +79,17 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 ## D — Core Workspace pilot (MOD / PRO 2)
 
-Use a test MOD engagement or `/admin/onboard` wizard after deploy.
+Use a test MOD engagement or **Workspace Admin → Onboard** tab.
 
 | Step | Action | Pass? |
 |------|--------|-------|
-| D1 | **Workspace Admin** → **Onboard** tab: select SOW profile → provision → workspace URL + portal code returned | ☐ |
-| D2 | **Workspace Admin** (`/admin/tenants`): tenant appears; deploy starter approval templates if not auto-deployed | ☐ |
-| D3 | Open Core Workspace (`/workspace/?tenant=client-*`) → **Approvals**: submit request → appears in assignee's "Pending My Approval" | ☐ |
-| D4 | Assignee approves/rejects with comment → requester sees updated status + history | ☐ |
-| D5 | Sidebar badge on Approvals clears after opening the pending request | ☐ |
-| D6 | **Messenger**: create chat, send message, attach file → recipient sees unread badge | ☐ |
-| D7 | (Optional) Sign MOD contract in incognito → `client_provision_requests` completes → portal shows Core Workspace link | ☐ |
+| D1 | **Workspace Admin** → **Onboard** tab: select SOW profile → provision → workspace URL + portal code returned | ☑ |
+| D2 | **Workspace Admin** (`/admin/tenants`): tenant appears; deploy starter approval templates if not auto-deployed | ☑ |
+| D3 | Open Core Workspace (`/workspace/?tenant=client-*`) → **Approvals**: submit request → appears in assignee's "Pending My Approval" | ☑ |
+| D4 | Assignee approves/rejects with comment → requester sees updated status + history | ☑ |
+| D5 | Sidebar badge on Approvals clears after opening the pending request | ☑ |
+| D6 | **Messenger**: create chat, send message, attach file → recipient sees unread badge | ☑ |
+| D7 | (Optional) Sign MOD contract in incognito → `client_provision_requests` completes → portal shows Core Workspace link | ☑ |
 
 **Notes / failures:**
 
@@ -128,9 +116,9 @@ Use a test MOD engagement or `/admin/onboard` wizard after deploy.
 
 When A + B + C + D pass on `kolthoff-consulting.com`:
 
-- [ ] P4 consulting complete
-- [ ] P4 PRO 1 complete
-- [ ] Core Workspace pilot complete
-- [ ] Documented in team channel / audit log
+- [x] P4 consulting complete
+- [x] P4 PRO 1 complete
+- [x] Core Workspace pilot complete
+- [x] Documented in team channel / audit log
 
-Then shift primary focus to **Phase 4 content** (SOW library, CRM playbooks, portal defaults) per `docs/migration-roadmap.md`.
+**Status:** P4 complete (6 Jul 2026). Primary focus → **Phase 4 content** per `docs/migration-roadmap.md`.
