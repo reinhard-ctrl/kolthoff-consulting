@@ -10,7 +10,6 @@ import {
   seedMasterTemplates,
 } from '../lib/approval-starter-templates';
 import { cancelWorkspaceTenant } from '../lib/workspace-cancel';
-import { deleteWorkspaceTenant } from '../lib/workspace-delete';
 import {
   INTERNAL_WORKSPACE_TENANT,
   isWorkspaceTenantCancelled,
@@ -37,7 +36,6 @@ interface WorkspaceInstance {
   workspaceUrl?: string;
   portalAccessCode?: string;
   portalUrl?: string;
-  internal?: boolean;
   createdAt?: number;
 }
 
@@ -71,13 +69,6 @@ interface ItTicket {
 }
 
 type WorkspaceTab = 'instances' | 'access' | 'support' | 'blueprints';
-
-const INTERNAL_WORKSPACE: WorkspaceInstance = {
-  tenantId: INTERNAL_WORKSPACE_TENANT,
-  clientName: 'Kolthoff Internal',
-  status: 'active',
-  internal: true,
-};
 
 const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: 'instances', label: 'Instances' },
@@ -116,7 +107,7 @@ export default function Tenants() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = parseTab(searchParams.get('tab'));
 
-  const [tenantId, setTenantId] = useState(INTERNAL_WORKSPACE_TENANT);
+  const [tenantId, setTenantId] = useState('');
   const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: true, crm: false });
@@ -147,9 +138,6 @@ export default function Tenants() {
   const [toast, setToast] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<WorkspaceInstance | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<WorkspaceInstance | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const setTab = (tab: WorkspaceTab) => {
     if (tab === 'instances') setSearchParams({});
@@ -157,12 +145,21 @@ export default function Tenants() {
   };
 
   useEffect(() => {
+    const fromUrl = searchParams.get('tenant')?.trim();
+    if (fromUrl && fromUrl !== INTERNAL_WORKSPACE_TENANT) {
+      setTenantId(fromUrl);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
     return onSnapshot(registryRef, (snap) => {
       const list: WorkspaceInstance[] = [];
       snap.forEach((d) => {
         const data = d.data() as WorkspaceInstance;
-        list.push({ ...data, tenantId: data.tenantId || d.id });
+        const id = data.tenantId || d.id;
+        if (id === INTERNAL_WORKSPACE_TENANT) return;
+        list.push({ ...data, tenantId: id });
       });
       list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setWorkspaces(list);
@@ -178,6 +175,12 @@ export default function Tenants() {
   }, []);
 
   useEffect(() => {
+    if (!tenantId) {
+      setUsers([]);
+      setTickets([]);
+      return;
+    }
+
     const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
     const usersRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_users');
     const ticketsRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests');
@@ -198,15 +201,7 @@ export default function Tenants() {
     return () => { u1(); u2(); u3(); };
   }, [tenantId]);
 
-  const allWorkspaces = useMemo(
-    () => [INTERNAL_WORKSPACE, ...workspaces.filter((w) => w.tenantId !== INTERNAL_WORKSPACE.tenantId)],
-    [workspaces],
-  );
-
-  const clientWorkspaces = useMemo(
-    () => workspaces.filter((w) => w.tenantId !== INTERNAL_WORKSPACE.tenantId),
-    [workspaces],
-  );
+  const clientWorkspaces = useMemo(() => workspaces, [workspaces]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -220,16 +215,7 @@ export default function Tenants() {
     return 'text-brandAmber-300';
   };
 
-  const workspaceHrefFor = (id: string) => (
-    id === INTERNAL_WORKSPACE_TENANT
-      ? '/workspace/'
-      : `/workspace/?tenant=${encodeURIComponent(id)}`
-  );
-
-  const openDeleteWorkspace = (workspace: WorkspaceInstance) => {
-    setDeleteConfirmText('');
-    setDeleteTarget(workspace);
-  };
+  const workspaceHrefFor = (id: string) => `/workspace/?tenant=${encodeURIComponent(id)}`;
 
   const runCancelWorkspace = async () => {
     if (!cancelTarget) return;
@@ -246,35 +232,21 @@ export default function Tenants() {
     }
   };
 
-  const runDeleteWorkspace = async () => {
-    if (!deleteTarget || deleteConfirmText.trim() !== deleteTarget.tenantId) return;
-    setDeletingId(deleteTarget.tenantId);
-    try {
-      await bootstrapAuth();
-      const data = await deleteWorkspaceTenant({ tenantId: deleteTarget.tenantId });
-      if (tenantId === deleteTarget.tenantId) {
-        setTenantId(INTERNAL_WORKSPACE_TENANT);
-      }
-      setDeleteTarget(null);
-      setDeleteConfirmText('');
-      showToast(data.message);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Deletion failed');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const activeWorkspace = allWorkspaces.find((w) => w.tenantId === tenantId);
+  const activeWorkspace = clientWorkspaces.find((w) => w.tenantId === tenantId);
   const openTickets = tickets.filter((t) => t.status === 'open').length;
 
   const toggleFeature = async (key: keyof typeof features) => {
+    if (!tenantId) return;
     const updated = { ...features, [key]: !features[key] };
     setFeatures(updated);
     await setDoc(doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config'), { features: updated }, { merge: true });
   };
 
   const provisionUser = async () => {
+    if (!tenantId) {
+      setInviteStatus('Select a client workspace first.');
+      return;
+    }
     if (!inviteEmail) return;
     setInviting(true);
     setInviteStatus('');
@@ -398,7 +370,7 @@ export default function Tenants() {
   };
 
   const publishActiveToPortal = async () => {
-    if (tenantId === INTERNAL_WORKSPACE_TENANT || !activeWorkspace) return;
+    if (!tenantId || !activeWorkspace) return;
     setPublishingPortal(true);
     setInviteStatus('');
     try {
@@ -453,7 +425,7 @@ export default function Tenants() {
   };
 
   const handleDeployTemplate = async (templateId: string) => {
-    if (tenantId === INTERNAL_WORKSPACE_TENANT) {
+    if (!tenantId) {
       showToast('Select a client tenant before deploying templates.');
       return;
     }
@@ -473,7 +445,7 @@ export default function Tenants() {
   };
 
   const handleDeployStarterPack = async () => {
-    if (tenantId === INTERNAL_WORKSPACE_TENANT) {
+    if (!tenantId) {
       showToast('Select a client tenant before deploying templates.');
       return;
     }
@@ -490,7 +462,7 @@ export default function Tenants() {
   };
 
   const nukeTenantData = async () => {
-    if (!tenantId || tenantId === INTERNAL_WORKSPACE_TENANT) return;
+    if (!tenantId) return;
     if (!confirm(`This permanently deletes workspace data for ${tenantId}. Continue?`)) return;
     const typed = prompt(`Type ${tenantId} to confirm deletion:`);
     if (typed !== tenantId) {
@@ -631,14 +603,9 @@ export default function Tenants() {
               </tr>
             </thead>
             <tbody className="divide-y divide-brandNavy-800">
-              {allWorkspaces.map((ws) => (
+              {clientWorkspaces.map((ws) => (
                 <tr key={ws.tenantId} className="hover:bg-brandNavy-800/30">
-                  <td className="p-4 font-bold">
-                    {ws.clientName}
-                    {ws.internal && (
-                      <span className="block text-[10px] text-slate-500 font-normal uppercase tracking-wide mt-0.5">Internal</span>
-                    )}
-                  </td>
+                  <td className="p-4 font-bold">{ws.clientName}</td>
                   <td className="p-4 font-mono text-xs text-slate-400">{ws.tenantId}</td>
                   <td className="p-4 font-mono text-xs">
                     {ws.portalAccessCode ? (
@@ -687,22 +654,13 @@ export default function Tenants() {
                       >
                         Manage
                       </button>
-                      {!ws.internal && !isWorkspaceTenantCancelled(ws) && (
+                      {!isWorkspaceTenantCancelled(ws) && (
                         <button
                           type="button"
                           onClick={() => setCancelTarget(ws)}
                           className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
                         >
                           Cancel account
-                        </button>
-                      )}
-                      {!ws.internal && (
-                        <button
-                          type="button"
-                          onClick={() => openDeleteWorkspace(ws)}
-                          className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase tracking-wide"
-                        >
-                          Delete
                         </button>
                       )}
                     </div>
@@ -720,10 +678,15 @@ export default function Tenants() {
         </div>
       )}
 
-      {activeTab === 'access' && (
+      {activeTab !== 'instances' && !activeWorkspace && (
+        <div className="glass-panel p-6 text-sm text-slate-400">
+          Select a client workspace from the <button type="button" onClick={() => setTab('instances')} className="text-brandTeal-400 underline">Instances</button> tab, then click <strong className="text-slate-300">Manage</strong>.
+        </div>
+      )}
+
+      {activeTab === 'access' && activeWorkspace && (
         <>
-          {tenantId !== INTERNAL_WORKSPACE_TENANT && activeWorkspace && (
-            <div className="glass-panel p-4 mb-6">
+          <div className="glass-panel p-4 mb-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-slate-400 space-y-1">
                   {activeWorkspace.workspaceUrl && (
@@ -743,7 +706,6 @@ export default function Tenants() {
                 </button>
               </div>
             </div>
-          )}
 
           <div className="glass-panel p-4 mb-6">
             <h2 className="font-bold mb-3">Feature Flags</h2>
@@ -800,33 +762,22 @@ export default function Tenants() {
             ))}
           </div>
 
-          {tenantId !== INTERNAL_WORKSPACE_TENANT && activeWorkspace && (
+          {activeWorkspace && (
             <div className="glass-panel p-4 mt-6 border border-rose-900/30">
               <h2 className="font-bold text-rose-400 mb-2">Account actions</h2>
               <p className="text-xs text-slate-500 mb-4">
                 <strong className="text-slate-400">Cancel account</strong> disables client access but keeps the registry row.
-                <strong className="text-slate-400"> Delete permanently</strong> removes the workspace from the registry and clears portal links (for test accounts).
-                Use <strong className="text-slate-400">Clear tenant workspace data</strong> on the IT Support tab to wipe users and modules first if needed.
+                Use <strong className="text-slate-400">Clear tenant workspace data</strong> on the IT Support tab to wipe users and modules if needed.
               </p>
               <div className="flex flex-wrap gap-2">
-                {!activeWorkspace.internal && !isWorkspaceTenantCancelled(activeWorkspace) && (
+                {!isWorkspaceTenantCancelled(activeWorkspace) && (
                   <button
                     type="button"
                     onClick={() => setCancelTarget(activeWorkspace)}
-                    disabled={cancellingId === activeWorkspace.tenantId || deletingId === activeWorkspace.tenantId}
+                    disabled={cancellingId === activeWorkspace.tenantId}
                     className="px-4 py-2 text-rose-400 border border-rose-500/30 rounded text-xs font-bold uppercase disabled:opacity-50"
                   >
                     Cancel account
-                  </button>
-                )}
-                {!activeWorkspace.internal && (
-                  <button
-                    type="button"
-                    onClick={() => openDeleteWorkspace(activeWorkspace)}
-                    disabled={deletingId === activeWorkspace.tenantId || cancellingId === activeWorkspace.tenantId}
-                    className="px-4 py-2 bg-rose-950/40 text-rose-300 border border-rose-500/40 rounded text-xs font-bold uppercase disabled:opacity-50"
-                  >
-                    Delete permanently
                   </button>
                 )}
               </div>
@@ -835,7 +786,7 @@ export default function Tenants() {
         </>
       )}
 
-      {activeTab === 'support' && (
+      {activeTab === 'support' && activeWorkspace && (
         <>
           <div className="glass-panel overflow-hidden mb-6">
             <table className="w-full text-left text-sm">
@@ -873,8 +824,7 @@ export default function Tenants() {
             )}
           </div>
 
-          {tenantId !== INTERNAL_WORKSPACE_TENANT && (
-            <div className="glass-panel p-4 border border-rose-900/30">
+          <div className="glass-panel p-4 border border-rose-900/30">
               <h2 className="font-bold text-rose-400 mb-2">Danger zone</h2>
               <p className="text-xs text-slate-500 mb-3">
                 Deletes users, departments, requests, templates, policies, and IT tickets for the selected tenant. Portal and registry records are not removed.
@@ -886,9 +836,8 @@ export default function Tenants() {
                 className="px-4 py-2 text-rose-400 border border-rose-500/30 rounded text-sm disabled:opacity-50"
               >
                 {nukeBusy ? 'Clearing...' : 'Clear tenant workspace data'}
-              </button>
-            </div>
-          )}
+            </button>
+          </div>
         </>
       )}
 
@@ -906,7 +855,7 @@ export default function Tenants() {
             <button
               type="button"
               onClick={handleDeployStarterPack}
-              disabled={blueprintBusy === 'pack' || tenantId === INTERNAL_WORKSPACE_TENANT}
+              disabled={blueprintBusy === 'pack' || !tenantId}
               className="px-3 py-1.5 text-xs rounded bg-brandTeal-500 text-brandNavy-955 font-bold disabled:opacity-50"
             >
               {blueprintBusy === 'pack' ? 'Deploying…' : `Deploy starter pack → ${tenantId}`}
@@ -925,7 +874,7 @@ export default function Tenants() {
                 <button
                   type="button"
                   onClick={() => handleDeployTemplate(tmpl.id)}
-                  disabled={blueprintBusy === tmpl.id || tenantId === INTERNAL_WORKSPACE_TENANT}
+                  disabled={blueprintBusy === tmpl.id || !tenantId}
                   className="text-brandTeal-400 text-xs disabled:opacity-50"
                 >
                   {blueprintBusy === tmpl.id ? 'Deploying…' : 'Deploy'}
@@ -1006,48 +955,6 @@ export default function Tenants() {
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
               >
                 {cancellingId === cancelTarget.tenantId ? 'Cancelling…' : 'Cancel account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteTarget && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
-            <h3 className="font-bold text-lg mb-2 text-rose-300">Delete workspace account</h3>
-            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-              Permanently delete <strong className="text-white">{deleteTarget.clientName}</strong> ({deleteTarget.tenantId})?
-              This removes the workspace from the registry and clears portal links. Use this for test accounts.
-            </p>
-            <label className="text-[10px] uppercase text-slate-500 block mb-1">
-              Type <span className="font-mono text-slate-300">{deleteTarget.tenantId}</span> to confirm
-            </label>
-            <input
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-xs mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteTarget(null);
-                  setDeleteConfirmText('');
-                }}
-                disabled={deletingId === deleteTarget.tenantId}
-                className="px-4 py-2 bg-brandNavy-800 rounded text-sm"
-              >
-                Keep
-              </button>
-              <button
-                type="button"
-                onClick={runDeleteWorkspace}
-                disabled={deletingId === deleteTarget.tenantId || deleteConfirmText.trim() !== deleteTarget.tenantId}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-sm font-bold disabled:opacity-50"
-              >
-                {deletingId === deleteTarget.tenantId ? 'Deleting…' : 'Delete permanently'}
               </button>
             </div>
           </div>
