@@ -1,4 +1,10 @@
 import { auth, bootstrapAuth } from './firebase';
+import {
+  provisionClientWorkspaceViaFirestore,
+  type ClientProvisionInput,
+  type ClientProvisionResult,
+} from './client-provision-firestore';
+import { provisionClientWorkspaceDirect } from './provision-client-workspace-direct';
 
 const FIRESTORE_TIMEOUT_MS = 90000;
 

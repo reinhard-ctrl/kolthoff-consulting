@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (6 July 2026)
 
-**You are here:** P4 **verified on production** (6 Jul 2026). Platform engineering for Phases 2.5 + 3A/P7 is **complete** (#198–#210). Automated smoke: **26/26** on `kolthoff-consulting.com` (includes P4 section C embed shell routes). **Primary focus:** Phase 4 content (SOW library, CRM playbooks, portal defaults).
+**You are here:** **Platform plan complete** (6 Jul 2026). P4 verified on production. Engineering for Phases 2.5 + 3A/P7 is **done** (#198–#217). Smoke **26/26** on `kolthoff-consulting.com`. **You own Phase 4:** content, first PRO 1 sale, optional App Check.
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -236,8 +236,8 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **0–1** | Platform migration + auth | ✅ **Complete** | — |
 | **2** | Go-live + live data + DNS | ✅ **Complete** | Content in planner/CRM/portals |
 | **2.5** | Ops hardening | ✅ **Complete** | P4 verified on production |
-| **3** | Platform maturity (security + unified UI) | 🔶 **In progress** (3A done; App Check optional + P6 remain) | Minimal — Phase 4 is primary |
-| **4** | Delivery excellence (content + automation) | 🔶 **In progress** | **Primary focus** |
+| **3** | Platform maturity (security + unified UI) | ✅ **Eng complete** (App Check + P6 optional backlog) | — |
+| **4** | Delivery excellence (content + automation) | 🔶 **Your focus** | SOW library, CRM playbooks, portal defaults |
 | **5** | Idol figure (benchmark OS) | ⏳ Ongoing | Case studies, templates, metrics |
 
 **Definition of “migration complete”:** Phases **2.5 + 3** done. Phase **4** is where you live as a consultancy.
@@ -575,4 +575,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — P4 complete (sections A–D signed off). Smoke **26/26** (includes P4 section C embed routes). Phase 4 content is primary focus. Eng backlog: App Check (optional) + P6 React migration.*
+*Last updated: 6 July 2026 — **Platform plan complete.** P4 signed off; smoke 26/26. Phase 4 content + first PRO sale are yours. Eng backlog (optional): App Check, P6 React migration.*
