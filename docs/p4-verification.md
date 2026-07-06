@@ -81,7 +81,7 @@ Use a test MOD engagement or `/admin/onboard` wizard after deploy.
 
 | Step | Action | Pass? |
 |------|--------|-------|
-| D1 | **Client Onboarding** (`/admin/onboard`): select SOW profile → provision → workspace URL + portal code returned | ☐ |
+| D1 | **Workspace Admin** → **Onboard** tab: select SOW profile → provision → workspace URL + portal code returned | ☐ |
 | D2 | **Workspace Admin** (`/admin/tenants`): tenant appears; deploy starter approval templates if not auto-deployed | ☐ |
 | D3 | Open Core Workspace (`/workspace/?tenant=client-*`) → **Approvals**: submit request → appears in assignee's "Pending My Approval" | ☐ |
 | D4 | Assignee approves/rejects with comment → requester sees updated status + history | ☐ |

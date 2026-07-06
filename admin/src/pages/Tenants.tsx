@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
 import { provisionClientWorkspaceViaFirestore } from '../lib/client-provision-firestore';
@@ -10,6 +10,15 @@ import {
   seedMasterTemplates,
 } from '../lib/approval-starter-templates';
 import { cancelWorkspaceTenant } from '../lib/workspace-cancel';
+import {
+  coreWorkspaceProvisionUiState,
+  isCoreWorkspaceProfile,
+  needsCoreWorkspaceTenant,
+  type CoreWorkspaceProfileFields,
+} from '../lib/core-workspace-profiles';
+import { getClientDisplayName } from '../lib/engagement-config';
+import { derivePortalCodeFromName, slugifyClientName } from '../lib/provision-profile-defaults';
+import ProductProvisionWizard, { type WorkbookProfileRow } from '../components/ProductProvisionWizard';
 import {
   INTERNAL_WORKSPACE_TENANT,
   isWorkspaceTenantCancelled,
@@ -68,38 +77,30 @@ interface ItTicket {
   requesterName?: string;
 }
 
-type WorkspaceTab = 'instances' | 'access' | 'support' | 'blueprints';
+type WorkspaceTab = 'instances' | 'onboard' | 'access' | 'support' | 'blueprints';
 
 const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: 'instances', label: 'Instances' },
+  { id: 'onboard', label: 'Onboard' },
   { id: 'access', label: 'Users & Flags' },
   { id: 'support', label: 'IT Support' },
   { id: 'blueprints', label: 'Blueprints' },
 ];
 
-function slugifyClientName(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
-  return slug ? `client-${slug}` : '';
+interface ContractRecord {
+  id: string;
+  profileId?: string;
+  status?: string;
+  coreWorkspaceAutoProvisionError?: string;
 }
 
-function derivePortalCode(clientName: string, tenantId: string): string {
-  const fromName = clientName
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 24);
-  if (fromName) return fromName;
-  return tenantId.replace('client-', '').toUpperCase().slice(0, 24);
+interface ActionProfile extends WorkbookProfileRow, CoreWorkspaceProfileFields {
+  uiState: 'failed' | 'provisioning' | 'awaiting';
+  contractError?: string;
 }
 
 function parseTab(value: string | null): WorkspaceTab {
-  if (value === 'access' || value === 'support' || value === 'blueprints') return value;
+  if (value === 'onboard' || value === 'access' || value === 'support' || value === 'blueprints') return value;
   return 'instances';
 }
 
@@ -109,6 +110,9 @@ export default function Tenants() {
 
   const [tenantId, setTenantId] = useState('');
   const [workspaces, setWorkspaces] = useState<WorkspaceInstance[]>([]);
+  const [profiles, setProfiles] = useState<WorkbookProfileRow[]>([]);
+  const [contracts, setContracts] = useState<ContractRecord[]>([]);
+  const [onboardProfileId, setOnboardProfileId] = useState('');
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [features, setFeatures] = useState({ messenger: true, approvals: true, vault: true, crm: false });
   const [templates, setTemplates] = useState<MasterTemplate[]>([]);
@@ -140,8 +144,12 @@ export default function Tenants() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const setTab = (tab: WorkspaceTab) => {
-    if (tab === 'instances') setSearchParams({});
-    else setSearchParams({ tab });
+    const tenant = searchParams.get('tenant');
+    if (tab === 'instances') {
+      setSearchParams(tenant ? { tenant } : {});
+    } else {
+      setSearchParams(tenant ? { tab, tenant } : { tab });
+    }
   };
 
   useEffect(() => {
@@ -149,11 +157,15 @@ export default function Tenants() {
     if (fromUrl && fromUrl !== INTERNAL_WORKSPACE_TENANT) {
       setTenantId(fromUrl);
     }
+    const profileFromUrl = searchParams.get('profile')?.trim();
+    if (profileFromUrl) setOnboardProfileId(profileFromUrl);
   }, [searchParams]);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
-    return onSnapshot(registryRef, (snap) => {
+    const profilesRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'workbook_profiles');
+    const contractsRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'contracts_ledger');
+    const u1 = onSnapshot(registryRef, (snap) => {
       const list: WorkspaceInstance[] = [];
       snap.forEach((d) => {
         const data = d.data() as WorkspaceInstance;
@@ -164,6 +176,17 @@ export default function Tenants() {
       list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setWorkspaces(list);
     });
+    const u2 = onSnapshot(profilesRef, (snap) => {
+      const list: WorkbookProfileRow[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WorkbookProfileRow));
+      setProfiles(list);
+    });
+    const u3 = onSnapshot(contractsRef, (snap) => {
+      const list: ContractRecord[] = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ContractRecord));
+      setContracts(list);
+    });
+    return () => { u1(); u2(); u3(); };
   }, []);
 
   useEffect(() => {
@@ -202,6 +225,50 @@ export default function Tenants() {
   }, [tenantId]);
 
   const clientWorkspaces = useMemo(() => workspaces, [workspaces]);
+
+  const signedContractErrors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of contracts) {
+      if (c.status !== 'signed' || !c.profileId) continue;
+      if (c.coreWorkspaceAutoProvisionError) map.set(c.profileId, c.coreWorkspaceAutoProvisionError);
+    }
+    return map;
+  }, [contracts]);
+
+  const actionRequiredProfiles = useMemo(() => {
+    const byId = new Map<string, ActionProfile>();
+
+    for (const p of profiles) {
+      if (!needsCoreWorkspaceTenant(p)) continue;
+      const uiState = coreWorkspaceProvisionUiState(p) || 'awaiting';
+      byId.set(p.id, {
+        ...p,
+        uiState: signedContractErrors.has(p.id) ? 'failed' : uiState,
+        contractError: signedContractErrors.get(p.id),
+      });
+    }
+
+    for (const c of contracts) {
+      if (c.status !== 'signed' || !c.profileId || byId.has(c.profileId)) continue;
+      const p = profiles.find((x) => x.id === c.profileId);
+      if (!p || !isCoreWorkspaceProfile(p) || p.coreWorkspaceTenantId) continue;
+      byId.set(c.profileId, {
+        ...p,
+        uiState: c.coreWorkspaceAutoProvisionError ? 'failed' : 'awaiting',
+        contractError: c.coreWorkspaceAutoProvisionError,
+      });
+    }
+
+    return [...byId.values()].sort((a, b) => {
+      const rank = { failed: 0, provisioning: 1, awaiting: 2 };
+      return rank[a.uiState] - rank[b.uiState];
+    });
+  }, [profiles, contracts, signedContractErrors]);
+
+  const openOnboardForProfile = (profileId: string) => {
+    setOnboardProfileId(profileId);
+    setTab('onboard');
+  };
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -379,7 +446,7 @@ export default function Tenants() {
       const result = await prepare({
         clientName: activeWorkspace.clientName,
         tenantId,
-        portalAccessCode: activeWorkspace.portalAccessCode || derivePortalCode(activeWorkspace.clientName, tenantId),
+        portalAccessCode: activeWorkspace.portalAccessCode || derivePortalCodeFromName(activeWorkspace.clientName, tenantId),
         deliverViaPortal: true,
         inviteContact: false,
       });
@@ -498,8 +565,8 @@ export default function Tenants() {
 
   const syncPortalCode = (clientName: string, tenantSlug: string) => {
     setNewPortalCode((current) => {
-      if (!current || current === derivePortalCode(newClientName, newTenantId || tenantSlug)) {
-        return derivePortalCode(clientName, tenantSlug);
+      if (!current || current === derivePortalCodeFromName(newClientName, newTenantId || tenantSlug)) {
+        return derivePortalCodeFromName(clientName, tenantSlug);
       }
       return current;
     });
@@ -532,25 +599,26 @@ export default function Tenants() {
           </p>
         </div>
         {activeTab === 'instances' && (
-          <div className="flex gap-2">
-            <Link
-              to="/onboard"
-              className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
-            >
-              Onboarding Wizard
-            </Link>
-            <button
-              type="button"
-              onClick={openCreateModal}
-              className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-xs font-bold uppercase shadow-sm"
-            >
-              Provision Workspace
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setTab('onboard')}
+            className="px-4 py-2 border border-brandTeal-500/50 text-brandTeal-400 rounded-lg text-xs font-bold uppercase"
+          >
+            Onboard client
+          </button>
+        )}
+        {activeTab === 'instances' && (
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-brandNavy-800 hover:bg-brandNavy-750 text-slate-300 rounded-lg text-xs font-bold uppercase border border-brandNavy-700"
+          >
+            Quick provision
+          </button>
         )}
       </div>
 
-      {activeTab !== 'instances' && activeWorkspace && (
+      {activeTab !== 'instances' && activeTab !== 'onboard' && activeWorkspace && (
         <div className="glass-panel p-4 mb-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -588,6 +656,45 @@ export default function Tenants() {
           </button>
         ))}
       </div>
+
+      {activeTab === 'instances' && actionRequiredProfiles.length > 0 && (
+        <div className="glass-panel p-4 mb-6 border border-brandAmber-500/30">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-brandAmber-400 font-bold mb-2">
+            Action required — provision Core Workspace
+          </h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Signed MOD / PRO 2 deals without a workspace appear here. Use Onboard to link the SOW profile and deliver portal access.
+          </p>
+          <div className="space-y-3">
+            {actionRequiredProfiles.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 text-sm border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-950/50">
+                <div className="min-w-0 flex-1">
+                  <span className="font-semibold text-white">{getClientDisplayName(p)}</span>
+                  {p.quoteId && <span className="text-slate-500 font-mono text-xs ml-2">{p.quoteId}</span>}
+                  {p.uiState === 'provisioning' && (
+                    <span className="block text-amber-400 text-xs uppercase font-bold mt-1 animate-pulse">Provisioning in progress…</span>
+                  )}
+                  {p.uiState === 'failed' && (
+                    <span className="block text-rose-300/90 text-xs mt-1 max-w-xl">
+                      {p.provisioningError || p.contractError || 'Auto-provision did not complete — retry from Onboard.'}
+                    </span>
+                  )}
+                  {p.uiState === 'awaiting' && (
+                    <span className="block text-slate-500 text-xs mt-1">Signed contract — workspace not created yet</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openOnboardForProfile(p.id)}
+                  className="shrink-0 px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-xs font-bold uppercase tracking-wide shadow-sm"
+                >
+                  {p.uiState === 'failed' || p.uiState === 'provisioning' ? 'Retry onboard' : 'Onboard now'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'instances' && (
         <div className="glass-panel overflow-hidden">
@@ -678,7 +785,17 @@ export default function Tenants() {
         </div>
       )}
 
-      {activeTab !== 'instances' && !activeWorkspace && (
+      {activeTab === 'onboard' && (
+        <ProductProvisionWizard
+          product="core-workspace"
+          profiles={profiles}
+          initialProfileId={onboardProfileId}
+          managePath="/tenants"
+          onProvisioned={(id) => setTenantId(id)}
+        />
+      )}
+
+      {activeTab !== 'instances' && activeTab !== 'onboard' && !activeWorkspace && (
         <div className="glass-panel p-6 text-sm text-slate-400">
           Select a client workspace from the <button type="button" onClick={() => setTab('instances')} className="text-brandTeal-400 underline">Instances</button> tab, then click <strong className="text-slate-300">Manage</strong>.
         </div>

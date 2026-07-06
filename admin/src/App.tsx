@@ -6,7 +6,6 @@ import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import AgencyOpsDashboard from './pages/AgencyOpsDashboard';
 import Tenants from './pages/Tenants';
-import WorkspaceOnboard from './pages/WorkspaceOnboard';
 import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
@@ -395,7 +394,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={isAgencyOpsStarter() ? <AgencyOpsDashboard /> : <Dashboard />} />
         {!isAgencyOpsStarter() && <Route path="/tenants" element={<Tenants />} />}
-        {!isAgencyOpsStarter() && <Route path="/onboard" element={<WorkspaceOnboard />} />}
+        {!isAgencyOpsStarter() && <Route path="/onboard" element={<Navigate to="/tenants?tab=onboard" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/org-chart" element={<OrgChart />} />}
         {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/org-chart" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
