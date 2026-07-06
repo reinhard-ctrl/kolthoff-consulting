@@ -69,7 +69,6 @@ Use an existing test client or create one in `/admin/portals` with a known acces
 
 | Route | Expect |
 |-------|--------|
-| `/admin/app/core-workspace` | Left module sidebar visible (Messenger, Approvals, etc.) |
 | `/admin/app/resource-capacity` | Kanban + left analytics sidebar visible |
 | `/admin/app/project-planner` | Planner loads inside admin frame |
 

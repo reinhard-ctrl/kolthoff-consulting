@@ -53,7 +53,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     id: 'product',
     label: 'Product',
     items: [
-      { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
       { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
       { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
     ],
