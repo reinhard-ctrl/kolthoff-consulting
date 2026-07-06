@@ -449,8 +449,8 @@ export const generatePortalToken = onCall({ invoker: 'public' }, async (request)
   return createPortalTokenForAccessCode(accessCode);
 });
 
-/** Hosting rewrite endpoint — private invoker; Firebase Hosting grants invoke access */
-export const generatePortalTokenHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
+/** Hosting rewrite endpoint — public invoker (org policies may block post-deploy IAM; match callable) */
+export const generatePortalTokenHttp = onRequest({ invoker: 'public', cors: true }, async (req: Request, res: Response) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return;
