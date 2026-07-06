@@ -1,11 +1,13 @@
 import { auth, bootstrapAuth } from './firebase';
-import {
-  provisionClientWorkspaceViaFirestore,
-  type ClientProvisionInput,
-  type ClientProvisionResult,
-} from './client-provision-firestore';
 
-const FIRESTORE_TIMEOUT_MS = 45000;
+const FIRESTORE_TIMEOUT_MS = 90000;
+
+function isPermissionError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('permission-denied')
+    || msg.includes('Missing or insufficient permissions')
+    || msg.includes('PERMISSION_DENIED');
+}
 
 function shouldFallbackToFirestore(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -51,7 +53,7 @@ async function prepareClientWorkspaceViaHosting(
   return payload as ClientProvisionResult;
 }
 
-/** Same-origin Hosting API first (no callable CORS); Firestore queue when HTTP unavailable. */
+/** Direct Firestore first (no Cloud Functions); Hosting API and queue as fallbacks. */
 export async function prepareClientWorkspace(
   input: ClientProvisionInput,
   options?: { onProgress?: (message: string) => void },
@@ -61,16 +63,27 @@ export async function prepareClientWorkspace(
   options?.onProgress?.('Provisioning workspace…');
 
   try {
+    return await provisionClientWorkspaceDirect(input);
+  } catch (directErr) {
+    if (!isPermissionError(directErr)) {
+      throw directErr instanceof Error ? directErr : new Error(String(directErr));
+    }
+    console.warn('Direct provision blocked by rules; trying Hosting API:', directErr);
+  }
+
+  try {
+    options?.onProgress?.('Retrying via server API…');
     return await prepareClientWorkspaceViaHosting(input);
   } catch (httpErr) {
     if (!shouldFallbackToFirestore(httpErr)) {
       throw httpErr instanceof Error ? httpErr : new Error(String(httpErr));
     }
     console.warn('Hosting provision unavailable; trying Firestore queue:', httpErr);
-    options?.onProgress?.('Direct provision unavailable — waiting for server queue…');
-    return provisionClientWorkspaceViaFirestore(input, {
-      timeoutMs: FIRESTORE_TIMEOUT_MS,
-      onProgress: options?.onProgress,
-    });
   }
+
+  options?.onProgress?.('Waiting for server queue…');
+  return provisionClientWorkspaceViaFirestore(input, {
+    timeoutMs: FIRESTORE_TIMEOUT_MS,
+    onProgress: options?.onProgress,
+  });
 }
