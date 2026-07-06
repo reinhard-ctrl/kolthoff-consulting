@@ -5,7 +5,7 @@ Walk through these flows on **production** after each major deploy. Target domai
 - Staff: [kolthoff-portal.web.app/admin](https://kolthoff-portal.web.app/admin/) or [kolthoff-consulting.com/admin](https://kolthoff-consulting.com/admin/)
 - Clients: [kolthoff-consulting.com/apps/public/portal.html](https://kolthoff-consulting.com/apps/public/portal.html)
 
-**Time:** ~30 minutes total (consulting ~15 min, PRO 1 ~15 min).
+**Time:** ~45 minutes total (consulting ~15 min, PRO 1 ~15 min, Core Workspace pilot ~15 min).
 
 Hard-refresh staff apps after deploy: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows).
 
@@ -20,7 +20,7 @@ bash scripts/smoke-test.sh https://kolthoff-portal.web.app
 bash scripts/smoke-test.sh https://kolthoff-consulting.com
 ```
 
-Expect **0 failures**. Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
+Expect **0 failures** (24 routes). Portal auth API should return JSON `404` with `"code":"not-found"` for a fake access code (not HTML 403).
 
 ---
 
