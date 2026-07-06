@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { updateDoc } from 'firebase/firestore';
 import { auth, logAudit, setDoc, tenantCol, tenantDoc } from '../lib/firebase';
 import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 import {
@@ -56,6 +57,12 @@ function FieldInput({
 export default function ApprovalsApp({ currentUserId }: { currentUserId: string }) {
   const { data: templates } = useFirestoreCollection<ApprovalTemplate>(tenantCol('core_templates'));
   const { data: requests } = useFirestoreCollection<ApprovalRequest>(tenantCol('core_requests'));
+  const { data: notifications } = useFirestoreCollection<{
+    id: string;
+    userId: string;
+    requestId?: string;
+    read?: boolean;
+  }>(tenantCol('core_notifications'));
   const { data: usersRaw } = useFirestoreCollection<TenantUserRow>(tenantCol('core_users'));
   const users = useMemo(() => usersRaw as TenantUserRow[], [usersRaw]);
 
@@ -83,11 +90,21 @@ export default function ApprovalsApp({ currentUserId }: { currentUserId: string 
     ? templates.find((t) => t.id === detailRequest.templateId)
     : null;
 
+  const markNotificationsRead = async (requestId: string) => {
+    const unread = notifications.filter(
+      (n) => n.userId === currentUserId && n.requestId === requestId && !n.read,
+    );
+    await Promise.all(
+      unread.map((n) => updateDoc(tenantDoc('core_notifications', n.id), { read: true })),
+    );
+  };
+
   const openDetail = (id: string) => {
     setDetailId(id);
     setDecisionComment('');
     setError('');
     setView('detail');
+    void markNotificationsRead(id);
   };
 
   const submit = async () => {

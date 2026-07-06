@@ -61,6 +61,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Product',
     items: [
       { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
+      { id: 'workspace-onboard', label: 'Client Onboarding', type: 'route', path: '/onboard' },
       {
         id: AGENCY_OPS_CONSOLE_NAV_ID,
         label: 'Agency Ops',

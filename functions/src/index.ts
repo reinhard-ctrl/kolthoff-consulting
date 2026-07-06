@@ -792,10 +792,15 @@ async function prepareClientWorkspaceInternal(params: {
   }, { merge: true });
 
   if (params.profileId?.trim()) {
-    await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${params.profileId.trim()}`).set({
+    const profileRef = db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${params.profileId.trim()}`);
+    const profileSnap = await profileRef.get();
+    const profileData = profileSnap.data() || {};
+    await profileRef.set({
       coreWorkspaceTenantId: workspace.tenantId,
+      provisioningStatus: 'ready',
       updatedAt: Date.now(),
     }, { merge: true });
+    await seedOrgChartToWorkspace(workspace.tenantId, profileData);
   }
 
   if (params.deployStarterTemplates !== false) {
@@ -914,6 +919,18 @@ export const processClientProvisionRequest = onDocumentWritten(
         ...result,
         completedAt: Date.now(),
       });
+
+      const profileId = typeof data.profileId === 'string' ? data.profileId.trim() : undefined;
+      if (data.autoProvisioned && profileId) {
+        const contractId = `contract-${profileId}`;
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/contracts_ledger/${contractId}`).set({
+          coreWorkspaceAutoProvisioned: true,
+          coreWorkspaceTenantId: result.tenantId,
+          coreWorkspaceProvisionedAt: Date.now(),
+          coreWorkspaceAutoProvisionError: admin.firestore.FieldValue.delete(),
+        }, { merge: true });
+      }
+
       console.log('processClientProvisionRequest complete', requestId, result.tenantId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
@@ -923,7 +940,54 @@ export const processClientProvisionRequest = onDocumentWritten(
         error: message,
         failedAt: Date.now(),
       });
+
+      const profileId = typeof data.profileId === 'string' ? data.profileId.trim() : undefined;
+      if (profileId) {
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/workbook_profiles/${profileId}`).set({
+          provisioningStatus: 'failed',
+          provisioningError: message,
+          updatedAt: Date.now(),
+        }, { merge: true });
+        if (data.autoProvisioned) {
+          const contractId = `contract-${profileId}`;
+          await db.doc(`artifacts/${ADMIN_TENANT}/public/data/contracts_ledger/${contractId}`).set({
+            coreWorkspaceAutoProvisionError: message,
+            coreWorkspaceAutoProvisionFailedAt: Date.now(),
+          }, { merge: true });
+        }
+      }
     }
+  },
+);
+
+/** Notify assignees when an approval request needs action */
+export const onApprovalRequestWritten = onDocumentWritten(
+  'artifacts/{tenantId}/public/data/core_requests/{requestId}',
+  async (event) => {
+    const after = event.data?.after?.data();
+    if (!after || after.status !== 'pending') return;
+
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    const assigneeIds = (after.currentAssigneeIds as string[]) || [];
+    if (!assigneeIds.length) return;
+
+    const priorIds = (before?.currentAssigneeIds as string[]) || [];
+    const isNew = !before;
+    const assigneesChanged = JSON.stringify([...priorIds].sort()) !== JSON.stringify([...assigneeIds].sort());
+    if (!isNew && !assigneesChanged) return;
+
+    const tenantId = event.params.tenantId;
+    const requestId = event.params.requestId;
+    const templateId = String(after.templateId || '');
+    let title = 'Approval request';
+    if (templateId) {
+      const tmplSnap = await db.doc(`artifacts/${tenantId}/public/data/core_templates/${templateId}`).get();
+      if (tmplSnap.exists) {
+        title = String(tmplSnap.data()?.name || title);
+      }
+    }
+
+    await createApprovalNotifications(tenantId, requestId, assigneeIds, title);
   },
 );
 
@@ -1230,6 +1294,112 @@ function isPro1AgencyOpsProfile(profile: Record<string, unknown>): boolean {
     return !profile.productId || profile.productId === 'pro1';
   }
   return false;
+}
+
+/** MOD consulting or PRO 2 — auto-provision Core Workspace on contract sign */
+function isCoreWorkspaceProfile(profile: Record<string, unknown>): boolean {
+  if (isPro1AgencyOpsProfile(profile)) return false;
+  if (profile.productId === 'pro2') return true;
+  const pkg = String(profile.selectedPackageId || '');
+  if (pkg.includes('pro2') || pkg.includes('core-workspace')) return true;
+  if (!profile.engagementType || profile.engagementType === 'service') return true;
+  return false;
+}
+
+function slugifyDepartmentName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40) || 'general';
+}
+
+function resolveOrgMembersFromProfile(profile: Record<string, unknown>): Array<{
+  id: string;
+  name: string;
+  role: string;
+  department: string;
+}> {
+  const orgChart = profile.orgChart as { members?: unknown[] } | undefined;
+  if (orgChart?.members && Array.isArray(orgChart.members)) {
+    return orgChart.members
+      .filter((m): m is Record<string, unknown> => Boolean(m && typeof m === 'object'))
+      .map((m) => ({
+        id: String(m.id || `m_${Date.now()}`),
+        name: String(m.name || '').trim(),
+        role: String(m.role || '').trim(),
+        department: String(m.department || '').trim(),
+      }))
+      .filter((m) => m.name);
+  }
+  const roles = profile.roles as Array<{ owner?: string; name?: string; role?: string; title?: string }> | undefined;
+  if (roles?.length) {
+    return roles
+      .map((row) => ({
+        id: `m_${Math.random().toString(36).slice(2, 8)}`,
+        name: String(row.owner || row.name || '').trim(),
+        role: String(row.role || row.title || '').trim(),
+        department: '',
+      }))
+      .filter((m) => m.name);
+  }
+  return [];
+}
+
+async function seedOrgChartToWorkspace(tenantId: string, profile: Record<string, unknown>): Promise<number> {
+  const members = resolveOrgMembersFromProfile(profile);
+  if (!members.length) return 0;
+
+  const batch = db.batch();
+  const departments = new Set<string>();
+  for (const member of members) {
+    const deptName = member.department || 'General';
+    departments.add(deptName);
+  }
+
+  let count = 0;
+  for (const deptName of departments) {
+    const deptId = slugifyDepartmentName(deptName);
+    batch.set(
+      db.doc(`artifacts/${tenantId}/public/data/core_departments/${deptId}`),
+      { id: deptId, name: deptName, updatedAt: Date.now() },
+      { merge: true },
+    );
+    count += 1;
+  }
+
+  await batch.commit();
+  return count;
+}
+
+async function createApprovalNotifications(
+  tenantId: string,
+  requestId: string,
+  assigneeIds: string[],
+  title: string,
+): Promise<void> {
+  if (!assigneeIds.length) return;
+  const batch = db.batch();
+  const now = Date.now();
+  for (const userId of assigneeIds) {
+    const notifId = `n_${requestId}_${userId}`;
+    batch.set(
+      db.doc(`artifacts/${tenantId}/public/data/core_notifications/${notifId}`),
+      {
+        id: notifId,
+        userId,
+        type: 'approval_pending',
+        title: 'Approval required',
+        body: title,
+        requestId,
+        read: false,
+        createdAt: now,
+      },
+      { merge: true },
+    );
+  }
+  await batch.commit();
 }
 
 function extractAgencyBranding(profile: Record<string, unknown>): AgencyBrandingInput | undefined {
@@ -1573,12 +1743,55 @@ export const onContractLedgerWritten = onDocumentWritten(
       }, { merge: true });
     }
 
-    if (!isPro1AgencyOpsProfile(profile)) return;
-    if (profile.agencyOpsTenantId) {
+    if (isPro1AgencyOpsProfile(profile)) {
+      if (profile.agencyOpsTenantId) {
+        await event.data!.after!.ref.set({
+          agencyOpsAutoProvisioned: true,
+          agencyOpsTenantId: profile.agencyOpsTenantId,
+          agencyOpsProvisionedAt: Date.now(),
+        }, { merge: true });
+        return;
+      }
+
+      try {
+        const clientName =
+          (profile.clientCompany as string) ||
+          (profile.clientName as string) ||
+          profileId;
+        const requestId = `auto-ao-${profileId}-${Date.now()}`;
+        await profileRef.set({ provisioningStatus: 'provisioning', updatedAt: Date.now() }, { merge: true });
+        await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/${requestId}`).set({
+          status: 'pending',
+          profileId,
+          clientName,
+          autoProvisioned: true,
+          requestedAt: Date.now(),
+          requestedBy: 'system-contract-sign',
+        });
+        console.log('Queued Agency Ops auto-provision', requestId, 'for profile', profileId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Provisioning failed';
+        console.error('Agency Ops auto-provision queue failed for profile', profileId, err);
+        await profileRef.set({
+          provisioningStatus: 'failed',
+          provisioningError: message,
+          updatedAt: Date.now(),
+        }, { merge: true });
+        await event.data!.after!.ref.set({
+          agencyOpsAutoProvisionError: message,
+          agencyOpsAutoProvisionFailedAt: Date.now(),
+        }, { merge: true });
+      }
+      return;
+    }
+
+    if (!isCoreWorkspaceProfile(profile)) return;
+
+    if (profile.coreWorkspaceTenantId) {
       await event.data!.after!.ref.set({
-        agencyOpsAutoProvisioned: true,
-        agencyOpsTenantId: profile.agencyOpsTenantId,
-        agencyOpsProvisionedAt: Date.now(),
+        coreWorkspaceAutoProvisioned: true,
+        coreWorkspaceTenantId: profile.coreWorkspaceTenantId,
+        coreWorkspaceProvisionedAt: Date.now(),
       }, { merge: true });
       return;
     }
@@ -1588,28 +1801,36 @@ export const onContractLedgerWritten = onDocumentWritten(
         (profile.clientCompany as string) ||
         (profile.clientName as string) ||
         profileId;
-      const requestId = `auto-${profileId}-${Date.now()}`;
+      const portalAccessCode = (profile.quoteId as string) || undefined;
+      const repName = (profile.clientRep as string) || undefined;
+      const requestId = `auto-cw-${profileId}-${Date.now()}`;
       await profileRef.set({ provisioningStatus: 'provisioning', updatedAt: Date.now() }, { merge: true });
-      await db.doc(`artifacts/${ADMIN_TENANT}/public/data/agency_ops_provision_requests/${requestId}`).set({
+      await db.doc(`artifacts/${ADMIN_TENANT}/public/data/client_provision_requests/${requestId}`).set({
         status: 'pending',
         profileId,
         clientName,
+        portalAccessCode: portalAccessCode || null,
+        repName: repName || null,
+        repEmail: null,
+        deliverViaPortal: true,
+        inviteContact: false,
+        deployStarterTemplates: true,
         autoProvisioned: true,
         requestedAt: Date.now(),
         requestedBy: 'system-contract-sign',
       });
-      console.log('Queued Agency Ops auto-provision', requestId, 'for profile', profileId);
+      console.log('Queued Core Workspace auto-provision', requestId, 'for profile', profileId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Provisioning failed';
-      console.error('Auto-provision queue failed for profile', profileId, err);
+      console.error('Core Workspace auto-provision queue failed for profile', profileId, err);
       await profileRef.set({
         provisioningStatus: 'failed',
         provisioningError: message,
         updatedAt: Date.now(),
       }, { merge: true });
       await event.data!.after!.ref.set({
-        agencyOpsAutoProvisionError: message,
-        agencyOpsAutoProvisionFailedAt: Date.now(),
+        coreWorkspaceAutoProvisionError: message,
+        coreWorkspaceAutoProvisionFailedAt: Date.now(),
       }, { merge: true });
     }
   },

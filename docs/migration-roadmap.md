@@ -34,7 +34,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **P4 Verification** | ⏳ **Your turn** | End-to-end client journey on production domain (~30 min) — **deploy hosting first**, then run `docs/p4-verification.md` |
 | **P5 App Check** | ⏳ **Recommended** | Bootstrap in code; enforcement not yet required in Console |
 | **P6 React migration** | ⏳ **Next eng** | Retire HTML iframe apps → native admin routes (planner first) |
-| **P7 MOD onboarding** | ⏳ **Planned** | One-click new Kolthoff client: portal + workspace + org chart (PRO path partially done) |
+| **P7 MOD onboarding** | ✅ **Wizard shipped** | `/admin/onboard` — link SOW profile → Core Workspace + portal + templates; MOD auto-provision on contract sign |
 
 ### Your checklist (priority order)
 
@@ -51,8 +51,8 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 - React migration waves (P6): planner → CRM/ops → analytics → client apps
 - Bundle/code-split admin + workspace SPAs (&lt;500KB chunks)
 - Planner retainer buffer vs signed PDF alignment (e.g. KC-2026-003 Care Plan)
-- Workspace module depth (Approvals workflow, Messenger threads)
-- Master Admin blueprint designer + Kolthoff MOD provisioning wizard (P7)
+- Workspace module depth — Approvals v1 + Messenger v1 shipped (#198, #202); deeper Lark parity deferred
+- Master Admin blueprint designer (P7 visual editor — wizard shipped at `/admin/onboard`)
 - Monitoring: deploy health checks, Function error alerts, Firestore rules regression in CI
 
 ---
@@ -68,14 +68,14 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | Deliver | Org Chart, Diagnosis, Policy, Workflow | ✅ Production (HTML embeds) |
 | Client view | Portal, org chart sync | ✅ Production — **verify P4** |
 | Bill | Collections (milestones + care plan) | ✅ Production |
-| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | 🔶 Shell stable; modules MVP |
+| Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ Approvals v1 + Messenger v1 + onboarding wizard on `main` — **pilot verify section D** |
 
 ### Lane B — PRO products (subscription software)
 
 | SKU | Lead-to-cash | Status |
 |-----|--------------|--------|
 | **PRO 1 · Agency Ops** | CRM → blank Planner quote → Sign → auto-provision → client passcode at `/agency-ops/?tenant=` → Collections PRO tab | ✅ On `main` (#186–#189) — **verify P4 PRO path (B5–B6)** |
-| **PRO 2 · Core Workspace** | Planned product SKU | ⏳ Catalog placeholder only |
+| **PRO 2 · Core Workspace** | CRM → Sign → auto-provision Core Workspace → client portal + Approvals/Messenger | ✅ Auto-provision on contract sign (MOD + PRO 2 profiles) — **pilot verify section D** |
 
 See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 
@@ -239,11 +239,11 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P1** | Go-live, DNS, seed tooling | ✅ Complete |
 | **P2** | Phase 2.5A–B: portal token auth, intake rules, vault publish, workspace identity/CRM | ✅ Complete |
 | **P3** | Phase 2.5C: CRM→planner sync, embed polish, App Check bootstrap, config centralization, analytics baselines | ✅ Complete |
-| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C) | ⏳ **You** — deploy #188–#189 first |
+| **P4** | Production client journey verification (consulting A + Agency Ops B + embeds C + Core Workspace D) | ⏳ **You** — after #202 merge |
 | **P5** | Phase 3A: Google SSO + App Check enforcement + rules hardening | 🔶 **SSO done** — App Check optional |
 | **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning) | ✅ Phase 1–2 on `main`; Phase 3 draft (#159) |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
-| **P7** | Phase 3C: Blueprint designer + client provisioning wizard | ⏳ Planned |
+| **P7** | Phase 3C: Blueprint designer + client provisioning wizard | 🔶 **Wizard shipped** (#202) — visual blueprint designer deferred |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
 
 ---
@@ -562,4 +562,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — Agency Ops client UX on `main` (#184–#189): passcode embeds, tenant nav, paid branding, empty planner. **Next:** deploy hosting → P4 verification (you) → Phase 4 content; eng: App Check + P6 React migration.*
+*Last updated: 6 July 2026 — Core Workspace plan complete (#198, #202): Approvals/Messenger v1, onboarding wizard, MOD auto-provision, notifications. **Next:** merge #202 → P4 verification sections A–D (you) → Phase 4 content; eng: App Check + P6 React migration.*
