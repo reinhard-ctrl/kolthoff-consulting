@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
-import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
+import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs, type FirestoreError } from 'firebase/firestore';
+import { db, bootstrapAuth, functions, httpsCallable, adminAppId, hasAdminSession } from '../lib/firebase';
 import { prepareClientWorkspace } from '../lib/prepare-client-workspace';
 import {
   STARTER_APPROVAL_TEMPLATES,
@@ -76,6 +76,16 @@ interface ItTicket {
   status?: string;
   timestamp?: number;
   requesterName?: string;
+}
+
+function snapshotErrorHandler(label: string) {
+  return (err: FirestoreError) => {
+    if (err.code === 'permission-denied') {
+      console.warn(`Tenants: ${label} — permission denied (session may still be loading; re-login if this persists)`);
+      return;
+    }
+    console.error(`Tenants: ${label} listener error`, err);
+  };
 }
 
 type WorkspaceTab = 'instances' | 'onboard' | 'access' | 'support' | 'blueprints';
@@ -165,39 +175,81 @@ export default function Tenants() {
   }, [searchParams]);
 
   useEffect(() => {
-    const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
-    const profilesRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'workbook_profiles');
-    const contractsRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'contracts_ledger');
-    const u1 = onSnapshot(registryRef, (snap) => {
-      const list: WorkspaceInstance[] = [];
-      snap.forEach((d) => {
-        const data = d.data() as WorkspaceInstance;
-        const id = data.tenantId || d.id;
-        if (id === INTERNAL_WORKSPACE_TENANT) return;
-        list.push({ ...data, tenantId: id });
-      });
-      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      setWorkspaces(list);
-    });
-    const u2 = onSnapshot(profilesRef, (snap) => {
-      const list: WorkbookProfileRow[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WorkbookProfileRow));
-      setProfiles(list);
-    });
-    const u3 = onSnapshot(contractsRef, (snap) => {
-      const list: ContractRecord[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ContractRecord));
-      setContracts(list);
-    });
-    return () => { u1(); u2(); u3(); };
+    let cancelled = false;
+    const unsubs: (() => void)[] = [];
+
+    (async () => {
+      try {
+        await bootstrapAuth();
+        const ok = await hasAdminSession();
+        if (cancelled || !ok) return;
+
+        const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'core_workspaces');
+        const profilesRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'workbook_profiles');
+        const contractsRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'contracts_ledger');
+
+        unsubs.push(onSnapshot(registryRef, (snap) => {
+          const list: WorkspaceInstance[] = [];
+          snap.forEach((d) => {
+            const data = d.data() as WorkspaceInstance;
+            const id = data.tenantId || d.id;
+            if (id === INTERNAL_WORKSPACE_TENANT) return;
+            list.push({ ...data, tenantId: id });
+          });
+          list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          setWorkspaces(list);
+        }, snapshotErrorHandler('core_workspaces')));
+
+        unsubs.push(onSnapshot(profilesRef, (snap) => {
+          const list: WorkbookProfileRow[] = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as WorkbookProfileRow));
+          setProfiles(list);
+        }, snapshotErrorHandler('workbook_profiles')));
+
+        unsubs.push(onSnapshot(contractsRef, (snap) => {
+          const list: ContractRecord[] = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as ContractRecord));
+          setContracts(list);
+        }, snapshotErrorHandler('contracts_ledger')));
+      } catch (err) {
+        console.warn('Tenants: could not attach registry listeners', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubs.forEach((u) => u());
+    };
   }, []);
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'artifacts', adminAppId, 'public', 'data', 'master_templates'), (snap) => {
-      const list: MasterTemplate[] = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() } as MasterTemplate));
-      setTemplates(list);
-    });
+    let cancelled = false;
+    let unsub: (() => void) | undefined;
+
+    (async () => {
+      try {
+        await bootstrapAuth();
+        const ok = await hasAdminSession();
+        if (cancelled || !ok) return;
+
+        unsub = onSnapshot(
+          collection(db, 'artifacts', adminAppId, 'public', 'data', 'master_templates'),
+          (snap) => {
+            const list: MasterTemplate[] = [];
+            snap.forEach((d) => list.push({ id: d.id, ...d.data() } as MasterTemplate));
+            setTemplates(list);
+          },
+          snapshotErrorHandler('master_templates'),
+        );
+      } catch (err) {
+        console.warn('Tenants: could not attach blueprint listener', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -207,24 +259,43 @@ export default function Tenants() {
       return;
     }
 
-    const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
-    const usersRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_users');
-    const ticketsRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests');
+    let cancelled = false;
+    const unsubs: (() => void)[] = [];
 
-    const u1 = onSnapshot(configRef, (snap) => {
-      if (snap.exists() && snap.data().features) setFeatures(snap.data().features);
-    });
-    const u2 = onSnapshot(usersRef, (snap) => {
-      const list: TenantUser[] = [];
-      snap.forEach((d) => list.push(d.data() as TenantUser));
-      setUsers(list);
-    });
-    const u3 = onSnapshot(ticketsRef, (snap) => {
-      const list: ItTicket[] = [];
-      snap.forEach((d) => list.push({ id: d.id, tenantId, ...d.data() } as ItTicket));
-      setTickets(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
-    });
-    return () => { u1(); u2(); u3(); };
+    (async () => {
+      try {
+        await bootstrapAuth();
+        const ok = await hasAdminSession();
+        if (cancelled || !ok) return;
+
+        const configRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'tenant_settings', 'config');
+        const usersRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_users');
+        const ticketsRef = collection(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests');
+
+        unsubs.push(onSnapshot(configRef, (snap) => {
+          if (snap.exists() && snap.data().features) setFeatures(snap.data().features);
+        }, snapshotErrorHandler(`${tenantId}/config`)));
+
+        unsubs.push(onSnapshot(usersRef, (snap) => {
+          const list: TenantUser[] = [];
+          snap.forEach((d) => list.push(d.data() as TenantUser));
+          setUsers(list);
+        }, snapshotErrorHandler(`${tenantId}/core_users`)));
+
+        unsubs.push(onSnapshot(ticketsRef, (snap) => {
+          const list: ItTicket[] = [];
+          snap.forEach((d) => list.push({ id: d.id, tenantId, ...d.data() } as ItTicket));
+          setTickets(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
+        }, snapshotErrorHandler(`${tenantId}/core_it_requests`)));
+      } catch (err) {
+        console.warn('Tenants: could not attach tenant listeners', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubs.forEach((u) => u());
+    };
   }, [tenantId]);
 
   const clientWorkspaces = useMemo(() => workspaces, [workspaces]);
