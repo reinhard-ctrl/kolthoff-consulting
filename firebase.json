@@ -10,6 +10,13 @@
           "region": "asia-southeast1"
         }
       },
+      {
+        "source": "/api/prepareClientWorkspace",
+        "function": {
+          "functionId": "prepareClientWorkspaceHttp",
+          "region": "asia-southeast1"
+        }
+      },
       { "source": "/workspace", "destination": "/workspace/index.html" },
       { "source": "/workspace/", "destination": "/workspace/index.html" },
       { "source": "/admin", "destination": "/admin/index.html" },

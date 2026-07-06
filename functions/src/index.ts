@@ -894,6 +894,72 @@ export const prepareClientWorkspace = onCall(async (request) => {
   });
 });
 
+/** Hosting rewrite — same-origin when org policy blocks public callable invoke (CORS on cloudfunctions.net) */
+export const prepareClientWorkspaceHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed', code: 'method-not-allowed' });
+    return;
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Authorization required', code: 'unauthenticated' });
+    return;
+  }
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    const isAdmin = await callerIsAdmin(decoded.uid, decoded.role, decoded.email);
+    if (!isAdmin) {
+      res.status(403).json({ error: 'Admin privileges required', code: 'permission-denied' });
+      return;
+    }
+
+    const body = req.body as Record<string, unknown> | string | undefined;
+    let data: Record<string, unknown> = {};
+    if (body && typeof body === 'object') {
+      data = body;
+    } else if (typeof body === 'string') {
+      try { data = JSON.parse(body) as Record<string, unknown>; } catch { /* ignore */ }
+    }
+
+    const clientName = (data.clientName as string)?.trim();
+    if (!clientName) {
+      res.status(400).json({ error: 'Client name required', code: 'invalid-argument' });
+      return;
+    }
+
+    const result = await prepareClientWorkspaceInternal({
+      clientName,
+      requestedTenantId: (data.tenantId as string)?.trim(),
+      portalAccessCodeInput: (data.portalAccessCode as string)?.trim(),
+      repName: (data.repName as string)?.trim(),
+      repEmail: (data.repEmail as string)?.trim(),
+      deliverViaPortal: data.deliverViaPortal !== false,
+      inviteContact: data.inviteContact !== false,
+      deployStarterTemplates: data.deployStarterTemplates !== false,
+      profileId: (data.profileId as string)?.trim(),
+      createdBy: decoded.uid || null,
+    });
+    res.json(result);
+  } catch (err) {
+    if (err instanceof HttpsError) {
+      const status = err.code === 'permission-denied' ? 403
+        : err.code === 'invalid-argument' ? 400
+          : err.code === 'already-exists' ? 409
+            : 500;
+      res.status(status).json({ error: err.message, code: err.code });
+      return;
+    }
+    console.error('prepareClientWorkspaceHttp failed', err);
+    res.status(500).json({ error: 'Internal error', code: 'internal' });
+  }
+});
+
 /** Firestore path when org policy blocks public Cloud Function invoke */
 export const processClientProvisionRequest = onDocumentWritten(
   `artifacts/${ADMIN_TENANT}/public/data/client_provision_requests/{requestId}`,

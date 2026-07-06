@@ -461,15 +461,14 @@ export default function Tenants() {
     setInviteStatus('');
     try {
       await bootstrapAuth();
-      const prepare = httpsCallable(functions, 'prepareClientWorkspace');
-      const result = await prepare({
+      const data = await prepareClientWorkspace({
         clientName: activeWorkspace.clientName,
         tenantId,
         portalAccessCode: activeWorkspace.portalAccessCode || derivePortalCodeFromName(activeWorkspace.clientName, tenantId),
         deliverViaPortal: true,
         inviteContact: false,
+        deployStarterTemplates: false,
       });
-      const data = result.data as PrepareResult;
       setPrepareResult(data);
       setInviteStatus(data.message);
     } catch (err) {
