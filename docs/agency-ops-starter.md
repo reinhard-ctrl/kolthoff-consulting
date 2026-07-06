@@ -138,4 +138,4 @@ Paid client tenants are **not** seeded — they start empty (see provisioning ab
 | PRO Subscriptions billing in Kolthoff OS Collections | ✅ |
 | Smoke routes `/agency-ops/`, `/admin/agency-ops-manager` | ✅ |
 
-**Your sign-off:** Run `docs/p4-verification.md` sections **B1–B7** on `kolthoff-consulting.com` after deploy.
+**P4 verified:** Sections B1–B7 signed off 6 Jul 2026 — see `docs/p4-verification.md`. Ready for first paying client handoff via Agency Ops Manager.
