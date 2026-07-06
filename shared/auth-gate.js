@@ -1,17 +1,31 @@
 /**
  * Staff auth gate for internal Kolthoff OS HTML apps.
- * Redirects to /admin/ when no valid staff session exists.
+ * Redirects to /admin/ or /agency-ops/ when no valid session exists.
  * Public apps (marketing, portal, intake) must NOT import this module.
  */
-import { auth, db, initialAuthToken, bootstrapAuth } from './firebase-init.js?v=20250702-firebase-v2';
 import { getRedirectResult } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+import { getProductId, getTenantId } from './product-config.js';
 
-const ADMIN_APP = 'kolthoff-admin-app';
-const LOGIN_PATH = '/admin/';
+const FIRM_APP = 'kolthoff-admin-app';
 
-function adminSessionRef(uid) {
-  return doc(db, 'artifacts', ADMIN_APP, 'public', 'data', 'admin_sessions', uid);
+function firebaseDeps() {
+  return {
+    auth: window.firebaseAuth,
+    db: window.firebaseDb,
+    appId: window.appId || getTenantId(FIRM_APP),
+    initialAuthToken: window.initialAuthToken,
+    bootstrapAuth: window.bootstrapAuth,
+    hasAdminSession: window.hasAdminSession,
+  };
+}
+
+function adminSessionRef(db, tenantId, uid) {
+  return doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_sessions', uid);
+}
+
+function googleAdminSessionRef(db, tenantId, uid) {
+  return doc(db, 'artifacts', tenantId, 'public', 'data', 'google_admin_sessions', uid);
 }
 
 function revealPage() {
@@ -48,6 +62,7 @@ function isAgencyStarterContext() {
   if (typeof window === 'undefined') return false;
   const params = new URLSearchParams(window.location.search);
   if (params.get('product') === 'agency-ops-starter') return true;
+  if (params.get('tenant')?.startsWith('agency-')) return true;
   if (params.get('tenant') === 'agency-ops-demo') return true;
   const cfg = window.ProductConfig?.getProductConfig?.();
   return Boolean(cfg?.starterMode);
@@ -73,9 +88,28 @@ function isEmbeddedView() {
   }
 }
 
+function resolveLoginPath() {
+  if (isAgencyStarterContext()) {
+    const tenant = getTenantId();
+    const params = new URLSearchParams();
+    if (tenant && tenant.startsWith('agency-')) params.set('tenant', tenant);
+    const query = params.toString();
+    return `/agency-ops/${query ? `?${query}` : ''}`;
+  }
+  return '/admin/';
+}
+
+async function hasFirmAdminSession(user, db) {
+  const firmSession = await getDoc(adminSessionRef(db, FIRM_APP, user.uid));
+  if (firmSession.exists()) return true;
+  const googleSession = await getDoc(googleAdminSessionRef(db, FIRM_APP, user.uid));
+  return googleSession.exists();
+}
+
 export async function hasStaffAccess(user) {
   if (!user) return false;
 
+  const { initialAuthToken, appId, db, hasAdminSession } = firebaseDeps();
   if (initialAuthToken) return true;
 
   try {
@@ -92,11 +126,18 @@ export async function hasStaffAccess(user) {
     return true;
   }
 
-  const session = await getDoc(adminSessionRef(user.uid));
-  return session.exists();
+  if (await hasFirmAdminSession(user, db)) return true;
+
+  if (typeof hasAdminSession === 'function') {
+    return await hasAdminSession();
+  }
+
+  const tenantSession = await getDoc(adminSessionRef(db, appId, user.uid));
+  return tenantSession.exists();
 }
 
 async function resolveAuthUser() {
+  const { auth, bootstrapAuth } = firebaseDeps();
   await auth.authStateReady();
 
   try {
@@ -117,6 +158,7 @@ async function resolveAuthUser() {
 }
 
 async function waitForStaffAccess(maxMs = 10000) {
+  const { auth, bootstrapAuth } = firebaseDeps();
   await auth.authStateReady();
   const start = Date.now();
   while (Date.now() - start < maxMs) {
@@ -141,11 +183,17 @@ function showEmbedAuthRequired() {
   url.searchParams.delete('embed');
   const openUrl = url.pathname + url.search + url.hash;
   const light = isAgencyStarterContext();
+  const agency = isAgencyStarterContext() && getProductId() === 'agency-ops-starter';
+  const loginPath = resolveLoginPath();
+  const message = agency
+    ? 'Sign in to your Agency Ops console first, then reload this panel. Use your tenant passcode from the welcome email.'
+    : 'Staff session required. Ensure you are logged into the admin console, then reload this panel.';
   document.body.innerHTML = `
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:${light ? '#e3e6eb' : '#02050e'};color:${light ? '#6e7681' : '#94a3b8'};font-family:${light ? 'Inter' : 'Montserrat'},system-ui,sans-serif;text-align:center;">
       <div style="max-width:22rem;">
-        <p style="margin:0 0 1rem;font-size:0.875rem;line-height:1.5;">Staff session required. Ensure you are logged into the admin console, then reload this panel.</p>
-        <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:0.625rem 1rem;background:${light ? '#4f46e5' : '#14B8A6'};color:#ffffff;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open in new tab</a>
+        <p style="margin:0 0 1rem;font-size:0.875rem;line-height:1.5;">${message}</p>
+        <a href="${loginPath}" style="display:inline-block;margin:0 0.5rem;padding:0.625rem 1rem;background:${light ? '#4f46e5' : '#14B8A6'};color:#ffffff;border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;">Open console</a>
+        <a href="${openUrl}" target="_blank" rel="noopener" style="display:inline-block;margin:0 0.5rem;padding:0.625rem 1rem;background:${light ? '#ffffff' : '#1e293b'};color:${light ? '#334155' : '#e2e8f0'};border-radius:0.5rem;font-weight:700;font-size:0.75rem;text-decoration:none;border:1px solid ${light ? '#d0d7de' : '#334155'};">Open in new tab</a>
       </div>
     </div>
   `;
@@ -160,13 +208,13 @@ export async function requireStaffAuth() {
   if (isClientContractLedgerView()) {
     await resolveAuthUser();
     revealPage();
-    return { user: auth.currentUser, role: 'client' };
+    return { user: firebaseDeps().auth.currentUser, role: 'client' };
   }
 
   if (isCrmPipelineShareView()) {
     await resolveAuthUser();
     revealPage();
-    return { user: auth.currentUser, role: 'guest' };
+    return { user: firebaseDeps().auth.currentUser, role: 'guest' };
   }
 
   try {
@@ -193,7 +241,7 @@ export async function requireStaffAuth() {
     const returnTo = encodeURIComponent(
       window.location.pathname + window.location.search + window.location.hash
     );
-    window.location.replace(`${LOGIN_PATH}?return=${returnTo}`);
+    window.location.replace(`${resolveLoginPath()}?return=${returnTo}`);
     return new Promise(() => {});
   } catch (err) {
     revealPage();

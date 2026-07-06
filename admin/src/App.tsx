@@ -64,6 +64,8 @@ function getReturnUrl(): string | null {
 function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialError?: string }) {
   const product = useProduct();
   const { isLight: light } = useDemoAppearance();
+  const agencyOpsShell = isAgencyOpsStarter();
+  const showGoogleStaffLogin = !agencyOpsShell && !product.isDemo;
   const [code, setCode] = useState(product.isDemo ? (product.demoPasscode ?? '') : '');
   const [error, setError] = useState(initialError);
   const [loading, setLoading] = useState(false);
@@ -152,9 +154,11 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         <p className="text-sm text-slate-400 mb-5 leading-relaxed">
           {product.isDemo
             ? 'Log in as the demo admin to explore Sales, Quotes, and Invoicing.'
-            : 'Sign in with Google Workspace or use the break-glass passcode.'}
+            : agencyOpsShell
+              ? 'Enter the passcode from your Agency Ops welcome email to open Sales, Quotes, and Invoicing.'
+              : 'Sign in with Google Workspace or use the break-glass passcode.'}
         </p>
-        {!product.isDemo && (
+        {showGoogleStaffLogin && (
         <button
           type="button"
           onClick={signInGoogle}
@@ -164,7 +168,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
           {googleLoading ? 'Redirecting to Google…' : 'Sign in with Google'}
         </button>
         )}
-        {!product.isDemo && (
+        {showGoogleStaffLogin && (
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 h-px bg-brandNavy-700" />
           <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">or passcode</span>
@@ -185,7 +189,7 @@ function LoginGate({ onAuth, initialError = '' }: { onAuth: () => void; initialE
         />
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <button disabled={loading} className="w-full py-2.5 brand-primary-bg rounded-lg font-semibold text-white">
-          {loading ? 'Signing in…' : product.isDemo ? 'Log in as demo admin' : 'Continue'}
+          {loading ? 'Signing in…' : product.isDemo || agencyOpsShell ? 'Continue with passcode' : 'Continue'}
         </button>
       </form>
     </div>
