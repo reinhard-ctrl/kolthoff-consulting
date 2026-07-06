@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bootstrapAuth } from '../lib/firebase';
-import { provisionClientWorkspaceViaFirestore } from '../lib/client-provision-firestore';
+import { prepareClientWorkspace } from '../lib/prepare-client-workspace';
 import { provisionAgencyOpsViaFirestore, type AgencyOpsProvisionResult } from '../lib/agency-ops-provision-firestore';
 import { getClientDisplayName } from '../lib/engagement-config';
 import { isPro1AgencyOpsProfile } from '../lib/agency-ops-profiles';
@@ -71,6 +71,7 @@ export default function ProductProvisionWizard({
   const [inviteContact, setInviteContact] = useState(true);
   const [deployTemplates, setDeployTemplates] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [coreResult, setCoreResult] = useState<CoreWorkspaceResult | null>(null);
   const [agencyResult, setAgencyResult] = useState<AgencyOpsProvisionResult | null>(null);
@@ -109,13 +110,14 @@ export default function ProductProvisionWizard({
     if (!selected) return;
     setBusy(true);
     setError('');
+    setProgress('');
     setCoreResult(null);
     setAgencyResult(null);
     try {
       await bootstrapAuth();
       const clientName = getClientDisplayName(selected);
       if (product === 'core-workspace') {
-        const data = await provisionClientWorkspaceViaFirestore({
+        const data = await prepareClientWorkspace({
           clientName,
           tenantId: tenantId.trim() || undefined,
           profileId: selected.id,
@@ -125,7 +127,7 @@ export default function ProductProvisionWizard({
           deliverViaPortal,
           inviteContact: inviteContact && !!repEmail.trim(),
           deployStarterTemplates: deployTemplates,
-        });
+        }, { onProgress: setProgress });
         setCoreResult({
           tenantId: data.tenantId,
           workspaceUrl: data.workspaceUrl,
@@ -333,6 +335,7 @@ export default function ProductProvisionWizard({
         )}
       </div>
 
+      {busy && progress && !error && <p className="text-sm text-brandTeal-300">{progress}</p>}
       {error && <p className="text-sm text-rose-400">{error}</p>}
 
       <button

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { onSnapshot, setDoc, doc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db, bootstrapAuth, functions, httpsCallable, adminAppId } from '../lib/firebase';
-import { provisionClientWorkspaceViaFirestore } from '../lib/client-provision-firestore';
+import { prepareClientWorkspace } from '../lib/prepare-client-workspace';
 import {
   STARTER_APPROVAL_TEMPLATES,
   deployStarterPackToTenant,
@@ -128,6 +128,7 @@ export default function Tenants() {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createModalError, setCreateModalError] = useState('');
+  const [provisionStatus, setProvisionStatus] = useState('');
   const [newClientName, setNewClientName] = useState('');
   const [newTenantId, setNewTenantId] = useState('');
   const [newPortalCode, setNewPortalCode] = useState('');
@@ -400,6 +401,7 @@ export default function Tenants() {
     setCreatingWorkspace(true);
     setInviteStatus('');
     setCreateModalError('');
+    setProvisionStatus('');
     setPrepareResult(null);
     try {
       await bootstrapAuth();
@@ -414,20 +416,7 @@ export default function Tenants() {
         deployStarterTemplates,
       };
 
-      let data: PrepareResult;
-      try {
-        data = await provisionClientWorkspaceViaFirestore(input);
-      } catch (firestoreErr) {
-        const prepare = httpsCallable(functions, 'prepareClientWorkspace');
-        const result = await prepare({
-          ...input,
-          deployStarterTemplates,
-        });
-        data = result.data as PrepareResult;
-        if (firestoreErr instanceof Error && firestoreErr.message.includes('timed out')) {
-          console.warn('Firestore provision timed out; callable fallback succeeded');
-        }
-      }
+      const data = await prepareClientWorkspace(input, { onProgress: setProvisionStatus });
 
       setTenantId(data.tenantId);
       setPrepareResult(data);
@@ -563,6 +552,7 @@ export default function Tenants() {
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setCreateModalError('');
+    setProvisionStatus('');
   };
 
   const openCreateModal = () => {
@@ -575,6 +565,7 @@ export default function Tenants() {
     setInviteContact(true);
     setPrepareResult(null);
     setCreateModalError('');
+    setProvisionStatus('');
     setShowCreateModal(true);
   };
 
@@ -1105,6 +1096,12 @@ export default function Tenants() {
             {createModalError && (
               <div className="mb-4 rounded-lg border border-rose-500/40 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">
                 {createModalError}
+              </div>
+            )}
+
+            {creatingWorkspace && provisionStatus && !createModalError && (
+              <div className="mb-4 rounded-lg border border-brandTeal-500/30 bg-brandTeal-950/20 px-3 py-2 text-sm text-brandTeal-200">
+                {provisionStatus}
               </div>
             )}
 
