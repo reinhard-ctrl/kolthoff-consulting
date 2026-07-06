@@ -22,7 +22,8 @@ service cloud.firestore {
       return isAuthenticated() && (
         request.auth.token.role == 'kolthoff_admin' ||
         hasAdminSession('kolthoff-admin-app') ||
-        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/google_admin_sessions/$(request.auth.uid))
+        exists(/databases/$(database)/documents/artifacts/kolthoff-admin-app/public/data/google_admin_sessions/$(request.auth.uid)) ||
+        isKolthoffStaffEmail()
       );
     }
 

@@ -228,7 +228,7 @@ export default function AgencyOpsManager() {
             Action required — provision Agency Ops tenant
           </h2>
           <p className="text-xs text-slate-500 mb-3">
-            Signed PRO 1 deals without a tenant appear here. Click Provision or Retry — cold Functions can take up to 2 minutes.
+            Signed PRO 1 deals without a tenant appear here. Provision is instant (no Cloud Function wait).
           </p>
           <div className="space-y-3">
             {actionRequiredProfiles.map((p) => (
