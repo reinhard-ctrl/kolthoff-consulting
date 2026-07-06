@@ -181,6 +181,7 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250706-drawio-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -327,7 +328,16 @@
                         { id: 'jd-2', title: 'Quality Assurance, Risk Management and Compliance Specialists', content: 'QA Specialists are responsible for auditing process compliance, identifying system bottlenecks, conducting root-cause analysis on operational errors, and designing process enhancements. They require deep system expertise, high accuracy, and strong attention to detail.' },
                         { id: 'jd-3', title: 'Customer Success Managers and Account Leadership', content: 'Customer Success Managers serve as the primary strategic point of contact for clients, managing account health, driving retention, and ensuring service delivery aligns with client business objectives. They require excellent negotiation, communication, and relationship-building skills.' }
                     ]
-                }
+                },
+                orgChart: JSON.parse(JSON.stringify(window.DiagramEditor?.DEFAULT_ORG_CHART_POLICY || {
+                    title: 'Organizational Structure & Reporting Policy',
+                    docControl: { version: '1.0', effectiveDate: '2026-07-06', lastReviewed: '2026-07-06', owner: 'HR Director' },
+                    introduction: 'Official reporting structure and organization chart policy.',
+                    sections: [],
+                    diagram: { drawioXml: '', svgCache: '', layout: 'horizontalTree' },
+                    roster: [],
+                    link: { source: 'policy-studio', lastSyncedAt: null }
+                }))
             }
         };
 
@@ -358,7 +368,89 @@
             Download: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
             Upload: () => <svg aria-hidden="true" className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Reset: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>,
-            Archive: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            Archive: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>,
+            Sitemap: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/></svg>
+        };
+
+        const DrawIoEmbed = ({ preset = 'orgChart', xml, onXmlChange, onSvgExport, height = 520 }) => {
+            const iframeRef = useRef(null);
+            const readyRef = useRef(false);
+            const configuredRef = useRef(false);
+            const pendingXmlRef = useRef(xml);
+
+            const postAction = (payload) => {
+                iframeRef.current?.contentWindow?.postMessage(JSON.stringify(payload), '*');
+            };
+
+            const sendLoad = (diagramXml) => {
+                postAction({
+                    action: 'load',
+                    xml: diagramXml || window.DiagramEditor?.BLANK_ORG_CHART_XML || '',
+                    autosave: 1,
+                });
+            };
+
+            const requestExport = (format) => {
+                postAction({
+                    action: 'export',
+                    format,
+                    xml: format === 'xml',
+                    spin: 'Exporting diagram…',
+                });
+            };
+
+            useEffect(() => {
+                pendingXmlRef.current = xml;
+                if (readyRef.current && configuredRef.current) sendLoad(xml);
+            }, [xml]);
+
+            useEffect(() => {
+                const handler = (evt) => {
+                    if (!evt.data || typeof evt.data !== 'string') return;
+                    let msg;
+                    try { msg = JSON.parse(evt.data); } catch { return; }
+
+                    if (msg.event === 'configure') {
+                        configuredRef.current = true;
+                        postAction({
+                            action: 'configure',
+                            config: window.DiagramEditor?.getPreset(preset)?.configure || {},
+                        });
+                    }
+                    if (msg.event === 'init') {
+                        readyRef.current = true;
+                        sendLoad(pendingXmlRef.current);
+                    }
+                    if (msg.event === 'export') {
+                        if (msg.format === 'xml' && msg.xml && onXmlChange) onXmlChange(msg.xml);
+                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data && onSvgExport) onSvgExport(msg.data);
+                    }
+                    if (msg.event === 'autosave' && msg.xml && onXmlChange) onXmlChange(msg.xml);
+                };
+                window.addEventListener('message', handler);
+                return () => window.removeEventListener('message', handler);
+            }, [preset, onXmlChange, onSvgExport]);
+
+            return (
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap gap-2 no-print">
+                        <button
+                            type="button"
+                            onClick={() => { requestExport('xml'); requestExport('xmlsvg'); }}
+                            className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                            Apply Diagram to Policy
+                        </button>
+                    </div>
+                    <iframe
+                        ref={iframeRef}
+                        src={window.DiagramEditor?.getDrawioEmbedUrl() || 'https://embed.diagrams.net/?embed=1&proto=json&configure=1'}
+                        className="w-full border border-brandNavy-800 rounded-xl bg-white"
+                        style={{ height }}
+                        title="draw.io diagram editor"
+                    />
+                </div>
+            );
         };
 
         const moveArrayItem = (arr, index, direction) => {
@@ -671,6 +763,10 @@
                 Object.keys(defaultData.standardDocs).forEach(key => {
                     const defaultDoc = defaultData.standardDocs[key];
                     const loadedDoc = loadedData.standardDocs?.[key] || {};
+                    if (key === 'orgChart' && window.DiagramEditor?.mergeOrgChartPolicy) {
+                        mergedStandardDocs[key] = window.DiagramEditor.mergeOrgChartPolicy(defaultDoc, loadedDoc);
+                        return;
+                    }
                     mergedStandardDocs[key] = {
                         ...defaultDoc,
                         ...loadedDoc,
@@ -870,6 +966,7 @@
 
                 if (localPolicyData.standardDocs) {
                     Object.keys(localPolicyData.standardDocs).forEach(key => {
+                        if (key === 'orgChart') return;
                         const doc = localPolicyData.standardDocs[key];
                         let mdContent = `# ${doc.title || 'Standard Document'}\n\n`;
                         if (doc.introduction) mdContent += `## Introduction\n${doc.introduction}\n\n`;
@@ -886,6 +983,16 @@
                             content: mdContent.trim(),
                             lastUpdated: doc.docControl?.lastReviewed || defaultDate
                         });
+                    });
+                }
+
+                if (localPolicyData.standardDocs?.orgChart && window.DiagramEditor?.compileOrgChartPolicyMarkdown) {
+                    const orgDoc = localPolicyData.standardDocs.orgChart;
+                    policiesArray.push({
+                        id: 'doc-orgChart',
+                        title: orgDoc.title || 'Organizational Structure & Reporting Policy',
+                        content: window.DiagramEditor.compileOrgChartPolicyMarkdown(orgDoc),
+                        lastUpdated: orgDoc.docControl?.lastReviewed || defaultDate
                     });
                 }
 
@@ -1114,11 +1221,67 @@
             const removeStandardSection = (key, secId) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).filter(s => s.id !== secId) } }));
             const reorderStandardSection = (key, idx, dir) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: moveArrayItem(docs[key]?.sections || [], idx, dir) } }));
 
+            const updateOrgChartPolicy = (patch) => updateDocState('standardDocs', docs => ({
+                ...docs,
+                orgChart: {
+                    ...(docs.orgChart || {}),
+                    ...patch,
+                    diagram: patch.diagram ? { ...(docs.orgChart?.diagram || {}), ...patch.diagram } : docs.orgChart?.diagram,
+                    link: patch.link ? { ...(docs.orgChart?.link || {}), ...patch.link } : docs.orgChart?.link,
+                }
+            }));
+
+            const handleOrgChartXmlChange = (drawioXml) => {
+                updateOrgChartPolicy({
+                    diagram: {
+                        drawioXml,
+                        lastDiagramEditAt: Date.now(),
+                    },
+                    link: { source: 'policy-studio' },
+                });
+            };
+
+            const handleOrgChartSvgExport = (svgDataUri) => {
+                updateOrgChartPolicy({
+                    diagram: { svgCache: svgDataUri },
+                });
+            };
+
+            const handleSyncOrgChartFromWorkspace = () => {
+                if (!activeProfile) {
+                    triggerToast('⚠️ Select a workspace profile first.');
+                    return;
+                }
+                const workspaceXml = window.DiagramEditor.resolveWorkspaceOrgChartXml(activeProfile);
+                const roster = window.DiagramEditor.parseRosterFromDrawioXml(workspaceXml);
+                updateOrgChartPolicy({
+                    diagram: {
+                        drawioXml: workspaceXml,
+                        lastDiagramEditAt: Date.now(),
+                    },
+                    roster,
+                    link: {
+                        source: 'workspace',
+                        workbookOrgChartField: 'orgChart.drawioXml',
+                        lastSyncedAt: Date.now(),
+                    },
+                });
+                triggerToast(`✅ Organization chart synced from workspace (${roster.length} roster entries).`);
+            };
+
+            const handleParseRosterFromDiagram = () => {
+                const doc = localPolicyData.standardDocs?.orgChart;
+                const roster = window.DiagramEditor.parseRosterFromDrawioXml(doc?.diagram?.drawioXml);
+                updateOrgChartPolicy({ roster });
+                triggerToast(`✅ Parsed ${roster.length} roster entries from diagram.`);
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return 'Standard Operating Procedures';
                 if (activeMode === 'handbook') return localPolicyData.handbook?.title || 'Employee Handbook';
                 if (activeMode === 'branding') return 'Branding & Identity';
+                if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
                 return localPolicyData.standardDocs?.[activeMode]?.title || 'Document';
             };
 
@@ -1132,6 +1295,7 @@
                 
                 const docsList = [
                     { id: 'handbook', group: 'HR', title: 'Employee Handbook', obj: localPolicyData.handbook },
+                    { id: 'orgChart', group: 'HR', title: 'Org Chart & Reporting Policy', obj: localPolicyData.standardDocs?.orgChart },
                     { id: 'conduct', group: 'Legal', title: 'Code of Conduct', obj: localPolicyData.standardDocs?.conduct },
                     { id: 'nda', group: 'Legal', title: 'Non-Disclosure (NDA)', obj: localPolicyData.standardDocs?.nda },
                     { id: 'dataPrivacy', group: 'IT', title: 'Data Privacy & Sec', obj: localPolicyData.standardDocs?.dataPrivacy },
@@ -1361,6 +1525,65 @@
                 );
             };
 
+            const renderOrgChartPolicyEditor = () => {
+                const doc = localPolicyData.standardDocs?.orgChart;
+                if (!doc || !activeClient) return null;
+                const roster = doc.roster || [];
+                const svgCache = doc.diagram?.svgCache;
+
+                return (
+                    <React.Fragment>
+                        {renderStandardEditor('orgChart')}
+
+                        <tr className="block print:table-row page-break-avoid">
+                            <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
+                                <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>3. Official Organization Chart</h2>
+                                <p className="text-sm text-slate-600 mt-3 mb-4">The diagram below is the authoritative visual reference for reporting relationships. Solid connectors indicate primary reporting lines.</p>
+                                {svgCache ? (
+                                    <img src={svgCache} alt="Official organization chart" className="max-w-full h-auto border border-slate-200 rounded-lg bg-white p-2" />
+                                ) : (
+                                    <div className="border border-dashed border-slate-300 rounded-lg p-8 text-center text-sm text-slate-500 bg-slate-50">
+                                        No diagram exported yet. Switch to Edit Mode, build the org chart in draw.io, and click <strong>Apply Diagram to Policy</strong>.
+                                    </div>
+                                )}
+                            </td>
+                        </tr>
+
+                        <tr className="block print:table-row page-break-avoid">
+                            <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
+                                <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>4. Roster Summary</h2>
+                                {roster.length === 0 ? (
+                                    <p className="text-sm text-slate-500 mt-4">No roster entries yet. Parse roster from the diagram or sync from workspace.</p>
+                                ) : (
+                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm mt-4">
+                                        <table className="w-full text-left print-table text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                    <th scope="col" className="p-3">Name</th>
+                                                    <th scope="col" className="p-3">Title</th>
+                                                    <th scope="col" className="p-3">Department</th>
+                                                    <th scope="col" className="p-3">Reports To</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {roster.map((row) => (
+                                                    <tr key={row.id || row.name} className="border-b border-slate-200">
+                                                        <td className="p-3 font-semibold text-slate-800">{row.name || '—'}</td>
+                                                        <td className="p-3 text-slate-600">{row.title || '—'}</td>
+                                                        <td className="p-3 text-slate-600">{row.department || '—'}</td>
+                                                        <td className="p-3 text-slate-600">{row.reportsTo || '—'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </td>
+                        </tr>
+                    </React.Fragment>
+                );
+            };
+
             return (
                 <div className="flex flex-col h-screen overflow-hidden bg-brandNavy-955 font-sans">
                     
@@ -1498,6 +1721,7 @@
                                 <div className="mt-4">
                                     <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">HR & Talent</h3>
                                     <button type="button" aria-pressed={activeMode === 'handbook'} onClick={() => setActiveMode('handbook')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'handbook' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.BookOpen /> <span className="text-xs ml-2">Employee Handbook</span></button>
+                                    <button type="button" aria-pressed={activeMode === 'orgChart'} onClick={() => setActiveMode('orgChart')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'orgChart' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Sitemap /> <span className="text-xs ml-2">Org Chart Policy</span></button>
                                     <button type="button" aria-pressed={activeMode === 'jobDescriptions'} onClick={() => setActiveMode('jobDescriptions')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'jobDescriptions' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Briefcase /> <span className="text-xs ml-2">Job Role Profiles</span></button>
                                     <button type="button" aria-pressed={activeMode === 'onboarding'} onClick={() => setActiveMode('onboarding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'onboarding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Users /> <span className="text-xs ml-2">Onboarding & 90-Day</span></button>
                                     <button type="button" aria-pressed={activeMode === 'performanceReview'} onClick={() => setActiveMode('performanceReview')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'performanceReview' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Performance Reviews</span></button>
@@ -1562,6 +1786,37 @@
                                                 )}
                                             </div>
                                             <div className="text-right text-xs font-mono text-slate-500">Internal Document<br/>Prepared for {activeClient.clientCompany}</div>
+                                        </div>
+                                    )}
+
+                                    {activeMode === 'orgChart' && isEditMode && (
+                                        <div className="px-10 pb-6 no-print shrink-0 space-y-4 border-b border-slate-200">
+                                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                                <div>
+                                                    <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">draw.io Organization Chart</h2>
+                                                    <p className="text-xs text-slate-500 mt-1 max-w-2xl">Use standard draw.io org chart shapes (rectangle cards + tree connectors). Apply saves the diagram into this policy. Publish to Vault when approved.</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {!isStandalone && (
+                                                        <button type="button" onClick={handleSyncOrgChartFromWorkspace} className="text-[10px] font-bold uppercase bg-brandNavy-900 border border-brandNavy-700 text-brandTeal-400 px-3 py-1.5 rounded-lg hover:bg-brandNavy-800 transition-colors flex items-center">
+                                                            <Icons.Sync /> Sync from Workspace
+                                                        </button>
+                                                    )}
+                                                    <button type="button" onClick={handleParseRosterFromDiagram} className="text-[10px] font-bold uppercase bg-slate-100 border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+                                                        Parse Roster from Diagram
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <DrawIoEmbed
+                                                preset="orgChart"
+                                                xml={localPolicyData.standardDocs?.orgChart?.diagram?.drawioXml}
+                                                onXmlChange={handleOrgChartXmlChange}
+                                                onSvgExport={handleOrgChartSvgExport}
+                                                height={480}
+                                            />
+                                            {localPolicyData.standardDocs?.orgChart?.link?.lastSyncedAt && (
+                                                <p className="text-[10px] text-slate-400 font-mono">Last workspace sync: {new Date(localPolicyData.standardDocs.orgChart.link.lastSyncedAt).toLocaleString()}</p>
+                                            )}
                                         </div>
                                     )}
 
@@ -2206,6 +2461,8 @@
                                             })()}
 
                                             {/* --- STANDARD DOCS DISPATCHER --- */}
+                                            {activeMode === 'orgChart' && renderOrgChartPolicyEditor()}
+
                                             {['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview', 'jobDescriptions'].includes(activeMode) && (
                                                 renderStandardEditor(activeMode)
                                             )}

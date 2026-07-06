@@ -33,7 +33,7 @@ Client workspaces use distinct tenant IDs (e.g. `client-acme-corp`).
 | `crm_deals` | CRM pipeline | pipelineStatus, estValue, company, status |
 | `crm_contacts` | CRM network contacts | name, label, nextAction |
 | `crm_partners` | Strategic partners | businessProposal, investmentBudget, phase |
-| `policy_documents` | Policy Studio packs | keyed by profile ID |
+| `policy_documents` | Policy Studio packs | keyed by profile ID — see below |
 | `time_logs` | Time tracking entries | profileId, taskName, planned, actual |
 | `resource_tasks` | Capacity allocations | member, hours, profileId |
 | `team_members` | Resource pool | name, role, capacity |
@@ -57,6 +57,39 @@ artifacts/{tenantId}/files/messenger/{chatId}/{filename}
 | `role` | `kolthoff_admin`, `admin`, `user`, `portal_client` |
 | `tenantId` | Tenant namespace ID |
 | `accessCode` | Portal client access code |
+
+## Policy Studio — `policy_documents/{profileId}`
+
+Standard pack shape:
+
+| Field | Notes |
+|-------|--------|
+| `sops[]` | SOP manuals (steps, RACI, doc control) |
+| `handbook` | Employee handbook |
+| `standardDocs` | Fixed policy templates — see keys below |
+
+### `standardDocs.orgChart` (Org Chart & Reporting Policy)
+
+Published to Vault as `doc-orgChart`. Official org chart for clients comes from Policy Studio (workspace org chart is draft/source).
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `title` | string | e.g. Organizational Structure & Reporting Policy |
+| `docControl` | object | version, effectiveDate, lastReviewed, owner |
+| `introduction` | string | Policy narrative |
+| `sections[]` | array | Purpose, reporting structure, decision authority, etc. |
+| `diagram.drawioXml` | string | draw.io mxGraphModel XML (canonical visual) |
+| `diagram.svgCache` | string | Exported SVG data URI for PDF/Vault |
+| `diagram.layout` | string | `horizontalTree` \| `verticalTree` |
+| `roster[]` | array | Parsed `{ id, name, title, department, reportsTo }` |
+| `link.lastSyncedAt` | number | When diagram was synced from `workbook_profiles.orgChart` |
+
+### `workbook_profiles.orgChart` (workspace draft)
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `drawioXml` | string | draw.io org chart (Mod 1 as-is / Mod 2 to-be) |
+| `members[]` | array | Legacy roster; used as fallback when no `drawioXml` |
 
 ## Related docs
 
