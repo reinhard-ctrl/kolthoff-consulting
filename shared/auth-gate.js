@@ -3,28 +3,18 @@
  * Redirects to /admin/ or /agency-ops/ when no valid session exists.
  * Public apps (marketing, portal, intake) must NOT import this module.
  */
+import { auth, db, appId, initialAuthToken, bootstrapAuth, hasAdminSession } from './firebase-init.js';
 import { getRedirectResult } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 import { getProductId, getTenantId } from './product-config.js';
 
 const FIRM_APP = 'kolthoff-admin-app';
 
-function firebaseDeps() {
-  return {
-    auth: window.firebaseAuth,
-    db: window.firebaseDb,
-    appId: window.appId || getTenantId(FIRM_APP),
-    initialAuthToken: window.initialAuthToken,
-    bootstrapAuth: window.bootstrapAuth,
-    hasAdminSession: window.hasAdminSession,
-  };
-}
-
-function adminSessionRef(db, tenantId, uid) {
+function adminSessionRef(tenantId, uid) {
   return doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_sessions', uid);
 }
 
-function googleAdminSessionRef(db, tenantId, uid) {
+function googleAdminSessionRef(tenantId, uid) {
   return doc(db, 'artifacts', tenantId, 'public', 'data', 'google_admin_sessions', uid);
 }
 
@@ -99,17 +89,16 @@ function resolveLoginPath() {
   return '/admin/';
 }
 
-async function hasFirmAdminSession(user, db) {
-  const firmSession = await getDoc(adminSessionRef(db, FIRM_APP, user.uid));
+async function hasFirmAdminSession(user) {
+  const firmSession = await getDoc(adminSessionRef(FIRM_APP, user.uid));
   if (firmSession.exists()) return true;
-  const googleSession = await getDoc(googleAdminSessionRef(db, FIRM_APP, user.uid));
+  const googleSession = await getDoc(googleAdminSessionRef(FIRM_APP, user.uid));
   return googleSession.exists();
 }
 
 export async function hasStaffAccess(user) {
   if (!user) return false;
 
-  const { initialAuthToken, appId, db, hasAdminSession } = firebaseDeps();
   if (initialAuthToken) return true;
 
   try {
@@ -126,18 +115,12 @@ export async function hasStaffAccess(user) {
     return true;
   }
 
-  if (await hasFirmAdminSession(user, db)) return true;
+  if (await hasFirmAdminSession(user)) return true;
 
-  if (typeof hasAdminSession === 'function') {
-    return await hasAdminSession();
-  }
-
-  const tenantSession = await getDoc(adminSessionRef(db, appId, user.uid));
-  return tenantSession.exists();
+  return hasAdminSession();
 }
 
 async function resolveAuthUser() {
-  const { auth, bootstrapAuth } = firebaseDeps();
   await auth.authStateReady();
 
   try {
@@ -158,7 +141,6 @@ async function resolveAuthUser() {
 }
 
 async function waitForStaffAccess(maxMs = 10000) {
-  const { auth, bootstrapAuth } = firebaseDeps();
   await auth.authStateReady();
   const start = Date.now();
   while (Date.now() - start < maxMs) {
@@ -208,13 +190,13 @@ export async function requireStaffAuth() {
   if (isClientContractLedgerView()) {
     await resolveAuthUser();
     revealPage();
-    return { user: firebaseDeps().auth.currentUser, role: 'client' };
+    return { user: auth.currentUser, role: 'client' };
   }
 
   if (isCrmPipelineShareView()) {
     await resolveAuthUser();
     revealPage();
-    return { user: firebaseDeps().auth.currentUser, role: 'guest' };
+    return { user: auth.currentUser, role: 'guest' };
   }
 
   try {

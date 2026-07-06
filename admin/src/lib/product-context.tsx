@@ -11,6 +11,11 @@ export function ProductProvider({ children, config }: { children: ReactNode; con
   );
 }
 
+/** Always resolves current tenant (?tenant= from URL or sessionStorage). */
 export function useProduct(): ProductConfig {
+  return getProductConfig();
+}
+
+export function useProductSnapshot(): ProductConfig {
   return useContext(ProductContext);
 }

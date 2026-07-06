@@ -21,6 +21,12 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, 'asia-southeast1');
+/** Resolve tenant on each call so Agency Ops ?tenant= survives client-side navigation. */
+export function getAdminAppId(): string {
+  return getAdminTenantId();
+}
+
+/** @deprecated Prefer getAdminAppId() — frozen at module load for legacy imports */
 export const adminAppId = getAdminTenantId();
 
 const STAFF_DOMAIN = '@kolthoff-consulting.com';
@@ -31,12 +37,12 @@ function isKolthoffStaffEmail(email: string | null | undefined): boolean {
 
 /** Collection ref — must use collection(), not doc(), or Firestore throws on listeners. */
 export function adminCol(name: string) {
-  return collection(db, 'artifacts', adminAppId, 'public', 'data', name);
+  return collection(db, 'artifacts', getAdminAppId(), 'public', 'data', name);
 }
 
 /** Document ref within an admin collection. */
 export function adminDoc(col: string, id: string) {
-  return doc(db, 'artifacts', adminAppId, 'public', 'data', col, id);
+  return doc(db, 'artifacts', getAdminAppId(), 'public', 'data', col, id);
 }
 
 export async function bootstrapAuth() {
@@ -74,8 +80,9 @@ export async function verifyAdminPasscode(code: string) {
   let matchedCode: string | undefined;
   let role = 'kolthoff_admin';
 
+  const tenantId = getAdminAppId();
   for (const candidate of variants) {
-    const credRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_credentials', candidate);
+    const credRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_credentials', candidate);
     const snap = await getDoc(credRef);
     if (snap.exists()) {
       matchedCode = candidate;
@@ -87,7 +94,7 @@ export async function verifyAdminPasscode(code: string) {
   if (!matchedCode) return { valid: false as const };
 
   const uid = auth.currentUser!.uid;
-  await setDoc(doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', uid), {
+  await setDoc(doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_sessions', uid), {
     passcodeVerified: matchedCode,
     role: 'kolthoff_admin',
     verifiedAt: Date.now(),
@@ -102,10 +109,11 @@ export async function hasAdminSession(): Promise<boolean> {
     const user = auth.currentUser;
     if (!user) return false;
 
+    const tenantId = getAdminAppId();
     let hasSession = false;
 
     if (user.isAnonymous) {
-      const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
+      const sessionRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_sessions', user.uid);
       const snap = await getDoc(sessionRef);
       hasSession = snap.exists();
     } else {
@@ -115,12 +123,12 @@ export async function hasAdminSession(): Promise<boolean> {
       } else if (isKolthoffStaffEmail(user.email) && user.providerData.some((p) => p.providerId === 'google.com')) {
         hasSession = true;
       } else {
-        const googleSessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'google_admin_sessions', user.uid);
+        const googleSessionRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'google_admin_sessions', user.uid);
         const googleSnap = await getDoc(googleSessionRef);
         if (googleSnap.exists()) {
           hasSession = true;
         } else {
-          const sessionRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'admin_sessions', user.uid);
+          const sessionRef = doc(db, 'artifacts', tenantId, 'public', 'data', 'admin_sessions', user.uid);
           const snap = await getDoc(sessionRef);
           hasSession = snap.exists();
         }

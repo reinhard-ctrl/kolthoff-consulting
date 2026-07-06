@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db, adminAppId, bootstrapAnonymousForPasscode } from './firebase';
+import { auth, db, bootstrapAnonymousForPasscode, getAdminAppId } from './firebase';
 import { getProductConfig, isAgencyOpsStarter } from './product-config';
 import { isAgencyOpsTenantCancelled } from './agency-ops-tenant-status';
 
@@ -19,7 +19,7 @@ export async function getAgencyOpsTenantAccessBlockReason(): Promise<string | nu
     }
   }
 
-  const registryRef = doc(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants', adminAppId);
+  const registryRef = doc(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants', getAdminAppId());
   try {
     const registrySnap = await getDoc(registryRef);
     if (registrySnap.exists() && isAgencyOpsTenantCancelled(registrySnap.data() as Record<string, unknown>)) {
@@ -30,7 +30,7 @@ export async function getAgencyOpsTenantAccessBlockReason(): Promise<string | nu
   }
 
   try {
-    const configRef = doc(db, 'artifacts', adminAppId, 'public', 'data', 'tenant_settings', 'config');
+    const configRef = doc(db, 'artifacts', getAdminAppId(), 'public', 'data', 'tenant_settings', 'config');
     const configSnap = await getDoc(configRef);
     if (configSnap.exists() && isAgencyOpsTenantCancelled(configSnap.data() as Record<string, unknown>)) {
       return 'This Agency Ops account has been cancelled. Contact Kolthoff Consulting if you need access restored.';
