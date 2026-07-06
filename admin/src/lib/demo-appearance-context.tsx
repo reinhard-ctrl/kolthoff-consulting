@@ -34,7 +34,7 @@ const DemoAppearanceContext = createContext<DemoAppearanceContextValue>({
 
 export function DemoAppearanceProvider({ children }: { children: ReactNode }) {
   const product = useProduct();
-  const demoToggleEnabled = isAgencyOpsStarter(product.id);
+  const demoToggleEnabled = isAgencyOpsStarter(product.id) && product.isDemo;
   const [appearance, setAppearanceState] = useState<DemoAppearance>(() =>
     demoToggleEnabled ? getStoredDemoAppearance() : 'dark'
   );

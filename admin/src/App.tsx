@@ -237,7 +237,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <SidebarNav />
         <div className={`sidebar-nav-hint px-3 pt-2 pb-2 shrink-0 space-y-2 ${light ? 'ops-sidebar-footer border-t border-brandNavy-800 text-slate-600' : 'text-slate-600 px-2 border-t border-brandNavy-800 font-mono'}`}>
-          {isAgencyOpsStarter(product.id) && (
+          {isAgencyOpsStarter(product.id) && product.isDemo && (
             <DemoAppearanceToggle />
           )}
           <div className="truncate">

@@ -11,6 +11,13 @@ import {
   type AgencyOpsProfileFields,
 } from '../lib/agency-ops-profiles';
 import { AGENCY_OPS_DEMO_TENANT, agencyOpsStatusLabel, isAgencyOpsTenantCancelled } from '../lib/agency-ops-tenant-status';
+import {
+  agencyOpsConsoleUrl,
+  buildAgencyOpsHandoffText,
+  getActiveAgencyOpsTenantId,
+  setActiveAgencyOpsTenantId,
+} from '../lib/agency-ops-active-tenant';
+import { resetAgencyOpsPasscode } from '../lib/agency-ops-passcode-reset';
 
 interface AgencyOpsTenant {
   tenantId: string;
@@ -74,6 +81,9 @@ export default function AgencyOpsManager() {
   const [deleteTarget, setDeleteTarget] = useState<AgencyOpsTenant | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeTenantId, setActiveTenantIdState] = useState(() => getActiveAgencyOpsTenantId() || '');
+  const [resetPasscodeTarget, setResetPasscodeTarget] = useState<AgencyOpsTenant | null>(null);
+  const [resettingPasscodeId, setResettingPasscodeId] = useState<string | null>(null);
 
   useEffect(() => {
     const registryRef = collection(db, 'artifacts', 'kolthoff-admin-app', 'public', 'data', 'agency_ops_tenants');
@@ -140,6 +150,61 @@ export default function AgencyOpsManager() {
     });
   }, [profiles, contracts, signedContractErrors]);
 
+  const activeTenants = useMemo(
+    () => tenants.filter((t) => !isAgencyOpsTenantCancelled(t)),
+    [tenants],
+  );
+
+  const activeTenant = useMemo(
+    () => activeTenants.find((t) => t.tenantId === activeTenantId) || null,
+    [activeTenants, activeTenantId],
+  );
+
+  useEffect(() => {
+    if (!activeTenantId && activeTenants.length > 0) {
+      const stored = getActiveAgencyOpsTenantId();
+      const next = stored && activeTenants.some((t) => t.tenantId === stored)
+        ? stored
+        : activeTenants[0].tenantId;
+      setActiveTenantIdState(next);
+      try {
+        setActiveAgencyOpsTenantId(next);
+      } catch {
+        /* ignore invalid stored id */
+      }
+      return;
+    }
+    if (activeTenantId && !activeTenants.some((t) => t.tenantId === activeTenantId)) {
+      const next = activeTenants[0]?.tenantId || '';
+      setActiveTenantIdState(next);
+      if (next) {
+        try {
+          setActiveAgencyOpsTenantId(next);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }, [activeTenantId, activeTenants]);
+
+  const selectActiveTenant = (tenantId: string) => {
+    setActiveTenantIdState(tenantId);
+    try {
+      setActiveAgencyOpsTenantId(tenantId);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not select tenant.');
+    }
+  };
+
+  const rememberProvisionedTenant = (tenantId: string) => {
+    setActiveTenantIdState(tenantId);
+    try {
+      setActiveAgencyOpsTenantId(tenantId);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
@@ -166,6 +231,7 @@ export default function AgencyOpsManager() {
         tenantId: slugifyAgencyName(profile.clientCompany || profile.id) || undefined,
       });
       setResult(data);
+      rememberProvisionedTenant(data.tenantId);
       showToast(`Tenant ${data.tenantId} provisioned.`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Provisioning failed');
@@ -187,6 +253,7 @@ export default function AgencyOpsManager() {
         passcode: customPasscode.trim() || undefined,
       });
       setResult(data);
+      rememberProvisionedTenant(data.tenantId);
       showToast('Agency Ops tenant provisioned.');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Provisioning failed');
@@ -197,11 +264,43 @@ export default function AgencyOpsManager() {
 
   const copyHandoff = () => {
     if (!result) return;
-    const text =
-      `Agency Ops Console: ${result.consoleUrl}\nPasscode: ${result.passcode}\n\n` +
-      'Open the URL, enter the passcode, and complete branding under Settings.';
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(buildAgencyOpsHandoffText(result.consoleUrl, result.passcode));
     showToast('Handoff copied to clipboard.');
+  };
+
+  const copyTenantHandoff = (tenant: AgencyOpsTenant) => {
+    const consoleUrl = tenant.consoleUrl || agencyOpsConsoleUrl(tenant.tenantId);
+    const passcode = tenant.initialPasscode;
+    if (!passcode) {
+      showToast('No passcode on file for this tenant.');
+      return;
+    }
+    navigator.clipboard.writeText(buildAgencyOpsHandoffText(consoleUrl, passcode));
+    showToast('Handoff copied to clipboard.');
+  };
+
+  const runResetPasscode = async () => {
+    if (!resetPasscodeTarget) return;
+    setResettingPasscodeId(resetPasscodeTarget.tenantId);
+    try {
+      await bootstrapAuth();
+      const data = await resetAgencyOpsPasscode(resetPasscodeTarget.tenantId);
+      setResetPasscodeTarget(null);
+      setResult({
+        tenantId: data.tenantId,
+        clientName: data.clientName,
+        consoleUrl: data.consoleUrl,
+        passcode: data.passcode,
+        message: data.message,
+        created: false,
+      });
+      setShowModal(true);
+      showToast(data.message);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Passcode reset failed');
+    } finally {
+      setResettingPasscodeId(null);
+    }
   };
 
   const runCancelTenant = async () => {
@@ -271,6 +370,57 @@ export default function AgencyOpsManager() {
         >
           Provision Tenant
         </button>
+      </div>
+
+      <div className="glass-panel p-4 mb-6">
+        <label className="text-sm text-slate-400">Active Agency Ops tenant</label>
+        {activeTenants.length > 0 ? (
+          <>
+            <select
+              value={activeTenantId}
+              onChange={(e) => selectActiveTenant(e.target.value)}
+              className="w-full mt-1 p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+            >
+              {activeTenants.map((t) => (
+                <option key={t.tenantId} value={t.tenantId}>
+                  {t.clientName} ({t.tenantId})
+                </option>
+              ))}
+            </select>
+            <div className="flex flex-wrap gap-3 mt-2 text-sm items-center">
+              {activeTenant && (
+                <>
+                  <a
+                    href={activeTenant.consoleUrl || agencyOpsConsoleUrl(activeTenant.tenantId)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => selectActiveTenant(activeTenant.tenantId)}
+                    className="text-brandTeal-400 hover:text-brandTeal-300"
+                  >
+                    Open Agency Ops console →
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => copyTenantHandoff(activeTenant)}
+                    className="text-brandTeal-400 hover:text-brandTeal-300"
+                  >
+                    Copy handoff
+                  </button>
+                  <span className="text-slate-500">
+                    Managing: {activeTenant.clientName}
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-2">
+              Sidebar <strong className="text-slate-400">Agency Ops</strong> opens this tenant in a new tab.
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500 mt-2">
+            No active tenants yet. Provision a client to enable the sidebar Agency Ops link.
+          </p>
+        )}
       </div>
 
       {actionRequiredProfiles.length > 0 && (
@@ -363,9 +513,24 @@ export default function AgencyOpsManager() {
                 <td className="p-4 text-right">
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {t.consoleUrl && !isAgencyOpsTenantCancelled(t) && (
-                      <a href={t.consoleUrl} target="_blank" rel="noreferrer" className="text-brandTeal-400 text-xs font-bold hover:underline">
+                      <a
+                        href={t.consoleUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => selectActiveTenant(t.tenantId)}
+                        className="text-brandTeal-400 text-xs font-bold hover:underline"
+                      >
                         Open console
                       </a>
+                    )}
+                    {t.tenantId !== AGENCY_OPS_DEMO_TENANT && !isAgencyOpsTenantCancelled(t) && (
+                      <button
+                        type="button"
+                        onClick={() => setResetPasscodeTarget(t)}
+                        className="text-brandAmber-300 hover:text-brandAmber-200 text-xs font-bold uppercase tracking-wide"
+                      >
+                        Reset passcode
+                      </button>
                     )}
                     {t.tenantId !== AGENCY_OPS_DEMO_TENANT && !isAgencyOpsTenantCancelled(t) && (
                       <button
@@ -401,6 +566,36 @@ export default function AgencyOpsManager() {
           <p className="p-6 text-slate-500 italic">Tenant registry empty — use Provision / Retry in the panel above.</p>
         )}
       </div>
+
+      {resetPasscodeTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full">
+            <h3 className="font-bold text-lg mb-2 text-brandAmber-300">Reset Agency Ops passcode</h3>
+            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+              Generate a new passcode for <strong className="text-white">{resetPasscodeTarget.clientName}</strong> ({resetPasscodeTarget.tenantId}).
+              The previous passcode stops working immediately.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setResetPasscodeTarget(null)}
+                disabled={resettingPasscodeId === resetPasscodeTarget.tenantId}
+                className="px-4 py-2 bg-brandNavy-800 rounded text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={runResetPasscode}
+                disabled={resettingPasscodeId === resetPasscodeTarget.tenantId}
+                className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded text-sm font-bold disabled:opacity-50"
+              >
+                {resettingPasscodeId === resetPasscodeTarget.tenantId ? 'Resetting…' : 'Reset passcode'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {cancelTarget && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">

@@ -1,3 +1,10 @@
+import {
+  getActiveAgencyOpsConsoleUrl,
+  getAgencyOpsManagerUrl,
+} from '../lib/agency-ops-active-tenant';
+
+export const AGENCY_OPS_CONSOLE_NAV_ID = 'agency-ops-console';
+
 export type NavItem = {
   id: string;
   label: string;
@@ -55,6 +62,13 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'core-workspace', label: 'Core Workspace', type: 'embed', href: '/workspace/' },
       { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
+      {
+        id: AGENCY_OPS_CONSOLE_NAV_ID,
+        label: 'Agency Ops',
+        type: 'embed',
+        href: '/agency-ops/',
+        openInNewTab: true,
+      },
       { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
     ],
   },
@@ -86,6 +100,9 @@ export function getNavLink(item: NavItem): string {
 
 /** Full-page URL for opening a nav item in a new browser tab. */
 export function getNavExternalUrl(item: NavItem): string | null {
+  if (item.id === AGENCY_OPS_CONSOLE_NAV_ID) {
+    return getActiveAgencyOpsConsoleUrl() ?? getAgencyOpsManagerUrl();
+  }
   if (item.openInNewTab && item.href) {
     return item.href.startsWith('http') ? item.href : `${window.location.origin}${item.href}`;
   }
