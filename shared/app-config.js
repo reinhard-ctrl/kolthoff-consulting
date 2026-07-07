@@ -8,7 +8,7 @@ export const DEFAULT_APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'kolt
 export const ROUTES = {
   home: '/',
   portal: '/apps/public/portal.html',
-  orgChart: '/admin/org-chart',
+  orgChart: '/admin/app/diagnosis-reports',
   projectPlanner: '/apps/delivery/project_planner.html',
   contractLedger: '/admin/contracts',
   clientContractSign: '/apps/public/contract_sign.html',
