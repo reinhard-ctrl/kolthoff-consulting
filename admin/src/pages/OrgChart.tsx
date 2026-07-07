@@ -1,27 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 import { getClientDisplayName } from '../lib/engagement-config';
 import DiagramEditor from '../components/DiagramEditor';
-import { BLANK_ORG_CHART_XML } from '../lib/diagram-editor';
 import {
-  buildOrgChartTree,
-  createOrgMemberId,
-  emptyOrgMember,
-  isDescendantMember,
-  managerName,
+  BLANK_ORG_CHART_XML,
+  parseRosterFromDrawioXml,
+  resolveWorkspaceOrgChartXml,
+} from '../lib/diagram-editor';
+import {
+  emptyRosterRow,
+  membersToRosterRows,
   resolveOrgChartFromProfile,
-  type OrgChartMember,
-  type OrgChartTreeNode,
+  rosterRowsToMembers,
+  type OrgChartRosterRow,
 } from '../lib/org-chart';
 import { resolvePortalAccessCode, syncProfileToPortalIfExists } from '../lib/portal-sync';
-
-function resolveWorkspaceOrgChartXml(profile: WorkbookProfile | null): string {
-  if (!profile?.orgChart) return BLANK_ORG_CHART_XML;
-  const org = profile.orgChart as { drawioXml?: string; members?: OrgChartMember[] };
-  if (typeof org.drawioXml === 'string' && org.drawioXml.trim()) return org.drawioXml;
-  return BLANK_ORG_CHART_XML;
-}
 
 interface WorkbookProfile {
   id: string;
@@ -29,33 +23,22 @@ interface WorkbookProfile {
   clientName?: string;
   clientRep?: string;
   quoteId?: string;
-  orgChart?: { members?: OrgChartMember[]; drawioXml?: string; svgCache?: string; updatedAt?: string };
+  orgChart?: {
+    members?: Array<{ id: string; name: string; role?: string; department?: string; managerId?: string | null }>;
+    roster?: OrgChartRosterRow[];
+    drawioXml?: string;
+    svgCache?: string;
+    updatedAt?: string;
+  };
   roles?: Array<{ owner?: string; name?: string; role?: string; title?: string }>;
-}
-
-function OrgTreeNode({ node, depth = 0 }: { node: OrgChartTreeNode; depth?: number }) {
-  return (
-    <div className={depth ? 'ml-5 border-l border-brandNavy-700 pl-3' : ''}>
-      <div className="py-1.5">
-        <div className="text-sm font-semibold text-slate-100">{node.name || 'Unnamed'}</div>
-        <div className="text-[11px] text-slate-400">
-          {[node.role, node.department].filter(Boolean).join(' · ') || 'Role pending'}
-        </div>
-      </div>
-      {node.children.map((child) => (
-        <OrgTreeNode key={child.id} node={child} depth={depth + 1} />
-      ))}
-    </div>
-  );
 }
 
 export default function OrgChart() {
   const [profiles, setProfiles] = useState<WorkbookProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
-  const [members, setMembers] = useState<OrgChartMember[]>([]);
   const [orgChartXml, setOrgChartXml] = useState(BLANK_ORG_CHART_XML);
   const [orgChartSvg, setOrgChartSvg] = useState('');
-  const [editorMode, setEditorMode] = useState<'roster' | 'diagram'>('roster');
+  const [roster, setRoster] = useState<OrgChartRosterRow[]>([]);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -74,71 +57,72 @@ export default function OrgChart() {
 
   useEffect(() => {
     if (!activeProfile) {
-      setMembers([]);
+      setOrgChartXml(BLANK_ORG_CHART_XML);
+      setOrgChartSvg('');
+      setRoster([]);
       return;
     }
-    const chart = resolveOrgChartFromProfile(activeProfile);
-    setMembers(chart.members);
-    setOrgChartXml(resolveWorkspaceOrgChartXml(activeProfile));
-    setOrgChartSvg(activeProfile.orgChart?.svgCache || '');
-  }, [activeProfileId, activeProfile]);
 
-  const tree = useMemo(() => buildOrgChartTree(members.filter((m) => m.name.trim())), [members]);
+    const xml = resolveWorkspaceOrgChartXml(activeProfile);
+    setOrgChartXml(xml);
+    setOrgChartSvg(activeProfile.orgChart?.svgCache || '');
+
+    const storedRoster = activeProfile.orgChart?.roster;
+    if (storedRoster?.length) {
+      setRoster(storedRoster);
+      return;
+    }
+
+    const parsed = parseRosterFromDrawioXml(xml);
+    if (parsed.length) {
+      setRoster(parsed);
+      return;
+    }
+
+    const chart = resolveOrgChartFromProfile(activeProfile);
+    setRoster(membersToRosterRows(chart.members));
+  }, [activeProfileId, activeProfile]);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
 
-  const updateMember = (id: string, patch: Partial<OrgChartMember>) => {
-    setMembers((prev) =>
-      prev.map((m) => {
-        if (m.id !== id) return m;
-        const next = { ...m, ...patch };
-        if (
-          patch.managerId &&
-          (patch.managerId === id || isDescendantMember(prev, patch.managerId, id))
-        ) {
-          return m;
-        }
-        return next;
-      }),
-    );
+  const updateRosterRow = (rowId: string, field: keyof OrgChartRosterRow, value: string) => {
+    setRoster((prev) => prev.map((row) => (row.id === rowId ? { ...row, [field]: value } : row)));
   };
 
-  const addMember = () => setMembers((prev) => [...prev, emptyOrgMember()]);
+  const addRosterRow = () => setRoster((prev) => [...prev, emptyRosterRow()]);
 
-  const removeMember = (id: string) => {
-    setMembers((prev) =>
-      prev
-        .filter((m) => m.id !== id)
-        .map((m) => (m.managerId === id ? { ...m, managerId: null } : m)),
-    );
+  const removeRosterRow = (rowId: string) => {
+    setRoster((prev) => prev.filter((row) => row.id !== rowId));
+  };
+
+  const handleParseRosterFromDiagram = () => {
+    const parsed = parseRosterFromDrawioXml(orgChartXml);
+    setRoster(parsed);
+    showToast(`Parsed ${parsed.length} roster entries from diagram.`);
   };
 
   const saveOrgChart = async () => {
     if (!activeProfileId) return;
     setSaving(true);
     try {
-      const cleaned = members.map((m) => ({
-        ...m,
-        name: m.name.trim(),
-        role: m.role.trim(),
-        department: m.department.trim(),
-      }));
+      const members = rosterRowsToMembers(roster);
       await setDoc(
         adminDoc('workbook_profiles', activeProfileId),
         {
           orgChart: {
-            members: cleaned,
             drawioXml: orgChartXml,
             svgCache: orgChartSvg || undefined,
+            roster,
+            members,
             updatedAt: new Date().toISOString(),
           },
         },
         { merge: true },
       );
-      showToast('Org chart saved to SOW profile.');
+      showToast('Org chart and roster saved to SOW profile.');
     } finally {
       setSaving(false);
     }
@@ -162,11 +146,6 @@ export default function OrgChart() {
     }
   };
 
-  const managerOptions = (memberId: string) =>
-    members.filter(
-      (m) => m.id !== memberId && m.name.trim() && !isDescendantMember(members, memberId, m.id),
-    );
-
   return (
     <div>
       {toast && (
@@ -179,7 +158,7 @@ export default function OrgChart() {
         <div>
           <h1 className="text-2xl font-bold">Org Chart</h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Build the client organization structure for each SOW profile — name, role, department, and reporting lines.
+            Build the organization chart with draw.io (same engine as Org Chart Policy). Apply the diagram, then edit the roster summary — Policy Studio can sync from this workspace.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -203,22 +182,6 @@ export default function OrgChart() {
       </div>
 
       <div className="glass-panel p-4 mb-6">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            type="button"
-            onClick={() => setEditorMode('roster')}
-            className={`px-3 py-1.5 rounded text-xs font-bold uppercase ${editorMode === 'roster' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-300'}`}
-          >
-            Roster table
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditorMode('diagram')}
-            className={`px-3 py-1.5 rounded text-xs font-bold uppercase ${editorMode === 'diagram' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-300'}`}
-          >
-            draw.io diagram
-          </button>
-        </div>
         <label className="text-xs text-slate-500 uppercase font-bold block mb-2">SOW Profile</label>
         <select
           value={activeProfileId ?? ''}
@@ -234,144 +197,126 @@ export default function OrgChart() {
         </select>
         {activeProfile && resolvePortalAccessCode(activeProfile) && (
           <p className="text-[11px] text-slate-500 mt-2">
-            Portal access code: <span className="font-mono text-brandTeal-400">{resolvePortalAccessCode(activeProfile)}</span>
+            Portal access code:{' '}
+            <span className="font-mono text-brandTeal-400">{resolvePortalAccessCode(activeProfile)}</span>
           </p>
         )}
       </div>
 
-      {editorMode === 'diagram' ? (
-        <div className="glass-panel p-4 mb-6 min-h-[32rem]">
-          <h2 className="text-sm font-bold text-slate-200 mb-3">Visual organization chart</h2>
-          <DiagramEditor
-            preset="orgChart"
-            xml={orgChartXml}
-            onXmlChange={setOrgChartXml}
-            onSvgExport={setOrgChartSvg}
-            height={560}
-          />
-        </div>
-      ) : (
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
-        <div className="glass-panel overflow-hidden">
-          <div className="px-4 py-3 border-b border-brandNavy-800 flex justify-between items-center">
-            <h2 className="text-sm font-bold text-slate-200">Team roster</h2>
-            <button
-              type="button"
-              onClick={addMember}
-              className="px-3 py-1.5 bg-brandTeal-500/15 text-brandTeal-300 border border-brandTeal-500/30 rounded text-xs font-bold uppercase"
-            >
-              + Add person
-            </button>
+      <div className="glass-panel p-4 mb-6 min-h-[32rem]">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider">draw.io Organization Chart</h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+              Use standard draw.io org chart shapes. Click Apply to capture the diagram into this workspace profile.
+            </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-brandNavy-900/60 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                <tr>
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Role</th>
-                  <th className="px-3 py-2">Department</th>
-                  <th className="px-3 py-2">Direct manager</th>
-                  <th className="px-3 py-2 w-16" />
-                </tr>
-              </thead>
-              <tbody>
-                {members.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500 text-sm italic">
-                      No team members yet. Add the first person to start the org chart.
-                    </td>
-                  </tr>
-                )}
-                {members.map((member) => (
-                  <tr key={member.id} className="border-t border-brandNavy-800/70">
-                    <td className="px-3 py-2">
-                      <input
-                        value={member.name}
-                        onChange={(e) => updateMember(member.id, { name: e.target.value })}
-                        placeholder="Full name"
-                        className="w-full min-w-[8rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={member.role}
-                        onChange={(e) => updateMember(member.id, { role: e.target.value })}
-                        placeholder="Job title"
-                        className="w-full min-w-[7rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={member.department}
-                        onChange={(e) => updateMember(member.id, { department: e.target.value })}
-                        placeholder="Department"
-                        className="w-full min-w-[7rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <select
-                        value={member.managerId ?? ''}
-                        onChange={(e) =>
-                          updateMember(member.id, { managerId: e.target.value || null })
-                        }
-                        className="w-full min-w-[8rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                      >
-                        <option value="">— None —</option>
-                        {managerOptions(member.id).map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => removeMember(member.id)}
-                        className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase"
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <button
+            type="button"
+            onClick={handleParseRosterFromDiagram}
+            className="text-[10px] font-bold uppercase bg-brandNavy-800 border border-brandNavy-700 text-brandTeal-400 px-3 py-1.5 rounded-lg hover:bg-brandNavy-750 transition-colors"
+          >
+            Parse Roster from Diagram
+          </button>
         </div>
+        <DiagramEditor
+          preset="orgChart"
+          xml={orgChartXml}
+          onXmlChange={setOrgChartXml}
+          onSvgExport={setOrgChartSvg}
+          height={520}
+          applyLabel="Apply Diagram to Workspace"
+        />
+        {orgChartSvg && (
+          <div className="mt-4 pt-4 border-t border-brandNavy-800">
+            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Diagram preview</p>
+            <img src={orgChartSvg} alt="Organization chart preview" className="max-w-full h-auto border border-brandNavy-800 rounded-lg bg-white p-2" />
+          </div>
+        )}
+      </div>
 
-        <div className="glass-panel p-4">
-          <h2 className="text-sm font-bold text-slate-200 mb-1">Reporting preview</h2>
-          <p className="text-[11px] text-slate-500 mb-4">Auto-generated from direct manager links.</p>
-          {tree.length === 0 ? (
-            <p className="text-sm text-slate-500 italic">Add named team members to preview the hierarchy.</p>
-          ) : (
-            <div className="space-y-1 max-h-[32rem] overflow-y-auto pr-1">
-              {tree.map((node) => (
-                <OrgTreeNode key={node.id} node={node} />
+      <div className="glass-panel overflow-hidden">
+        <div className="px-4 py-3 border-b border-brandNavy-800 flex justify-between items-center">
+          <div>
+            <h2 className="text-sm font-bold text-slate-200">Roster Summary</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">Same fields as Org Chart Policy section 4 — editable after parsing from the diagram.</p>
+          </div>
+          <button
+            type="button"
+            onClick={addRosterRow}
+            className="px-3 py-1.5 bg-brandTeal-500/15 text-brandTeal-300 border border-brandTeal-500/30 rounded text-xs font-bold uppercase"
+          >
+            + Add Person
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-brandNavy-900/60 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+              <tr>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Title</th>
+                <th className="px-3 py-2">Department</th>
+                <th className="px-3 py-2">Reports To</th>
+                <th className="px-3 py-2 w-16" />
+              </tr>
+            </thead>
+            <tbody>
+              {roster.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 text-sm italic">
+                    No roster entries yet. Build the diagram above and click Parse Roster from Diagram, or add people manually.
+                  </td>
+                </tr>
+              )}
+              {roster.map((row) => (
+                <tr key={row.id} className="border-t border-brandNavy-800/70 align-top">
+                  <td className="px-3 py-2">
+                    <input
+                      value={row.name}
+                      onChange={(e) => updateRosterRow(row.id, 'name', e.target.value)}
+                      placeholder="Full name"
+                      className="w-full min-w-[8rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={row.title}
+                      onChange={(e) => updateRosterRow(row.id, 'title', e.target.value)}
+                      placeholder="Job title"
+                      className="w-full min-w-[7rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={row.department}
+                      onChange={(e) => updateRosterRow(row.id, 'department', e.target.value)}
+                      placeholder="Department"
+                      className="w-full min-w-[7rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      value={row.reportsTo}
+                      onChange={(e) => updateRosterRow(row.id, 'reportsTo', e.target.value)}
+                      placeholder="Manager name"
+                      className="w-full min-w-[8rem] bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => removeRosterRow(row.id)}
+                      className="text-rose-400 hover:text-rose-300 text-xs font-bold uppercase"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </div>
-          )}
-          {members.some((m) => m.name.trim()) && (
-            <div className="mt-4 pt-4 border-t border-brandNavy-800">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Flat summary</p>
-              <ul className="text-xs text-slate-400 space-y-1">
-                {members
-                  .filter((m) => m.name.trim())
-                  .map((m) => (
-                    <li key={m.id}>
-                      <span className="text-slate-200 font-semibold">{m.name}</span>
-                      {m.role ? ` — ${m.role}` : ''}
-                      {m.department ? ` (${m.department})` : ''}
-                      {m.managerId ? ` → reports to ${managerName(members, m.managerId)}` : ''}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
+            </tbody>
+          </table>
         </div>
       </div>
-      )}
     </div>
   );
 }
