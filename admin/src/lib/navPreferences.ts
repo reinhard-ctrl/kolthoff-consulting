@@ -9,7 +9,10 @@ function navStorageKey(): string {
   return getProductConfig().navStorageKey;
 }
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-export const NAV_PREFS_VERSION = 10;
+export const NAV_PREFS_VERSION = 11;
+
+/** Nav items removed from the catalog — stripped from saved assignments on migrate. */
+const REMOVED_NAV_ITEMS = ['org-chart', 'workflow-builder'];
 
 /** Map legacy group ids from older saved layouts. */
 export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
@@ -35,6 +38,15 @@ export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
   }
   if (next.hiddenGroups?.includes('workspace')) {
     next.hiddenGroups = next.hiddenGroups.map((id) => (id === 'workspace' ? 'product' : id));
+  }
+
+  for (const groupId of Object.keys(next.assignments)) {
+    next.assignments[groupId] = (next.assignments[groupId] ?? []).filter(
+      (id) => !REMOVED_NAV_ITEMS.includes(id),
+    );
+  }
+  if (next.itemLabels) {
+    for (const id of REMOVED_NAV_ITEMS) delete next.itemLabels[id];
   }
 
   return next;
