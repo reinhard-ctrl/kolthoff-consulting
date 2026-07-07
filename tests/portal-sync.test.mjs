@@ -81,4 +81,34 @@ assert.equal(mod1Patch.roadmap[0].status, 'Complete');
 assert.equal(mod1Patch.roadmap[1].status, 'In Progress');
 assert.equal(mod1Patch.currentPhase, EC.MODULES[1].portalPhase);
 
+const stamped = PS.stampMod1TasksDelivered(
+  [
+    { id: 'm1-01', selected: true },
+    { id: 'm1-02', selected: true },
+    { id: 'm1-06', selected: false },
+    { id: 'm2-01', selected: true },
+  ],
+  '2026-07-07T00:00:00.000Z',
+);
+assert.equal(stamped.find((t) => t.id === 'm1-01')?.deliveredAt, '2026-07-07T00:00:00.000Z');
+assert.equal(stamped.find((t) => t.id === 'm1-06')?.deliveredAt, undefined);
+assert.equal(stamped.find((t) => t.id === 'm2-01')?.deliveredAt, undefined);
+
+const assetsProfile = PS.upsertMod1DeliverableAssets({
+  customAssets: [{ title: 'Other Doc', category: 'MOD 1', link: 'https://example.com/other' }],
+  synthesis: { clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view' },
+});
+assert.equal(assetsProfile.length, 2);
+assert.equal(assetsProfile.find((a) => a.title === PS.WASTE_TO_PESO_ASSET_TITLE)?.link, 'https://drive.google.com/file/d/abc/view');
+
+const mod1CompletePatch = PS.buildPortalPatchFromProfile(
+  {
+    ...profile,
+    synthesis: { clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view' },
+  },
+  { assets: [] },
+  { syncIntakeAssets: true },
+);
+assert.ok(mod1CompletePatch.assets.some((a) => a.title === PS.WASTE_TO_PESO_ASSET_TITLE));
+
 console.log('portal-sync.test.mjs: all assertions passed');

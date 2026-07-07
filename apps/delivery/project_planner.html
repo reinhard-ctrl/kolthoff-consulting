@@ -5220,6 +5220,12 @@
                             <button onClick={handleClearAllPresets} className={STARTER_UI ? "starter-sow-btn-secondary px-3 py-1.5 text-xs font-semibold rounded-lg border" : "px-3 py-1 text-[10px] font-bold rounded bg-brandNavy-900 text-slate-400 border border-brandNavy-700 uppercase tracking-wider"}>Clear All</button>
                           </div>
                         </div>
+                        {activeProfile?.mod1DeliveredAt && (
+                          <div className={`flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border text-left font-sans ${STARTER_UI ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'}`}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Mod 1 delivered {new Date(activeProfile.mod1DeliveredAt).toLocaleDateString()}</span>
+                            <span className={`text-[10px] ${STARTER_UI ? 'text-emerald-700' : 'text-emerald-400'}`}>— line items below show delivery dates from Waste-to-Peso Report</span>
+                          </div>
+                        )}
                         <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>
                           {getModPresets(moduleBundleNames).map(preset => {
                             const isActive = activePresets.includes(preset.name);
@@ -5388,6 +5394,11 @@
                                       className={STARTER_UI ? "starter-sow-input w-full border border-slate-200 rounded-md px-2 py-1 text-[12px] text-slate-600 leading-snug focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 resize-none overflow-hidden min-h-[1.4rem] max-h-[6rem]" : "w-full bg-brandNavy-950/80 border border-brandNavy-800 rounded px-2 py-1 text-[11px] text-slate-400 leading-snug focus:outline-none focus:border-brandTeal-500/70 disabled:opacity-50 resize-none overflow-hidden min-h-[1.4rem] max-h-[6rem]"}
                                       aria-label={`Deliverable description for ${task.deliverable}`}
                                     />
+                                    {task.deliveredAt && (
+                                      <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${STARTER_UI ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30'}`}>
+                                        Delivered {new Date(task.deliveredAt).toLocaleDateString()}
+                                      </span>
+                                    )}
                                     {task.highRisk && <span className="text-rose-500 text-[9px] font-sans" title="High Risk Custom Build">⚠ High Risk Build</span>}
                                   </td>
                                   <td className="py-4 px-4 text-center align-top">

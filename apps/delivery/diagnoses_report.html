@@ -120,8 +120,8 @@
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
-    <script src="../../shared/portal-sync.js?v=20250707-mod1-complete-v1"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v3"></script>
+    <script src="../../shared/portal-sync.js?v=20250707-mod1-handoff-v2"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-mod1-handoff-v2"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -175,6 +175,7 @@
             customPitch: '',
             staffFeedbackThemes: [''],
             loomWalkthroughUrl: '',
+            clientDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
         });
@@ -1530,7 +1531,18 @@
             const reportValidation = useMemo(() => DRH().validateReportReadiness?.({
                 tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
                 workflowUpdatedAt, reportDataUpdatedAt,
-            }) || { ready: true, warnings: [] }, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt]);
+            }) || { ready: true, warnings: [], errors: [] }, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt]);
+
+            const activeProfile = useMemo(
+                () => workbookProfiles.find((p) => p.id === activeProfileId) || null,
+                [workbookProfiles, activeProfileId],
+            );
+
+            const mod1Handoff = useMemo(() => DRH().validateMod1Handoff?.({
+                tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
+                workflowUpdatedAt, reportDataUpdatedAt,
+                tasks: activeProfile?.tasks || [],
+            }) || reportValidation, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation]);
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
@@ -1576,10 +1588,15 @@
                     const chaosTax = EC.buildChaosTaxPayload
                         ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
                         : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
+                    const customAssets = window.PortalSync?.upsertMod1DeliverableAssets?.({
+                        synthesis,
+                        customAssets: activeProfile?.customAssets,
+                    }) ?? activeProfile?.customAssets ?? [];
                     await window.firestoreSetDoc(profileRef, {
                         subSaaS,
                         raciAssignments,
                         preparedBy,
+                        customAssets,
                         annualOperationalLeakage: totalAnnualChaosTax,
                         chaosTax,
                         synthesis,
@@ -1609,25 +1626,37 @@
 
             const handleMarkMod1Complete = async () => {
                 if (authError || !isAuthed || !activeProfileId) return;
-                if (!reportValidation.ready) {
-                    triggerToast('❌ Complete required sections before marking Mod 1 done');
+                if (!mod1Handoff.ready) {
+                    const lines = [...(mod1Handoff.errors || []), ...(mod1Handoff.warnings || [])];
+                    triggerToast(`❌ ${lines[0] || 'Complete required sections before marking Mod 1 done'}`);
                     return;
                 }
-                const ok = window.confirm('Mark Module 1 (Business Leak Scan) as delivered?\n\nThis will advance the client portal to MOD 2 on the roadmap.');
+                if ((mod1Handoff.warnings || []).length > 0) {
+                    const msg = mod1Handoff.warnings.map((l) => `• ${l}`).join('\n');
+                    const proceed = window.confirm(`Mod 1 handoff warnings:\n\n${msg}\n\nMark Mod 1 complete anyway?`);
+                    if (!proceed) return;
+                }
+                const ok = window.confirm('Mark Module 1 (Business Leak Scan) as delivered?\n\nThis will push the report to the client portal vault and advance the portal to MOD 2.');
                 if (!ok) return;
                 setIsSaving(true);
                 try {
                     await handleSaveToCloud();
                     const deliveredAt = new Date().toISOString();
                     const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                    const profileSnap = await window.getDoc(profileRef);
+                    const profileData = profileSnap.exists() ? { id: activeProfileId, ...profileSnap.data() } : { id: activeProfileId, synthesis, tasks: activeProfile?.tasks };
+                    const customAssets = window.PortalSync?.upsertMod1DeliverableAssets?.({ ...profileData, synthesis }) ?? profileData.customAssets ?? [];
+                    const stampedTasks = window.PortalSync?.stampMod1TasksDelivered?.(profileData.tasks, deliveredAt) ?? profileData.tasks;
                     await window.firestoreSetDoc(profileRef, {
                         mod1Status: 'complete',
                         mod1DeliveredAt: deliveredAt,
+                        customAssets,
+                        tasks: stampedTasks,
                     }, { merge: true });
                     setMod1DeliveredAt(deliveredAt);
-                    const profileSnap = await window.getDoc(profileRef);
-                    const profileData = profileSnap.exists() ? { id: activeProfileId, ...profileSnap.data() } : { id: activeProfileId };
-                    const portalCode = await window.PortalSync?.syncMod1CompleteToPortal?.(profileData);
+                    const finalSnap = await window.getDoc(profileRef);
+                    const finalProfile = finalSnap.exists() ? { id: activeProfileId, ...finalSnap.data() } : { id: activeProfileId, synthesis, customAssets, tasks: stampedTasks };
+                    const portalCode = await window.PortalSync?.syncMod1CompleteToPortal?.(finalProfile);
                     triggerToast(portalCode ? `✓ Mod 1 complete — portal advanced (${portalCode})` : '✓ Mod 1 marked complete (no linked portal)');
                 } catch (e) {
                     triggerToast('❌ Could not mark Mod 1 complete');
@@ -1759,7 +1788,7 @@
                                                 <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing (3–4 pp)</button>
                                                 <button type="button" onClick={() => applyPrintPreset('full')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full Diagnostic</button>
                                                 {!mod1DeliveredAt && (
-                                                    <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError} className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-700 disabled:opacity-50">Mark Mod 1 Complete</button>
+                                                    <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError || !mod1Handoff.ready} title={!mod1Handoff.ready ? 'Complete report sections and deliverable links first' : ''} className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-700 disabled:opacity-50">Mark Mod 1 Complete</button>
                                                 )}
                                                 <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
                                             </div>
@@ -1768,6 +1797,11 @@
                                             <div className="min-w-[200px]">
                                                 <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Prepared by</label>
                                                 <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                            </div>
+                                            <div className="min-w-[280px] flex-1">
+                                                <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Client deliverable link (Google Drive PDF)</label>
+                                                <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                <p className="text-[9px] text-slate-400 mt-1">Upload the printed PDF to Drive, paste the share link — syncs to the client portal vault on save.</p>
                                             </div>
                                             <div className="flex flex-wrap gap-3 text-[9px] font-bold text-slate-500 uppercase tracking-wider items-center flex-1">
                                                 {[
@@ -1790,12 +1824,12 @@
                                                 ))}
                                             </div>
                                         </div>
-                                        {reportValidation.warnings.length > 0 && (
-                                            <div className={`mx-2 p-3 rounded-lg border ${reportValidation.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
-                                                <div className={`text-[10px] font-bold uppercase mb-1 ${reportValidation.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>Before you print</div>
-                                                <ul className={`text-[10px] space-y-0.5 list-disc list-inside ${reportValidation.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
-                                                    {(reportValidation.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
-                                                    {reportValidation.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
+                                        {(mod1Handoff.errors?.length > 0 || mod1Handoff.warnings.length > 0) && (
+                                            <div className={`mx-2 p-3 rounded-lg border ${mod1Handoff.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                                                <div className={`text-[10px] font-bold uppercase mb-1 ${mod1Handoff.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>{mod1Handoff.errors?.length ? 'Before Mod 1 handoff' : 'Before you print'}</div>
+                                                <ul className={`text-[10px] space-y-0.5 list-disc list-inside ${mod1Handoff.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
+                                                    {(mod1Handoff.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
+                                                    {mod1Handoff.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
                                                 </ul>
                                             </div>
                                         )}

@@ -77,6 +77,35 @@
     return Array.from(byTitle.values());
   }
 
+  const WASTE_TO_PESO_ASSET_TITLE = 'Waste-to-Peso Report';
+
+  /** Upsert Mod 1 PDF / Drive link into profile.customAssets for portal vault sync. */
+  function upsertMod1DeliverableAssets(profile) {
+    const link = String(profile?.synthesis?.clientDeliverableUrl || '').trim();
+    const existing = [...(profile?.customAssets || [])];
+    const idx = existing.findIndex(
+      (a) => String(a.title || '').trim().toLowerCase() === WASTE_TO_PESO_ASSET_TITLE.toLowerCase(),
+    );
+    if (!link) {
+      if (idx >= 0) existing.splice(idx, 1);
+      return existing;
+    }
+    const row = { title: WASTE_TO_PESO_ASSET_TITLE, category: 'MOD 1', link };
+    if (idx >= 0) existing[idx] = { ...existing[idx], ...row };
+    else existing.push(row);
+    return existing;
+  }
+
+  /** Stamp deliveredAt on selected Mod 1 SOW line items (excludes optional m1-06). */
+  function stampMod1TasksDelivered(tasks, deliveredAt) {
+    if (!deliveredAt) return tasks || [];
+    return (tasks || []).map((task) => {
+      const id = String(task.id || '');
+      if (!id.startsWith('m1-') || id === 'm1-06' || task.selected === false) return task;
+      return { ...task, deliveredAt };
+    });
+  }
+
   function mergeActionItems(existing, incoming) {
     const byTitle = new Map();
     (existing || []).forEach((a) => {
@@ -128,7 +157,15 @@
     const snap = await global.getDoc(portalRef);
     if (!snap.exists()) return null;
 
-    const patch = buildMod1CompletePortalPatch(snap.data());
+    const existing = snap.data();
+    const patch = buildMod1CompletePortalPatch(existing);
+    const assetsProfile = { ...profile, customAssets: upsertMod1DeliverableAssets(profile) };
+    const fromSaas = mapSubSaaSToPortalAssets(assetsProfile.subSaaS);
+    const fromCustom = mapCustomAssetsToPortalAssets(assetsProfile.customAssets);
+    patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
+    if (assetsProfile.orgChart) {
+      patch.orgChart = mapOrgChartToPortal(assetsProfile.orgChart);
+    }
     await global.setDoc(portalRef, patch, { merge: true });
     return code;
   }
@@ -160,8 +197,9 @@
     }
 
     if (options?.syncIntakeAssets) {
-      const fromSaas = mapSubSaaSToPortalAssets(profile.subSaaS);
-      const fromCustom = mapCustomAssetsToPortalAssets(profile.customAssets);
+      const assetsProfile = { ...profile, customAssets: upsertMod1DeliverableAssets(profile) };
+      const fromSaas = mapSubSaaSToPortalAssets(assetsProfile.subSaaS);
+      const fromCustom = mapCustomAssetsToPortalAssets(assetsProfile.customAssets);
       patch.assets = mergePortalAssets(existing?.assets || [], [...fromSaas, ...fromCustom]);
     }
 
@@ -249,6 +287,9 @@
     mapRolesToActionItems,
     mergePortalAssets,
     mergeActionItems,
+    WASTE_TO_PESO_ASSET_TITLE,
+    upsertMod1DeliverableAssets,
+    stampMod1TasksDelivered,
     buildMod1CompletePortalPatch,
     syncMod1CompleteToPortal,
     buildPortalPatchFromProfile,

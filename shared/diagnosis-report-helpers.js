@@ -352,6 +352,33 @@
     return { ready, warnings, errors };
   }
 
+  function validateMod1Handoff(ctx) {
+    const base = validateReportReadiness(ctx);
+    const { synthesis = {}, tasks = [] } = ctx;
+    const errors = [...(base.errors || [])];
+    const warnings = [...(base.warnings || [])];
+
+    if (!String(synthesis.clientDeliverableUrl || '').trim()) {
+      errors.push('Add a client deliverable link (Google Drive PDF URL) before marking Mod 1 complete.');
+    }
+    if (!String(synthesis.loomWalkthroughUrl || '').trim()) {
+      errors.push('Add a Loom walkthrough URL (Mod 1 deliverable) before marking Mod 1 complete.');
+    }
+
+    const m102InScope = (tasks || []).some((t) => t.id === 'm1-02' && t.selected !== false);
+    const feedbackThemes = (synthesis.staffFeedbackThemes || []).filter((t) => t && String(t).trim());
+    if (m102InScope && feedbackThemes.length === 0) {
+      warnings.push('Staff Feedback (m1-02) is in SOW scope — add at least one anonymous feedback theme.');
+    }
+
+    const ready =
+      base.ready &&
+      !!String(synthesis.clientDeliverableUrl || '').trim() &&
+      !!String(synthesis.loomWalkthroughUrl || '').trim();
+
+    return { ready, warnings, errors };
+  }
+
   const PRINT_PRESETS = {
     full: {
       showExecutiveSummary: true,
@@ -399,6 +426,7 @@
     getTop5Fixes,
     buildModulePitch,
     validateReportReadiness,
+    validateMod1Handoff,
     PRINT_PRESETS,
   };
 
