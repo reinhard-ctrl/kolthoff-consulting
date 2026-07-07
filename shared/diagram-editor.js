@@ -345,6 +345,227 @@
     };
   }
 
+  function mergeOrgChartPolicy(defaultDoc, loadedDoc) {
+    const base = JSON.parse(JSON.stringify(defaultDoc));
+    if (!loadedDoc || typeof loadedDoc !== 'object') return base;
+    return {
+      ...base,
+      ...loadedDoc,
+      docControl: { ...base.docControl, ...(loadedDoc.docControl || {}) },
+      sections: loadedDoc.sections?.length ? loadedDoc.sections : base.sections,
+      diagram: {
+        ...base.diagram,
+        ...(loadedDoc.diagram || {}),
+        drawioXml: loadedDoc.diagram?.drawioXml || base.diagram.drawioXml,
+      },
+      roster: loadedDoc.roster || base.roster,
+      link: { ...base.link, ...(loadedDoc.link || {}) },
+    };
+  }
+
+  function createEmptyWorkflowPresent() {
+    return {
+      format: 'bpmn',
+      drawioXml: BLANK_BPMN_XML,
+      svgCache: '',
+      cellMeta: {},
+    };
+  }
+
+  function normalizeWorkflowPresent(present) {
+    if (!present || typeof present !== 'object') return createEmptyWorkflowPresent();
+    if (typeof present.drawioXml === 'string' && present.drawioXml.trim()) {
+      return {
+        format: 'bpmn',
+        drawioXml: present.drawioXml,
+        svgCache: present.svgCache || '',
+        cellMeta: present.cellMeta || {},
+      };
+    }
+    if (Array.isArray(present.nodes)) {
+      return {
+        format: 'legacy',
+        nodes: present.nodes || [],
+        edges: present.edges || [],
+        lanes: present.lanes || [],
+        phases: present.phases || [],
+        cellMeta: present.cellMeta || {},
+      };
+    }
+    return createEmptyWorkflowPresent();
+  }
+
+  function parseDrawioXmlCells(xml) {
+    if (!xml || typeof xml !== 'string') return [];
+    const cells = [];
+    const re = /<mxCell\b([^>]*?)(?:\/>|>([\s\S]*?)<\/mxCell>)/g;
+    let match;
+    while ((match = re.exec(xml)) !== null) {
+      const attrs = match[1];
+      const inner = match[2] || '';
+      const idMatch = attrs.match(/\bid="([^"]+)"/);
+      if (!idMatch) continue;
+      const valueMatch = attrs.match(/\bvalue="([^"]*)"/);
+      const styleMatch = attrs.match(/\bstyle="([^"]*)"/);
+      const parentMatch = attrs.match(/\bparent="([^"]+)"/);
+      const sourceMatch = attrs.match(/\bsource="([^"]+)"/);
+      const targetMatch = attrs.match(/\btarget="([^"]+)"/);
+      const geoMatch = (attrs + inner).match(/<mxGeometry[^>]*\bx="([^"]+)"[^>]*\by="([^"]+)"/);
+      cells.push({
+        id: idMatch[1],
+        value: valueMatch ? decodeXmlEntities(valueMatch[1]) : '',
+        style: styleMatch ? styleMatch[1] : '',
+        vertex: /\bvertex="1"/.test(attrs),
+        edge: /\bedge="1"/.test(attrs),
+        parent: parentMatch ? parentMatch[1] : null,
+        source: sourceMatch ? sourceMatch[1] : null,
+        target: targetMatch ? targetMatch[1] : null,
+        x: geoMatch ? Number(geoMatch[1]) : 0,
+        y: geoMatch ? Number(geoMatch[2]) : 0,
+      });
+    }
+    return cells;
+  }
+
+  function isBpmnLane(style) {
+    const s = style || '';
+    return /swimlane/i.test(s) || /mxgraph\.bpmn\.lane/i.test(s) || /part=swimlane/i.test(s);
+  }
+
+  function isBpmnPool(style) {
+    const s = style || '';
+    return /mxgraph\.bpmn\.pool/i.test(s) || /shape=pool/i.test(s);
+  }
+
+  function isBpmnContainer(style) {
+    return isBpmnLane(style) || isBpmnPool(style) || /group/i.test(style);
+  }
+
+  function parseBpmnFromDrawioXml(xml) {
+    const cells = parseDrawioXmlCells(xml);
+    const lanes = cells
+      .filter((c) => c.vertex && isBpmnLane(c.style))
+      .map((c) => {
+        const label = parseCellLabel(c.value);
+        return {
+          id: c.id,
+          label: label.name || 'Lane',
+          owner: label.title || label.name || '',
+          x: c.x,
+          y: c.y,
+        };
+      })
+      .sort((a, b) => a.y - b.y || a.x - b.x);
+
+    const laneIds = new Set(lanes.map((l) => l.id));
+    const tasks = cells
+      .filter((c) => c.vertex && !c.edge && c.value && !isBpmnContainer(c.style))
+      .map((c) => {
+        const label = stripHtml(c.value).replace(/\n/g, ' ').trim();
+        const laneId = laneIds.has(c.parent) ? c.parent : '';
+        const lane = lanes.find((l) => l.id === laneId);
+        return {
+          id: c.id,
+          label,
+          owner: lane ? lane.label : 'Unassigned',
+          laneId,
+          x: c.x,
+          y: c.y,
+          type: /gateway/i.test(c.style) ? 'gateway' : /event/i.test(c.style) ? 'event' : 'task',
+          delayMinutes: 0,
+          affectedStaff: 1,
+          hourlyRate: 150,
+          duration: '1 Hour',
+          description: '',
+        };
+      })
+      .sort((a, b) => a.x - b.x || a.y - b.y);
+
+    return { tasks, lanes };
+  }
+
+  function getLegacyWorkflowViewModel(present) {
+    const lanes = (present.lanes || [])
+      .slice()
+      .sort((a, b) => a.y - b.y)
+      .map((l) => ({
+        id: l.id,
+        label: String(l.label || '').replace(/\n/g, ' '),
+        owner: l.owner || '',
+      }));
+    const tasks = (present.nodes || [])
+      .filter((n) => n.type === 'process' || n.type === 'approval')
+      .sort((a, b) => a.x - b.x)
+      .map((n) => {
+        const lane = lanes.find((l) => l.id === n.roleId);
+        return {
+          id: n.id,
+          label: String(n.label || '').replace(/\n/g, ' '),
+          owner: lane ? lane.label : 'Unassigned',
+          laneId: n.roleId || '',
+          x: n.x,
+          y: n.y,
+          type: n.type,
+          delayMinutes: Number(n.delayMinutes) || 0,
+          affectedStaff: Number(n.affectedStaff) || 1,
+          hourlyRate: Number(n.hourlyRate) || 150,
+          duration: n.duration || '1 Hour',
+          description: n.description || '',
+        };
+      });
+    return {
+      format: 'legacy',
+      drawioXml: '',
+      svgCache: '',
+      tasks,
+      lanes,
+    };
+  }
+
+  /** Unified tasks + lanes for RACI, SOP sync, chaos tax, and reports. */
+  function getWorkflowViewModel(present) {
+    const norm = normalizeWorkflowPresent(present);
+    if (norm.format === 'legacy') {
+      return getLegacyWorkflowViewModel(norm);
+    }
+    const parsed = parseBpmnFromDrawioXml(norm.drawioXml);
+    const cellMeta = norm.cellMeta || {};
+    const tasks = parsed.tasks.map((task) => {
+      const meta = cellMeta[task.id] || {};
+      return {
+        ...task,
+        delayMinutes: Number(meta.delayMinutes) || 0,
+        affectedStaff: Number(meta.affectedStaff) || 1,
+        hourlyRate: Number(meta.hourlyRate) || 150,
+        duration: meta.duration || task.duration || '1 Hour',
+        description: meta.description || task.description || '',
+        risk: meta.risk || '',
+      };
+    });
+    const lanes = parsed.lanes.length
+      ? parsed.lanes
+      : [{ id: 'lane-default', label: 'Responsible Role', owner: '' }];
+    return {
+      format: 'bpmn',
+      drawioXml: norm.drawioXml,
+      svgCache: norm.svgCache || '',
+      tasks,
+      lanes,
+    };
+  }
+
+  function computeTabChaosTax(tasks) {
+    let annual = 0;
+    let dailyHours = 0;
+    (tasks || []).forEach((task) => {
+      if (task.type === 'gateway' || task.type === 'event') return;
+      const dailyWasteHours = ((Number(task.delayMinutes) || 0) * (Number(task.affectedStaff) || 1)) / 60;
+      dailyHours += dailyWasteHours;
+      annual += dailyWasteHours * (Number(task.hourlyRate) || 0) * 22 * 12;
+    });
+    return { annual: Math.round(annual), dailyHours };
+  }
+
   global.DiagramEditor = {
     DRAWIO_EMBED_BASE,
     BLANK_ORG_CHART_XML,
@@ -354,9 +575,15 @@
     getDrawioEmbedUrl,
     getPreset,
     parseRosterFromDrawioXml,
+    parseDrawioXmlCells,
+    parseBpmnFromDrawioXml,
     membersToDrawioXml,
     resolveWorkspaceOrgChartXml,
     compileOrgChartPolicyMarkdown,
     mergeOrgChartPolicy,
+    createEmptyWorkflowPresent,
+    normalizeWorkflowPresent,
+    getWorkflowViewModel,
+    computeTabChaosTax,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

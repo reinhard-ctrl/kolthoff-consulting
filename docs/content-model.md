@@ -104,8 +104,8 @@ Convention:
 | Field | Writer | Notes |
 |-------|--------|-------|
 | `tabs[]`, `activeTabId` | Diagnosis / Workflow Builder | Legacy canonical view (merged from app slices) |
-| `diagnosisWorkflow` | Diagnosis Reports | `{ tabs, activeTabId, updatedAt }` — app-specific slice |
-| `workflowBuilder` | Workflow Builder | `{ tabs, activeTabId, updatedAt }` — app-specific slice |
+| `diagnosisWorkflow` | Diagnosis Reports | `{ tabs, activeTabId, updatedAt }` — each tab `present` uses draw.io BPMN (`drawioXml`, `svgCache`, `cellMeta`) |
+| `workflowBuilder` | Workflow Builder | `{ tabs, activeTabId, updatedAt }` — BPMN to-be diagrams (same `present` shape) |
 | `subSaaS` | Diagnosis / Intake | SaaS stack (Intake merges by tool name) |
 | `raciAssignments` | Diagnosis | RACI matrix |
 | `synthesis` | Diagnosis | Executive summary |
