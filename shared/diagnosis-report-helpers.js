@@ -575,7 +575,7 @@
 
     if (!hasWorkflow) warnings.push('No workflow steps mapped — add at least one process in the Workflow Builder.');
     if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for peso calculations.');
-    if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 1) — diagrams save separately.');
+    if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 2) — diagrams save separately.');
     if (workflowUpdatedAt && reportDataUpdatedAt && workflowUpdatedAt > reportDataUpdatedAt) {
       warnings.push('Workflow was saved after your last report sync — click Sync to Cloud here to refresh chaos tax in the PDF.');
     }
@@ -611,10 +611,155 @@
       .filter((row) => row.name);
   }
 
-  function buildFeedbackFormQrUrl(formUrl) {
-    const url = String(formUrl || '').trim();
+  function buildLinkQrUrl(linkUrl, size) {
+    const url = String(linkUrl || '').trim();
     if (!url) return '';
-    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+    const px = Number(size) || 180;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${px}x${px}&data=${encodeURIComponent(url)}`;
+  }
+
+  function buildFeedbackFormQrUrl(formUrl) {
+    return buildLinkQrUrl(formUrl, 180);
+  }
+
+  function isMod1TaskInScope(tasks, taskId) {
+    const task = (tasks || []).find((t) => t.id === taskId);
+    if (!task) return true;
+    return task.selected !== false;
+  }
+
+  function buildMod1DeliverableStatus(ctx) {
+    const {
+      tasks = [],
+      orgChartSvg = '',
+      orgChartMembers = [],
+      tabs = [],
+      subSaaS = [],
+      synthesis = {},
+      DiagramEditor,
+    } = ctx;
+
+    const items = [];
+    const rosterRows = normalizeStaffDirectoryRows(orgChartMembers);
+    const feedbackThemes = (synthesis.staffFeedbackThemes || []).filter((t) => t && String(t).trim());
+    const hasWorkflow = (tabs || []).some((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0);
+    const hasLeakage = buildStepLeakageList(tabs, DiagramEditor).length > 0;
+    const top5Check = validateTop5Readiness({ synthesis, tasks });
+
+    const push = (id, label, inScope, complete, warningHint, pendingHint) => {
+      if (!inScope) return;
+      let status = 'pending';
+      let hint = pendingHint || '';
+      if (complete) {
+        status = 'complete';
+        hint = '';
+      } else if (warningHint) {
+        status = 'warning';
+        hint = warningHint;
+      }
+      items.push({ id, label, status, hint });
+    };
+
+    push(
+      'm1-01',
+      'Team List (m1-01)',
+      isMod1TaskInScope(tasks, 'm1-01'),
+      rosterRows.length > 0 && !!String(orgChartSvg || '').trim(),
+      rosterRows.length > 0 ? 'Export org chart diagram' : 'Add staff in Org Chart section',
+      'Build org chart and sync roster',
+    );
+    push(
+      'm1-02',
+      'Staff Feedback (m1-02)',
+      isMod1TaskInScope(tasks, 'm1-02'),
+      !!String(synthesis.feedbackFormUrl || '').trim() && feedbackThemes.length > 0,
+      !String(synthesis.feedbackFormUrl || '').trim() ? 'Add feedback form URL' : 'Add at least one feedback theme',
+      'Launch anonymous feedback form',
+    );
+    push(
+      'm1-03',
+      'Workflow Study (m1-03)',
+      isMod1TaskInScope(tasks, 'm1-03'),
+      hasWorkflow && hasLeakage,
+      hasWorkflow ? 'Set delay minutes on bottleneck steps' : 'Map at least one workflow',
+      'Map as-is workflows in section 2',
+    );
+    push(
+      'm1-04',
+      'SaaS Review (m1-04)',
+      isMod1TaskInScope(tasks, 'm1-04'),
+      (subSaaS || []).length > 0,
+      '',
+      'Add subscription rows in SaaS audit',
+    );
+    push(
+      'm1-05',
+      'Waste-to-Peso Report (m1-05)',
+      isMod1TaskInScope(tasks, 'm1-05'),
+      top5Check.ready
+        && !!String(synthesis.clientDeliverableUrl || '').trim()
+        && !!String(synthesis.loomWalkthroughUrl || '').trim(),
+      !top5Check.ready ? 'Complete Top 5 (owner + week)' : 'Add Drive PDF + Loom URLs in Client Handoff',
+      'Build fix list and client handoff links',
+    );
+
+    return items;
+  }
+
+  function buildDefaultExecutiveLetter(ctx) {
+    const {
+      tabs = [],
+      subSaaS = [],
+      synthesis = {},
+      orgChartMembers = [],
+      formatCurrency = (v) => String(v),
+      DiagramEditor,
+    } = ctx;
+
+    const rankings = buildProcessRankings(tabs, DiagramEditor);
+    const top = rankings[0];
+    const top5 = getTop5Fixes(synthesis.matrix?.items || []);
+    const saasMonthly = (subSaaS || []).reduce(
+      (acc, curr) => acc + (Number(curr.billing) || 0) * (Number(curr.users) || 0),
+      0,
+    );
+    const processAnnual = rankings.reduce((acc, row) => acc + (row.annual || 0), 0);
+    const totalAnnual = processAnnual + saasMonthly * 12;
+    const recapture = computeRecaptureSummary(top5, totalAnnual);
+    const processCount = (tabs || []).filter((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0).length;
+    const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
+    const toolCount = (subSaaS || []).length;
+
+    const parts = [];
+    parts.push(
+      `We mapped ${processCount || 'no'} core process${processCount === 1 ? '' : 'es'}, ${staffCount || 'no'} team member${staffCount === 1 ? '' : 's'}, and ${toolCount} software subscription${toolCount === 1 ? '' : 's'} during your Module 1 Business Leak Scan.`,
+    );
+    if (top && top.annual > 0) {
+      parts.push(
+        ` The highest-leak process is "${top.tabName}" at approximately ${formatCurrency(top.monthly)}/month — bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process maps'}.`,
+      );
+    }
+    if (totalAnnual > 0) {
+      parts.push(` Total identified leakage is ${formatCurrency(totalAnnual)}/year (process delays + subscription waste).`);
+    }
+    if (recapture.annual > 0 && top5.length > 0) {
+      parts.push(
+        ` Executing the Top ${top5.length} fixes in this report can recover approximately ${formatCurrency(recapture.annual)} in Year 1`,
+      );
+      if (recapture.pctOfTotalLeakage > 0) {
+        parts.push(` (~${recapture.pctOfTotalLeakage}% of total leakage) within 90 days without adding headcount.`);
+      } else {
+        parts.push(' within 90 days without adding headcount.');
+      }
+    }
+    return parts.join('');
+  }
+
+  function getBriefingWorkflowTabs(tabs, DiagramEditor) {
+    const rankings = buildProcessRankings(tabs, DiagramEditor);
+    if (!rankings.length) return [];
+    const topId = rankings[0].tabId;
+    return (tabs || []).filter((tab) => tab.id === topId);
   }
 
   function validateMod1Handoff(ctx) {
@@ -654,10 +799,12 @@
   const PRINT_PRESETS = {
     full: {
       showExecutiveSummary: true,
+      showExecutiveLetter: true,
       showFixOrder: true,
       showLeakageRanking: true,
       showOrgChart: true,
       showFlowcharts: true,
+      flowchartsTopOnly: false,
       showRaci: true,
       showSaas: true,
       showSynthesis: true,
@@ -665,13 +812,16 @@
       showFindings: true,
       showNextSteps: true,
       showAppendix: false,
+      showFeedbackAppendix: true,
     },
     briefing: {
       showExecutiveSummary: true,
+      showExecutiveLetter: true,
       showFixOrder: true,
       showLeakageRanking: true,
       showOrgChart: false,
-      showFlowcharts: false,
+      showFlowcharts: true,
+      flowchartsTopOnly: true,
       showRaci: false,
       showSaas: true,
       showSynthesis: true,
@@ -679,6 +829,7 @@
       showFindings: true,
       showNextSteps: true,
       showAppendix: false,
+      showFeedbackAppendix: false,
     },
   };
 
@@ -713,7 +864,12 @@
     validateMod1Handoff,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     normalizeStaffDirectoryRows,
+    buildLinkQrUrl,
     buildFeedbackFormQrUrl,
+    isMod1TaskInScope,
+    buildMod1DeliverableStatus,
+    buildDefaultExecutiveLetter,
+    getBriefingWorkflowTabs,
     PRINT_PRESETS,
   };
 
