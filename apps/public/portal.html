@@ -144,6 +144,12 @@
                 return () => clearInterval(checkInterval);
             }, []);
 
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const codeFromUrl = params.get('code')?.trim().toUpperCase();
+                if (codeFromUrl) setAccessCode(codeFromUrl);
+            }, []);
+
             const handleLogin = async (e) => {
                 e.preventDefault();
                 if (!firebaseReady) {
