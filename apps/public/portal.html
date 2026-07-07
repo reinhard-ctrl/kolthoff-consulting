@@ -77,8 +77,17 @@
 
     <div id="root"></div>
 
+    <script src="../shared/mod-gating.js?v=20250707-mod2-gate-v1"></script>
+
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        const normalizeRoadmapStatus = (status) => {
+            const s = String(status || '').toLowerCase().replace(/\s+/g, '');
+            if (s.includes('complete')) return 'completed';
+            if (s.includes('progress') || s === 'active' || s === 'inprogress') return 'active';
+            return 'pending';
+        };
 
         // --- ICONS ---
         const Icons = {
@@ -364,11 +373,21 @@
             const pendingActions = (data.actionItems || []).filter(a => a.status === 'pending');
             const safeMetrics = data.metrics || { annualLeakageIdentified: 0, chaosTaxEliminated: 0, saasSavingsIdentified: 0 };
             const workspaceUrl = data.workspaceUrl || '';
+            const mod2Unlocked = Boolean(data.mod2UnlockedAt) || normalizeRoadmapStatus(data.roadmap?.[0]?.status) === 'completed';
 
             return (
                 <div className="space-y-8 fade-in">
                     {uploadError && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-3">{uploadError}</p>}
                     {uploadSuccess && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">{uploadSuccess}</p>}
+                    {mod2Unlocked && data.currentPhase && String(data.currentPhase).includes('MOD 2') && (
+                        <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
+                            <p className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest font-bold mb-2">Module 2 unlocked</p>
+                            <h3 className="text-lg font-serif font-bold text-white mb-2">How Your Business Runs — now in progress</h3>
+                            <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">
+                                {data.mod1CompleteNotice || 'Module 1 (Business Leak Scan) is complete. Your consultant is building playbooks, policies, and to-be workflows for the next phase.'}
+                            </p>
+                        </div>
+                    )}
                     {workspaceUrl && (
                         <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -516,14 +535,16 @@
                         <div className="space-y-8 relative">
                             {roadmapItems.length === 0 && <p className="text-center text-sm text-slate-500">No roadmap items added yet.</p>}
                             {roadmapItems.map((item, idx) => {
+                                const statusKey = normalizeRoadmapStatus(item.status);
                                 let statusColor, statusBg, dotColor;
-                                if (item.status === 'completed') {
+                                if (statusKey === 'completed') {
                                     statusColor = 'text-emerald-400'; statusBg = 'bg-emerald-500/10 border-emerald-500/30'; dotColor = 'bg-emerald-500 shadow-[0_0_10px_#10b981]';
-                                } else if (item.status === 'active') {
+                                } else if (statusKey === 'active') {
                                     statusColor = 'text-brandTeal-400'; statusBg = 'bg-brandTeal-500/10 border-brandTeal-500/30'; dotColor = 'bg-brandTeal-500 shadow-[0_0_15px_#14b8a6] animate-pulse';
                                 } else {
                                     statusColor = 'text-slate-500'; statusBg = 'bg-brandNavy-800 border-brandNavy-700'; dotColor = 'bg-brandNavy-700';
                                 }
+                                const statusLabel = statusKey === 'completed' ? 'Complete' : statusKey === 'active' ? 'In Progress' : 'Pending';
 
                                 return (
                                     <div key={item.id || idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
@@ -534,11 +555,11 @@
                                         <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-panel border border-brandNavy-800 rounded-xl p-5 shadow-lg transition-all hover:border-brandNavy-600">
                                             <div className="flex justify-between items-start mb-1">
                                                 <span className={`text-[10px] font-bold uppercase tracking-wider font-mono px-2 py-0.5 rounded border ${statusBg} ${statusColor}`}>
-                                                    {item.status}
+                                                    {statusLabel}
                                                 </span>
                                                 <span className="text-[10px] font-mono text-slate-500 font-bold">{item.date}</span>
                                             </div>
-                                            <h4 className={`font-bold text-sm mt-2 ${item.status === 'pending' ? 'text-slate-400' : 'text-white'}`}>{item.title}</h4>
+                                            <h4 className={`font-bold text-sm mt-2 ${statusKey === 'pending' ? 'text-slate-400' : 'text-white'}`}>{item.title}</h4>
                                             <p className="text-xs text-slate-400 mt-2 leading-relaxed">{item.details}</p>
                                         </div>
                                     </div>

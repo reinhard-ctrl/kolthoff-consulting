@@ -136,14 +136,17 @@
     const defaultRoadmap = engagement.buildDefaultPortalRoadmap?.() || [];
     const base = existing?.roadmap?.length ? existing.roadmap : defaultRoadmap;
     const roadmap = base.map((item, i) => {
-      if (i === 0) return { ...item, status: 'Complete' };
-      if (i === 1) return { ...item, status: 'In Progress' };
-      return { ...item, status: item.status === 'Complete' ? 'Complete' : 'Pending' };
+      if (i === 0) return { ...item, status: 'completed' };
+      if (i === 1) return { ...item, status: 'active' };
+      return { ...item, status: item.status === 'completed' || item.status === 'Complete' ? 'completed' : 'pending' };
     });
     const mod2 = mods[1];
     return {
       roadmap,
       currentPhase: mod2?.portalPhase || 'MOD 2: How Your Business Runs',
+      mod2UnlockedAt: new Date().toISOString(),
+      mod1CompleteNotice:
+        'Module 1 (Business Leak Scan) is complete. Your consultant is now delivering Module 2 — How Your Business Runs (playbooks, policies, and to-be workflows).',
     };
   }
 
