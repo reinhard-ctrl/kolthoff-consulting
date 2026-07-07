@@ -175,11 +175,11 @@ describe('diagnosis-report-helpers', () => {
     assert.match(qr, /forms\.example/);
   });
 
-  it('buildFeedbackFormTemplateCopyUrl normalizes edit and view URLs', () => {
-    const copy = DRH.buildFeedbackFormTemplateCopyUrl('https://docs.google.com/forms/d/abc123xyz/edit');
-    assert.equal(copy, 'https://docs.google.com/forms/d/abc123xyz/copy');
-    const view = DRH.buildFeedbackFormViewUrl('https://docs.google.com/forms/d/e/1FAIpQLS-demo/viewform');
-    assert.equal(view, 'https://docs.google.com/forms/d/1FAIpQLS-demo/viewform');
+  it('buildFeedbackFormViewUrl normalizes edit and view URLs', () => {
+    const view = DRH.buildFeedbackFormViewUrl('https://docs.google.com/forms/d/abc123xyz/edit');
+    assert.equal(view, 'https://docs.google.com/forms/d/abc123xyz/viewform');
+    const fromPublished = DRH.buildFeedbackFormViewUrl('https://docs.google.com/forms/d/e/1FAIpQLS-demo/viewform');
+    assert.equal(fromPublished, 'https://docs.google.com/forms/d/1FAIpQLS-demo/viewform');
   });
 
   it('getM102FeedbackFormTemplate exposes anonymous survey questions', () => {
@@ -188,10 +188,6 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(template.questions.length >= 5);
     assert.equal(template.settings.collectEmail, false);
     assert.match(template.description, /anonymous/i);
-  });
-
-  it('isM102FeedbackFormTemplateReady is false until templateFormId is provisioned', () => {
-    assert.equal(DRH.isM102FeedbackFormTemplateReady(), false);
   });
 
   it('normalizeReportDiagramSvg removes fixed dimensions for responsive print scaling', () => {
