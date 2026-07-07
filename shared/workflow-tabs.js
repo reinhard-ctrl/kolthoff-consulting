@@ -35,7 +35,12 @@
     return order.map((id) => byId[id]);
   }
 
-  /** Prefer app-specific slice; fall back to legacy tabs[]. */
+  /** True when profile uses Mod 1 / Mod 2 slice fields (post-split). */
+  function hasSliceSplit(profile) {
+    return !!(profile?.diagnosisWorkflow || profile?.workflowBuilder);
+  }
+
+  /** Prefer app-specific slice; fall back to legacy tabs[] only before slice split. */
   function resolveWorkflowTabs(profile, app) {
     if (!profile) return null;
     const sliceKey = SLICE_KEYS[app];
@@ -47,7 +52,7 @@
         source: sliceKey,
       };
     }
-    if (profile.tabs?.length) {
+    if (!hasSliceSplit(profile) && profile.tabs?.length) {
       return {
         tabs: profile.tabs,
         activeTabId: profile.activeTabId || profile.tabs[0].id,
@@ -89,7 +94,7 @@
     if (wf?.tabs?.length && wf.source === 'workflowBuilder') {
       return { tabs: wf.tabs, activeTabId: wf.activeTabId, source: 'workflowBuilder (legacy fallback)' };
     }
-    if (profile.tabs?.length) {
+    if (!hasSliceSplit(profile) && profile.tabs?.length) {
       return {
         tabs: profile.tabs,
         activeTabId: profile.activeTabId || profile.tabs[0].id,
@@ -99,19 +104,12 @@
     return { tabs: [], activeTabId: null, source: null };
   }
 
-  /** Mod 2 workflow builder tabs — to-be workflows only. */
+  /** Mod 2 workflow builder tabs — to-be workflows only (never Mod 1 as-is). */
   function getWorkflowTabs(profile) {
     if (!profile) return { tabs: [], activeTabId: null, source: null };
     const wf = resolveWorkflowTabs(profile, 'workflow');
     if (wf?.tabs?.length) {
       return { tabs: wf.tabs, activeTabId: wf.activeTabId, source: wf.source };
-    }
-    if (profile.tabs?.length) {
-      return {
-        tabs: profile.tabs,
-        activeTabId: profile.activeTabId || profile.tabs[0].id,
-        source: 'tabs',
-      };
     }
     return { tabs: [], activeTabId: null, source: null };
   }
@@ -165,6 +163,7 @@
     stripTabsForSave,
     hydrateTabs,
     mergeTabsById,
+    hasSliceSplit,
     resolveWorkflowTabs,
     buildWorkflowTabsPayload,
     getDiagnosisTabs,

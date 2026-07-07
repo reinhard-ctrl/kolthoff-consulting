@@ -48,5 +48,23 @@ assert.equal(dxPrimary.source, 'diagnosisWorkflow');
 assert.equal(WT.parseWorkflowAppFromSearch('?slice=diagnosis'), 'diagnosis');
 assert.equal(WT.parseWorkflowAppFromSearch('?slice=workflow'), 'workflow');
 assert.equal(WT.getWorkflowTabs(profile).activeTabId, 'b');
+assert.equal(WT.getWorkflowTabs(profile).source, 'workflowBuilder');
+
+const dxOnlySplit = {
+  diagnosisWorkflow: { tabs: [tabA], activeTabId: 'a', updatedAt: 1 },
+  tabs: [tabA, tabB],
+  activeTabId: 'a',
+};
+assert.equal(WT.getWorkflowTabs(dxOnlySplit).tabs.length, 0);
+assert.equal(WT.getWorkflowTabs(dxOnlySplit).source, null);
+
+const legacyOnly = { tabs: [tabA], activeTabId: 'a' };
+assert.equal(WT.getWorkflowTabs(legacyOnly).tabs[0].id, 'a');
+assert.equal(WT.getWorkflowTabs(legacyOnly).source, 'tabs');
+
+const wfOnlySplit = {
+  workflowBuilder: { tabs: [tabB], activeTabId: 'b', updatedAt: 2 },
+};
+assert.equal(WT.getWorkflowTabs(wfOnlySplit).tabs[0].id, 'b');
 
 console.log('workflow-tabs.test.mjs: all assertions passed');
