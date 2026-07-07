@@ -2514,18 +2514,18 @@
                                 </div>
                                 
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    Select an active workflow tab diagrammed in the <strong>Workflow Studio</strong> to automatically generate or update an operational SOP. This pulls step-by-step actions, durations, Swimlane owners, and translates RACI boundaries instantly.
+                                    Select a to-be workflow tab from <strong>Workflow Builder (Mod 2)</strong> to generate or update an operational SOP. As-is diagrams from Diagnosis Reports are not imported — only the <code className="text-brandTeal-404">workflowBuilder</code> slice is used.
                                 </p>
 
                                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 mt-2">
                                     {(() => {
-                                        const wfTabs = window.WorkflowTabs?.getWorkflowTabs?.(activeProfile);
-                                        const availableTabs = wfTabs?.tabs || activeProfile?.tabs || [];
-                                        
+                                        const wfTabs = window.WorkflowTabs?.getWorkflowTabs?.(activeProfile) || { tabs: [] };
+                                        const availableTabs = wfTabs.tabs || [];
+
                                         if (availableTabs.length === 0) {
                                             return (
                                                 <div className="text-center py-8 text-xs text-slate-500 font-medium">
-                                                    No active workflows found in this client profile. Map them first in Mod2: Workflow Studio.
+                                                    No Mod 2 to-be workflows found. Build them in <strong>Workflow Builder</strong> (not Diagnosis Reports) — SOPs import from the to-be slice only.
                                                 </div>
                                             );
                                         }
