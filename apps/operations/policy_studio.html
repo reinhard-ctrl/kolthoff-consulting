@@ -182,8 +182,8 @@
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
-    <script src="../../shared/sop-sync.js?v=20250707-diagnosis-bpmn-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250707-sop-bpmn-v1"></script>
+    <script src="../../shared/sop-sync.js?v=20250707-sop-bpmn-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -203,7 +203,9 @@
                         { id: 'step-1', action: 'Receive Packing List and Verify Stock Location', owner: 'Warehouse Staff', duration: '10 mins', details: 'Retrieve system-generated packaging manifests from WMS. Conduct barcoded terminal validation at designated storage racks to confirm absolute code alignment before moving stock to packaging queues.' },
                         { id: 'step-2', action: 'Quality Assurance Inspection and Secure Packaging', owner: 'Warehouse Staff', duration: '15 mins', details: 'Conduct a thorough structural review of packaging seals. Snugly wrap components with certified double-layered cellular sheets. Place into selected carton templates with eco-friendly padding, and seal using heavy-duty, tamper-evident tape.' },
                         { id: 'step-3', action: 'Freight Manifest Generation and Third-Party Carrier Hand-Off', owner: 'Logistics Coordinator', duration: '10 mins', details: 'Register total physical attributes (weight, volumetric dimensions) into the shipping ledger. Generate standard third-party courier labels, apply directly onto carton faces, obtain carrier signature, and log dispatch codes.' }
-                    ]
+                    ],
+                    diagram: { drawioXml: '', svgCache: '', lastDiagramEditAt: null },
+                    link: { source: 'policy-studio', workbookWorkflowField: 'workflowBuilder', lastSyncedAt: null }
                 }
             ],
             handbook: {
@@ -385,9 +387,12 @@
             };
 
             const sendLoad = (diagramXml) => {
+                const blank = preset === 'bpmn'
+                    ? (window.DiagramEditor?.BLANK_BPMN_XML || '')
+                    : (window.DiagramEditor?.BLANK_ORG_CHART_XML || '');
                 postAction({
                     action: 'load',
-                    xml: diagramXml || window.DiagramEditor?.BLANK_ORG_CHART_XML || '',
+                    xml: diagramXml || blank,
                     autosave: 1,
                 });
             };
@@ -747,7 +752,10 @@
                 const defaultData = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA));
                 if (!loadedData) return defaultData;
                 
-                const mergedSops = loadedData.sops || defaultData.sops;
+                const sopTemplate = defaultData.sops[0];
+                const mergedSops = (loadedData.sops?.length ? loadedData.sops : defaultData.sops).map((loaded) =>
+                    window.SopSync?.mergeSopDocument?.(sopTemplate, loaded) || loaded
+                );
                 
                 const mergedHandbook = {
                     ...defaultData.handbook,
@@ -1090,7 +1098,56 @@
                 });
 
                 setShowSyncModal(false);
-                triggerToast(`🔄 Successfully synchronized "${tab.name}" as an SOP!`);
+                triggerToast(`🔄 Successfully synchronized "${tab.name}" as an SOP (diagram + ${newSop.steps?.length || 0} steps).`);
+            };
+
+            const updateSopFields = (sopId, patch) => updateDocState('sops', (sops) => sops.map((s) => {
+                if (s.id !== sopId) return s;
+                return {
+                    ...s,
+                    ...patch,
+                    diagram: patch.diagram ? { ...(s.diagram || {}), ...patch.diagram } : s.diagram,
+                    link: patch.link ? { ...(s.link || {}), ...patch.link } : s.link,
+                };
+            }));
+
+            const handleSopDiagramXmlChange = (sopId, drawioXml) => {
+                updateSopFields(sopId, {
+                    diagram: { drawioXml, lastDiagramEditAt: Date.now() },
+                    link: { source: 'policy-studio' },
+                });
+            };
+
+            const handleSopSvgExport = (sopId, svgCache) => {
+                updateSopFields(sopId, { diagram: { svgCache } });
+            };
+
+            const handleSyncSopFromWorkspace = (sopId) => {
+                const sop = (localPolicyData.sops || []).find((s) => s.id === sopId);
+                const profile = workbookProfiles.find((p) => p.id === activeProfileId);
+                if (!sop || !profile) {
+                    triggerToast('⚠️ Select a workspace profile first.');
+                    return;
+                }
+                const synced = window.SopSync?.syncSopFromWorkspace?.(sop, profile);
+                if (!synced) {
+                    triggerToast('⚠️ No matching Mod 2 workflow tab with BPMN tasks. Build the to-be diagram in Workflow Builder first.');
+                    return;
+                }
+                updateDocState('sops', (sops) => sops.map((s) => (s.id === sopId ? synced : s)));
+                triggerToast(`✅ "${synced.title}" synced from workspace (${synced.steps?.length || 0} steps).`);
+            };
+
+            const handleParseStepsFromSopDiagram = (sopId) => {
+                const sop = (localPolicyData.sops || []).find((s) => s.id === sopId);
+                const profile = workbookProfiles.find((p) => p.id === activeProfileId);
+                const refreshed = window.SopSync?.refreshSopStepsFromDiagram?.(sop, profile);
+                if (!refreshed) {
+                    triggerToast('⚠️ This diagram has no BPMN tasks to parse.');
+                    return;
+                }
+                updateDocState('sops', (sops) => sops.map((s) => (s.id === sopId ? refreshed : s)));
+                triggerToast(`✅ Parsed ${refreshed.steps?.length || 0} steps from diagram.`);
             };
 
             const updateActiveClientField = (field, value) => {
@@ -1475,6 +1532,52 @@
                             </td>
                         </tr>
                     </React.Fragment>
+                );
+            };
+
+            const renderSopDiagramSection = (sop) => {
+                const svgCache = sop.diagram?.svgCache;
+                return (
+                    <section aria-labelledby={`sop-diagram-heading-${sop.id}`} className="mt-8 page-break-avoid">
+                        <h3 id={`sop-diagram-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold print-section-title" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Process Flow Diagram (BPMN 2.0)</h3>
+                        <p className="text-sm text-slate-600 mt-1 mb-4">Authoritative visual reference for this procedure. Linked to Mod 2 Workflow Builder (<code className="text-xs">workflowBuilder</code>) when synced from workspace.</p>
+
+                        {isEditMode && (
+                            <div className="no-print mb-6 space-y-4 border border-slate-200 rounded-xl p-4 bg-slate-50">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <p className="text-xs text-slate-500 max-w-xl">Build or edit the BPMN diagram below, sync from the workspace to-be workflow tab, or parse execution steps from shapes.</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {!isStandalone && (
+                                            <button type="button" onClick={() => handleSyncSopFromWorkspace(sop.id)} className="text-[10px] font-bold uppercase bg-brandNavy-900 border border-brandNavy-700 text-brandTeal-400 px-3 py-1.5 rounded-lg hover:bg-brandNavy-800 transition-colors flex items-center">
+                                                <Icons.Sync /> <span className="ml-1">Sync from Workspace</span>
+                                            </button>
+                                        )}
+                                        <button type="button" onClick={() => handleParseStepsFromSopDiagram(sop.id)} className="text-[10px] font-bold uppercase bg-slate-100 border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors">
+                                            Parse Steps from Diagram
+                                        </button>
+                                    </div>
+                                </div>
+                                <DrawIoEmbed
+                                    preset="bpmn"
+                                    xml={sop.diagram?.drawioXml}
+                                    onXmlChange={(xml) => handleSopDiagramXmlChange(sop.id, xml)}
+                                    onSvgExport={(svg) => handleSopSvgExport(sop.id, svg)}
+                                    height={420}
+                                />
+                                {sop.link?.lastSyncedAt && (
+                                    <p className="text-[10px] text-slate-400 font-mono">Last workspace sync: {new Date(sop.link.lastSyncedAt).toLocaleString()}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {svgCache ? (
+                            <img src={svgCache} alt={`${sop.title} BPMN diagram`} className="max-w-full h-auto border border-slate-200 rounded-lg bg-white p-2" />
+                        ) : (
+                            <div className="border border-dashed border-slate-300 rounded-lg p-8 text-center text-sm text-slate-500 bg-slate-50">
+                                No diagram exported yet. Switch to Edit Mode, sync from Workflow Builder or draw the BPMN diagram, then click <strong>Apply Diagram</strong>.
+                            </div>
+                        )}
+                    </section>
                 );
             };
 
@@ -2131,6 +2234,8 @@
                                                                     </div>
                                                                 </div>
 
+                                                                {renderSopDiagramSection(sop)}
+
                                                                 <section aria-labelledby={`sop-steps-heading-${sop.id}`} className="mt-8">
                                                                     <h3 id={`sop-steps-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Step-by-Step Execution</h3>
                                                                     <table className="w-full text-left print-table text-sm border-collapse">
@@ -2555,7 +2660,7 @@
                                 </div>
                                 
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    Select a to-be workflow tab from <strong>Workflow Builder (Mod 2)</strong> to generate or update an operational SOP. As-is diagrams from Diagnosis Reports are not imported — only the <code className="text-brandTeal-404">workflowBuilder</code> slice is used.
+                                    Select a to-be workflow tab from <strong>Workflow Builder (Mod 2)</strong> to generate or update an operational SOP with BPMN diagram and step table. As-is diagrams from Diagnosis Reports are not imported — only the <code className="text-brandTeal-404">workflowBuilder</code> slice is used.
                                 </p>
 
                                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 mt-2">
