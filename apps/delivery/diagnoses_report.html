@@ -447,7 +447,7 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId, setActiveNav, onSave, isSaving, authError, workbookProfiles, profileLabel, setActiveProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-diagnosis-bpmn-v1' });
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-workflow-errorboundary-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             const sectionBtn = (id, label) => (

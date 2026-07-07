@@ -88,6 +88,20 @@
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
         const IS_EMBED = document.documentElement.classList.contains('workflow-embed');
+
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) return (
+                    <div className="p-10 text-rose-500 font-mono bg-brandNavy-955 min-h-screen">
+                        <h1 className="text-2xl font-bold mb-4">React Compilation Error</h1>
+                        <p className="bg-rose-950 p-4 rounded border border-rose-500/30 whitespace-pre-wrap">{this.state.error.toString()}</p>
+                    </div>
+                );
+                return this.props.children;
+            }
+        }
         const WORKFLOW_APP = window.WorkflowTabs?.parseWorkflowAppFromSearch?.(window.location.search) || 'workflow';
         const IS_DIAGNOSIS_MODE = WORKFLOW_APP === 'diagnosis';
 
