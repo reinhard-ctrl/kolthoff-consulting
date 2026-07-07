@@ -9,12 +9,50 @@ function navStorageKey(): string {
   return getProductConfig().navStorageKey;
 }
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-export const NAV_PREFS_VERSION = 11;
+export const NAV_PREFS_VERSION = 12;
 
 /** Nav items removed from the catalog — stripped from saved assignments on migrate. */
 const REMOVED_NAV_ITEMS = ['org-chart', 'workflow-builder'];
 
 /** Map legacy group ids from older saved layouts. */
+function migrateNavLayoutV12(prefs: NavPreferences): NavPreferences {
+  const next: NavPreferences = {
+    ...prefs,
+    groupOrder: [...(prefs.groupOrder ?? [])],
+    assignments: { ...(prefs.assignments ?? {}) },
+    hiddenGroups: prefs.hiddenGroups ? [...prefs.hiddenGroups] : undefined,
+  };
+
+  const moveItem = (itemId: string, toGroupId: string, position: 'start' | 'end' = 'end') => {
+    for (const groupId of Object.keys(next.assignments)) {
+      next.assignments[groupId] = (next.assignments[groupId] ?? []).filter((id) => id !== itemId);
+    }
+    const target = [...(next.assignments[toGroupId] ?? [])].filter((id) => id !== itemId);
+    if (position === 'start') target.unshift(itemId);
+    else target.push(itemId);
+    next.assignments[toGroupId] = target;
+  };
+
+  if (next.assignments.client?.length) {
+    for (const itemId of next.assignments.client) {
+      if (itemId === 'marketing') moveItem(itemId, 'command', 'start');
+      else if (itemId === 'client-portal') moveItem(itemId, 'analytics', 'end');
+    }
+    delete next.assignments.client;
+  }
+
+  if (next.assignments.operations?.includes('portals')) {
+    moveItem('portals', 'product', 'start');
+  }
+
+  next.groupOrder = next.groupOrder.filter((id) => id !== 'client');
+  if (next.hiddenGroups) {
+    next.hiddenGroups = next.hiddenGroups.filter((id) => id !== 'client');
+  }
+
+  return next;
+}
+
 export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
   const next: NavPreferences = {
     ...prefs,
@@ -49,7 +87,7 @@ export function migrateNavPreferences(prefs: NavPreferences): NavPreferences {
     for (const id of REMOVED_NAV_ITEMS) delete next.itemLabels[id];
   }
 
-  return next;
+  return migrateNavLayoutV12(next);
 }
 
 export type NavPreferences = {
