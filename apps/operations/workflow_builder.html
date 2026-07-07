@@ -508,6 +508,39 @@
                     const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload(WORKFLOW_APP, tabs, activeTabId, existing);
                     await window.setDoc(profileRef, { ...tabsPayload, raciAssignments }, { merge: true });
 
+                    if (IS_DIAGNOSIS_MODE) {
+                        let totalAnnual = 0;
+                        tabs.forEach((tab) => {
+                            const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [] };
+                            const tax = window.DiagramEditor?.computeTabChaosTax?.(vm.tasks) || { annual: 0 };
+                            totalAnnual += tax.annual || 0;
+                        });
+                        const EC = window.EngagementConfig || {};
+                        const chaosTax = EC.buildChaosTaxPayload
+                            ? EC.buildChaosTaxPayload('diagnosis', totalAnnual, {})
+                            : { source: 'diagnosis', value: totalAnnual, inputs: {} };
+                        await window.setDoc(profileRef, {
+                            annualOperationalLeakage: totalAnnual,
+                            chaosTax,
+                        }, { merge: true });
+                        if (window.PortalSync?.syncProfileToPortalIfExists) {
+                            try {
+                                const profileForSync = {
+                                    ...existing,
+                                    ...tabsPayload,
+                                    raciAssignments,
+                                    subSaaS: existing.subSaaS,
+                                    chaosTax,
+                                    annualOperationalLeakage: totalAnnual,
+                                    id: activeProfileId,
+                                };
+                                await window.PortalSync.syncProfileToPortalIfExists(profileForSync, { syncIntakeAssets: false });
+                            } catch (portalErr) {
+                                console.warn('Portal sync skipped:', portalErr);
+                            }
+                        }
+                    }
+
                     if (!IS_DIAGNOSIS_MODE && window.SopSync) {
                         const profileForSop = { ...existing, ...tabsPayload, raciAssignments };
                         const policyRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'policy_documents', activeProfileId);

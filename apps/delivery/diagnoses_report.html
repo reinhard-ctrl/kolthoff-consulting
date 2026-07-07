@@ -120,8 +120,8 @@
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
-    <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v2"></script>
+    <script src="../../shared/portal-sync.js?v=20250707-mod1-complete-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v3"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -174,6 +174,7 @@
             nextModuleId: 'MOD 2',
             customPitch: '',
             staffFeedbackThemes: [''],
+            loomWalkthroughUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
         });
@@ -964,6 +965,10 @@
                                     </div>
                                     <textarea rows="4" value={synthesis.customPitch} onChange={(e) => setSynthesis(prev => ({ ...prev, customPitch: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-xs text-white leading-relaxed outline-none focus:border-brandTeal-500 resize-none font-medium"></textarea>
                                 </div>
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Loom walkthrough URL (Mod 1 deliverable)</label>
+                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                </div>
                                 <div className="text-[10px] text-slate-400 leading-relaxed pt-1.5 border-t border-brandNavy-800 flex justify-between items-center">
                                     <span>Learn more about transition support:</span>
                                     <a href="http://www.kolthoff-consulting.com" target="_blank" className="text-brandTeal-400 hover:underline font-bold">www.kolthoff-consulting.com</a>
@@ -1223,6 +1228,7 @@
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
             const raciGaps = DR.buildRaciGaps?.(tabs, raciAssignments, window.DiagramEditor) || { gaps: [], unassignedSteps: 0, totalSteps: 0 };
+            const raciOrgInsights = DR.buildRaciOrgInsights?.(tabs, raciAssignments, orgChartMembers, window.DiagramEditor) || [];
             const modules = EC_MODULES();
             const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
 
@@ -1357,6 +1363,11 @@
                     {printConfig.showRaci && (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader number="D" title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
+                            {raciOrgInsights.length > 0 && (
+                                <ul className="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside page-break-inside-avoid">
+                                    {raciOrgInsights.map((line, i) => <li key={i}>{line}</li>)}
+                                </ul>
+                            )}
                             {tabs.map(tab => {
                                 const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
                                 const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
@@ -1533,6 +1544,9 @@
                                 <div className="p-4 border-l-4 border-brandTeal-600 bg-teal-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-brandTeal-900 text-xs uppercase tracking-wider block mb-1">Week 7–12 — Structural changes</strong>
                                     <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-day fix list with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
+                                    {synthesis.loomWalkthroughUrl && synthesis.loomWalkthroughUrl.trim() && (
+                                        <p className="text-slate-700 text-xs mt-2"><strong>Video walkthrough:</strong> <span className="font-mono text-brandTeal-700 break-all">{synthesis.loomWalkthroughUrl.trim()}</span></p>
+                                    )}
                                 </div>
                             </div>
                             <div className="mt-8 p-5 border border-slate-200 rounded-xl bg-slate-50 page-break-inside-avoid">
@@ -1581,6 +1595,9 @@
             const [clientCompany, setClientCompany] = useState('');
             const [preparedBy, setPreparedBy] = useState('Reinhard Ludwig A. Kolthoff');
             const [orgChartMembers, setOrgChartMembers] = useState([]);
+            const [workflowUpdatedAt, setWorkflowUpdatedAt] = useState(0);
+            const [reportDataUpdatedAt, setReportDataUpdatedAt] = useState(0);
+            const [mod1DeliveredAt, setMod1DeliveredAt] = useState(null);
 
             const [diagnosisInit] = useState(() => {
                 const id = `tab-${Date.now()}`;
@@ -1655,6 +1672,9 @@
                     setOrgChartXml(window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '');
                     setOrgChartSvg(profile.orgChart?.svgCache || '');
                     setOrgChartMembers(profile.orgChart?.members || []);
+                    setWorkflowUpdatedAt(profile.diagnosisWorkflow?.updatedAt || 0);
+                    setReportDataUpdatedAt(profile.diagnosisReportUpdatedAt || 0);
+                    setMod1DeliveredAt(profile.mod1DeliveredAt || null);
 
                     if (profile.synthesis) {
                         const loadedSynthesis = { ...profile.synthesis };
@@ -1714,7 +1734,8 @@
 
             const reportValidation = useMemo(() => DRH().validateReportReadiness?.({
                 tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
-            }) || { ready: true, warnings: [] }, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments]);
+                workflowUpdatedAt, reportDataUpdatedAt,
+            }) || { ready: true, warnings: [] }, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt]);
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
@@ -1767,6 +1788,7 @@
                         annualOperationalLeakage: totalAnnualChaosTax,
                         chaosTax,
                         synthesis,
+                        diagnosisReportUpdatedAt: Date.now(),
                         orgChart: {
                             drawioXml: orgChartXml,
                             svgCache: orgChartSvg,
@@ -1775,6 +1797,7 @@
                         },
                     }, { merge: true });
                     setOrgChartMembers(window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || orgChartMembers);
+                    setReportDataUpdatedAt(Date.now());
                     if (window.PortalSync?.syncProfileToPortalIfExists) {
                         try {
                             const profileSnap = await window.getDoc(profileRef);
@@ -1786,6 +1809,34 @@
                     }
                     triggerToast("💾 Saved to Cloud!");
                 } catch (e) { triggerToast("❌ Error saving."); }
+                setIsSaving(false);
+            };
+
+            const handleMarkMod1Complete = async () => {
+                if (authError || !isAuthed || !activeProfileId) return;
+                if (!reportValidation.ready) {
+                    triggerToast('❌ Complete required sections before marking Mod 1 done');
+                    return;
+                }
+                const ok = window.confirm('Mark Module 1 (Business Leak Scan) as delivered?\n\nThis will advance the client portal to MOD 2 on the roadmap.');
+                if (!ok) return;
+                setIsSaving(true);
+                try {
+                    await handleSaveToCloud();
+                    const deliveredAt = new Date().toISOString();
+                    const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                    await window.firestoreSetDoc(profileRef, {
+                        mod1Status: 'complete',
+                        mod1DeliveredAt: deliveredAt,
+                    }, { merge: true });
+                    setMod1DeliveredAt(deliveredAt);
+                    const profileSnap = await window.getDoc(profileRef);
+                    const profileData = profileSnap.exists() ? { id: activeProfileId, ...profileSnap.data() } : { id: activeProfileId };
+                    const portalCode = await window.PortalSync?.syncMod1CompleteToPortal?.(profileData);
+                    triggerToast(portalCode ? `✓ Mod 1 complete — portal advanced (${portalCode})` : '✓ Mod 1 marked complete (no linked portal)');
+                } catch (e) {
+                    triggerToast('❌ Could not mark Mod 1 complete');
+                }
                 setIsSaving(false);
             };
 
@@ -1906,9 +1957,15 @@
                                                 <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Waste-to-Peso Report Preview</h2>
                                                 <p className="text-[10px] text-slate-500 mt-0.5">{clientCompany} · {reportDate}</p>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                                                {mod1DeliveredAt && (
+                                                    <span className="text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Mod 1 delivered {new Date(mod1DeliveredAt).toLocaleDateString()}</span>
+                                                )}
                                                 <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing (3–4 pp)</button>
                                                 <button type="button" onClick={() => applyPrintPreset('full')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full Diagnostic</button>
+                                                {!mod1DeliveredAt && (
+                                                    <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError} className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-700 disabled:opacity-50">Mark Mod 1 Complete</button>
+                                                )}
                                                 <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
                                             </div>
                                         </div>

@@ -73,4 +73,12 @@ assert.equal(merged.length, 2);
 
 assert.equal(EC.getClientDisplayName({ clientName: 'Legacy Co' }), 'Legacy Co');
 
+const mod1Patch = PS.buildMod1CompletePortalPatch({
+  roadmap: EC.buildDefaultPortalRoadmap(),
+  currentPhase: EC.MODULES[0].portalPhase,
+});
+assert.equal(mod1Patch.roadmap[0].status, 'Complete');
+assert.equal(mod1Patch.roadmap[1].status, 'In Progress');
+assert.equal(mod1Patch.currentPhase, EC.MODULES[1].portalPhase);
+
 console.log('portal-sync.test.mjs: all assertions passed');
