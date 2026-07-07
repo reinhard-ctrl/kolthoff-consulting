@@ -49,7 +49,7 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'client',
     label: 'Client Experience',
-    items: [{ id: 'client-portal' }, { id: 'marketing' }],
+    items: [{ id: 'marketing' }],
   },
 ];
 
@@ -173,7 +173,7 @@ const movedPrefs = {
     delivery: ['diagnosis-reports', 'policy-studio'],
     product: ['tenants', 'agency-ops-manager'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
-    client: ['client-portal', 'marketing'],
+    client: ['marketing'],
   },
 };
 

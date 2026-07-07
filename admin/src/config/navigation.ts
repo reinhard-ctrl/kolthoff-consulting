@@ -68,7 +68,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     id: 'client',
     label: 'Client Experience',
     items: [
-      { id: 'client-portal', label: 'Client Portal', type: 'embed', href: '/apps/public/portal.html', openInNewTab: true },
       { id: 'marketing', label: 'Marketing Site', type: 'embed', href: '/', openInNewTab: true },
     ],
   },
