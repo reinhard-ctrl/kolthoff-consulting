@@ -43,4 +43,11 @@ assert.equal(legacy.tasks[0].delayMinutes, 15);
 const tax = DE.computeTabChaosTax(vmResult.tasks);
 assert.ok(tax.annual > 0);
 
+const bpmnUrl = DE.getDrawioEmbedUrl({ libs: 'bpmn' });
+assert.ok(bpmnUrl.includes('libs=bpmn'));
+assert.ok(bpmnUrl.includes('libraries=1'));
+const bpmnPreset = DE.getPreset('bpmn');
+assert.equal(bpmnPreset.embedLibs, 'bpmn');
+assert.ok(bpmnPreset.configure.defaultLibraries.includes('bpmn'));
+
 console.log('diagram-editor.test.mjs: all assertions passed');

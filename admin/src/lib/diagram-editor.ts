@@ -41,7 +41,7 @@ export interface OrgChartPolicyDoc {
 
 export type DiagramPresetId = 'orgChart' | 'bpmn';
 
-export function getDrawioEmbedUrl(options?: { ui?: string; dark?: boolean }): string {
+export function getDrawioEmbedUrl(options?: { ui?: string; dark?: boolean; libs?: string }): string {
   const params = new URLSearchParams({
     embed: '1',
     proto: 'json',
@@ -53,6 +53,7 @@ export function getDrawioEmbedUrl(options?: { ui?: string; dark?: boolean }): st
     noExitBtn: '1',
     ui: options?.ui || 'kennedy',
   });
+  if (options?.libs) params.set('libs', options.libs);
   if (options?.dark) params.set('dark', '1');
   return `${DRAWIO_EMBED_BASE}?${params.toString()}`;
 }
@@ -62,9 +63,11 @@ export function getPreset(presetId: DiagramPresetId) {
     return {
       id: 'bpmn',
       label: 'BPMN 2.0 Workflow',
+      embedLibs: 'bpmn',
       configure: {
-        defaultLibraries: 'bpmn;general',
-        enabledLibraries: ['bpmn', 'general'],
+        defaultLibraries: 'bpmn;general;flowchart;basic;arrows2',
+        enabledLibraries: ['bpmn', 'general', 'flowchart', 'basic', 'arrows2'],
+        title: 'BPMN 2.0 Workflow',
       },
     };
   }
