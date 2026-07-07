@@ -297,6 +297,7 @@
             clientDeliverableUrl: '',
             feedbackFormUrl: '',
             feedbackLaunchGuide: DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '',
+            executiveLetter: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
@@ -430,6 +431,25 @@
                         </div>
                     </div>
                 </header>
+            );
+        };
+
+        const Mod1DeliverableStrip = ({ items }) => {
+            if (!items?.length) return null;
+            const statusIcon = { complete: '✓', warning: '!', pending: '○' };
+            const statusColor = { complete: 'text-emerald-400', warning: 'text-amber-400', pending: 'text-slate-500' };
+            return (
+                <div className="mb-4 px-1">
+                    <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-2">Mod 1 Deliverables</p>
+                    <ul className="space-y-1.5">
+                        {items.map((item) => (
+                            <li key={item.id} className="text-[10px] flex items-start gap-2 leading-tight" title={item.hint || undefined}>
+                                <span className={`font-bold shrink-0 ${statusColor[item.status] || statusColor.pending}`}>{statusIcon[item.status] || statusIcon.pending}</span>
+                                <span className="text-slate-400">{item.label}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             );
         };
 
@@ -886,6 +906,34 @@
 
             return (
                 <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
+                    <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandTeal-500/30 space-y-3">
+                        <div className="flex flex-wrap justify-between items-start gap-3 border-b border-brandNavy-700 pb-3">
+                            <div>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Executive Letter (Report Cover)</h3>
+                                <p className="text-[10px] text-slate-400 mt-1">3–5 sentences for the owner — appears on page 1 of the PDF.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const letter = DRH().buildDefaultExecutiveLetter?.({
+                                        tabs, subSaaS, synthesis, orgChartMembers, formatCurrency,
+                                        DiagramEditor: window.DiagramEditor,
+                                    }) || '';
+                                    setSynthesis((prev) => ({ ...prev, executiveLetter: letter }));
+                                }}
+                                className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+                            >
+                                Generate from Diagnosis
+                            </button>
+                        </div>
+                        <textarea
+                            rows="4"
+                            value={synthesis.executiveLetter || ''}
+                            onChange={(e) => setSynthesis((prev) => ({ ...prev, executiveLetter: e.target.value }))}
+                            placeholder="We mapped 3 core processes, 12 team members, and 8 subscriptions…"
+                            className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none"
+                        />
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-6">
                             <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-6 bg-brandNavy-900 border border-brandNavy-800">
@@ -1000,10 +1048,6 @@
                                         ))}
                                     </div>
                                     <textarea rows="4" value={synthesis.customPitch} onChange={(e) => setSynthesis(prev => ({ ...prev, customPitch: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-xs text-white leading-relaxed outline-none focus:border-brandTeal-500 resize-none font-medium"></textarea>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Loom walkthrough URL (Mod 1 deliverable)</label>
-                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
                                 </div>
                                 <div className="text-[10px] text-slate-400 leading-relaxed pt-1.5 border-t border-brandNavy-800 flex justify-between items-center">
                                     <span>Learn more about transition support:</span>
@@ -1216,7 +1260,7 @@
             </div>
         );
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes }) => (
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, executiveLetter, loomWalkthroughUrl, showExecutiveLetter }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -1230,6 +1274,12 @@
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Lead strategist</span><span className="text-slate-700">{preparedBy}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span></div>
                 </div>
+                {showExecutiveLetter && executiveLetter && executiveLetter.trim() && (
+                    <div className="mb-8 p-5 border border-slate-200 rounded-xl bg-slate-50/80 page-break-inside-avoid">
+                        <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Executive Summary</h3>
+                        <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{executiveLetter.trim()}</p>
+                    </div>
+                )}
                 <div className="report-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     <div className="report-kpi p-5 text-center">
                         <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Total Annual Leakage</div>
@@ -1278,10 +1328,20 @@
                         </table>
                     </div>
                 )}
+                {loomWalkthroughUrl && loomWalkthroughUrl.trim() && (
+                    <div className="mt-6 p-4 border border-brandTeal-200 rounded-xl bg-teal-50/40 flex flex-wrap items-center gap-4 page-break-inside-avoid">
+                        <img src={DRH().buildLinkQrUrl?.(loomWalkthroughUrl, 120)} alt="Loom walkthrough QR code" className="w-[100px] h-[100px] border border-white rounded-lg bg-white p-1 shrink-0" />
+                        <div className="min-w-0">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1">Video Walkthrough</div>
+                            <p className="text-xs text-slate-700 leading-relaxed">Start here — your consultant explains the findings before you read the detail sections.</p>
+                            <p className="text-[10px] font-mono text-brandTeal-700 mt-1 break-all">{loomWalkthroughUrl.trim()}</p>
+                        </div>
+                    </div>
+                )}
             </div>
         );
 
-        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate }) => {
+        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, profileTasks }) => {
             const DR = DRH();
             const saasMonthlyWaste = subSaaS.reduce((acc, curr) => acc + ((Number(curr.billing) || 0) * (Number(curr.users) || 0)), 0);
             const saasAnnualWaste = saasMonthlyWaste * 12;
@@ -1291,6 +1351,10 @@
             const topFixes = DR.getTop5Fixes?.(activeItems) || [];
             const recapture = DR.computeRecaptureSummary?.(topFixes, totalAnnualWaste) || { monthly: 0, annual: 0, pctOfTotalLeakage: 0 };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
+            const workflowTabs = printConfig.flowchartsTopOnly
+                ? (DR.getBriefingWorkflowTabs?.(tabs, window.DiagramEditor) || [])
+                : tabs;
+            const m102InScope = DR.isMod1TaskInScope?.(profileTasks, 'm1-02');
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
@@ -1311,7 +1375,19 @@
                 <div className="report-doc w-full max-w-[850px] bg-white text-slate-900 shadow-2xl relative print:shadow-none print:w-full print:max-w-full p-8 md:p-12 print:p-0 flex flex-col gap-12 print:block print:gap-0">
 
                     {printConfig.showExecutiveSummary && (
-                        <ReportCover clientCompany={clientCompany} preparedBy={preparedBy} reportDate={reportDate} totalAnnualWaste={totalAnnualWaste} processAnnual={annualChaosTax} saasAnnual={saasAnnualWaste} maturityIndex={maturityIndex} topFixes={topFixes} />
+                        <ReportCover
+                            clientCompany={clientCompany}
+                            preparedBy={preparedBy}
+                            reportDate={reportDate}
+                            totalAnnualWaste={totalAnnualWaste}
+                            processAnnual={annualChaosTax}
+                            saasAnnual={saasAnnualWaste}
+                            maturityIndex={maturityIndex}
+                            topFixes={topFixes}
+                            executiveLetter={synthesis.executiveLetter}
+                            loomWalkthroughUrl={synthesis.loomWalkthroughUrl}
+                            showExecutiveLetter={printConfig.showExecutiveLetter !== false}
+                        />
                     )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
@@ -1336,39 +1412,9 @@
                         </div>
                     )}
 
-                    {printConfig.showLeakageRanking && processRankings.length > 0 && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="A" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
-                            <table className="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Process</th>
-                                        <th className="text-right">Monthly</th>
-                                        <th className="text-right">Annual</th>
-                                        <th>% of Total</th>
-                                        <th>Top Bottleneck</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {processRankings.map((row, idx) => (
-                                        <tr key={row.tabId}>
-                                            <td className="font-mono font-bold text-slate-400">{idx + 1}</td>
-                                            <td className="font-bold text-slate-900">{row.tabName}</td>
-                                            <td className="text-right font-mono text-rose-700 font-bold">{formatCurrency(row.monthly)}</td>
-                                            <td className="text-right font-mono text-rose-600">{formatCurrency(row.annual)}</td>
-                                            <td className="font-mono text-slate-600">{row.pctOfTotal}%</td>
-                                            <td className="text-slate-600 text-[10px]">{row.topStepLabel.replace(/\n/g, ' ')}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page">
-                            <ReportSectionHeader number="B" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
+                            <ReportSectionHeader number="A" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
                             {orgChartSvg && (
                                 <div className="report-diagram-frame border border-slate-200 rounded-lg bg-white mb-4">
                                     <img src={printReadySvg(orgChartSvg)} alt="Organization chart" className="report-diagram-img border-0 rounded-lg" />
@@ -1393,11 +1439,11 @@
                         </div>
                     )}
 
-                    {printConfig.showFlowcharts && (
+                    {printConfig.showFlowcharts && workflowTabs.length > 0 && (
                         <div className="report-page">
-                            <ReportSectionHeader number="C" title="Process Maps & Step Analysis" subtitle="As-is workflows with delay times and per-step leakage calculations." />
+                            <ReportSectionHeader number="B" title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
                             <div className="space-y-6">
-                                {tabs.map(tab => {
+                                {workflowTabs.map(tab => {
                                     const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
                                     const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                     const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
@@ -1432,6 +1478,41 @@
                                     );
                                 })}
                             </div>
+                        </div>
+                    )}
+
+                    {printConfig.showLeakageRanking && processRankings.length > 0 && (
+                        <div className="report-page">
+                            <ReportSectionHeader number="C" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            {topFixes[0] && (
+                                <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
+                                    <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
+                                </p>
+                            )}
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Process</th>
+                                        <th className="text-right">Monthly</th>
+                                        <th className="text-right">Annual</th>
+                                        <th>% of Total</th>
+                                        <th>Top Bottleneck</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {processRankings.map((row, idx) => (
+                                        <tr key={row.tabId}>
+                                            <td className="font-mono font-bold text-slate-400">{idx + 1}</td>
+                                            <td className="font-bold text-slate-900">{row.tabName}</td>
+                                            <td className="text-right font-mono text-rose-700 font-bold">{formatCurrency(row.monthly)}</td>
+                                            <td className="text-right font-mono text-rose-600">{formatCurrency(row.annual)}</td>
+                                            <td className="font-mono text-slate-600">{row.pctOfTotal}%</td>
+                                            <td className="text-slate-600 text-[10px]">{row.topStepLabel.replace(/\n/g, ' ')}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
 
@@ -1685,6 +1766,25 @@
                             </div>
                         </div>
                     )}
+
+                    {printConfig.showFeedbackAppendix && m102InScope && String(synthesis.feedbackFormUrl || '').trim() && (
+                        <div className="report-page">
+                            <ReportSectionHeader title="Appendix — Staff Feedback Channel (m1-02)" subtitle="Anonymous staff survey — circulate internally. No names or emails are collected." />
+                            <div className="flex flex-wrap items-start gap-6 page-break-inside-avoid">
+                                <img src={DR.buildLinkQrUrl?.(synthesis.feedbackFormUrl, 160)} alt="Feedback form QR code" className="w-[140px] h-[140px] border border-slate-200 rounded-lg bg-white p-2 shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs text-slate-700 leading-relaxed mb-3">Share this QR code or link with staff for 5–7 business days. Import summarized themes only into the report — never raw submissions or names.</p>
+                                    <p className="text-[10px] font-mono text-brandTeal-700 break-all mb-4">{synthesis.feedbackFormUrl.trim()}</p>
+                                    {synthesis.feedbackLaunchGuide && synthesis.feedbackLaunchGuide.trim() && (
+                                        <div className="p-4 border border-slate-200 rounded-lg bg-slate-50">
+                                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Launch Guide</h4>
+                                            <p className="text-[10px] text-slate-700 leading-relaxed whitespace-pre-wrap">{synthesis.feedbackLaunchGuide.trim()}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -1863,6 +1963,16 @@
                 tasks: activeProfile?.tasks || [],
                 orgChartMembers,
             }) || reportValidation, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation, orgChartMembers]);
+
+            const mod1Deliverables = useMemo(() => DRH().buildMod1DeliverableStatus?.({
+                tasks: activeProfile?.tasks || [],
+                orgChartSvg,
+                orgChartMembers,
+                tabs,
+                subSaaS,
+                synthesis,
+                DiagramEditor: window.DiagramEditor,
+            }) || [], [activeProfile, orgChartSvg, orgChartMembers, tabs, subSaaS, synthesis]);
 
             const handlePrintStaffDirectory = () => {
                 const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
@@ -2043,6 +2153,7 @@
                         
                         <nav className="p-4 flex-1 overflow-y-auto space-y-2">
                             <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
+                            <Mod1DeliverableStrip items={mod1Deliverables} />
                             <button onClick={() => setActiveNav('orgchart')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'orgchart' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Sitemap /> 1. Org Chart</button>
                             <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 2. Workflow Builder</button>
                             <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 3. RACI Architecture</button>
@@ -2166,14 +2277,40 @@
                                                 <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Prepared by</label>
                                                 <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
                                             </div>
-                                            <div className="min-w-[280px] flex-1">
-                                                <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Client deliverable link (Google Drive PDF)</label>
-                                                <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
-                                                <p className="text-[9px] text-slate-400 mt-1">Upload the printed PDF to Drive, paste the share link — syncs to the client portal vault on save.</p>
+                                        </div>
+                                        <div className="mx-2 p-4 rounded-lg border border-brandTeal-200 bg-teal-50/40 space-y-3">
+                                            <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-900">Client Handoff</div>
+                                            <p className="text-[9px] text-slate-600 leading-relaxed">All client-facing links in one place — syncs to the portal vault on save.</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Google Drive PDF URL (m1-05)</label>
+                                                    <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Loom walkthrough URL (m1-05)</label>
+                                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                </div>
+                                                {DRH().isMod1TaskInScope?.(activeProfile?.tasks, 'm1-02') && (
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Staff feedback form URL (m1-02)</label>
+                                                        <input type="url" value={synthesis.feedbackFormUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackFormUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/…/viewform" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="flex flex-wrap gap-3 text-[9px] font-bold text-slate-500 uppercase tracking-wider items-center flex-1">
+                                            <div className="flex flex-wrap gap-2">
+                                                <button type="button" onClick={() => {
+                                                    const letter = DRH().buildDefaultExecutiveLetter?.({
+                                                        tabs, subSaaS, synthesis, orgChartMembers, formatCurrency,
+                                                        DiagramEditor: window.DiagramEditor,
+                                                    }) || '';
+                                                    setSynthesis((prev) => ({ ...prev, executiveLetter: letter }));
+                                                }} className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded text-[10px] font-bold uppercase">Generate Executive Letter</button>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-3 text-[9px] font-bold text-slate-500 uppercase tracking-wider items-center flex-1 px-2">
                                                 {[
                                                     ['showExecutiveSummary', 'Summary'],
+                                                    ['showExecutiveLetter', 'Letter'],
                                                     ['showLeakageRanking', 'Rankings'],
                                                     ['showOrgChart', 'Org Chart'],
                                                     ['showFlowcharts', 'Workflows'],
@@ -2183,7 +2320,8 @@
                                                     ['showMatrix', 'Matrix'],
                                                     ['showFindings', 'Risks'],
                                                     ['showNextSteps', 'Next Steps'],
-                                                    ['showAppendix', 'Appendix'],
+                                                    ['showFeedbackAppendix', 'Feedback QR'],
+                                                    ['showAppendix', 'Methodology'],
                                                 ].map(([key, label]) => (
                                                     <label key={key} className="flex items-center gap-1 cursor-pointer hover:text-brandTeal-600">
                                                         <input type="checkbox" checked={!!printConfig[key]} onChange={e => { setPrintPreset('custom'); setPrintConfig({ ...printConfig, [key]: e.target.checked }); }} className="accent-brandTeal-500" />
@@ -2217,6 +2355,7 @@
                                             orgChartSvg={orgChartSvg}
                                             orgChartMembers={orgChartMembers}
                                             reportDate={reportDate}
+                                            profileTasks={activeProfile?.tasks || []}
                                         />
                                     </div>
                                 </div>

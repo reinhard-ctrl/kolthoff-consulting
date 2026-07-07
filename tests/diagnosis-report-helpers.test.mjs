@@ -184,4 +184,48 @@ describe('diagnosis-report-helpers', () => {
     assert.match(svgText, /viewBox="0 0 1600 900"/);
     assert.doesNotMatch(svgText, /^<svg[^>]*width="1600"/);
   });
+
+  it('buildMod1DeliverableStatus tracks in-scope deliverables', () => {
+    const items = DRH.buildMod1DeliverableStatus({
+      tasks: [
+        { id: 'm1-01', selected: true },
+        { id: 'm1-05', selected: true },
+      ],
+      orgChartMembers: [{ name: 'Jane', role: 'CEO' }],
+      orgChartSvg: 'data:image/svg+xml,abc',
+      tabs: [{ id: 'a', name: 'Sales', present: {} }],
+      subSaaS: [],
+      synthesis: {
+        matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 4, owner: 'Jane', targetWeek: 'Week 1–2', expectedSavings: 5000 }] },
+        clientDeliverableUrl: 'https://drive.google.com/file/d/x',
+        loomWalkthroughUrl: 'https://loom.com/share/x',
+      },
+      DiagramEditor: mockDiagramEditor,
+    });
+    assert.ok(items.some((i) => i.id === 'm1-01' && i.status === 'complete'));
+    assert.ok(items.some((i) => i.id === 'm1-05'));
+  });
+
+  it('buildDefaultExecutiveLetter summarizes leakage and top process', () => {
+    const letter = DRH.buildDefaultExecutiveLetter({
+      tabs: [{ id: 'a', name: 'Sales', present: {} }],
+      subSaaS: [{ tool: 'Slack', billing: 100, users: 5 }],
+      synthesis: { matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 5, expectedSavings: 10000, owner: 'A', targetWeek: 'Week 1–2' }] } },
+      orgChartMembers: [{ name: 'Jane' }],
+      formatCurrency: (v) => `P${v}`,
+      DiagramEditor: mockDiagramEditor,
+    });
+    assert.match(letter, /Sales/);
+    assert.match(letter, /team member/);
+  });
+
+  it('getBriefingWorkflowTabs returns only top-leak tab', () => {
+    const tabs = [
+      { id: 'a', name: 'Sales', present: {} },
+      { id: 'b', name: 'Ops', present: {} },
+    ];
+    const filtered = DRH.getBriefingWorkflowTabs(tabs, mockDiagramEditor);
+    assert.equal(filtered.length, 1);
+    assert.equal(filtered[0].id, 'a');
+  });
 });
