@@ -7,6 +7,7 @@ import {
   resolveChaosTax,
 } from '../lib/engagement-config';
 import { buildPortalPatchFromProfile, writePortalLinkToProfile, type PortalClientRecord } from '../lib/portal-sync';
+import { clientPortalUrl } from '../lib/portal-url';
 import { deleteDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 
@@ -495,6 +496,14 @@ export default function PortalManager() {
                         <button onClick={() => { setNewCodeInput(activeCode); setEditingCode(true); }} className="text-slate-500 text-xs underline">Change</button>
                       </>
                     )}
+                    <a
+                      href={clientPortalUrl(activeCode)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brandTeal-400 text-xs font-bold hover:underline"
+                    >
+                      Open client portal →
+                    </a>
                   </div>
                 </div>
                 <div className="flex gap-2">
