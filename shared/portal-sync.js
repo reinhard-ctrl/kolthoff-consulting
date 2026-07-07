@@ -90,6 +90,49 @@
     return Array.from(byTitle.values());
   }
 
+  /** After Mod 1 Waste-to-Peso delivery: mark MOD 1 complete and advance portal to MOD 2. */
+  function buildMod1CompletePortalPatch(existing) {
+    const engagement = EC();
+    const mods = engagement.MODULES || [];
+    const defaultRoadmap = engagement.buildDefaultPortalRoadmap?.() || [];
+    const base = existing?.roadmap?.length ? existing.roadmap : defaultRoadmap;
+    const roadmap = base.map((item, i) => {
+      if (i === 0) return { ...item, status: 'Complete' };
+      if (i === 1) return { ...item, status: 'In Progress' };
+      return { ...item, status: item.status === 'Complete' ? 'Complete' : 'Pending' };
+    });
+    const mod2 = mods[1];
+    return {
+      roadmap,
+      currentPhase: mod2?.portalPhase || 'MOD 2: How Your Business Runs',
+    };
+  }
+
+  /**
+   * Mark Mod 1 complete on the linked client portal (roadmap + currentPhase).
+   * Returns access code on success, null if no portal.
+   */
+  async function syncMod1CompleteToPortal(profile) {
+    const code = resolvePortalAccessCode(profile);
+    if (!code || !global.firebaseDb || !global.appId) return null;
+
+    const portalRef = global.doc(
+      global.firebaseDb,
+      'artifacts',
+      global.appId,
+      'public',
+      'data',
+      'clients',
+      code,
+    );
+    const snap = await global.getDoc(portalRef);
+    if (!snap.exists()) return null;
+
+    const patch = buildMod1CompletePortalPatch(snap.data());
+    await global.setDoc(portalRef, patch, { merge: true });
+    return code;
+  }
+
   function buildPortalPatchFromProfile(profile, existing, options) {
     const engagement = EC();
     const saasWaste = computeSaasAnnualWaste(profile.subSaaS);
@@ -206,6 +249,8 @@
     mapRolesToActionItems,
     mergePortalAssets,
     mergeActionItems,
+    buildMod1CompletePortalPatch,
+    syncMod1CompleteToPortal,
     buildPortalPatchFromProfile,
     syncProfileToPortalIfExists,
     syncInvoicesToPortal,

@@ -160,6 +160,11 @@ assert.equal(
   'tenants,agency-ops-manager',
 );
 
+assert.equal(
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'delivery')?.items.map((i) => i.id).join(','),
+  'diagnosis-reports,policy-studio',
+);
+
 const movedPrefs = {
   groupOrder: ['command', 'operations', 'delivery', 'product', 'analytics', 'client'],
   assignments: {

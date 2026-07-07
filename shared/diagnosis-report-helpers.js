@@ -299,6 +299,22 @@
     return pitches[modKey] || '';
   }
 
+  function buildRaciOrgInsights(tabs, raciAssignments, orgChartMembers, DiagramEditor) {
+    const raciGaps = buildRaciGaps(tabs, raciAssignments, DiagramEditor);
+    const lines = [];
+    if (orgChartMembers.length > 0 && raciGaps.unassignedSteps > 0) {
+      lines.push(`${raciGaps.unassignedSteps} workflow step(s) lack RACI assignments despite ${orgChartMembers.length} staff on the org chart — assign accountable owners before Mod 2.`);
+    }
+    if (raciGaps.noAccountable > 0) {
+      lines.push(`${raciGaps.noAccountable} step(s) have no Accountable (A) role — decisions may stall at handoffs.`);
+    }
+    const unownedLanes = raciGaps.gaps.filter((g) => g.issue.includes('Lane has no named owner'));
+    if (unownedLanes.length > 0) {
+      lines.push(`${unownedLanes.length} workflow lane(s) have no named owner in the diagram — align lanes with org chart roles.`);
+    }
+    return lines;
+  }
+
   function validateReportReadiness(ctx) {
     const {
       tabs = [],
@@ -307,6 +323,8 @@
       orgChartSvg = '',
       raciAssignments = {},
       DiagramEditor,
+      workflowUpdatedAt = 0,
+      reportDataUpdatedAt = 0,
     } = ctx;
 
     const warnings = [];
@@ -321,6 +339,9 @@
     if (!hasWorkflow) warnings.push('No workflow steps mapped — add at least one process in the Workflow Builder.');
     if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for peso calculations.');
     if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 1) — diagrams save separately.');
+    if (workflowUpdatedAt && reportDataUpdatedAt && workflowUpdatedAt > reportDataUpdatedAt) {
+      warnings.push('Workflow was saved after your last report sync — click Sync to Cloud here to refresh chaos tax in the PDF.');
+    }
     if (!subSaaS.length) warnings.push('SaaS audit is empty — add subscription rows for software savings.');
     if (matrixCount < 3) warnings.push('Fewer than 3 priority items — generate or add fixes for the 90-day plan.');
     if (matrixCount === 0) errors.push('No 90-day fix items — add priorities in Strategy or click Generate from Diagnosis.');
@@ -373,6 +394,7 @@
     buildRaciGaps,
     buildOperationalInsights,
     buildRiskProfiles,
+    buildRaciOrgInsights,
     generateMatrixFromDiagnosis,
     getTop5Fixes,
     buildModulePitch,
