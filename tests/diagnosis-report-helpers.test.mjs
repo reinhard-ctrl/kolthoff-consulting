@@ -175,6 +175,16 @@ describe('diagnosis-report-helpers', () => {
     assert.match(qr, /forms\.example/);
   });
 
+  it('normalizeReportDiagramSvg removes fixed dimensions for responsive print scaling', () => {
+    const raw = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#fff"/></svg>');
+    const normalized = DRH.normalizeReportDiagramSvg(raw);
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    assert.match(svgText, /^<svg[^>]*width="100%"/);
+    assert.match(svgText, /height="100%"/);
+    assert.match(svgText, /viewBox="0 0 1600 900"/);
+    assert.doesNotMatch(svgText, /^<svg[^>]*width="1600"/);
+  });
+
   it('buildMod1DeliverableStatus tracks in-scope deliverables', () => {
     const items = DRH.buildMod1DeliverableStatus({
       tasks: [

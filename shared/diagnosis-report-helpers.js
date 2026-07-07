@@ -796,6 +796,59 @@
     return { ready, warnings, errors, top5: base.top5 };
   }
 
+  /**
+   * Strip fixed pixel dimensions from draw.io SVG exports so report/print CSS can scale
+   * diagrams to the printable page width without clipping the right edge.
+   */
+  function normalizeReportDiagramSvg(svgDataUri) {
+    if (!svgDataUri || typeof svgDataUri !== 'string') return svgDataUri || '';
+    if (!svgDataUri.startsWith('data:image/svg+xml')) return svgDataUri;
+
+    try {
+      const commaIdx = svgDataUri.indexOf(',');
+      if (commaIdx < 0) return svgDataUri;
+      const meta = svgDataUri.slice(0, commaIdx);
+      const payload = svgDataUri.slice(commaIdx + 1);
+      const isBase64 = /;base64/i.test(meta);
+      const decodePayload = () => {
+        if (isBase64) {
+          if (typeof atob === 'function') return atob(payload);
+          if (typeof Buffer !== 'undefined') return Buffer.from(payload, 'base64').toString('utf8');
+          return payload;
+        }
+        return decodeURIComponent(payload);
+      };
+      const encodePayload = (text) => {
+        if (isBase64) {
+          if (typeof btoa === 'function') return btoa(text);
+          if (typeof Buffer !== 'undefined') return Buffer.from(text, 'utf8').toString('base64');
+          return text;
+        }
+        return encodeURIComponent(text);
+      };
+
+      let svgText = decodePayload();
+      svgText = svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
+        const widthMatch = attrs.match(/\bwidth="([\d.]+)/i);
+        const heightMatch = attrs.match(/\bheight="([\d.]+)/i);
+        let next = attrs
+          .replace(/\swidth="[^"]*"/gi, '')
+          .replace(/\sheight="[^"]*"/gi, '')
+          .replace(/\spreserveAspectRatio="[^"]*"/gi, '');
+        if (!/\bviewBox=/i.test(next) && widthMatch && heightMatch) {
+          next += ` viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`;
+        }
+        next += ' width="100%" height="100%" preserveAspectRatio="xMidYMid meet"';
+        return `<svg${next}>`;
+      });
+
+      const encodedPrefix = isBase64 ? ';base64,' : ',';
+      return `${meta}${encodedPrefix}${encodePayload(svgText)}`;
+    } catch {
+      return svgDataUri;
+    }
+  }
+
   const PRINT_PRESETS = {
     full: {
       showExecutiveSummary: true,
@@ -864,6 +917,7 @@
     validateMod1Handoff,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     normalizeStaffDirectoryRows,
+    normalizeReportDiagramSvg,
     buildLinkQrUrl,
     buildFeedbackFormQrUrl,
     isMod1TaskInScope,
