@@ -140,16 +140,35 @@
 
             body.printing-report aside,
             body.printing-report .no-print,
+            body.printing-report .staff-directory-print-root,
+            body.printing-report iframe,
             body.printing-staff-directory aside,
             body.printing-staff-directory main,
             body.printing-staff-directory .no-print {
                 display: none !important;
             }
 
+            body.printing-report #root > div.flex,
+            body.printing-report main,
+            body.printing-report main > div,
+            body.printing-report [class*="bg-brandNavy"] {
+                background: white !important;
+                background-image: none !important;
+            }
+
+            body.printing-report .min-h-full,
+            body.printing-report .h-full,
+            body.printing-report .pb-32,
+            body.printing-report .pb-24 {
+                min-height: 0 !important;
+                height: auto !important;
+                padding-bottom: 0 !important;
+            }
+
             body.printing-staff-directory .staff-directory-print-root { display: block !important; }
 
             .no-print { display: none !important; }
-            .luxury-gradient { background: none !important; }
+            .luxury-gradient { background: white !important; background-image: none !important; }
             .print-only { display: block !important; }
             main { padding: 0 !important; margin: 0 !important; }
             .report-print-surface { background: white !important; padding: 0 !important; margin: 0 !important; }
@@ -2131,7 +2150,7 @@
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0] || { id: 'empty', name: 'No workflow', present: { ...EMPTY_CANVAS } };
 
             return (
-                <div className="flex h-full min-h-0 overflow-hidden bg-brandNavy-955 font-sans">
+                <div className="flex h-full min-h-0 overflow-hidden bg-brandNavy-955 font-sans print:h-auto print:min-h-0 print:bg-white">
                     {toastMessage && (<div role="alert" className="fixed bottom-6 right-6 z-[100] bg-brandTeal-600 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce"><span>✓</span>{toastMessage}</div>)}
 
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
@@ -2205,7 +2224,7 @@
                             />
                         )}
 
-                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-y-auto w-full pb-32' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-y-auto w-full pb-32 print:pb-0 print:min-h-0 print:bg-white' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
                                 <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
                             )}
@@ -2253,7 +2272,7 @@
                                 />
                             )}
                             {activeNav === 'report' && (
-                                <div className="w-full flex flex-col items-center animate-fade-in min-h-full">
+                                <div className="w-full flex flex-col items-center animate-fade-in min-h-full print:min-h-0 print:bg-white">
                                     <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex flex-col gap-4 no-print shadow-sm w-full shrink-0">
                                         <div className="flex flex-wrap justify-between items-center gap-4 px-2">
                                             <div>
