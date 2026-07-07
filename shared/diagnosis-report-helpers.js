@@ -10,6 +10,38 @@
     moneyPit: { effortMin: 3, impactMax: 3 },
   };
 
+  const TARGET_WEEK_OPTIONS = [
+    'Week 1–2',
+    'Week 3–4',
+    'Week 5–6',
+    'Week 7–8',
+    'Week 9–10',
+    'Week 11–12',
+  ];
+
+  const MATURITY_RUBRIC = {
+    communication: {
+      label: 'Team Communication',
+      low: 'Viber/chat approvals, no SLA on handoffs',
+      high: 'Documented channels with response-time expectations',
+    },
+    documentation: {
+      label: 'Process Documentation',
+      low: 'Tribal knowledge only — no SOPs in busy weeks',
+      high: 'SOPs exist and teams use them under load',
+    },
+    accountability: {
+      label: 'Handoff Accountability',
+      low: 'RACI gaps — no single accountable owner on critical steps',
+      high: 'Every critical step has a named Accountable (A)',
+    },
+    software: {
+      label: 'Software Utilization',
+      low: 'Duplicate tools and idle seats across departments',
+      high: 'Consolidated stack with known owners per tool',
+    },
+  };
+
   function getQuadrant(effort, impact) {
     const e = Number(effort) || 3;
     const i = Number(impact) || 3;
@@ -230,36 +262,180 @@
     return profiles;
   }
 
-  function generateMatrixFromDiagnosis(tabs, subSaaS, existingItems, DiagramEditor) {
-    const existing = Array.isArray(existingItems) ? existingItems : [];
-    const existingTexts = new Set(existing.map((i) => (i.text || '').toLowerCase().trim()));
-    const generated = [];
-    const steps = buildStepLeakageList(tabs, DiagramEditor).slice(0, 6);
+  function resolveOwnerFromRaci(tab, step, raciAssignments, DiagramEditor) {
+    const { vm } = getProcessNodes(tab, DiagramEditor);
+    const roles = vm.lanes || [];
+    const row = raciAssignments?.[step.id] || {};
+    for (const role of roles) {
+      if (row[role.id] === 'A' && String(role.owner || '').trim()) return String(role.owner).trim();
+    }
+    for (const role of roles) {
+      if (row[role.id] && String(role.owner || '').trim()) return String(role.owner).trim();
+    }
+    return '';
+  }
 
-    steps.forEach((step, idx) => {
-      const text = `Reduce wait time on "${step.stepLabel.replace(/\n/g, ' ')}" in ${step.tabName}`;
-      if (existingTexts.has(text.toLowerCase())) return;
-      const impact = Math.min(5, Math.max(2, Math.round(step.monthly / 5000) + 2));
-      generated.push({
-        id: `gen-step-${Date.now()}-${idx}`,
+  function formatSaasEvidence(item) {
+    const monthly = (Number(item.billing) || 0) * (Number(item.users) || 0);
+    const billing = Number(item.billing || 0).toLocaleString();
+    return `${item.tool} — ${item.users} seats @ ₱${billing}/mo (≈ ₱${monthly.toLocaleString()}/mo)`;
+  }
+
+  function suggestTargetWeek(effort, impact, index) {
+    const e = Number(effort) || 3;
+    const i = Number(impact) || 3;
+    const earlyWeeks = ['Week 1–2', 'Week 3–4'];
+    const lateWeeks = ['Week 5–6', 'Week 7–8', 'Week 9–10', 'Week 11–12'];
+    if (e < 3 && i >= 3) return earlyWeeks[index % earlyWeeks.length];
+    if (e >= 3 && i >= 3) return lateWeeks[index % lateWeeks.length];
+    return earlyWeeks[index % earlyWeeks.length];
+  }
+
+  function getRootCauseKey(item) {
+    if (item.rootCauseKey) return item.rootCauseKey;
+    const src = item.source || 'manual';
+    if (src === 'saas') {
+      const tool = String(item.sourceDetail || item.text || '').split('—')[0].trim().toLowerCase();
+      return `saas:${tool || 'unknown'}`;
+    }
+    if (src === 'workflow') {
+      const proc = String(item.sourceDetail || item.text || '').split(',')[0]?.trim().toLowerCase();
+      return `workflow:${proc || 'unknown'}`;
+    }
+    if (src === 'feedback') return `feedback:${String(item.sourceDetail || item.text || '').slice(0, 40).toLowerCase()}`;
+    if (src === 'raci') return `raci:${String(item.sourceDetail || item.text || '').slice(0, 40).toLowerCase()}`;
+    return `manual:${String(item.text || '').slice(0, 50).toLowerCase()}`;
+  }
+
+  function formatMatrixEvidence(item, formatCurrencyFn) {
+    const fmt = formatCurrencyFn || ((v) => String(v));
+    const src = item.source || 'manual';
+    if (src === 'workflow' && item.sourceDetail) return `Source: ${item.sourceDetail}`;
+    if (src === 'saas' && item.sourceDetail) return `Source: SaaS audit — ${item.sourceDetail}`;
+    if (src === 'feedback') return `Source: Staff feedback — ${item.sourceDetail || item.text || 'theme'}`;
+    if (src === 'raci') return `Source: RACI gap — ${item.sourceDetail || item.text}`;
+    if (Number(item.expectedSavings) > 0) return `Est. savings: ${fmt(item.expectedSavings)}/mo`;
+    return '';
+  }
+
+  function computeRecaptureSummary(topFixes, totalAnnualWaste) {
+    const monthly = (topFixes || []).reduce((acc, i) => acc + (Number(i.expectedSavings) || 0), 0);
+    const annual = monthly * 12;
+    const total = Number(totalAnnualWaste) || 0;
+    const pctOfTotalLeakage = total > 0 ? Math.round((annual / total) * 100) : 0;
+    return { monthly, annual, pctOfTotalLeakage };
+  }
+
+  function isDefaultMaturity(synthesis) {
+    const s = synthesis || {};
+    return [s.communication, s.documentation, s.accountability, s.software]
+      .every((v) => !v || Number(v) === 3);
+  }
+
+  function generateMatrixFromFeedback(themes, existingItems, existingTexts) {
+    const items = [...existingItems];
+    const texts = existingTexts || new Set(items.map((i) => (i.text || '').toLowerCase().trim()));
+    (themes || []).filter((t) => t && String(t).trim()).forEach((theme, idx) => {
+      const trimmed = String(theme).trim();
+      const text = `Address staff feedback: ${trimmed}`;
+      const key = text.toLowerCase();
+      if (texts.has(key)) return;
+      texts.add(key);
+      items.push({
+        id: `gen-fb-${Date.now()}-${idx}`,
         text,
         effort: 2.5,
-        impact,
+        impact: 3.5,
         owner: '',
-        targetWeek: '',
-        expectedSavings: step.monthly,
-        source: 'workflow',
+        targetWeek: 'Week 3–4',
+        expectedSavings: 0,
+        source: 'feedback',
+        sourceDetail: trimmed,
+        rootCauseKey: `feedback:${trimmed.slice(0, 40).toLowerCase()}`,
+      });
+    });
+    return items;
+  }
+
+  function generateRaciGapMatrixItems(tabs, raciAssignments, DiagramEditor, existingItems, existingTexts) {
+    const gaps = buildRaciGaps(tabs, raciAssignments, DiagramEditor).gaps.slice(0, 4);
+    const items = [...existingItems];
+    const texts = existingTexts || new Set(items.map((i) => (i.text || '').toLowerCase().trim()));
+    gaps.forEach((gap, idx) => {
+      const stepLabel = gap.stepLabel.replace(/\n/g, ' ');
+      const text = gap.issue.includes('Accountable')
+        ? `Assign accountable owner (A) for "${stepLabel}" in ${gap.tabName}`
+        : `Assign RACI roles for "${stepLabel}" in ${gap.tabName}`;
+      const key = text.toLowerCase();
+      if (texts.has(key)) return;
+      texts.add(key);
+      items.push({
+        id: `gen-raci-${Date.now()}-${idx}`,
+        text,
+        effort: 2,
+        impact: 3,
+        owner: '',
+        targetWeek: 'Week 1–2',
+        expectedSavings: 0,
+        source: 'raci',
+        sourceDetail: `${gap.tabName}: ${stepLabel}`,
+        rootCauseKey: `raci:${gap.tabName}:${stepLabel.slice(0, 30).toLowerCase()}`,
+      });
+    });
+    return items;
+  }
+
+  function generateMatrixFromDiagnosis(tabs, subSaaS, existingItems, DiagramEditor, options) {
+    const opts = options || {};
+    const raciAssignments = opts.raciAssignments || {};
+    const staffFeedbackThemes = opts.staffFeedbackThemes || [];
+    const synthesis = opts.synthesis || {};
+    let items = [...(Array.isArray(existingItems) ? existingItems : [])];
+    const existingTexts = new Set(items.map((i) => (i.text || '').toLowerCase().trim()));
+    let workflowIdx = 0;
+
+    (tabs || []).forEach((tab) => {
+      const { tasks } = getProcessNodes(tab, DiagramEditor);
+      tasks.forEach((step) => {
+        const monthly = stepMonthlyLoss(step);
+        if (monthly <= 0) return;
+        const stepLabel = step.label.replace(/\n/g, ' ');
+        const text = `Reduce wait time on "${stepLabel}" in ${tab.name}`;
+        const key = text.toLowerCase();
+        if (existingTexts.has(key)) return;
+        existingTexts.add(key);
+        const impact = Math.min(5, Math.max(2, Math.round(monthly / 5000) + 2));
+        const effort = 2.5;
+        items.push({
+          id: `gen-step-${Date.now()}-${workflowIdx}`,
+          text,
+          effort,
+          impact,
+          owner: resolveOwnerFromRaci(tab, step, raciAssignments, DiagramEditor),
+          targetWeek: suggestTargetWeek(effort, impact, workflowIdx),
+          expectedSavings: monthly,
+          source: 'workflow',
+          sourceDetail: `${tab.name}, Step: ${stepLabel}`,
+          rootCauseKey: `workflow:${tab.name.toLowerCase()}`,
+        });
+        workflowIdx += 1;
       });
     });
 
-    subSaaS.forEach((item, idx) => {
+    const seenTools = new Set();
+    (subSaaS || []).forEach((item, idx) => {
+      const toolKey = String(item.tool || '').toLowerCase().trim();
+      if (seenTools.has(toolKey)) return;
       const monthly = (Number(item.billing) || 0) * (Number(item.users) || 0);
       if (monthly < 100) return;
+      seenTools.add(toolKey);
       const text = item.reason
         ? `${item.reason} — ${item.tool}`
         : `Review ${item.tool} licenses (${item.users} seats)`;
-      if (existingTexts.has(text.toLowerCase())) return;
-      generated.push({
+      const key = text.toLowerCase();
+      if (existingTexts.has(key)) return;
+      existingTexts.add(key);
+      items.push({
         id: `gen-saas-${Date.now()}-${idx}`,
         text,
         effort: 1.5,
@@ -268,10 +444,18 @@
         targetWeek: 'Week 1–2',
         expectedSavings: monthly,
         source: 'saas',
+        sourceDetail: formatSaasEvidence(item),
+        rootCauseKey: `saas:${toolKey}`,
       });
     });
 
-    return [...existing, ...generated];
+    items = generateMatrixFromFeedback(staffFeedbackThemes, items, existingTexts);
+
+    if (Number(synthesis.accountability) <= 2) {
+      items = generateRaciGapMatrixItems(tabs, raciAssignments, DiagramEditor, items, existingTexts);
+    }
+
+    return items;
   }
 
   function getTop5Fixes(matrixItems) {
@@ -279,9 +463,62 @@
       const effort = Number(item.effort) || 3;
       const impact = Number(item.impact) || 3;
       const score = impact / effort;
-      return { ...item, score, quadrant: getQuadrant(effort, impact) };
+      return {
+        ...item,
+        score,
+        quadrant: getQuadrant(effort, impact),
+        rootCauseKey: getRootCauseKey(item),
+      };
     });
-    return items.sort((a, b) => b.score - a.score || b.impact - a.impact).slice(0, 5);
+    const sorted = items.sort(
+      (a, b) => b.score - a.score
+        || b.impact - a.impact
+        || (Number(b.expectedSavings) || 0) - (Number(a.expectedSavings) || 0),
+    );
+    const seen = new Set();
+    const deduped = [];
+    for (const item of sorted) {
+      const key = item.rootCauseKey || getRootCauseKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(item);
+      if (deduped.length >= 5) break;
+    }
+    return deduped;
+  }
+
+  function validateTop5Readiness(ctx) {
+    const { synthesis = {}, tasks = [] } = ctx;
+    const matrixItems = synthesis.matrix?.items || [];
+    const top5 = getTop5Fixes(matrixItems);
+    const errors = [];
+    const warnings = [];
+
+    if (top5.length === 0) {
+      errors.push('No Top 5 fixes — add matrix items or click Generate from Diagnosis.');
+      return { ready: false, errors, warnings, top5 };
+    }
+
+    top5.forEach((item, idx) => {
+      const n = idx + 1;
+      if (!String(item.owner || '').trim()) errors.push(`Top ${n}: assign an owner for "${item.text.slice(0, 40)}…".`);
+      if (!String(item.targetWeek || '').trim()) errors.push(`Top ${n}: set a target week.`);
+      if (!(Number(item.expectedSavings) > 0)) warnings.push(`Top ${n}: add estimated monthly savings for "${item.text.slice(0, 40)}…".`);
+    });
+
+    if (isDefaultMaturity(synthesis)) {
+      warnings.push('Maturity scores are all default (3/5) — calibrate against field observations before printing.');
+    }
+
+    const m102InScope = (tasks || []).some((t) => t.id === 'm1-02' && t.selected !== false);
+    const feedbackThemes = (synthesis.staffFeedbackThemes || []).filter((t) => t && String(t).trim());
+    const feedbackMatrixCount = matrixItems.filter((i) => i.source === 'feedback').length;
+    if (m102InScope && feedbackThemes.length >= 2 && feedbackMatrixCount < 2) {
+      warnings.push('Staff Feedback (m1-02) in scope — add at least 2 feedback themes as matrix rows.');
+    }
+
+    const ready = errors.length === 0;
+    return { ready, errors, warnings, top5 };
   }
 
   function buildModulePitch(modKey, totalAnnualWaste, formatCurrencyFn, modules) {
@@ -348,8 +585,12 @@
     if (!orgChartSvg) warnings.push('Org chart not exported — open Org Chart section and save.');
     if (Object.keys(raciAssignments).length === 0) warnings.push('RACI grid is empty — assign roles to workflow steps.');
 
-    const ready = hasWorkflow && matrixCount >= 1;
-    return { ready, warnings, errors };
+    const top5Check = validateTop5Readiness(ctx);
+    errors.push(...(top5Check.errors || []));
+    warnings.push(...(top5Check.warnings || []));
+
+    const ready = hasWorkflow && matrixCount >= 1 && top5Check.ready;
+    return { ready, warnings, errors, top5: top5Check.top5 };
   }
 
   const DEFAULT_FEEDBACK_LAUNCH_GUIDE =
@@ -407,7 +648,7 @@
       !!String(synthesis.clientDeliverableUrl || '').trim() &&
       !!String(synthesis.loomWalkthroughUrl || '').trim();
 
-    return { ready, warnings, errors };
+    return { ready, warnings, errors, top5: base.top5 };
   }
 
   const PRINT_PRESETS = {
@@ -443,18 +684,30 @@
 
   const DiagnosisReportHelpers = {
     QUADRANT,
+    TARGET_WEEK_OPTIONS,
+    MATURITY_RUBRIC,
     getQuadrant,
     stepMonthlyLoss,
     computeCoiForecast,
     computeMaturityIndex,
+    computeRecaptureSummary,
     buildProcessRankings,
     buildStepLeakageList,
     buildRaciGaps,
     buildOperationalInsights,
     buildRiskProfiles,
     buildRaciOrgInsights,
+    resolveOwnerFromRaci,
+    formatMatrixEvidence,
+    formatSaasEvidence,
+    getRootCauseKey,
+    suggestTargetWeek,
+    isDefaultMaturity,
+    generateMatrixFromFeedback,
+    generateRaciGapMatrixItems,
     generateMatrixFromDiagnosis,
     getTop5Fixes,
+    validateTop5Readiness,
     buildModulePitch,
     validateReportReadiness,
     validateMod1Handoff,
