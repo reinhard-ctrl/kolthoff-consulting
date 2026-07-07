@@ -78,21 +78,31 @@
   }
 
   const WASTE_TO_PESO_ASSET_TITLE = 'Waste-to-Peso Report';
+  const STAFF_DIRECTORY_ASSET_TITLE = 'Team List & Privacy Ground Rules';
+  const FEEDBACK_FORM_ASSET_TITLE = 'Anonymous Staff Feedback Form';
 
-  /** Upsert Mod 1 PDF / Drive link into profile.customAssets for portal vault sync. */
-  function upsertMod1DeliverableAssets(profile) {
-    const link = String(profile?.synthesis?.clientDeliverableUrl || '').trim();
-    const existing = [...(profile?.customAssets || [])];
-    const idx = existing.findIndex(
-      (a) => String(a.title || '').trim().toLowerCase() === WASTE_TO_PESO_ASSET_TITLE.toLowerCase(),
-    );
-    if (!link) {
-      if (idx >= 0) existing.splice(idx, 1);
-      return existing;
+  function upsertCustomAssetByTitle(existing, title, link, category) {
+    const list = [...existing];
+    const key = String(title || '').trim().toLowerCase();
+    const idx = list.findIndex((a) => String(a.title || '').trim().toLowerCase() === key);
+    const trimmed = String(link || '').trim();
+    if (!trimmed) {
+      if (idx >= 0) list.splice(idx, 1);
+      return list;
     }
-    const row = { title: WASTE_TO_PESO_ASSET_TITLE, category: 'MOD 1', link };
-    if (idx >= 0) existing[idx] = { ...existing[idx], ...row };
-    else existing.push(row);
+    const row = { title, category: category || 'MOD 1', link: trimmed };
+    if (idx >= 0) list[idx] = { ...list[idx], ...row };
+    else list.push(row);
+    return list;
+  }
+
+  /** Upsert Mod 1 deliverable links into profile.customAssets for portal vault sync. */
+  function upsertMod1DeliverableAssets(profile) {
+    const synthesis = profile?.synthesis || {};
+    let existing = [...(profile?.customAssets || [])];
+    existing = upsertCustomAssetByTitle(existing, WASTE_TO_PESO_ASSET_TITLE, synthesis.clientDeliverableUrl);
+    existing = upsertCustomAssetByTitle(existing, STAFF_DIRECTORY_ASSET_TITLE, synthesis.staffDirectoryDeliverableUrl);
+    existing = upsertCustomAssetByTitle(existing, FEEDBACK_FORM_ASSET_TITLE, synthesis.feedbackFormUrl);
     return existing;
   }
 
@@ -288,6 +298,10 @@
     mergePortalAssets,
     mergeActionItems,
     WASTE_TO_PESO_ASSET_TITLE,
+    WASTE_TO_PESO_ASSET_TITLE,
+    STAFF_DIRECTORY_ASSET_TITLE,
+    FEEDBACK_FORM_ASSET_TITLE,
+    upsertCustomAssetByTitle,
     upsertMod1DeliverableAssets,
     stampMod1TasksDelivered,
     buildMod1CompletePortalPatch,
