@@ -126,7 +126,8 @@ When a linked client portal exists (`clients/{quoteId}`), Intake Center **auto-s
 
 ## Phase 2 — portal bridge & single workflow editor
 
-- **Diagnosis Reports** embeds Workflow Builder for diagram editing; report still reads merged tabs via `WorkflowTabs.getReportTabs()`.
+- **Diagnosis Reports** embeds Workflow Builder with `?slice=diagnosis`; saves to `diagnosisWorkflow`. Report reads via `WorkflowTabs.getDiagnosisTabs()`.
+- **Workflow Builder (Mod 2)** saves to `workflowBuilder`; Policy Studio SOP sync uses `WorkflowTabs.getWorkflowTabs()`.
 - **Intake → Portal** pushes merged intake data to `clients` when access code matches profile `quoteId`.
 
 ## Phase 3 — save → portal sync & bidirectional links

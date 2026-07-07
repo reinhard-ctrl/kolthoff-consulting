@@ -100,7 +100,7 @@
     <div id="root"></div>
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
-    <script src="../../shared/workflow-tabs.js?v=20250701-content-v2"></script>
+    <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
@@ -374,7 +374,7 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId, setActiveNav, onSave, isSaving, authError, workbookProfiles, profileLabel, setActiveProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', v: '20250701-workflow-v1' });
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250706-diagnosis-slice-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             const sectionBtn = (id, label) => (
@@ -393,7 +393,7 @@
                         <div className="flex flex-wrap justify-between items-start gap-3">
                             <div>
                                 <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">Workflow Diagrammer</h2>
-                                <p className="text-xs text-slate-400 mt-1 max-w-xl">Flowcharts are edited in Workflow Builder (Mod 2). Saves write to this workspace profile — Diagnosis reads them for the final report.</p>
+                                <p className="text-xs text-slate-400 mt-1 max-w-xl">Map how work runs today (as-is). Saves to the Mod 1 diagnosis workflow slice — separate from Mod 2 to-be workflows in Policy Studio.</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <a href={builderUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 rounded text-[10px] font-bold uppercase">Open Full Screen</a>
@@ -1549,10 +1549,11 @@
                 if (profile) {
                     setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
-                    const reportTabs = WT?.getReportTabs?.(profile) || [];
+                    const diagnosisData = WT?.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
+                    const reportTabs = diagnosisData.tabs || [];
                     if (reportTabs.length) {
                         setTabs(WT.hydrateTabs(reportTabs));
-                        setActiveTabId(profile.activeTabId || reportTabs[0].id);
+                        setActiveTabId(diagnosisData.activeTabId || reportTabs[0].id);
                     } else {
                         const id = `tab-${Date.now()}`;
                         setTabs([createEmptyTab(id, 'Diagram 1')]);
