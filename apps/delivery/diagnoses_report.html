@@ -350,13 +350,13 @@
         }
 
         const DIAGNOSIS_SECTION_META = {
-            flowcharts: {
-                title: '1. Workflow Diagrammer',
-                description: 'Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram.',
-            },
             orgchart: {
-                title: '2. Organization Chart (As-Is)',
+                title: '1. Organization Chart (As-Is)',
                 description: 'Map reporting lines with draw.io org chart shapes. Print the staff directory (m1-01) and sync to the client portal when ready.',
+            },
+            flowcharts: {
+                title: '2. Workflow Diagrammer',
+                description: 'Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram.',
             },
             raci: {
                 title: '3. RACI Architecture',
@@ -1660,7 +1660,7 @@
             const [activeProfileId, setActiveProfileId] = useState("");
 
             // View State
-            const [activeNav, setActiveNav] = useState('flowcharts');
+            const [activeNav, setActiveNav] = useState('orgchart');
             const [printConfig, setPrintConfig] = useState(() => ({ ...(DRH().PRINT_PRESETS?.full || {}) }));
             const [printPreset, setPrintPreset] = useState('full');
 
@@ -2003,8 +2003,8 @@
                         
                         <nav className="p-4 flex-1 overflow-y-auto space-y-2">
                             <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
-                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 1. Workflow Builder</button>
-                            <button onClick={() => setActiveNav('orgchart')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'orgchart' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Sitemap /> 2. Org Chart</button>
+                            <button onClick={() => setActiveNav('orgchart')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'orgchart' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Sitemap /> 1. Org Chart</button>
+                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 2. Workflow Builder</button>
                             <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 3. RACI Architecture</button>
                             <button onClick={() => setActiveNav('saas')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'saas' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.CreditCard /> 4. SaaS Bill Audit</button>
                             <button onClick={() => setActiveNav('synthesis')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'synthesis' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.TrendingUp /> 5. Strategy & Priorities</button>
