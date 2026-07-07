@@ -1203,6 +1203,32 @@
                 triggerToast(`✅ Parsed ${roster.length} roster entries from diagram.`);
             };
 
+            const updateOrgChartRoster = (rowId, field, val) => {
+                updateOrgChartPolicy({
+                    roster: (localPolicyData.standardDocs?.orgChart?.roster || []).map((row) =>
+                        (row.id || row.name) === rowId ? { ...row, [field]: val } : row
+                    ),
+                });
+            };
+
+            const addOrgChartRosterRow = () => {
+                const roster = localPolicyData.standardDocs?.orgChart?.roster || [];
+                updateOrgChartPolicy({
+                    roster: [
+                        ...roster,
+                        { id: 'roster-' + Date.now(), name: '', title: '', department: '', reportsTo: '' },
+                    ],
+                });
+            };
+
+            const removeOrgChartRosterRow = (rowId) => {
+                updateOrgChartPolicy({
+                    roster: (localPolicyData.standardDocs?.orgChart?.roster || []).filter(
+                        (row) => (row.id || row.name) !== rowId
+                    ),
+                });
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return 'Standard Operating Procedures';
@@ -1478,9 +1504,23 @@
 
                         <tr className="block print:table-row page-break-avoid">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>4. Roster Summary</h2>
+                                <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                    <h2 className="text-xl font-bold text-slate-900 uppercase">4. Roster Summary</h2>
+                                    {isEditMode && (
+                                        <button type="button" onClick={addOrgChartRosterRow} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
+                                            + Add Person
+                                        </button>
+                                    )}
+                                </div>
                                 {roster.length === 0 ? (
-                                    <p className="text-sm text-slate-500 mt-4">No roster entries yet. Parse roster from the diagram or sync from workspace.</p>
+                                    <div className="mt-4">
+                                        <p className="text-sm text-slate-500">No roster entries yet. Parse roster from the diagram, sync from workspace, or add people manually.</p>
+                                        {isEditMode && (
+                                            <button type="button" onClick={addOrgChartRosterRow} className="no-print mt-3 text-[10px] uppercase font-bold bg-brandTeal-500 text-brandNavy-955 px-3 py-1.5 rounded hover:bg-brandTeal-600">
+                                                + Add First Person
+                                            </button>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm mt-4">
                                         <table className="w-full text-left print-table text-sm border-collapse">
@@ -1490,17 +1530,84 @@
                                                     <th scope="col" className="p-3">Title</th>
                                                     <th scope="col" className="p-3">Department</th>
                                                     <th scope="col" className="p-3">Reports To</th>
+                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {roster.map((row) => (
-                                                    <tr key={row.id || row.name} className="border-b border-slate-200">
-                                                        <td className="p-3 font-semibold text-slate-800">{row.name || '—'}</td>
-                                                        <td className="p-3 text-slate-600">{row.title || '—'}</td>
-                                                        <td className="p-3 text-slate-600">{row.department || '—'}</td>
-                                                        <td className="p-3 text-slate-600">{row.reportsTo || '—'}</td>
-                                                    </tr>
-                                                ))}
+                                                {roster.map((row) => {
+                                                    const rowId = row.id || row.name;
+                                                    return (
+                                                        <tr key={rowId} className="border-b border-slate-200 align-top">
+                                                            <td className="p-3 font-semibold text-slate-800">
+                                                                <label htmlFor={`roster-name-${rowId}`} className="sr-only">Name</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`roster-name-${rowId}`}
+                                                                        value={row.name || ''}
+                                                                        onChange={(val) => updateOrgChartRoster(rowId, 'name', val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="font-semibold text-slate-800"
+                                                                        placeholder="Full name"
+                                                                    />
+                                                                ) : (
+                                                                    row.name || '—'
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3 text-slate-600">
+                                                                <label htmlFor={`roster-title-${rowId}`} className="sr-only">Title</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`roster-title-${rowId}`}
+                                                                        value={row.title || ''}
+                                                                        onChange={(val) => updateOrgChartRoster(rowId, 'title', val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder="Job title"
+                                                                    />
+                                                                ) : (
+                                                                    row.title || '—'
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3 text-slate-600">
+                                                                <label htmlFor={`roster-dept-${rowId}`} className="sr-only">Department</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`roster-dept-${rowId}`}
+                                                                        value={row.department || ''}
+                                                                        onChange={(val) => updateOrgChartRoster(rowId, 'department', val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder="Department"
+                                                                    />
+                                                                ) : (
+                                                                    row.department || '—'
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3 text-slate-600">
+                                                                <label htmlFor={`roster-reports-${rowId}`} className="sr-only">Reports To</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`roster-reports-${rowId}`}
+                                                                        value={row.reportsTo || ''}
+                                                                        onChange={(val) => updateOrgChartRoster(rowId, 'reportsTo', val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder="Manager name"
+                                                                    />
+                                                                ) : (
+                                                                    row.reportsTo || '—'
+                                                                )}
+                                                            </td>
+                                                            {isEditMode && (
+                                                                <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                    <button type="button" aria-label="Remove person" onClick={() => removeOrgChartRosterRow(rowId)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                        <Icons.Trash />
+                                                                    </button>
+                                                                </td>
+                                                            )}
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
