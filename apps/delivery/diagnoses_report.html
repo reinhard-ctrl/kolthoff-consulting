@@ -70,8 +70,25 @@
         .animate-pop-in { animation: popIn 0.2s ease-out forwards; }
         .animate-fade-in { animation: popIn 0.2s ease-out forwards; } 
 
-        .page-break { page-break-before: always; }
         .page-break-inside-avoid { page-break-inside: avoid; }
+
+        /* Report diagram frames — screen preview + print scaling to paper width */
+        .report-diagram-frame {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            max-height: 16rem;
+        }
+        .report-diagram-img {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            max-height: 16rem;
+            object-fit: contain;
+        }
 
         html, body, #root { height: 100%; }
         body { overflow: hidden; }
@@ -118,21 +135,39 @@
             .no-print { display: none !important; }
             .luxury-gradient { background: none !important; }
             .print-only { display: block !important; }
-            .print-force-break { page-break-before: always !important; }
             main { padding: 0 !important; margin: 0 !important; }
             .report-print-surface { background: white !important; padding: 0 !important; }
             .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
-            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 20px !important; page-break-inside: auto !important; }
+            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 12px 0 !important; page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; }
+            .report-doc .page-break-inside-avoid { page-break-inside: auto !important; break-inside: auto !important; }
+            .report-diagram-frame {
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: 175mm !important;
+                overflow: hidden !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .report-diagram-img {
+                width: auto !important;
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: 175mm !important;
+                object-fit: contain !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            .report-workflow-tab { page-break-inside: auto !important; break-inside: auto !important; }
+            @page { size: A4 portrait; margin: 18mm 14mm; }
+            .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
+            .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
+            .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
+            .report-table tr { page-break-inside: avoid; break-inside: avoid; }
             .overflow-hidden, .overflow-x-auto, .overflow-y-auto,
             .max-h-\[220px\], .max-h-72, .max-h-80, .max-h-64, .max-h-52, .max-h-\[500px\] {
                 max-height: none !important;
                 overflow: visible !important;
             }
-            @page { size: portrait; margin: 18mm 14mm; }
-            .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
-            .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
-            .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
-            .report-table tr { page-break-inside: avoid; }
         }
         .staff-directory-print-root { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
@@ -1240,7 +1275,7 @@
                     )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
                             <ul className="space-y-3">
                                 {findings.map((pt, i) => (
@@ -1262,7 +1297,7 @@
                     )}
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="A" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
                             <table className="report-table">
                                 <thead>
@@ -1292,9 +1327,13 @@
                     )}
 
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="B" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
-                            {orgChartSvg && <img src={orgChartSvg} alt="Organization chart" className="w-full max-h-80 object-contain border border-slate-200 rounded-lg bg-white mb-4 page-break-inside-avoid" />}
+                            {orgChartSvg && (
+                                <div className="report-diagram-frame border border-slate-200 rounded-lg bg-white mb-4">
+                                    <img src={orgChartSvg} alt="Organization chart" className="report-diagram-img border-0 rounded-lg" />
+                                </div>
+                            )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
                                 <table className="report-table">
                                     <thead><tr><th>Name / Role</th><th>Reports To</th></tr></thead>
@@ -1315,7 +1354,7 @@
                     )}
 
                     {printConfig.showFlowcharts && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="C" title="Process Maps & Step Analysis" subtitle="As-is workflows with delay times and per-step leakage calculations." />
                             <div className="space-y-6">
                                 {tabs.map(tab => {
@@ -1323,12 +1362,16 @@
                                     const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                     const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
                                     return (
-                                        <div key={tab.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 page-break-inside-avoid">
+                                        <div key={tab.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 report-workflow-tab">
                                             <div className="flex justify-between items-baseline border-b border-slate-200 pb-2 mb-3">
                                                 <span className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">{tab.name}</span>
                                                 <span className="font-mono text-rose-600 font-bold text-xs">{formatCurrency(Math.round(tabTax.annual / 12))}/mo</span>
                                             </div>
-                                            {vm.svgCache && <img src={vm.svgCache} alt={tab.name} className="w-full max-h-64 object-contain border border-slate-200 rounded bg-white mb-4" />}
+                                            {vm.svgCache && (
+                                                <div className="report-diagram-frame border border-slate-200 rounded bg-white">
+                                                    <img src={vm.svgCache} alt={tab.name} className="report-diagram-img border-0 rounded" />
+                                                </div>
+                                            )}
                                             <div className="space-y-2">
                                                 {processNodes.map((step, sIdx) => {
                                                     const monthly = DR.stepMonthlyLoss?.(step) ?? 0;
@@ -1353,7 +1396,7 @@
                     )}
 
                     {printConfig.showRaci && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="D" title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
                             {raciOrgInsights.length > 0 && (
                                 <ul className="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside page-break-inside-avoid">
@@ -1394,7 +1437,7 @@
                     )}
 
                     {printConfig.showSaas && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process waste and subscription waste are tracked separately so you know what to fix first." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
@@ -1450,7 +1493,7 @@
                     )}
 
                     {printConfig.showSynthesis && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="F" title="Operational Maturity & Cost of Inaction" subtitle="How ready your business is to scale — and what happens if nothing changes." />
                             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
                                 <div className="flex justify-between items-center mb-4">
@@ -1477,7 +1520,7 @@
                     )}
 
                     {printConfig.showMatrix && activeItems.length > 0 && (
-                        <div className="report-page print-force-break font-sans text-xs">
+                        <div className="report-page font-sans text-xs">
                             <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="All initiatives plotted by effort vs. impact. Numbers match the chart below." />
                             <div className="flex justify-center my-4 page-break-inside-avoid">
                                 <svg viewBox="0 0 450 450" className="w-[400px] h-[400px] bg-slate-50 border border-slate-200 rounded-xl">
@@ -1545,7 +1588,7 @@
                     )}
 
                     {printConfig.showFindings && riskProfiles.length > 0 && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="H" title="Operational Risk Profiles" subtitle="Issues that need attention before scaling headcount or adding new tools." />
                             <div className="space-y-3">
                                 {riskProfiles.map((rp, i) => (
@@ -1559,7 +1602,7 @@
                     )}
 
                     {printConfig.showNextSteps && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader number="I" title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
                             <div className="space-y-4 text-sm">
                                 <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50/40 rounded-r-lg page-break-inside-avoid">
@@ -1593,7 +1636,7 @@
                     )}
 
                     {printConfig.showAppendix && (
-                        <div className="report-page print-force-break">
+                        <div className="report-page">
                             <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
