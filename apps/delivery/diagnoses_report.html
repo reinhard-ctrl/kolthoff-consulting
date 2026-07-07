@@ -229,6 +229,8 @@
             }
         }
         .staff-directory-print-root { display: none; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
         .report-kpi { background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%); border: 1px solid #e2e8f0; border-radius: 12px; }
         .report-kpi-value { font-family: "Playfair Display", serif; }
@@ -2262,7 +2264,7 @@
                             />
                         )}
 
-                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-y-auto w-full pb-32 print:pb-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-hidden w-full flex flex-col min-h-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
                                 <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
                             )}
@@ -2311,93 +2313,103 @@
                                 />
                             )}
                             {activeNav === 'report' && (
-                                <div className="w-full flex flex-col items-center animate-fade-in min-h-full print:min-h-0">
-                                    <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex flex-col gap-4 no-print shadow-sm w-full shrink-0">
-                                        <div className="flex flex-wrap justify-between items-center gap-4 px-2">
-                                            <div>
-                                                <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Waste-to-Peso Report Preview</h2>
-                                                <p className="text-[10px] text-slate-500 mt-0.5">{clientCompany} · {reportDate}</p>
+                                <div className="w-full h-full min-h-0 flex flex-col print:min-h-0">
+                                    <div className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 no-print shadow-sm w-full shrink-0">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider truncate">Waste-to-Peso Report</h2>
+                                                <p className="text-[9px] text-slate-500 truncate">{clientCompany} · {reportDate}</p>
                                             </div>
-                                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
                                                 {mod1DeliveredAt && (
-                                                    <span className="text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded">Mod 1 delivered {new Date(mod1DeliveredAt).toLocaleDateString()}</span>
+                                                    <span className="text-[9px] font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">Delivered {new Date(mod1DeliveredAt).toLocaleDateString()}</span>
                                                 )}
-                                                <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing (3–4 pp)</button>
-                                                <button type="button" onClick={() => applyPrintPreset('full')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full Diagnostic</button>
+                                                {(mod1Handoff.errors?.length > 0 || mod1Handoff.warnings.length > 0) && (
+                                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border ${mod1Handoff.errors?.length ? 'text-rose-800 bg-rose-50 border-rose-200' : 'text-amber-800 bg-amber-50 border-amber-200'}`}>
+                                                        {mod1Handoff.errors?.length ? `${mod1Handoff.errors.length} blocker${mod1Handoff.errors.length > 1 ? 's' : ''}` : `${mod1Handoff.warnings.length} warning${mod1Handoff.warnings.length > 1 ? 's' : ''}`}
+                                                    </span>
+                                                )}
+                                                <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing</button>
+                                                <button type="button" onClick={() => applyPrintPreset('full')} className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full</button>
                                                 {!mod1DeliveredAt && (
-                                                    <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError || !mod1Handoff.ready} title={!mod1Handoff.ready ? 'Complete report sections and deliverable links first' : ''} className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-700 disabled:opacity-50">Mark Mod 1 Complete</button>
+                                                    <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError || !mod1Handoff.ready} title={!mod1Handoff.ready ? 'Complete report sections and deliverable links first' : ''} className="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-slate-700 disabled:opacity-50">Mark Mod 1</button>
                                                 )}
-                                                <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
+                                                <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-3 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1.5 shadow-sm"><Icons.Print /> Print PDF</button>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap items-end gap-4 px-2 pb-1">
-                                            <div className="min-w-[200px]">
-                                                <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Prepared by</label>
-                                                <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
-                                            </div>
-                                        </div>
-                                        <div className="mx-2 p-4 rounded-lg border border-brandTeal-200 bg-teal-50/40 space-y-3">
-                                            <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-900">Client Handoff</div>
-                                            <p className="text-[9px] text-slate-600 leading-relaxed">All client-facing links in one place — syncs to the portal vault on save.</p>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                <div>
-                                                    <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Google Drive PDF URL (m1-05)</label>
-                                                    <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                        <details className="mt-1.5 group">
+                                            <summary className="cursor-pointer list-none text-[9px] font-bold uppercase tracking-wider text-slate-500 hover:text-brandTeal-700 flex items-center gap-1">
+                                                <span className="group-open:rotate-90 transition-transform inline-block">▸</span>
+                                                Options, handoff &amp; sections
+                                            </summary>
+                                            <div className="pt-2 pb-1 space-y-3 border-t border-slate-100 mt-1.5">
+                                                <div className="flex flex-wrap items-end gap-3">
+                                                    <div className="min-w-[180px] flex-1">
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Prepared by</label>
+                                                        <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                    <button type="button" onClick={() => {
+                                                        const letter = DRH().buildDefaultExecutiveLetter?.({
+                                                            tabs, subSaaS, synthesis, orgChartMembers, formatCurrency,
+                                                            DiagramEditor: window.DiagramEditor,
+                                                        }) || '';
+                                                        setSynthesis((prev) => ({ ...prev, executiveLetter: letter }));
+                                                    }} className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded text-[9px] font-bold uppercase shrink-0">Generate letter</button>
                                                 </div>
-                                                <div>
-                                                    <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Loom walkthrough URL (m1-05)</label>
-                                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                <div className="p-3 rounded-lg border border-brandTeal-200 bg-teal-50/40 space-y-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-900">Client handoff (syncs to portal)</div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Drive PDF (m1-05)</label>
+                                                            <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Loom URL (m1-05)</label>
+                                                            <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                        </div>
+                                                        {DRH().isMod1TaskInScope?.(activeProfile?.tasks, 'm1-02') && (
+                                                            <div className="md:col-span-2">
+                                                                <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Feedback form (m1-02)</label>
+                                                                <input type="url" value={synthesis.feedbackFormUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackFormUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/…/viewform" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                {DRH().isMod1TaskInScope?.(activeProfile?.tasks, 'm1-02') && (
-                                                    <div className="md:col-span-2">
-                                                        <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Staff feedback form URL (m1-02)</label>
-                                                        <input type="url" value={synthesis.feedbackFormUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackFormUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/…/viewform" className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                                                    {[
+                                                        ['showExecutiveSummary', 'Summary'],
+                                                        ['showExecutiveLetter', 'Letter'],
+                                                        ['showLeakageRanking', 'Rankings'],
+                                                        ['showOrgChart', 'Org Chart'],
+                                                        ['showFlowcharts', 'Workflows'],
+                                                        ['showRaci', 'RACI'],
+                                                        ['showSaas', 'Financials'],
+                                                        ['showSynthesis', 'Maturity'],
+                                                        ['showMatrix', 'Matrix'],
+                                                        ['showFindings', 'Risks'],
+                                                        ['showNextSteps', 'Next Steps'],
+                                                        ['showFeedbackAppendix', 'Feedback QR'],
+                                                        ['showAppendix', 'Methodology'],
+                                                    ].map(([key, label]) => (
+                                                        <label key={key} className="flex items-center gap-1 cursor-pointer hover:text-brandTeal-600">
+                                                            <input type="checkbox" checked={!!printConfig[key]} onChange={e => { setPrintPreset('custom'); setPrintConfig({ ...printConfig, [key]: e.target.checked }); }} className="accent-brandTeal-500" />
+                                                            {label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                {(mod1Handoff.errors?.length > 0 || mod1Handoff.warnings.length > 0) && (
+                                                    <div className={`p-2.5 rounded-lg border ${mod1Handoff.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                                                        <div className={`text-[9px] font-bold uppercase mb-1 ${mod1Handoff.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>{mod1Handoff.errors?.length ? 'Before Mod 1 handoff' : 'Before you print'}</div>
+                                                        <ul className={`text-[9px] space-y-0.5 list-disc list-inside ${mod1Handoff.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
+                                                            {(mod1Handoff.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
+                                                            {mod1Handoff.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
+                                                        </ul>
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex flex-wrap gap-2">
-                                                <button type="button" onClick={() => {
-                                                    const letter = DRH().buildDefaultExecutiveLetter?.({
-                                                        tabs, subSaaS, synthesis, orgChartMembers, formatCurrency,
-                                                        DiagramEditor: window.DiagramEditor,
-                                                    }) || '';
-                                                    setSynthesis((prev) => ({ ...prev, executiveLetter: letter }));
-                                                }} className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded text-[10px] font-bold uppercase">Generate Executive Letter</button>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-3 text-[9px] font-bold text-slate-500 uppercase tracking-wider items-center flex-1 px-2">
-                                                {[
-                                                    ['showExecutiveSummary', 'Summary'],
-                                                    ['showExecutiveLetter', 'Letter'],
-                                                    ['showLeakageRanking', 'Rankings'],
-                                                    ['showOrgChart', 'Org Chart'],
-                                                    ['showFlowcharts', 'Workflows'],
-                                                    ['showRaci', 'RACI'],
-                                                    ['showSaas', 'Financials'],
-                                                    ['showSynthesis', 'Maturity'],
-                                                    ['showMatrix', 'Matrix'],
-                                                    ['showFindings', 'Risks'],
-                                                    ['showNextSteps', 'Next Steps'],
-                                                    ['showFeedbackAppendix', 'Feedback QR'],
-                                                    ['showAppendix', 'Methodology'],
-                                                ].map(([key, label]) => (
-                                                    <label key={key} className="flex items-center gap-1 cursor-pointer hover:text-brandTeal-600">
-                                                        <input type="checkbox" checked={!!printConfig[key]} onChange={e => { setPrintPreset('custom'); setPrintConfig({ ...printConfig, [key]: e.target.checked }); }} className="accent-brandTeal-500" />
-                                                        {label}
-                                                    </label>
-                                                ))}
-                                        </div>
-                                        {(mod1Handoff.errors?.length > 0 || mod1Handoff.warnings.length > 0) && (
-                                            <div className={`mx-2 p-3 rounded-lg border ${mod1Handoff.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
-                                                <div className={`text-[10px] font-bold uppercase mb-1 ${mod1Handoff.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>{mod1Handoff.errors?.length ? 'Before Mod 1 handoff' : 'Before you print'}</div>
-                                                <ul className={`text-[10px] space-y-0.5 list-disc list-inside ${mod1Handoff.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
-                                                    {(mod1Handoff.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
-                                                    {mod1Handoff.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
-                                                </ul>
-                                            </div>
-                                        )}
+                                        </details>
                                     </div>
-                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:px-0 print:bg-transparent report-print-surface">
+                                    <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center bg-slate-200/80 py-4 px-3 print:py-0 print:px-0 print:bg-transparent report-print-surface">
                                         <ExecutiveReport
                                             clientCompany={clientCompany}
                                             preparedBy={preparedBy}
