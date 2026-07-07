@@ -82,14 +82,16 @@
   };
 
   const PRESETS = {
-    orgChart: {
+        orgChart: {
       id: 'orgChart',
       label: 'Organization Chart',
       blankXml: BLANK_ORG_CHART_XML,
+      embedLibs: 'general;basic;arrows2',
       configure: {
         defaultLibraries: 'general;basic;arrows2',
         enabledLibraries: ['general', 'basic', 'arrows2'],
         css: '',
+        title: 'Organization Chart',
       },
     },
     bpmn: {

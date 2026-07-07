@@ -9,6 +9,13 @@ export const BLANK_ORG_CHART_XML =
   '<root><mxCell id="0"/><mxCell id="1" parent="0"/></root>' +
   '</mxGraphModel></diagram></mxfile>';
 
+export const BLANK_BPMN_XML =
+  '<mxfile host="app.diagrams.net" agent="kolthoff-portal">' +
+  '<diagram id="bpmn" name="Process">' +
+  '<mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850">' +
+  '<root><mxCell id="0"/><mxCell id="1" parent="0"/></root>' +
+  '</mxGraphModel></diagram></mxfile>';
+
 export interface OrgChartPolicyDoc {
   title: string;
   docControl: {
@@ -74,9 +81,11 @@ export function getPreset(presetId: DiagramPresetId) {
   return {
     id: 'orgChart',
     label: 'Organization Chart',
+    embedLibs: 'general;basic;arrows2',
     configure: {
       defaultLibraries: 'general;basic;arrows2',
       enabledLibraries: ['general', 'basic', 'arrows2'],
+      title: 'Organization Chart',
     },
   };
 }

@@ -4,7 +4,7 @@ import { useProduct } from '../lib/product-context';
 import { useDemoAppearance } from '../lib/demo-appearance-context';
 
 /** Bump when embedded HTML apps change so admin iframes skip stale cached scripts. */
-const EMBED_CACHE_VERSION = '20250707-diagnosis-bpmn-v1';
+const EMBED_CACHE_VERSION = '20250707-plan-complete-v1';
 
 function buildEmbedSrc(href: string, embedParams: Record<string, string>): string {
   const url = href.startsWith('http') ? new URL(href) : new URL(href, window.location.origin);

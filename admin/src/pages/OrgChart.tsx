@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { getDoc, onSnapshot, setDoc } from 'firebase/firestore';
 import { adminCol, adminDoc } from '../lib/firebase';
 import { getClientDisplayName } from '../lib/engagement-config';
+import DiagramEditor from '../components/DiagramEditor';
+import { BLANK_ORG_CHART_XML } from '../lib/diagram-editor';
 import {
   buildOrgChartTree,
   createOrgMemberId,
@@ -14,13 +16,20 @@ import {
 } from '../lib/org-chart';
 import { resolvePortalAccessCode, syncProfileToPortalIfExists } from '../lib/portal-sync';
 
+function resolveWorkspaceOrgChartXml(profile: WorkbookProfile | null): string {
+  if (!profile?.orgChart) return BLANK_ORG_CHART_XML;
+  const org = profile.orgChart as { drawioXml?: string; members?: OrgChartMember[] };
+  if (typeof org.drawioXml === 'string' && org.drawioXml.trim()) return org.drawioXml;
+  return BLANK_ORG_CHART_XML;
+}
+
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
   clientRep?: string;
   quoteId?: string;
-  orgChart?: { members?: OrgChartMember[]; updatedAt?: string };
+  orgChart?: { members?: OrgChartMember[]; drawioXml?: string; svgCache?: string; updatedAt?: string };
   roles?: Array<{ owner?: string; name?: string; role?: string; title?: string }>;
 }
 
@@ -44,6 +53,9 @@ export default function OrgChart() {
   const [profiles, setProfiles] = useState<WorkbookProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [members, setMembers] = useState<OrgChartMember[]>([]);
+  const [orgChartXml, setOrgChartXml] = useState(BLANK_ORG_CHART_XML);
+  const [orgChartSvg, setOrgChartSvg] = useState('');
+  const [editorMode, setEditorMode] = useState<'roster' | 'diagram'>('roster');
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -67,6 +79,8 @@ export default function OrgChart() {
     }
     const chart = resolveOrgChartFromProfile(activeProfile);
     setMembers(chart.members);
+    setOrgChartXml(resolveWorkspaceOrgChartXml(activeProfile));
+    setOrgChartSvg(activeProfile.orgChart?.svgCache || '');
   }, [activeProfileId, activeProfile]);
 
   const tree = useMemo(() => buildOrgChartTree(members.filter((m) => m.name.trim())), [members]);
@@ -114,7 +128,14 @@ export default function OrgChart() {
       }));
       await setDoc(
         adminDoc('workbook_profiles', activeProfileId),
-        { orgChart: { members: cleaned, updatedAt: new Date().toISOString() } },
+        {
+          orgChart: {
+            members: cleaned,
+            drawioXml: orgChartXml,
+            svgCache: orgChartSvg || undefined,
+            updatedAt: new Date().toISOString(),
+          },
+        },
         { merge: true },
       );
       showToast('Org chart saved to SOW profile.');
@@ -182,6 +203,22 @@ export default function OrgChart() {
       </div>
 
       <div className="glass-panel p-4 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setEditorMode('roster')}
+            className={`px-3 py-1.5 rounded text-xs font-bold uppercase ${editorMode === 'roster' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-300'}`}
+          >
+            Roster table
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditorMode('diagram')}
+            className={`px-3 py-1.5 rounded text-xs font-bold uppercase ${editorMode === 'diagram' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-300'}`}
+          >
+            draw.io diagram
+          </button>
+        </div>
         <label className="text-xs text-slate-500 uppercase font-bold block mb-2">SOW Profile</label>
         <select
           value={activeProfileId ?? ''}
@@ -202,6 +239,18 @@ export default function OrgChart() {
         )}
       </div>
 
+      {editorMode === 'diagram' ? (
+        <div className="glass-panel p-4 mb-6 min-h-[32rem]">
+          <h2 className="text-sm font-bold text-slate-200 mb-3">Visual organization chart</h2>
+          <DiagramEditor
+            preset="orgChart"
+            xml={orgChartXml}
+            onXmlChange={setOrgChartXml}
+            onSvgExport={setOrgChartSvg}
+            height={560}
+          />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
         <div className="glass-panel overflow-hidden">
           <div className="px-4 py-3 border-b border-brandNavy-800 flex justify-between items-center">
@@ -322,6 +371,7 @@ export default function OrgChart() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

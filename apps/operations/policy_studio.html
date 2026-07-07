@@ -182,7 +182,8 @@
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250706-bpmn-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
+    <script src="../../shared/sop-sync.js?v=20250707-diagnosis-bpmn-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1077,82 +1078,15 @@
             // --- SYNC WORKFLOW DIAGRAM AS SOP MANUAL ---
             const handleSyncSopFromTab = (tab) => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
-                const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
-                const sortedNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
-
-                if (sortedNodes.length === 0) {
+                const newSop = window.SopSync?.buildSopFromWorkflowTab?.(tab, profile);
+                if (!newSop) {
                     triggerToast('⚠️ This BPMN diagram has no tasks to import. Add BPMN task shapes in Workflow Builder first.');
                     return;
                 }
 
-                const rRoles = [];
-                const aRoles = [];
-                const cRoles = [];
-                const iRoles = [];
-
-                sortedNodes.forEach((node) => {
-                    if (node.owner && node.owner !== 'Unassigned' && !rRoles.includes(node.owner)) {
-                        rRoles.push(node.owner);
-                    }
-                });
-
-                if (profile?.raciAssignments) {
-                    sortedNodes.forEach((node) => {
-                        const nodeRaci = profile.raciAssignments[node.id];
-                        if (nodeRaci) {
-                            Object.entries(nodeRaci).forEach(([laneId, value]) => {
-                                const lane = vm.lanes.find((l) => l.id === laneId);
-                                if (lane) {
-                                    const name = lane.label.replace(/\n/g, ' ');
-                                    if (value === 'R' && !rRoles.includes(name)) rRoles.push(name);
-                                    if (value === 'A' && !aRoles.includes(name)) aRoles.push(name);
-                                    if (value === 'C' && !cRoles.includes(name)) cRoles.push(name);
-                                    if (value === 'I' && !iRoles.includes(name)) iRoles.push(name);
-                                }
-                            });
-                        }
-                    });
-                }
-
-                const mappedSteps = sortedNodes.map((node) => ({
-                    id: node.id,
-                    action: node.label,
-                    owner: node.owner || 'Unassigned',
-                    duration: node.duration || '1 Hour',
-                    details: node.description || 'Proceed with standard operational precautions as defined in the BPMN workflow.',
-                }));
-
-                const uniqueLanes = [...new Set(mappedSteps.map(s => s.owner).filter(o => o !== 'Unassigned'))];
-
-                const newSop = {
-                    id: 'sop-' + Date.now(),
-                    title: tab.name,
-                    docControl: {
-                        version: '1.0',
-                        effectiveDate: new Date().toISOString().split('T')[0],
-                        lastReviewed: new Date().toISOString().split('T')[0],
-                        owner: uniqueLanes[0] || 'Operations Lead'
-                    },
-                    objective: `To standardize the execution steps of the ${tab.name} workflow to optimize efficiency, limit errors, and minimize operational delay points.`,
-                    scope: `Applies to all ${uniqueLanes.join(', ') || 'relevant functional team'} personnel involved in this process path.`,
-                    prerequisites: `1. Fully trained status on ${tab.name} architecture.\n2. Access to primary software/tools as diagrammed.`,
-                    kpis: `1. SLA target times met per process node.\n2. Less than 5% delay deviation on handoffs.`,
-                    troubleshooting: `1. Delay on Handoff: Escalate to direct supervisor immediately if an orthogonal pathway stalls.`,
-                    raci: {
-                        responsible: rRoles.join(', ') || 'Fulfillment Team',
-                        accountable: aRoles.join(', ') || uniqueLanes[0] || 'Manager',
-                        consulted: cRoles.join(', ') || 'Consulted Stakeholders',
-                        informed: iRoles.join(', ') || 'Finance/Management'
-                    },
-                    steps: mappedSteps
-                };
-
                 setLocalPolicyData(prev => {
                     const filtered = (prev.sops || []).filter(s => s.title.toLowerCase() !== tab.name.toLowerCase());
-                    return {
-                        ...prev,
-                        sops: [...filtered, newSop]
-                    };
+                    return { ...prev, sops: [...filtered, newSop] };
                 });
 
                 setShowSyncModal(false);
