@@ -75,25 +75,36 @@
         /* Report diagram frames — screen preview + print scaling to paper width */
         .report-diagram-frame {
             width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            max-width: 100%;
+            min-width: 0;
+            display: block;
             margin-bottom: 1rem;
-            max-height: 16rem;
+            overflow: auto;
+            max-height: min(70vh, 520px);
         }
         .report-diagram-img {
             display: block;
             width: 100%;
             max-width: 100%;
+            min-width: 0;
             height: auto;
-            max-height: 16rem;
+            max-height: min(70vh, 520px);
             object-fit: contain;
+            object-position: center center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .report-matrix-chart {
+            width: min(100%, 400px);
+            height: auto;
+            aspect-ratio: 1 / 1;
         }
 
         html, body, #root { height: 100%; }
         body { overflow: hidden; }
 
         @media print {
+            *, *::before, *::after { box-sizing: border-box !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
             html, body, #root,
@@ -109,6 +120,8 @@
             }
 
             /* Unclip flex/scroll shells so every report-page reaches the print engine */
+            body.printing-report #root,
+            body.printing-report #root > div,
             body.printing-report .flex,
             body.printing-report main,
             body.printing-report main > div,
@@ -120,6 +133,9 @@
                 max-height: none !important;
                 overflow: visible !important;
                 flex: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
             }
 
             body.printing-report aside,
@@ -136,29 +152,52 @@
             .luxury-gradient { background: none !important; }
             .print-only { display: block !important; }
             main { padding: 0 !important; margin: 0 !important; }
-            .report-print-surface { background: white !important; padding: 0 !important; }
+            .report-print-surface { background: white !important; padding: 0 !important; margin: 0 !important; }
             .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
             .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 12px 0 !important; page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; }
             .report-doc .page-break-inside-avoid { page-break-inside: auto !important; break-inside: auto !important; }
-            .report-diagram-frame {
+            .report-table {
                 width: 100% !important;
                 max-width: 100% !important;
-                max-height: 175mm !important;
-                overflow: hidden !important;
+                table-layout: fixed !important;
+                word-wrap: break-word !important;
+                overflow-wrap: anywhere !important;
+            }
+            .report-table th,
+            .report-table td {
+                overflow-wrap: anywhere !important;
+                word-break: break-word !important;
+            }
+            .report-page .flex { flex-wrap: wrap !important; }
+            .report-diagram-frame {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
             .report-diagram-img {
-                width: auto !important;
+                display: block !important;
+                width: 100% !important;
                 max-width: 100% !important;
+                min-width: 0 !important;
                 height: auto !important;
-                max-height: 175mm !important;
+                max-height: 170mm !important;
                 object-fit: contain !important;
+                object-position: center center !important;
                 margin-left: auto !important;
                 margin-right: auto !important;
             }
+            .report-matrix-chart {
+                width: min(100%, 360px) !important;
+                max-width: 100% !important;
+                height: auto !important;
+            }
             .report-workflow-tab { page-break-inside: auto !important; break-inside: auto !important; }
-            @page { size: A4 portrait; margin: 18mm 14mm; }
+            @page { size: A4 portrait; margin: 15mm 12mm; }
             .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
             .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
             .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
@@ -200,7 +239,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-strategy-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-print-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -242,6 +281,7 @@
         const EMPTY_CANVAS = { nodes: [], edges: [], lanes: [], phases: [] };
 
         const DRH = () => window.DiagnosisReportHelpers || {};
+        const printReadySvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
         const EC_MODULES = () => (window.EngagementConfig?.MODULES) || [];
 
         const createDefaultSynthesis = () => ({
@@ -404,7 +444,7 @@
 
         const OrgChartBuilderPanel = ({ orgChartXml, setOrgChartXml, setOrgChartSvg }) => (
             <div className="w-full h-full min-h-0 flex flex-col">
-                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={setOrgChartSvg} height="100%" />
+                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={(svg) => setOrgChartSvg(printReadySvg(svg))} height="100%" />
             </div>
         );
 
@@ -1331,7 +1371,7 @@
                             <ReportSectionHeader number="B" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
                             {orgChartSvg && (
                                 <div className="report-diagram-frame border border-slate-200 rounded-lg bg-white mb-4">
-                                    <img src={orgChartSvg} alt="Organization chart" className="report-diagram-img border-0 rounded-lg" />
+                                    <img src={printReadySvg(orgChartSvg)} alt="Organization chart" className="report-diagram-img border-0 rounded-lg" />
                                 </div>
                             )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
@@ -1369,7 +1409,7 @@
                                             </div>
                                             {vm.svgCache && (
                                                 <div className="report-diagram-frame border border-slate-200 rounded bg-white">
-                                                    <img src={vm.svgCache} alt={tab.name} className="report-diagram-img border-0 rounded" />
+                                                    <img src={printReadySvg(vm.svgCache)} alt={tab.name} className="report-diagram-img border-0 rounded" />
                                                 </div>
                                             )}
                                             <div className="space-y-2">
@@ -1523,7 +1563,7 @@
                         <div className="report-page font-sans text-xs">
                             <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="All initiatives plotted by effort vs. impact. Numbers match the chart below." />
                             <div className="flex justify-center my-4 page-break-inside-avoid">
-                                <svg viewBox="0 0 450 450" className="w-[400px] h-[400px] bg-slate-50 border border-slate-200 rounded-xl">
+                                <svg viewBox="0 0 450 450" className="report-matrix-chart bg-slate-50 border border-slate-200 rounded-xl">
                                     <rect x="40" y="40" width="185" height="185" fill="#f0fdf4" /><rect x="225" y="40" width="175" height="175" fill="#eff6ff" />
                                     <rect x="30" y="225" width="170" height="185" fill="#f8fafc" /><rect x="225" y="225" width="185" height="185" fill="#fff1f2" />
                                     <line x1="225" y1="40" x2="225" y2="410" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
@@ -1742,7 +1782,7 @@
                     setSubSaaS(Array.isArray(profile.subSaaS) ? profile.subSaaS : []);
                     setRaciAssignments(profile.raciAssignments || {});
                     setOrgChartXml(window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '');
-                    setOrgChartSvg(profile.orgChart?.svgCache || '');
+                    setOrgChartSvg(printReadySvg(profile.orgChart?.svgCache || ''));
                     setOrgChartMembers(profile.orgChart?.members || []);
                     setWorkflowUpdatedAt(profile.diagnosisWorkflow?.updatedAt || 0);
                     setReportDataUpdatedAt(profile.diagnosisReportUpdatedAt || 0);
@@ -2162,7 +2202,7 @@
                                             </div>
                                         )}
                                     </div>
-                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:bg-transparent report-print-surface">
+                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:px-0 print:bg-transparent report-print-surface">
                                         <ExecutiveReport
                                             clientCompany={clientCompany}
                                             preparedBy={preparedBy}
