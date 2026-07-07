@@ -126,7 +126,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-mod1-deliverables-v3"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-strategy-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -659,7 +659,10 @@
             };
 
             const generateFromDiagnosis = () => {
-                const items = DRH().generateMatrixFromDiagnosis?.(tabs, subSaaS, synthesis.matrix?.items || [], window.DiagramEditor) || [];
+                const items = DRH().generateMatrixFromDiagnosis?.(
+                    tabs, subSaaS, synthesis.matrix?.items || [], window.DiagramEditor,
+                    { raciAssignments, staffFeedbackThemes: synthesis.staffFeedbackThemes, synthesis },
+                ) || [];
                 setSynthesis(prev => ({ ...prev, matrix: { items } }));
             };
 
@@ -671,17 +674,28 @@
 
             const aiInsights = useMemo(() => DRH().buildOperationalInsights?.(insightCtx) || [], [insightCtx]);
             const top5Preview = useMemo(() => DRH().getTop5Fixes?.(synthesis.matrix?.items || []) || [], [synthesis.matrix]);
+            const top5Validation = useMemo(() => DRH().validateTop5Readiness?.({ synthesis, tasks: [] }) || { ready: true, errors: [], warnings: [], top5: top5Preview }, [synthesis, top5Preview]);
+            const weekOptions = DRH().TARGET_WEEK_OPTIONS || ['Week 1–2', 'Week 3–4', 'Week 5–6', 'Week 7–8', 'Week 9–10', 'Week 11–12'];
+            const maturityRubric = DRH().MATURITY_RUBRIC || {};
 
             const updateScore = (key, val) => setSynthesis(prev => ({ ...prev, [key]: Number(val) }));
-            const ScoreBarUI = ({ label, valKey, val }) => (
-                <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-bold text-slate-300">{label}</label>
-                        <span className="text-xs font-mono text-brandTeal-400">{val}/5</span>
+            const ScoreBarUI = ({ label, valKey, val }) => {
+                const rubric = maturityRubric[valKey];
+                return (
+                    <div title={rubric ? `1–2: ${rubric.low}\n4–5: ${rubric.high}` : undefined}>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-bold text-slate-300">{label}</label>
+                            <span className="text-xs font-mono text-brandTeal-400">{val}/5</span>
+                        </div>
+                        <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" aria-label={label} />
+                        {rubric && (
+                            <div className="text-[9px] text-slate-500 mt-1 leading-relaxed">
+                                <span className="text-rose-400/80">1–2:</span> {rubric.low} · <span className="text-emerald-400/80">4–5:</span> {rubric.high}
+                            </div>
+                        )}
                     </div>
-                    <input type="range" min="1" max="5" value={val} onChange={(e) => updateScore(valKey, e.target.value)} className="w-full accent-brandTeal-500 h-1 rounded cursor-pointer bg-brandNavy-800" aria-label={label} />
-                </div>
-            );
+                );
+            };
 
             // Matrix Operations
             const matrixItems = synthesis.matrix?.items || [];
@@ -898,12 +912,30 @@
                         </div>
 
                         {top5Preview.length > 0 && (
-                            <div className="bg-brandNavy-950/60 border border-brandTeal-500/20 rounded-xl p-4">
-                                <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest mb-2">Top 5 Preview (report page 1)</div>
-                                <ol className="space-y-1.5 list-decimal list-inside text-xs text-slate-300">
-                                    {top5Preview.map((item, i) => (
-                                        <li key={item.id} className="leading-relaxed"><span className="font-semibold text-white">{item.text}</span></li>
-                                    ))}
+                            <div className={`bg-brandNavy-950/60 border rounded-xl p-4 ${top5Validation.ready ? 'border-brandTeal-500/20' : 'border-amber-500/40'}`}>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 5 Preview (report page 1)</div>
+                                    {!top5Validation.ready && <span className="text-[9px] font-bold uppercase text-amber-400">Needs owner + target week</span>}
+                                </div>
+                                <ol className="space-y-2 list-decimal list-inside text-xs text-slate-300">
+                                    {top5Preview.map((item, i) => {
+                                        const missingOwner = !String(item.owner || '').trim();
+                                        const missingWeek = !String(item.targetWeek || '').trim();
+                                        const missingSavings = !(Number(item.expectedSavings) > 0);
+                                        return (
+                                            <li key={item.id} className="leading-relaxed">
+                                                <span className="font-semibold text-white">{item.text}</span>
+                                                {(missingOwner || missingWeek || missingSavings) && (
+                                                    <span className="block text-[9px] text-amber-400 mt-0.5 font-mono uppercase">
+                                                        {missingOwner && 'Missing owner · '}{missingWeek && 'Missing week · '}{missingSavings && 'Missing savings'}
+                                                    </span>
+                                                )}
+                                                {item.source && (
+                                                    <span className="block text-[9px] text-slate-500 mt-0.5">{DRH().formatMatrixEvidence?.(item, formatCurrency)}</span>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
                                 </ol>
                             </div>
                         )}
@@ -964,6 +996,9 @@
                                                     <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${quad.color}`}>
                                                         {quad.name}
                                                     </span>
+                                                    {item.source && (
+                                                        <span className="text-[8px] font-mono uppercase text-slate-500 border border-brandNavy-700 px-1.5 py-0.5 rounded">{item.source}</span>
+                                                    )}
                                                     <button onClick={() => deleteItem(item.id)} className="text-slate-500 hover:text-rose-400 ml-2 shrink-0"><Icons.Close /></button>
                                                 </div>
 
@@ -1006,7 +1041,11 @@
                                                     </div>
                                                     <div>
                                                         <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Target week</label>
-                                                        <input type="text" value={item.targetWeek || ''} onChange={e => updateItemScore(item.id, 'targetWeek', e.target.value)} placeholder="Week 1–2" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                        <select value={item.targetWeek || ''} onChange={e => updateItemScore(item.id, 'targetWeek', e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500">
+                                                            <option value="">Select…</option>
+                                                            {weekOptions.map((w) => <option key={w} value={w}>{w}</option>)}
+                                                            {item.targetWeek && !weekOptions.includes(item.targetWeek) && <option value={item.targetWeek}>{item.targetWeek}</option>}
+                                                        </select>
                                                     </div>
                                                     <div>
                                                         <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Est. savings/mo</label>
@@ -1110,7 +1149,12 @@
                                 {topFixes.map((item, idx) => (
                                     <tr key={item.id}>
                                         <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
-                                        <td className="font-semibold text-slate-900">{item.text}</td>
+                                        <td>
+                                            <div className="font-semibold text-slate-900">{item.text}</div>
+                                            {DRH().formatMatrixEvidence?.(item, formatCurrency) && (
+                                                <div className="text-[9px] text-slate-500 mt-0.5 font-normal">{DRH().formatMatrixEvidence(item, formatCurrency)}</div>
+                                            )}
+                                        </td>
                                         <td className="text-slate-600">{item.owner || '—'}</td>
                                         <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
                                         <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
@@ -1131,6 +1175,7 @@
             const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
             const topFixes = DR.getTop5Fixes?.(activeItems) || [];
+            const recapture = DR.computeRecaptureSummary?.(topFixes, totalAnnualWaste) || { monthly: 0, annual: 0, pctOfTotalLeakage: 0 };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
@@ -1350,9 +1395,17 @@
                                     </tbody>
                                 </table>
                             )}
-                            <div className="p-4 border border-emerald-300 rounded-xl bg-emerald-50/50 flex justify-between items-center page-break-inside-avoid">
-                                <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
-                                <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
+                            <div className="p-4 border border-emerald-300 rounded-xl bg-emerald-50/50 page-break-inside-avoid space-y-3">
+                                <div className="flex justify-between items-center gap-4">
+                                    <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
+                                    <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total leakage</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
+                                </div>
+                                {recapture.annual > 0 && (
+                                    <div className="pt-3 border-t border-emerald-200 text-xs text-slate-700 leading-relaxed">
+                                        <strong className="text-emerald-800">If Top 5 fixes execute:</strong> estimated Year 1 recapture ≈ {formatCurrency(recapture.annual)}
+                                        {recapture.pctOfTotalLeakage > 0 && ` (~${recapture.pctOfTotalLeakage}% of total leakage recoverable in 90 days without new hires).`}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -1402,7 +1455,7 @@
                                     })}
                                 </svg>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div className="border border-teal-200 rounded-lg p-3 page-break-inside-avoid bg-teal-50/20">
                                     <strong className="text-teal-800 text-[10px] uppercase block mb-2">Quick Wins</strong>
                                     <ul className="space-y-1">{quickWins.length ? quickWins.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
@@ -1420,6 +1473,35 @@
                                     <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                             </div>
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th className="w-8">#</th>
+                                        <th>Initiative</th>
+                                        <th className="w-[14%]">Source</th>
+                                        <th className="w-[12%]">Owner</th>
+                                        <th className="w-[12%]">Target</th>
+                                        <th className="w-[12%] text-right">Savings/mo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {activeItems.map((item, idx) => (
+                                        <tr key={item.id}>
+                                            <td className="font-mono font-bold text-slate-400">{idx + 1}</td>
+                                            <td>
+                                                <div className="font-semibold text-slate-900">{item.text}</div>
+                                                {DR.formatMatrixEvidence?.(item, formatCurrency) && (
+                                                    <div className="text-[9px] text-slate-500 mt-0.5">{DR.formatMatrixEvidence(item, formatCurrency)}</div>
+                                                )}
+                                            </td>
+                                            <td className="text-[10px] uppercase font-mono text-slate-600">{item.source || 'manual'}</td>
+                                            <td className="text-slate-600">{item.owner || '—'}</td>
+                                            <td className="font-mono text-[10px] text-slate-600">{item.targetWeek || '—'}</td>
+                                            <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
 
@@ -1701,9 +1783,15 @@
             }, [activeProfileId, totalAnnualChaosTax, saasAnnualForCoi, synthesis.customPitch, synthesis.nextModuleId]);
 
             const handlePrintReport = () => {
-                const lines = [...(reportValidation.errors || []), ...(reportValidation.warnings || [])];
-                if (lines.length > 0) {
-                    const msg = lines.map((l) => `• ${l}`).join('\n');
+                const errors = reportValidation.errors || [];
+                const warnings = reportValidation.warnings || [];
+                if (errors.length > 0) {
+                    const msg = errors.map((l) => `• ${l}`).join('\n');
+                    window.alert(`Cannot print — complete required fields first:\n\n${msg}`);
+                    return;
+                }
+                if (warnings.length > 0) {
+                    const msg = warnings.map((l) => `• ${l}`).join('\n');
                     const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
                     if (!proceed) return;
                 }

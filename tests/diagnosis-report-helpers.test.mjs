@@ -34,15 +34,57 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(coi > 120000 * 3);
   });
 
-  it('getTop5Fixes caps at five and prefers high impact/effort', () => {
+  it('getTop5Fixes dedupes by root cause and caps at five', () => {
     const items = [
-      { id: '1', text: 'Low', effort: 4, impact: 2 },
-      { id: '2', text: 'High', effort: 2, impact: 5 },
-      { id: '3', text: 'Mid', effort: 3, impact: 3 },
+      { id: '1', text: 'Zoom seats', effort: 2, impact: 4, source: 'saas', sourceDetail: 'Zoom — 5 seats', expectedSavings: 5000, owner: 'Ops', targetWeek: 'Week 1–2' },
+      { id: '2', text: 'Zoom review', effort: 2, impact: 3, source: 'saas', sourceDetail: 'Zoom — 3 seats', expectedSavings: 3000, owner: 'Ops', targetWeek: 'Week 1–2' },
+      { id: '3', text: 'High', effort: 2, impact: 5, source: 'workflow', sourceDetail: 'Sales, Step: Approve', expectedSavings: 8000, owner: 'Maria', targetWeek: 'Week 3–4' },
     ];
     const top = DRH.getTop5Fixes(items);
+    assert.equal(top.length, 2);
     assert.equal(top[0].text, 'High');
-    assert.ok(top.length <= 5);
+  });
+
+  it('generateMatrixFromDiagnosis pre-fills owner from RACI accountable role', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const saas = [];
+    const items = DRH.generateMatrixFromDiagnosis(tabs, saas, [], mockDiagramEditor, {
+      raciAssignments: { s1: { l1: 'A' } },
+    });
+    const workflowItem = items.find((i) => i.source === 'workflow');
+    assert.equal(workflowItem?.owner, 'Maria');
+    assert.ok(workflowItem?.sourceDetail?.includes('Sales'));
+  });
+
+  it('validateTop5Readiness blocks when owner or week missing', () => {
+    const result = DRH.validateTop5Readiness({
+      synthesis: {
+        matrix: {
+          items: [{ id: '1', text: 'Fix approvals', effort: 2, impact: 4, expectedSavings: 5000 }],
+        },
+      },
+    });
+    assert.equal(result.ready, false);
+    assert.ok(result.errors.some((e) => e.includes('owner')));
+    assert.ok(result.errors.some((e) => e.includes('target week')));
+  });
+
+  it('computeRecaptureSummary sums Top 5 annual savings', () => {
+    const top5 = [
+      { expectedSavings: 10000 },
+      { expectedSavings: 5000 },
+    ];
+    const recapture = DRH.computeRecaptureSummary(top5, 240000);
+    assert.equal(recapture.annual, 180000);
+    assert.equal(recapture.pctOfTotalLeakage, 75);
+  });
+
+  it('formatMatrixEvidence shows workflow source detail', () => {
+    const line = DRH.formatMatrixEvidence({
+      source: 'workflow',
+      sourceDetail: 'Sales, Step: Approve order',
+    });
+    assert.match(line, /Sales, Step: Approve order/);
   });
 
   it('buildProcessRankings sorts by annual leakage', () => {
@@ -75,7 +117,7 @@ describe('diagnosis-report-helpers', () => {
     const result = DRH.validateReportReadiness({
       tabs: [{ id: 'a', name: 'Sales', present: {} }],
       subSaaS: [{ id: 1, tool: 'X', billing: 100, users: 1 }],
-      synthesis: { matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 4 }] } },
+      synthesis: { matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 4, owner: 'Maria', targetWeek: 'Week 1–2', expectedSavings: 5000 }] } },
       DiagramEditor: mockDiagramEditor,
     });
     assert.equal(result.errors.length, 0);
@@ -103,6 +145,12 @@ describe('diagnosis-report-helpers', () => {
       ...baseCtx,
       synthesis: {
         ...baseCtx.synthesis,
+        matrix: {
+          items: [{
+            id: '1', text: 'Fix', effort: 2, impact: 4,
+            owner: 'Maria', targetWeek: 'Week 1–2', expectedSavings: 5000,
+          }],
+        },
         clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view',
         loomWalkthroughUrl: 'https://www.loom.com/share/abc',
         staffFeedbackThemes: ['Slow approvals'],
