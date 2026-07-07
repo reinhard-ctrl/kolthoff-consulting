@@ -81,4 +81,33 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(result.errors.length, 0);
     assert.ok(result.warnings.length > 0);
   });
+
+  it('validateMod1Handoff requires deliverable link and Loom URL', () => {
+    const baseCtx = {
+      tabs: [{ id: 'a', name: 'Sales', present: {} }],
+      subSaaS: [{ id: 1, tool: 'X', billing: 100, users: 1 }],
+      synthesis: {
+        matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 4 }] },
+        clientDeliverableUrl: '',
+        loomWalkthroughUrl: '',
+      },
+      DiagramEditor: mockDiagramEditor,
+      tasks: [{ id: 'm1-02', selected: true }],
+    };
+    const blocked = DRH.validateMod1Handoff(baseCtx);
+    assert.equal(blocked.ready, false);
+    assert.ok(blocked.errors.some((e) => e.includes('deliverable link')));
+    assert.ok(blocked.errors.some((e) => e.includes('Loom')));
+
+    const ready = DRH.validateMod1Handoff({
+      ...baseCtx,
+      synthesis: {
+        ...baseCtx.synthesis,
+        clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view',
+        loomWalkthroughUrl: 'https://www.loom.com/share/abc',
+        staffFeedbackThemes: ['Slow approvals'],
+      },
+    });
+    assert.equal(ready.ready, true);
+  });
 });
