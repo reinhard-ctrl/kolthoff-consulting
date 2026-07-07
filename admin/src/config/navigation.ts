@@ -63,7 +63,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'firm-analytics', label: 'Firm Analytics', type: 'embed', href: '/apps/analytics/firm_analytics_dashboard.html' },
       { id: 'resource-capacity', label: 'Resource Capacity', type: 'embed', href: '/apps/analytics/resource_capacity_manager.html' },
       { id: 'time-variance', label: 'Time Variance', type: 'embed', href: '/apps/analytics/time_tracking_variance_analyzer.html' },
-      { id: 'client-portal', label: 'Client Portal', type: 'embed', href: '/apps/public/portal.html', openInNewTab: true },
     ],
   },
 ];

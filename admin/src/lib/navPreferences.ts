@@ -9,10 +9,10 @@ function navStorageKey(): string {
   return getProductConfig().navStorageKey;
 }
 /** Bump when shipped DEFAULT_NAV_GROUPS layout changes — clears stale localStorage layouts. */
-export const NAV_PREFS_VERSION = 12;
+export const NAV_PREFS_VERSION = 13;
 
 /** Nav items removed from the catalog — stripped from saved assignments on migrate. */
-const REMOVED_NAV_ITEMS = ['org-chart', 'workflow-builder'];
+const REMOVED_NAV_ITEMS = ['org-chart', 'workflow-builder', 'client-portal'];
 
 /** Map legacy group ids from older saved layouts. */
 function migrateNavLayoutV12(prefs: NavPreferences): NavPreferences {
@@ -36,7 +36,6 @@ function migrateNavLayoutV12(prefs: NavPreferences): NavPreferences {
   if (next.assignments.client?.length) {
     for (const itemId of next.assignments.client) {
       if (itemId === 'marketing') moveItem(itemId, 'command', 'start');
-      else if (itemId === 'client-portal') moveItem(itemId, 'analytics', 'end');
     }
     delete next.assignments.client;
   }

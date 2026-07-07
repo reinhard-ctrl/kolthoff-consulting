@@ -43,7 +43,6 @@ const DEFAULT_NAV_GROUPS = [
       { id: 'firm-analytics' },
       { id: 'resource-capacity' },
       { id: 'time-variance' },
-      { id: 'client-portal' },
     ],
   },
 ];
@@ -159,7 +158,7 @@ assert.equal(
 );
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'analytics')?.items.map((i) => i.id).join(','),
-  'firm-analytics,resource-capacity,time-variance,client-portal',
+  'firm-analytics,resource-capacity,time-variance',
 );
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'delivery')?.items.map((i) => i.id).join(','),
@@ -173,7 +172,7 @@ const movedPrefs = {
     operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections'],
     delivery: ['diagnosis-reports', 'policy-studio'],
     product: ['portals', 'tenants', 'agency-ops-manager'],
-    analytics: ['firm-analytics', 'resource-capacity', 'time-variance', 'client-portal'],
+    analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
   },
 };
 
