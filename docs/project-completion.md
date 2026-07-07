@@ -139,7 +139,7 @@ After custom domain works: GitHub repo → Settings → Pages → **Disable**.
 
 **Platform roadmap (stable · fast · optimized):** [`docs/migration-roadmap.md`](migration-roadmap.md)
 
-North star: P4 ✅ verified on production (6 Jul 2026). Optional eng: App Check (P5), React migration (P6). **Your focus:** **Phase 4 content** (SOWs, playbooks, portal defaults) and first PRO 1 client handoff.
+North star: P4 ✅ verified on production (6 Jul 2026). **Mod 1 delivery tooling ✅ closed and deployed** (7 Jul 2026, #242). Optional eng: App Check (P5), React migration (P6). **Your focus:** **Phase 4 content** (SOWs, playbooks, portal defaults), live Mod 1→Mod 2 engagements, and first PRO 1 client handoff.
 
 | Phase | Focus | Status |
 |-------|--------|--------|
@@ -148,7 +148,7 @@ North star: P4 ✅ verified on production (6 Jul 2026). Optional eng: App Check 
 | **4** | Content, templates, delivery automation (**your focus**) | 🔶 **Active** |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
-Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), Agency Ops Firestore provisioning (#165–#217), SSO cold-start (#175–176), P4 verified (#213–#216), direct workspace provision (#217).
+Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), Agency Ops Firestore provisioning (#165–#217), SSO cold-start (#175–176), P4 verified (#213–#216), direct workspace provision (#217), **Mod 1 Waste-to-Peso Report closed** (#242, deployed 7 Jul 2026).
 
 ---
 
