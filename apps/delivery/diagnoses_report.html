@@ -375,7 +375,7 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId, setActiveNav, onSave, isSaving, authError, workbookProfiles, profileLabel, setActiveProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250706-diagnosis-slice-v1' });
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-diagnosis-bpmn-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             const sectionBtn = (id, label) => (
@@ -404,7 +404,7 @@
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mr-1">Sections</span>
+                            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mr-1">Sections</span>
                             {sectionBtn('flowcharts', '1. Workflow')}
                             {sectionBtn('raci', '2. RACI')}
                             {sectionBtn('saas', '3. SaaS')}
@@ -412,7 +412,7 @@
                             {sectionBtn('report', '5. Report')}
                         </div>
                         <div className="max-w-md">
-                            <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1 block">Active Workspace</label>
+                            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-1 block">Active Workspace</label>
                             <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 outline-none focus:border-brandTeal-500" disabled={!!authError}>
                                 {workbookProfiles.length === 0 && <option value="">{authError ? 'Offline' : 'Loading…'}</option>}
                                 {workbookProfiles.map(p => <option key={p.id} value={p.id}>{profileLabel(p)}</option>)}
@@ -512,19 +512,19 @@
                             {subSaaS.map(item => (
                                 <div key={item.id} className="flex flex-col md:flex-row gap-3 items-center bg-brandNavy-950 p-3 rounded-xl border border-brandNavy-800">
                                     <div className="w-full md:w-1/4">
-                                        <label className="text-[9px] font-mono text-slate-500 uppercase font-bold block mb-1">Tool Name</label>
+                                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Tool Name</label>
                                         <input type="text" value={item.tool} onChange={(e) => updateSaaS(item.id, 'tool', e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500 font-bold" />
                                     </div>
                                     <div className="w-full md:w-1/6">
-                                        <label className="text-[9px] font-mono text-slate-500 uppercase font-bold block mb-1">Cost/Seat (mo)</label>
+                                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Cost/Seat (mo)</label>
                                         <div className="relative"><span className="absolute left-2 top-2 text-slate-400 text-xs">₱</span><input type="number" min="0" value={item.billing} onChange={(e) => updateSaaS(item.id, 'billing', Number(e.target.value))} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 pl-6 text-xs text-white focus:outline-none focus:border-brandTeal-500 font-mono" /></div>
                                     </div>
                                     <div className="w-full md:w-1/6">
-                                        <label className="text-[9px] font-mono text-slate-500 uppercase font-bold block mb-1">Unused Seats</label>
+                                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Unused Seats</label>
                                         <input type="number" min="0" value={item.users} onChange={(e) => updateSaaS(item.id, 'users', Number(e.target.value))} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-center text-white focus:outline-none focus:border-brandTeal-500 font-mono" />
                                     </div>
                                     <div className="w-full md:flex-1">
-                                        <label className="text-[9px] font-mono text-slate-500 uppercase font-bold block mb-1">Action Strategy</label>
+                                        <label className="text-[10px] font-mono text-slate-400 uppercase font-bold block mb-1">Action Strategy</label>
                                         <input type="text" value={item.reason} onChange={(e) => updateSaaS(item.id, 'reason', e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brandTeal-500" placeholder="e.g. Cancel unused licenses" />
                                     </div>
                                     <button onClick={() => removeSaaS(item.id)} className="p-2.5 text-rose-500 hover:text-white hover:bg-rose-500 rounded-lg transition-colors bg-brandNavy-900 border border-brandNavy-800"><Icons.Trash /></button>
@@ -1662,7 +1662,7 @@
                         </div>
 
                         <div className="p-4 border-b border-brandNavy-800 bg-brandNavy-950">
-                            <label className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-1.5 block">Active Workspace</label>
+                            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-1.5 block">Active Workspace</label>
                             <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 outline-none focus:border-brandTeal-500" disabled={!!authError}>
                                 {workbookProfiles.length === 0 && <option value="">{authError ? "Local Session Default" : "Loading..."}</option>}
                                 {workbookProfiles.map(p => <option key={p.id} value={p.id}>{profileLabel(p)}</option>)}
@@ -1670,7 +1670,7 @@
                         </div>
                         
                         <nav className="p-4 flex-1 overflow-y-auto space-y-2">
-                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
+                            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
                             <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 1. Workflow Builder</button>
                             <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 2. RACI Architecture</button>
                             <button onClick={() => setActiveNav('saas')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'saas' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.CreditCard /> 3. SaaS Bill Audit</button>

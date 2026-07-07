@@ -96,10 +96,12 @@
       id: 'bpmn',
       label: 'BPMN 2.0 Workflow',
       blankXml: BLANK_BPMN_XML,
+      embedLibs: 'bpmn',
       configure: {
-        defaultLibraries: 'bpmn;general',
-        enabledLibraries: ['bpmn', 'general'],
+        defaultLibraries: 'bpmn;general;flowchart;basic;arrows2',
+        enabledLibraries: ['bpmn', 'general', 'flowchart', 'basic', 'arrows2'],
         css: '',
+        title: 'BPMN 2.0 Workflow',
       },
     },
   };
@@ -117,6 +119,7 @@
       noExitBtn: '1',
       ui: opts.ui || 'kennedy',
     });
+    if (opts.libs) params.set('libs', opts.libs);
     if (opts.dark) params.set('dark', '1');
     return DRAWIO_EMBED_BASE + '?' + params.toString();
   }
