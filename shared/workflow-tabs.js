@@ -76,6 +76,78 @@
   }
 
   /**
+   * Mod 1 diagnosis report tabs — as-is workflows only.
+   * Falls back to workflowBuilder for profiles created before the slice split.
+   */
+  function getDiagnosisTabs(profile) {
+    if (!profile) return { tabs: [], activeTabId: null, source: null };
+    const dx = resolveWorkflowTabs(profile, 'diagnosis');
+    if (dx?.tabs?.length) {
+      return { tabs: dx.tabs, activeTabId: dx.activeTabId, source: dx.source };
+    }
+    const wf = resolveWorkflowTabs(profile, 'workflow');
+    if (wf?.tabs?.length && wf.source === 'workflowBuilder') {
+      return { tabs: wf.tabs, activeTabId: wf.activeTabId, source: 'workflowBuilder (legacy fallback)' };
+    }
+    if (profile.tabs?.length) {
+      return {
+        tabs: profile.tabs,
+        activeTabId: profile.activeTabId || profile.tabs[0].id,
+        source: 'tabs',
+      };
+    }
+    return { tabs: [], activeTabId: null, source: null };
+  }
+
+  /** Mod 2 workflow builder tabs — to-be workflows only. */
+  function getWorkflowTabs(profile) {
+    if (!profile) return { tabs: [], activeTabId: null, source: null };
+    const wf = resolveWorkflowTabs(profile, 'workflow');
+    if (wf?.tabs?.length) {
+      return { tabs: wf.tabs, activeTabId: wf.activeTabId, source: wf.source };
+    }
+    if (profile.tabs?.length) {
+      return {
+        tabs: profile.tabs,
+        activeTabId: profile.activeTabId || profile.tabs[0].id,
+        source: 'tabs',
+      };
+    }
+    return { tabs: [], activeTabId: null, source: null };
+  }
+
+  /**
+   * Parse workflow app slice from URL (?slice=diagnosis|workflow).
+   * Defaults to workflow (Mod 2).
+   */
+  function parseWorkflowAppFromSearch(search) {
+    let slice = 'workflow';
+    const raw = typeof search === 'string' ? search.replace(/^\?/, '') : '';
+    raw.split('&').forEach((pair) => {
+      if (!pair) return;
+      const eq = pair.indexOf('=');
+      const key = decodeURIComponent(eq >= 0 ? pair.slice(0, eq) : pair);
+      const val = decodeURIComponent(eq >= 0 ? pair.slice(eq + 1) : '');
+      if (key === 'slice' || key === 'app') slice = (val || '').toLowerCase();
+    });
+    return slice === 'diagnosis' ? 'diagnosis' : 'workflow';
+  }
+
+  /**
+   * Load tabs for a workflow editor app, with cross-slice fallback for legacy profiles.
+   */
+  function resolveEditorTabs(profile, app) {
+    const primary = resolveWorkflowTabs(profile, app);
+    if (primary?.tabs?.length) {
+      return { tabs: primary.tabs, activeTabId: primary.activeTabId, source: primary.source };
+    }
+    if (app === 'diagnosis') {
+      return getDiagnosisTabs(profile);
+    }
+    return getWorkflowTabs(profile);
+  }
+
+  /**
    * Merged tabs for read-only consumers (Diagnosis report, exports).
    */
   function getReportTabs(profile) {
@@ -95,6 +167,10 @@
     mergeTabsById,
     resolveWorkflowTabs,
     buildWorkflowTabsPayload,
+    getDiagnosisTabs,
+    getWorkflowTabs,
+    parseWorkflowAppFromSearch,
+    resolveEditorTabs,
     getReportTabs,
   };
 

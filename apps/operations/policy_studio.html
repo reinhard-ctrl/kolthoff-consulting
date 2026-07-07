@@ -181,6 +181,7 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
+    <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250706-drawio-v1"></script>
 
     <script type="text/babel">
@@ -2526,7 +2527,8 @@
 
                                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 mt-2">
                                     {(() => {
-                                        const availableTabs = activeProfile?.tabs || [];
+                                        const wfTabs = window.WorkflowTabs?.getWorkflowTabs?.(activeProfile);
+                                        const availableTabs = wfTabs?.tabs || activeProfile?.tabs || [];
                                         
                                         if (availableTabs.length === 0) {
                                             return (
