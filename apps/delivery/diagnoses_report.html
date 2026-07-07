@@ -173,8 +173,8 @@
             .print-only { display: block !important; }
             main { padding: 0 !important; margin: 0 !important; }
             .report-print-surface { background: white !important; padding: 0 !important; margin: 0 !important; }
-            .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
-            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 12px 0 !important; page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; }
+            .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important; }
+            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; padding: 12px 0 !important; page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; background: white !important; }
             .report-doc .page-break-inside-avoid { page-break-inside: auto !important; break-inside: auto !important; }
             .report-table {
                 width: 100% !important;
@@ -232,6 +232,34 @@
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
+
+        /* Screen PDF preview — white paper sheets on a gray canvas (not print) */
+        @media screen {
+            .report-print-surface {
+                background: #cbd5e1 !important;
+            }
+            .report-print-surface .report-doc {
+                background: transparent !important;
+                box-shadow: none !important;
+                padding: 0.5rem 0 2rem !important;
+                gap: 1.25rem;
+                color: #0f172a;
+            }
+            .report-print-surface .report-page {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 2.5rem 3rem;
+                border-radius: 2px;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 12px 32px rgba(15, 23, 42, 0.12);
+                border: 1px solid #e2e8f0;
+                width: 100%;
+                max-width: 850px;
+                margin-left: auto;
+                margin-right: auto;
+                box-sizing: border-box;
+            }
+        }
+
         .report-kpi { background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%); border: 1px solid #e2e8f0; border-radius: 12px; }
         .report-kpi-value { font-family: "Playfair Display", serif; }
         .report-accent-bar { height: 4px; background: linear-gradient(90deg, #0D9488, #14B8A6, #2DD4BF); border-radius: 2px; }
@@ -1431,7 +1459,7 @@
             const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
 
             return (
-                <div className="report-doc w-full max-w-[850px] bg-white text-slate-900 shadow-2xl relative print:shadow-none print:w-full print:max-w-full p-8 md:p-12 print:p-0 flex flex-col gap-12 print:block print:gap-0">
+                <div className="report-doc w-full max-w-[850px] text-slate-900 relative flex flex-col gap-5 print:gap-0 print:bg-white print:p-0 print:shadow-none p-0 bg-transparent shadow-none print:block">
 
                     {printConfig.showExecutiveSummary && (
                         <ReportCover
@@ -2409,7 +2437,7 @@
                                             </div>
                                         </details>
                                     </div>
-                                    <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center bg-slate-200/80 py-4 px-3 print:py-0 print:px-0 print:bg-transparent report-print-surface">
+                                    <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:py-0 print:px-0 print:bg-transparent">
                                         <ExecutiveReport
                                             clientCompany={clientCompany}
                                             preparedBy={preparedBy}
