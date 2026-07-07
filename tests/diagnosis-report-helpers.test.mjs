@@ -175,6 +175,25 @@ describe('diagnosis-report-helpers', () => {
     assert.match(qr, /forms\.example/);
   });
 
+  it('buildFeedbackFormTemplateCopyUrl normalizes edit and view URLs', () => {
+    const copy = DRH.buildFeedbackFormTemplateCopyUrl('https://docs.google.com/forms/d/abc123xyz/edit');
+    assert.equal(copy, 'https://docs.google.com/forms/d/abc123xyz/copy');
+    const view = DRH.buildFeedbackFormViewUrl('https://docs.google.com/forms/d/e/1FAIpQLS-demo/viewform');
+    assert.equal(view, 'https://docs.google.com/forms/d/1FAIpQLS-demo/viewform');
+  });
+
+  it('getM102FeedbackFormTemplate exposes anonymous survey questions', () => {
+    const template = DRH.getM102FeedbackFormTemplate();
+    assert.equal(template.taskId, 'm1-02');
+    assert.ok(template.questions.length >= 5);
+    assert.equal(template.settings.collectEmail, false);
+    assert.match(template.description, /anonymous/i);
+  });
+
+  it('isM102FeedbackFormTemplateReady is false until templateFormId is provisioned', () => {
+    assert.equal(DRH.isM102FeedbackFormTemplateReady(), false);
+  });
+
   it('normalizeReportDiagramSvg removes fixed dimensions for responsive print scaling', () => {
     const raw = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#fff"/></svg>');
     const normalized = DRH.normalizeReportDiagramSvg(raw);

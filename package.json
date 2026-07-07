@@ -10,6 +10,7 @@
     "dev:workspace": "npm run dev --prefix workspace",
     "dev:admin": "npm run dev --prefix admin",
     "test:rules": "npm run test --prefix tests",
+    "provision:m102-form": "node scripts/provision-m102-feedback-form.mjs",
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "serve:hosting": "npm run build && firebase emulators:start --only hosting",
@@ -18,6 +19,9 @@
   },
   "dependencies": {
     "firebase-tools": "^13.29.1"
+  },
+  "devDependencies": {
+    "googleapis": "^144.0.0"
   },
   "workspaces": [
     "workspace",

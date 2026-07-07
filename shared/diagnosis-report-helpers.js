@@ -593,12 +593,118 @@
     return { ready, warnings, errors, top5: top5Check.top5 };
   }
 
+  /**
+   * Canonical Mod 1 anonymous staff feedback Google Form template (m1-02).
+   * Provision the live master copy once: node scripts/provision-m102-feedback-form.mjs
+   * Then commit the returned form ID into templateFormId below.
+   */
+  const M102_FEEDBACK_FORM_TEMPLATE = {
+    taskId: 'm1-02',
+    title: 'Anonymous Staff Feedback Channel',
+    documentTitle: 'Kolthoff Mod 1 — Anonymous Staff Feedback (m1-02)',
+    description:
+      'This survey is anonymous — do not include your name or contact details. ' +
+      'Share honest themes about daily work friction, slow handoffs, and tool pain. ' +
+      'Leadership reviews summarized themes only (no raw submissions or identifiers).',
+    settings: {
+      collectEmail: false,
+      limitOneResponse: false,
+      allowResponseEdits: false,
+      publishAfterProvision: true,
+    },
+    questions: [
+      {
+        type: 'section',
+        title: 'About your work',
+        description: 'Pick the area closest to your role. Do not type your name.',
+      },
+      {
+        type: 'choice',
+        title: 'Which area best matches your day-to-day work?',
+        required: true,
+        options: ['Operations / Delivery', 'Sales / Client-facing', 'Finance / Admin', 'People / HR', 'Leadership / Management', 'Other'],
+      },
+      {
+        type: 'scale',
+        title: 'How often do approvals or handoffs slow you down?',
+        required: true,
+        lowLabel: 'Rarely',
+        highLabel: 'Daily',
+        low: 1,
+        high: 5,
+      },
+      {
+        type: 'paragraph',
+        title: 'What part of your daily work feels most frustrating or slow?',
+        description: 'Describe the workflow step, not people by name.',
+        required: true,
+      },
+      {
+        type: 'paragraph',
+        title: 'Where do requests or files get stuck between teams?',
+        description: 'Example: waiting on sign-off, missing info, duplicate data entry.',
+        required: true,
+      },
+      {
+        type: 'short',
+        title: 'Which tools, apps, or spreadsheets cause the most friction?',
+        required: true,
+      },
+      {
+        type: 'paragraph',
+        title: 'What should leadership fix first in the next 90 days?',
+        required: true,
+      },
+      {
+        type: 'choice',
+        title: 'How urgent does this feel to you?',
+        required: true,
+        options: ['Nice to fix eventually', 'Slowing us down weekly', 'Blocking revenue or clients', 'Safety / compliance risk'],
+      },
+      {
+        type: 'paragraph',
+        title: 'Anything else we should know? (optional)',
+        required: false,
+      },
+    ],
+    /** Drive file ID of the Kolthoff master template — set by scripts/provision-m102-feedback-form.mjs */
+    templateFormId: '',
+  };
+
+  function extractGoogleFormId(urlOrId) {
+    const raw = String(urlOrId || '').trim();
+    if (!raw) return '';
+    if (!raw.includes('/')) return raw;
+    const match = raw.match(/\/forms\/d\/(?:e\/)?([^/?#]+)/i);
+    return match ? match[1] : '';
+  }
+
+  function buildFeedbackFormTemplateCopyUrl(templateIdOrUrl) {
+    const formId = extractGoogleFormId(templateIdOrUrl || M102_FEEDBACK_FORM_TEMPLATE.templateFormId);
+    if (!formId) return '';
+    return `https://docs.google.com/forms/d/${formId}/copy`;
+  }
+
+  function buildFeedbackFormViewUrl(templateIdOrUrl) {
+    const formId = extractGoogleFormId(templateIdOrUrl || M102_FEEDBACK_FORM_TEMPLATE.templateFormId);
+    if (!formId) return '';
+    return `https://docs.google.com/forms/d/${formId}/viewform`;
+  }
+
+  function getM102FeedbackFormTemplate() {
+    return M102_FEEDBACK_FORM_TEMPLATE;
+  }
+
+  function isM102FeedbackFormTemplateReady() {
+    return !!String(M102_FEEDBACK_FORM_TEMPLATE.templateFormId || '').trim();
+  }
+
   const DEFAULT_FEEDBACK_LAUNCH_GUIDE =
-    '1. Duplicate the Kolthoff anonymous feedback form template into your Google account.\n' +
-    '2. Set the form to collect no names or email addresses.\n' +
-    '3. Share the form link with staff (QR poster, Viber group, or email) for 5–7 business days.\n' +
-    '4. Export themes only — paste summarized themes into Strategy (no raw submissions or names).\n' +
-    '5. Upload the printed launch guide or form link to the client portal if requested.';
+    '1. Click “Save copy to Google Drive” above to duplicate the Kolthoff m1-02 form template.\n' +
+    '2. In your copy: Form → Settings → confirm “Collect email addresses” is OFF, then publish.\n' +
+    '3. Paste the live viewform link above and share it with staff (QR poster, Viber, or email) for 5–7 business days.\n' +
+    '4. Export themes only — paste summarized themes below (no raw submissions or names).\n' +
+    '5. Sync to cloud pushes the form link to the client portal vault.';
 
   function normalizeStaffDirectoryRows(members) {
     return (members || [])
@@ -916,6 +1022,12 @@
     validateReportReadiness,
     validateMod1Handoff,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
+    M102_FEEDBACK_FORM_TEMPLATE,
+    getM102FeedbackFormTemplate,
+    isM102FeedbackFormTemplateReady,
+    extractGoogleFormId,
+    buildFeedbackFormTemplateCopyUrl,
+    buildFeedbackFormViewUrl,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
     buildLinkQrUrl,

@@ -239,7 +239,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-print-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-m102-form-template-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -549,6 +549,69 @@
             );
         };
 
+        const FeedbackFormTemplateLauncher = ({ clientCompany }) => {
+            const template = DRH().getM102FeedbackFormTemplate?.() || {};
+            const copyUrl = DRH().buildFeedbackFormTemplateCopyUrl?.() || '';
+            const previewUrl = DRH().buildFeedbackFormViewUrl?.() || '';
+            const templateReady = DRH().isM102FeedbackFormTemplateReady?.() || !!copyUrl;
+            const questionItems = (template.questions || []).filter((q) => q.type !== 'section');
+
+            const openTemplateCopy = () => {
+                if (!copyUrl) return;
+                window.open(copyUrl, '_blank', 'noopener,noreferrer');
+            };
+
+            return (
+                <div className="rounded-xl border border-brandTeal-500/30 bg-brandTeal-500/5 p-4 space-y-3">
+                    <div className="flex flex-wrap justify-between items-start gap-3">
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-300">Google Form template</p>
+                            <p className="text-xs text-slate-200 mt-1 leading-relaxed">{template.description}</p>
+                            {clientCompany && (
+                                <p className="text-[10px] text-slate-500 mt-1">Rename your copy to include <span className="font-semibold text-slate-400">{clientCompany}</span> before publishing.</p>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={openTemplateCopy}
+                                disabled={!templateReady}
+                                className="px-3 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-[10px] font-bold uppercase disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Save copy to Google Drive
+                            </button>
+                            {previewUrl && (
+                                <a href={previewUrl} target="_blank" rel="noreferrer" className="px-3 py-2 border border-brandNavy-700 hover:border-brandTeal-500 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold uppercase">
+                                    Preview template ↗
+                                </a>
+                            )}
+                        </div>
+                    </div>
+                    {!templateReady && (
+                        <p className="text-[10px] text-amber-300/90 leading-relaxed">
+                            Master template not provisioned yet. Run <span className="font-mono">node scripts/provision-m102-feedback-form.mjs</span> once with Google credentials, then redeploy.
+                        </p>
+                    )}
+                    {templateReady && (
+                        <p className="text-[10px] text-slate-500 leading-relaxed">
+                            Opens Google&apos;s copy dialog — the template saves to your Drive. Publish your copy, then paste the live viewform link below.
+                        </p>
+                    )}
+                    <details className="text-[10px] text-slate-400">
+                        <summary className="cursor-pointer font-bold uppercase tracking-wider text-slate-500 hover:text-brandTeal-300">Template questions ({questionItems.length})</summary>
+                        <ol className="mt-2 space-y-1.5 list-decimal list-inside text-slate-300">
+                            {(template.questions || []).map((q, idx) => (
+                                <li key={idx} className={q.type === 'section' ? 'list-none -ml-4 font-bold uppercase tracking-wider text-slate-500 mt-2' : ''}>
+                                    {q.type === 'section' ? q.title : q.title}
+                                    {q.required === false && <span className="text-slate-500"> (optional)</span>}
+                                </li>
+                            ))}
+                        </ol>
+                    </details>
+                </div>
+            );
+        };
+
         const WorkflowTabPicker = ({ tabs, activeTabId, setActiveTabId, label = 'Workflow tab' }) => (
             <div className="max-w-md">
                 <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-1 block">{label}</label>
@@ -778,7 +841,7 @@
             );
         };
 
-        const SynthesisBuilder = ({ synthesis, setSynthesis, annualChaosTax, projected3YearLoss, subSaaS, tabs, raciAssignments, orgChartMembers }) => {
+        const SynthesisBuilder = ({ synthesis, setSynthesis, annualChaosTax, projected3YearLoss, subSaaS, tabs, raciAssignments, orgChartMembers, clientCompany }) => {
             const saasWasteMonthly = subSaaS.reduce((acc, curr) => acc + (curr.billing * curr.users), 0);
             const totalAnnualWaste = annualChaosTax + (saasWasteMonthly * 12);
             const maturityIndex = DRH().computeMaturityIndex?.(synthesis) ?? 3;
@@ -970,9 +1033,10 @@
 
                             <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-4">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Anonymous Feedback Channel (m1-02)</h3>
-                                <p className="text-[10px] text-slate-400">Deploy the staff survey — share the form link or QR, then import themes (no names) below.</p>
+                                <p className="text-[10px] text-slate-400">Deploy the staff survey — duplicate the template, share the form link or QR, then import themes (no names) below.</p>
+                                <FeedbackFormTemplateLauncher clientCompany={clientCompany} />
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Google Form URL</label>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Live Google Form URL (your copy)</label>
                                     <input type="url" value={synthesis.feedbackFormUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackFormUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/…/viewform" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
                                 </div>
                                 <div>
@@ -2250,6 +2314,7 @@
                                     tabs={tabs}
                                     raciAssignments={raciAssignments}
                                     orgChartMembers={orgChartMembers}
+                                    clientCompany={clientCompany}
                                 />
                             )}
                             {activeNav === 'report' && (
