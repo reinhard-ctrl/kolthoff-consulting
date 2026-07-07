@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mod1: Diagnoses Report | Cloud Synced</title>
+    <title>Module 1: Waste-to-Peso Report | Cloud Synced</title>
  
     <!-- Custom SVG Logo Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' fill-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' fill-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
@@ -86,8 +86,26 @@
             main { padding: 0 !important; }
             .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 20px !important; }
             .overflow-x-auto, .max-h-\[220px\], .max-h-72, .max-h-52, .overflow-y-auto { max-height: none !important; overflow: visible !important; }
-            @page { size: portrait; margin: 20mm 15mm; }
+            @page { size: portrait; margin: 18mm 14mm; }
+            .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
+            .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
+            .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
         }
+        .report-doc { font-family: "Montserrat", sans-serif; }
+        .report-kpi { background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%); border: 1px solid #e2e8f0; border-radius: 12px; }
+        .report-kpi-value { font-family: "Playfair Display", serif; }
+        .report-accent-bar { height: 4px; background: linear-gradient(90deg, #0D9488, #14B8A6, #2DD4BF); border-radius: 2px; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .report-table thead tr { background: #f1f5f9; border-bottom: 2px solid #0f172a; }
+        .report-table th { text-align: left; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; color: #475569; padding: 10px 12px; }
+        .report-table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+        .report-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .report-fix-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .report-fix-num { width: 28px; height: 28px; border-radius: 50%; background: #0D9488; color: white; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .report-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+        .report-badge-rose { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .report-badge-teal { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+        .report-badge-amber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
     </style>
     <script>
         if (new URLSearchParams(window.location.search).has('embed')) {
@@ -103,6 +121,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v2"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -143,14 +162,19 @@
 
         const EMPTY_CANVAS = { nodes: [], edges: [], lanes: [], phases: [] };
 
+        const DRH = () => window.DiagnosisReportHelpers || {};
+        const EC_MODULES = () => (window.EngagementConfig?.MODULES) || [];
+
         const createDefaultSynthesis = () => ({
             communication: 3,
             documentation: 3,
             accountability: 3,
             software: 3,
             expectedGrowth: 0,
-            nextModuleId: 'MOD 1',
+            nextModuleId: 'MOD 2',
             customPitch: '',
+            staffFeedbackThemes: [''],
+            privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
         });
 
@@ -465,7 +489,7 @@
             },
             synthesis: {
                 title: '5. Strategy & Priorities',
-                description: 'Score operational maturity, forecast cost of inaction, and build the executive synthesis with action prioritization.',
+                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Waste-to-Peso Report.',
             },
         };
 
@@ -734,22 +758,33 @@
             );
         };
 
-        const SynthesisBuilder = ({ synthesis, setSynthesis, annualChaosTax, projected3YearLoss, subSaaS }) => {
+        const SynthesisBuilder = ({ synthesis, setSynthesis, annualChaosTax, projected3YearLoss, subSaaS, tabs, raciAssignments, orgChartMembers }) => {
             const saasWasteMonthly = subSaaS.reduce((acc, curr) => acc + (curr.billing * curr.users), 0);
             const totalAnnualWaste = annualChaosTax + (saasWasteMonthly * 12);
+            const maturityIndex = DRH().computeMaturityIndex?.(synthesis) ?? 3;
 
             const [newItemText, setNewItemText] = useState('');
             const [selectedItemId, setSelectedItemId] = useState(null);
+            const [feedbackPaste, setFeedbackPaste] = useState('');
 
             const generatePitch = (modId) => {
-                const pitches = {
-                    'MOD 1': `To identify the root causes of the ${formatCurrency(totalAnnualWaste)} annual leakage, we recommend beginning with Module 1: Business Leak Scan. This will audit your software subscriptions and pinpoint exact bottlenecks before you invest in tools or training.`,
-                    'MOD 2': `To recover the ${formatCurrency(totalAnnualWaste)} lost annually to manual delays, we recommend Module 2: How Your Business Runs — clear order playbooks, roles charts, and an employee handbook your team can follow.`,
-                    'MOD 3': `With core processes defined, the next step is Module 3: Your Team Workspace. We launch your workspace, digitize approval forms, and train your team for daily use. See full blueprints at www.kolthoff-consulting.com.`,
-                    'MOD 4': `To maintain operational integrity after go-live, we recommend Module 4: Care Plan — hosting, bi-weekly check-ins, and semi-annual health checks. Learn more at www.kolthoff-consulting.com.`
-                };
-                setSynthesis(prev => ({ ...prev, nextModuleId: modId, customPitch: pitches[modId] || '' }));
+                const pitch = DRH().buildModulePitch?.(modId, totalAnnualWaste, formatCurrency, EC_MODULES()) || '';
+                setSynthesis(prev => ({ ...prev, nextModuleId: modId, customPitch: pitch }));
             };
+
+            const generateFromDiagnosis = () => {
+                const items = DRH().generateMatrixFromDiagnosis?.(tabs, subSaaS, synthesis.matrix?.items || [], window.DiagramEditor) || [];
+                setSynthesis(prev => ({ ...prev, matrix: { items } }));
+            };
+
+            const insightCtx = useMemo(() => ({
+                synthesis, subSaaS, tabs, raciAssignments, orgChartMembers,
+                staffFeedbackThemes: synthesis.staffFeedbackThemes,
+                formatCurrency, DiagramEditor: window.DiagramEditor,
+            }), [synthesis, subSaaS, tabs, raciAssignments, orgChartMembers]);
+
+            const aiInsights = useMemo(() => DRH().buildOperationalInsights?.(insightCtx) || [], [insightCtx]);
+            const top5Preview = useMemo(() => DRH().getTop5Fixes?.(synthesis.matrix?.items || []) || [], [synthesis.matrix]);
 
             const updateScore = (key, val) => setSynthesis(prev => ({ ...prev, [key]: Number(val) }));
             const ScoreBarUI = ({ label, valKey, val }) => (
@@ -767,7 +802,7 @@
 
             const addPriorityItem = () => {
                 if (!newItemText || !newItemText.trim()) return;
-                const newItem = { id: 'item-' + Date.now(), text: newItemText.trim(), effort: 3, impact: 3 };
+                const newItem = { id: 'item-' + Date.now(), text: newItemText.trim(), effort: 3, impact: 3, owner: '', targetWeek: '', expectedSavings: 0 };
                 setSynthesis(prev => ({
                     ...prev,
                     matrix: {
@@ -805,7 +840,7 @@
                 return { name: 'Money Pit', color: 'text-rose-400 bg-rose-50/20 border-rose-500/30' };
             };
 
-            // Categorize dynamically for display count
+            // Dynamically computed diagnostic insights from live workbook data
             const categorization = useMemo(() => {
                 const items = synthesis.matrix?.items || [];
                 return {
@@ -816,38 +851,34 @@
                 };
             }, [synthesis.matrix]);
 
-            // Dynamically computed AI Audit insights based on live values
-            const aiInsights = useMemo(() => {
-                let bulletPoints = [];
-                if (synthesis.communication <= 2) {
-                    bulletPoints.push("Friction Point: Scattered communication models exist. Operational handovers run on unmonitored tracking logs (Viber/phone queries), triggering constant manual follow-ups.");
-                } else {
-                    bulletPoints.push("Advancement: Communication channels show initial stability, but still require formal SLA guardrails to prevent process leakage.");
-                }
-
-                if (synthesis.documentation <= 1) {
-                    bulletPoints.push("Vulnerability: Tribal knowledge serves as the single source of truth. Your business is highly exposed to employee attrition and service execution variations.");
-                } else if (synthesis.documentation <= 3) {
-                    bulletPoints.push("Process Deficit: Standard operating documentation is incomplete, leading to high-variance cycles during peak campaign intervals.");
-                }
-
-                if (synthesis.accountability <= 2) {
-                    bulletPoints.push("Governance Risk: Handoff boundaries are overlapping. Critical transitions between Sales, Creative Directors, and League Admins lack formal accountability boundaries.");
-                }
-
-                if (saasWasteMonthly > 2000) {
-                    bulletPoints.push(`SaaS Optimization: An active license bill leakage of ${formatCurrency(saasWasteMonthly)}/month has been identified from idle seats and duplication across teams.`);
-                }
-
-                return bulletPoints;
-            }, [synthesis, saasWasteMonthly]);
+            const updateFeedbackTheme = (idx, val) => {
+                setSynthesis(prev => {
+                    const themes = [...(prev.staffFeedbackThemes || [''])];
+                    themes[idx] = val;
+                    return { ...prev, staffFeedbackThemes: themes };
+                });
+            };
+            const addFeedbackTheme = () => setSynthesis(prev => ({ ...prev, staffFeedbackThemes: [...(prev.staffFeedbackThemes || []), ''] }));
+            const removeFeedbackTheme = (idx) => setSynthesis(prev => ({
+                ...prev,
+                staffFeedbackThemes: (prev.staffFeedbackThemes || []).filter((_, i) => i !== idx),
+            }));
+            const importFeedbackLines = () => {
+                const lines = feedbackPaste.split('\n').map((l) => l.trim()).filter(Boolean);
+                if (!lines.length) return;
+                setSynthesis(prev => ({ ...prev, staffFeedbackThemes: lines }));
+                setFeedbackPaste('');
+            };
 
             return (
                 <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-6">
                             <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-6 bg-brandNavy-900 border border-brandNavy-800">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">1. Operational Maturity Scorecard</h3>
+                                <div className="flex justify-between items-center border-b border-brandNavy-700 pb-2">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">1. Operational Maturity Scorecard</h3>
+                                    <span className="text-[10px] font-mono text-brandTeal-400 bg-brandTeal-500/10 px-2 py-0.5 rounded border border-brandTeal-500/20">Index {maturityIndex}/5</span>
+                                </div>
                                 <div className="space-y-4">
                                     <ScoreBarUI label="Team Communication" valKey="communication" val={synthesis.communication} />
                                     <ScoreBarUI label="Process Documentation" valKey="documentation" val={synthesis.documentation} />
@@ -856,11 +887,11 @@
                                 </div>
                             </div>
 
-                            {/* DYNAMIC AI STRATEGIC AUDITOR PANEL */}
+                            {/* OPERATIONAL FINDINGS PANEL */}
                             <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandTeal-500/20 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-3 bg-brandTeal-500/10 rounded-bl-lg font-mono text-[9px] text-brandTeal-300 font-bold uppercase tracking-widest flex items-center gap-1.5"><Icons.Sparkles /> AI Insight Engine</div>
+                                <div className="absolute top-0 right-0 p-3 bg-brandTeal-500/10 rounded-bl-lg font-mono text-[9px] text-brandTeal-300 font-bold uppercase tracking-widest">Live Findings</div>
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2 flex items-center gap-2">
-                                    Real-time Operational Auditing
+                                    Diagnostic Summary Preview
                                 </h3>
                                 <div className="space-y-3 mt-4">
                                     {aiInsights.map((pt, i) => (
@@ -870,9 +901,34 @@
                                         </div>
                                     ))}
                                     {aiInsights.length === 0 && (
-                                        <div className="text-xs text-slate-400 italic">Adjust sliders or parameters above to generate dynamic process diagnostics.</div>
+                                        <div className="text-xs text-slate-400 italic">Complete workflow delays, SaaS audit, and maturity scores to generate findings.</div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-3">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Staff Feedback Themes</h3>
+                                <p className="text-[10px] text-slate-400">Anonymous feedback themes from Mod 1 staff survey (no names). These appear in the client report.</p>
+                                {(synthesis.staffFeedbackThemes || ['']).map((theme, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input type="text" value={theme} onChange={(e) => updateFeedbackTheme(idx, e.target.value)} placeholder="e.g. Approvals take too long on busy days" className="flex-1 bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                        {(synthesis.staffFeedbackThemes || []).length > 1 && (
+                                            <button type="button" onClick={() => removeFeedbackTheme(idx)} className="text-slate-500 hover:text-rose-400 px-2"><Icons.Close /></button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme</button>
+                                <div className="pt-3 border-t border-brandNavy-800 space-y-2">
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Import from survey (one theme per line)</label>
+                                    <textarea rows="3" value={feedbackPaste} onChange={(e) => setFeedbackPaste(e.target.value)} placeholder="Paste anonymous feedback themes here…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500 resize-none" />
+                                    <button type="button" onClick={importFeedbackLines} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">Import lines</button>
+                                </div>
+                            </div>
+
+                            <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-3">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Privacy Ground Rules (Mod 1)</h3>
+                                <p className="text-[10px] text-slate-400">One-page summary printed with the org chart section. Not legal advice.</p>
+                                <textarea rows="4" value={synthesis.privacyGroundRules || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, privacyGroundRules: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none" />
                             </div>
                         </div>
 
@@ -883,10 +939,10 @@
                                     <span className="text-[10px] text-rose-400 bg-rose-50/10 px-2 py-0.5 rounded border border-rose-500/20 font-mono">Loss Forecast</span>
                                 </h3>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-300 block mb-2">Expected New Hires (Next 3 Years)</label>
+                                    <label className="text-xs font-bold text-slate-300 block mb-2">Expected Headcount Growth (Next 3 Years)</label>
                                     <div className="flex items-center gap-4">
                                         <input type="number" min="0" value={synthesis.expectedGrowth} onChange={(e) => updateScore('expectedGrowth', e.target.value)} className="w-24 bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-center text-white font-mono font-bold outline-none focus:border-brandTeal-500" />
-                                        <div className="text-xs text-slate-400 leading-tight">Increases the compounding multiplier on your current {formatCurrency(annualChaosTax)} annual leakage.</div>
+                                        <div className="text-xs text-slate-400 leading-tight">If team grows without fixing processes, total leakage (process + SaaS) compounds over 3 years.</div>
                                     </div>
                                 </div>
                                 <div className="bg-rose-950/30 border border-rose-500/30 rounded-lg p-4 text-center">
@@ -902,8 +958,8 @@
                                 </h3>
                                 <div>
                                     <div className="grid grid-cols-4 gap-2 mb-4">
-                                        {['MOD 1', 'MOD 2', 'MOD 3', 'MOD 4'].map(mod => (
-                                            <button key={mod} onClick={() => generatePitch(mod)} className={`py-1.5 text-xs font-bold rounded border transition-colors ${synthesis.nextModuleId === mod ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400' : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:text-white'}`}>{mod}</button>
+                                        {EC_MODULES().map(mod => (
+                                            <button key={mod.key} type="button" onClick={() => generatePitch(mod.key)} className={`py-1.5 text-[10px] font-bold rounded border transition-colors ${synthesis.nextModuleId === mod.key ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400' : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:text-white'}`} title={mod.title}>{mod.key.replace('MOD ', 'M')}</button>
                                         ))}
                                     </div>
                                     <textarea rows="4" value={synthesis.customPitch} onChange={(e) => setSynthesis(prev => ({ ...prev, customPitch: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-xs text-white leading-relaxed outline-none focus:border-brandTeal-500 resize-none font-medium"></textarea>
@@ -918,12 +974,26 @@
 
                     {/* INTERACTIVE COORDINATE MATRIX & PRIORITIZATION CARD BUILDER */}
                     <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-6 bg-brandNavy-900 border border-brandNavy-800">
-                        <div className="border-b border-brandNavy-700 pb-3 flex justify-between items-center">
+                        <div className="border-b border-brandNavy-700 pb-3 flex flex-wrap justify-between items-center gap-3">
                             <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">4. Prioritization Matrix Planner</h3>
-                                <p className="text-xs text-slate-400 mt-1">Calibrate individual operational parameters below. Adjusting scores dynamically plots tasks onto the coordinate matrix chart.</p>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">4. 90-Day Fix Order Planner</h3>
+                                <p className="text-xs text-slate-400 mt-1">Build the prioritized fix list for the Waste-to-Peso Report. Top 5 by impact ÷ effort appear on page 1.</p>
                             </div>
+                            <button type="button" onClick={generateFromDiagnosis} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
+                                Generate from Diagnosis
+                            </button>
                         </div>
+
+                        {top5Preview.length > 0 && (
+                            <div className="bg-brandNavy-950/60 border border-brandTeal-500/20 rounded-xl p-4">
+                                <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest mb-2">Top 5 Preview (report page 1)</div>
+                                <ol className="space-y-1.5 list-decimal list-inside text-xs text-slate-300">
+                                    {top5Preview.map((item, i) => (
+                                        <li key={item.id} className="leading-relaxed"><span className="font-semibold text-white">{item.text}</span></li>
+                                    ))}
+                                </ol>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                             {/* LEFT SIDE: INITIATIVE BUILDER CARD LIST */}
@@ -1016,6 +1086,20 @@
                                                         />
                                                     </div>
                                                 </div>
+                                                <div className="grid grid-cols-3 gap-2 pt-1">
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Owner</label>
+                                                        <input type="text" value={item.owner || ''} onChange={e => updateItemScore(item.id, 'owner', e.target.value)} placeholder="Name / role" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Target week</label>
+                                                        <input type="text" value={item.targetWeek || ''} onChange={e => updateItemScore(item.id, 'targetWeek', e.target.value)} placeholder="Week 1–2" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Est. savings/mo</label>
+                                                        <input type="number" min="0" value={item.expectedSavings || 0} onChange={e => updateItemScore(item.id, 'expectedSavings', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -1057,502 +1141,424 @@
             </div>
         );
 
-        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig }) => {
-            const saasMonthlyWaste = subSaaS.reduce((acc, curr) => acc + (curr.billing * curr.users), 0);
+        const ReportSectionHeader = ({ number, title, subtitle }) => (
+            <div className="mb-6 page-break-inside-avoid">
+                <div className="report-accent-bar mb-4" />
+                {number && <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">Section {number}</div>}
+                <h2 className="text-xl font-black text-slate-900 uppercase font-serif tracking-tight">{title}</h2>
+                {subtitle && <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{subtitle}</p>}
+            </div>
+        );
+
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes }) => (
+            <div className="report-page page-break-inside-avoid">
+                <div className="report-accent-bar mb-6" />
+                <div className="mb-8">
+                    <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
+                    <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Waste-to-Peso Report</h1>
+                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Prepared for</span><span className="font-bold text-slate-900 text-sm">{clientCompany}</span></div>
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Report date</span><span className="font-mono text-slate-700">{reportDate}</span></div>
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Lead strategist</span><span className="text-slate-700">{preparedBy}</span></div>
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span></div>
+                </div>
+                <div className="report-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div className="report-kpi p-5 text-center">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Total Annual Leakage</div>
+                        <div className="report-kpi-value text-2xl font-black text-rose-700">{formatCurrency(totalAnnualWaste)}</div>
+                    </div>
+                    <div className="report-kpi p-5 text-center">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Waste</div>
+                        <div className="report-kpi-value text-xl font-black text-rose-600">{formatCurrency(processAnnual)}</div>
+                        <div className="text-[9px] text-slate-400 mt-1">Manual delays & rework</div>
+                    </div>
+                    <div className="report-kpi p-5 text-center">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">SaaS Waste</div>
+                        <div className="report-kpi-value text-xl font-black text-amber-700">{formatCurrency(saasAnnual)}</div>
+                        <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
+                    </div>
+                </div>
+                {topFixes.length > 0 && (
+                    <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
+                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes — Next 90 Days</h3>
+                        <table className="report-table">
+                            <thead>
+                                <tr>
+                                    <th className="w-8">#</th>
+                                    <th>Fix</th>
+                                    <th className="w-[18%]">Owner</th>
+                                    <th className="w-[14%]">Target</th>
+                                    <th className="w-[14%] text-right">Savings/mo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topFixes.map((item, idx) => (
+                                    <tr key={item.id}>
+                                        <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
+                                        <td className="font-semibold text-slate-900">{item.text}</td>
+                                        <td className="text-slate-600">{item.owner || '—'}</td>
+                                        <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
+                                        <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        );
+
+        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate }) => {
+            const DR = DRH();
+            const saasMonthlyWaste = subSaaS.reduce((acc, curr) => acc + ((Number(curr.billing) || 0) * (Number(curr.users) || 0)), 0);
             const saasAnnualWaste = saasMonthlyWaste * 12;
             const totalAnnualWaste = annualChaosTax + saasAnnualWaste;
-
+            const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
-            
+            const topFixes = DR.getTop5Fixes?.(activeItems) || [];
+            const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
+            const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
+            const findings = DR.buildOperationalInsights?.(insightCtx) || [];
+            const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
+            const raciGaps = DR.buildRaciGaps?.(tabs, raciAssignments, window.DiagramEditor) || { gaps: [], unassignedSteps: 0, totalSteps: 0 };
+            const modules = EC_MODULES();
+            const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
+
             const quickWins = activeItems.filter(it => Number(it.effort) < 3 && Number(it.impact) >= 3);
             const majorProjects = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) >= 3);
             const fillIns = activeItems.filter(it => Number(it.effort) < 3 && Number(it.impact) < 3);
             const moneyPits = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) < 3);
 
-            return (
-                <div className="w-full max-w-[850px] bg-white text-slate-900 font-sans shadow-2xl relative print:shadow-none print:w-full print:max-w-full p-8 md:p-16 print:p-0 flex flex-col gap-16 print:block">
-                    
-                    {/* PAGE 1: DIAGNOSTICS & FLOWCHARTS */}
-                    {printConfig.showFlowcharts && (
-                        <div className="report-page">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-8">
-                                <h1 className="text-4xl font-black text-slate-900 uppercase font-serif tracking-tight">Operational Diagnostic Report</h1>
-                                <div className="text-sm font-bold text-brandTeal-600 mt-3 uppercase tracking-widest">Prepared for: {clientCompany}</div>
-                                <div className="text-[10px] text-slate-500 font-mono mt-1">Lead Strategist: {preparedBy}</div>
-                            </div>
-                            <div className="space-y-8">
-                                <div className="border-l-4 border-brandTeal-500 pl-4 py-1.5 bg-slate-50 rounded-r-lg p-3 page-break-inside-avoid">
-                                    <h2 className="text-base font-bold text-slate-900 uppercase font-sans">1. Process Diagnosis & Savings Map</h2>
-                                    <p className="text-xs text-slate-600 mt-1">Prepared in compliance with active operational workflow benchmarks across all tracked streams.</p>
-                                </div>
-                                <div className="space-y-6">
-                                    {tabs.map(tab => {
-                                        const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
-                                        const processNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
-                                        const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
-                                        const tabAnnualTax = tabTax.annual;
+            const severityClass = { amber: 'border-amber-200 bg-amber-50', rose: 'border-rose-200 bg-rose-50/50', slate: 'border-slate-200 bg-slate-50' };
+            const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
 
-                                        return (
-                                            <div key={tab.id} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50 page-break-inside-avoid mt-4">
-                                                <div className="flex justify-between items-baseline border-b pb-2 mb-3">
-                                                    <span className="font-extrabold text-slate-900 text-xs font-sans uppercase tracking-wider">{tab.name}</span>
-                                                    <span className="font-mono text-rose-600 font-bold text-xs uppercase">Chaos Tax: {formatCurrency(Math.round(tabAnnualTax / 12))}/mo</span>
-                                                </div>
-                                                {vm.svgCache && (
-                                                    <img src={vm.svgCache} alt={`${tab.name} BPMN diagram`} className="w-full max-h-72 object-contain border border-slate-200 rounded bg-white mb-4" />
-                                                )}
-                                                <div className="space-y-3 pl-2">
-                                                    {processNodes.map((step, sIdx) => {
-                                                        const sHours = parseFloat((((Number(step.delayMinutes)||0) * (Number(step.affectedStaff)||1)) / 60).toFixed(2));
-                                                        const sMonthlyLoss = Math.round(sHours * (Number(step.hourlyRate)||0) * 22);
-                                                        return (
-                                                            <div key={step.id} className="text-xs flex justify-between items-start gap-4 border-l-2 border-slate-200 pl-4 py-0.5 page-break-inside-avoid">
-                                                                <div className="space-y-1">
-                                                                    <div className="font-bold text-slate-900">{sIdx + 1}. {step.label} <span className="text-[10px] font-mono text-slate-400 font-semibold">({step.duration})</span></div>
-                                                                    <div className="text-slate-600 font-medium leading-relaxed">{step.description || 'No description provided.'}</div>
-                                                                </div>
-                                                                <div className="text-right shrink-0 font-mono text-[10px] text-slate-600">
-                                                                    <div>Delay: {step.delayMinutes || 0} mins</div>
-                                                                    <div>Staff: {step.affectedStaff || 1}</div>
-                                                                    {step.delayMinutes > 0 && <div className="text-rose-600 font-bold mt-1">Leakage: {formatCurrency(sMonthlyLoss)}/mo</div>}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+            return (
+                <div className="report-doc w-full max-w-[850px] bg-white text-slate-900 shadow-2xl relative print:shadow-none print:w-full print:max-w-full p-8 md:p-12 print:p-0 flex flex-col gap-12 print:block print:gap-0">
+
+                    {printConfig.showExecutiveSummary && (
+                        <ReportCover clientCompany={clientCompany} preparedBy={preparedBy} reportDate={reportDate} totalAnnualWaste={totalAnnualWaste} processAnnual={annualChaosTax} saasAnnual={saasAnnualWaste} maturityIndex={maturityIndex} topFixes={topFixes} />
+                    )}
+
+                    {printConfig.showExecutiveSummary && findings.length > 0 && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
+                            <ul className="space-y-3">
+                                {findings.map((pt, i) => (
+                                    <li key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed page-break-inside-avoid">
+                                        <span className="text-brandTeal-600 font-black shrink-0">{i + 1}.</span>
+                                        <span>{pt}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Staff Feedback Themes (Anonymous)</h4>
+                                    <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                        {synthesis.staffFeedbackThemes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
+                                    </ul>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     )}
 
-                    {/* PAGE 2: RACI & ACCOUNTABILITY */}
-                    {printConfig.showRaci && (
-                        <div className="report-page print-force-break flex flex-col">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-8">
-                                <h2 className="text-xl font-black text-slate-900 uppercase">2. RACI Matrix Architecture</h2>
-                                <p className="text-xs text-slate-500 mt-1">Mapping sequential dependencies to cross-functional organizational roles.</p>
-                            </div>
-                            <div className="space-y-8 flex-1">
+                    {printConfig.showLeakageRanking && processRankings.length > 0 && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="A" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Process</th>
+                                        <th className="text-right">Monthly</th>
+                                        <th className="text-right">Annual</th>
+                                        <th>% of Total</th>
+                                        <th>Top Bottleneck</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {processRankings.map((row, idx) => (
+                                        <tr key={row.tabId}>
+                                            <td className="font-mono font-bold text-slate-400">{idx + 1}</td>
+                                            <td className="font-bold text-slate-900">{row.tabName}</td>
+                                            <td className="text-right font-mono text-rose-700 font-bold">{formatCurrency(row.monthly)}</td>
+                                            <td className="text-right font-mono text-rose-600">{formatCurrency(row.annual)}</td>
+                                            <td className="font-mono text-slate-600">{row.pctOfTotal}%</td>
+                                            <td className="text-slate-600 text-[10px]">{row.topStepLabel.replace(/\n/g, ' ')}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
+                    {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="B" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
+                            {orgChartSvg && <img src={orgChartSvg} alt="Organization chart" className="w-full max-h-80 object-contain border border-slate-200 rounded-lg bg-white mb-4 page-break-inside-avoid" />}
+                            {orgChartMembers && orgChartMembers.length > 0 && (
+                                <table className="report-table">
+                                    <thead><tr><th>Name / Role</th><th>Reports To</th></tr></thead>
+                                    <tbody>
+                                        {orgChartMembers.map((m, i) => (
+                                            <tr key={i}><td className="font-semibold">{m.name || m.label || '—'}</td><td className="text-slate-600">{m.reportsTo || '—'}</td></tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                            {synthesis.privacyGroundRules && synthesis.privacyGroundRules.trim() && (
+                                <div className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Privacy Ground Rules</h4>
+                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{synthesis.privacyGroundRules.trim()}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {printConfig.showFlowcharts && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="C" title="Process Maps & Step Analysis" subtitle="As-is workflows with delay times and per-step leakage calculations." />
+                            <div className="space-y-6">
                                 {tabs.map(tab => {
-                                    const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
-                                    const processNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
-                                    const roles = vm.lanes;
-                                    if(processNodes.length === 0) return null;
+                                    const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
+                                    const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
+                                    const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
                                     return (
-                                        <div key={`raci-${tab.id}`} className="border border-slate-200 rounded-lg overflow-hidden text-xs page-break-inside-avoid mb-6">
-                                            <div className="bg-slate-100/80 px-4 py-2 font-bold text-slate-800 border-b-2 border-slate-900 text-[11px] uppercase font-sans tracking-wider">{tab.name}</div>
-                                            <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="text-slate-800 uppercase font-serif text-[10px] tracking-widest border-b border-slate-200 bg-white">
-                                                        <th scope="col" className="py-3 px-4 w-[35%]">Process Milestone Activity</th>
-                                                        {roles.map(r => (
-                                                            <th scope="col" key={r.id} className="py-3 px-4 text-center font-bold" style={{ minWidth: '100px' }}>
-                                                                <div className="text-slate-900 leading-tight">{r.label.replace('\n', ' ')}</div>
-                                                                <div className="text-[8px] text-slate-500 mt-1 font-mono">{r.owner || 'Unassigned'}</div>
-                                                            </th>
-                                                        ))}
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100 font-semibold">
-                                                    {processNodes.map(act => (
-                                                        <tr key={act.id}>
-                                                            <td className="py-3.5 px-4 font-bold text-slate-900 bg-slate-50/20">{act.label}</td>
-                                                            {roles.map(role => {
-                                                                const assign = raciAssignments[act.id]?.[role.id] || '';
-                                                                let badgeStyle = "text-slate-400 font-normal";
-                                                                if (assign === 'R') badgeStyle = "bg-emerald-100 text-emerald-800 font-black";
-                                                                if (assign === 'A') badgeStyle = "bg-amber-100 text-amber-800 font-black";
-                                                                if (assign === 'C') badgeStyle = "bg-purple-100 text-purple-800 font-black";
-                                                                if (assign === 'I') badgeStyle = "bg-slate-200 text-slate-600 font-black";
-                                                                return (
-                                                                    <td key={role.id} className="py-3.5 px-4 text-center font-mono">
-                                                                        {assign ? <span className={`w-8 h-8 inline-flex items-center justify-center rounded-full text-xs border ${badgeStyle}`}>{assign}</span> : <span aria-hidden="true" className="text-slate-300 font-light">—</span>}
-                                                                    </td>
-                                                                );
-                                                            })}
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                        <div key={tab.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 page-break-inside-avoid">
+                                            <div className="flex justify-between items-baseline border-b border-slate-200 pb-2 mb-3">
+                                                <span className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">{tab.name}</span>
+                                                <span className="font-mono text-rose-600 font-bold text-xs">{formatCurrency(Math.round(tabTax.annual / 12))}/mo</span>
+                                            </div>
+                                            {vm.svgCache && <img src={vm.svgCache} alt={tab.name} className="w-full max-h-64 object-contain border border-slate-200 rounded bg-white mb-4" />}
+                                            <div className="space-y-2">
+                                                {processNodes.map((step, sIdx) => {
+                                                    const monthly = DR.stepMonthlyLoss?.(step) ?? 0;
+                                                    return (
+                                                        <div key={step.id} className="text-xs flex justify-between gap-4 border-l-2 border-slate-200 pl-3 py-1 page-break-inside-avoid">
+                                                            <div>
+                                                                <span className="font-bold text-slate-900">{sIdx + 1}. {step.label.replace(/\n/g, ' ')}</span>
+                                                                {step.description && <p className="text-slate-500 mt-0.5">{step.description}</p>}
+                                                            </div>
+                                                            <div className="text-right shrink-0 font-mono text-[10px] text-slate-600">
+                                                                {step.delayMinutes > 0 ? <span className="text-rose-600 font-bold">{formatCurrency(monthly)}/mo</span> : <span className="text-slate-400">No delay</span>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>
                     )}
 
-                    {/* PAGE 3: FINANCIAL LEAKAGE */}
-                    {printConfig.showSaas && (
-                        <div className="report-page print-force-break flex flex-col">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-8">
-                                <h2 className="text-xl font-black text-slate-900 uppercase">3. Financial Leakage & Subscription Audit</h2>
-                                <p className="text-xs text-slate-500 mt-1">Calculation of the total "Chaos Tax" across all workflows and software utilization waste.</p>
-                            </div>
-
-                            <div className="space-y-8 flex-1">
-                                <div className="p-6 border border-slate-200 rounded-xl bg-slate-50 space-y-4 page-break-inside-avoid">
-                                    <div className="text-center max-w-xl mx-auto">
-                                        <span className="text-[9px] font-mono font-bold tracking-[0.2em] text-brandTeal-600 uppercase block mb-1">Total Operational Contingency</span>
-                                        <h3 className="font-bold text-sm text-slate-900 leading-tight font-serif">The "Chaos Tax" Loss Calculation</h3>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-4 text-center mt-4">
-                                        <div className="border-r border-slate-300">
-                                            <span className="text-[9px] font-serif uppercase tracking-widest text-slate-500 block">Calculated Daily Waste</span>
-                                            <span className="text-base font-black text-rose-700 font-mono block mt-2">{totalDailyWasteHours.toFixed(2)} Hours</span>
-                                        </div>
-                                        <div className="border-r border-slate-300">
-                                            <span className="text-[9px] font-serif uppercase tracking-widest text-slate-500 block">Monthly Profit Leakage</span>
-                                            <span className="text-base font-black text-rose-700 font-mono block mt-2">{formatCurrency(Math.round(annualChaosTax / 12))}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-[9px] font-serif uppercase font-bold tracking-widest text-rose-600 block">Annual "Chaos Tax" Paid</span>
-                                            <span className="text-xl font-black text-rose-700 font-mono block mt-2">{formatCurrency(annualChaosTax)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 page-break-inside-avoid">
-                                    <h4 className="font-bold text-xs uppercase text-slate-900 tracking-wider font-sans">Software Bill Savings Audit</h4>
-                                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                        <table className="w-full text-left border-collapse text-xs">
+                    {printConfig.showRaci && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="D" title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
+                            {tabs.map(tab => {
+                                const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
+                                const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
+                                const roles = vm.lanes;
+                                if (!processNodes.length) return null;
+                                return (
+                                    <div key={`raci-${tab.id}`} className="border border-slate-200 rounded-lg overflow-hidden mb-6 page-break-inside-avoid">
+                                        <div className="bg-slate-100 px-4 py-2 font-bold text-slate-800 text-[11px] uppercase">{tab.name}</div>
+                                        <table className="report-table text-[10px]">
                                             <thead>
-                                                <tr className="bg-slate-50 text-slate-600 uppercase font-mono text-[9px] tracking-wider border-b border-slate-200">
-                                                    <th scope="col" className="py-3 px-4 w-[25%]">Active Software</th>
-                                                    <th scope="col" className="py-3 px-4 w-[20%] text-center">License Billing</th>
-                                                    <th scope="col" className="py-3 px-4 w-[15%] text-center">Users</th>
-                                                    <th scope="col" className="py-3 px-4 w-[40%]">Recommended Cost-Recovery Strategy</th>
+                                                <tr>
+                                                    <th className="w-[30%]">Activity</th>
+                                                    {roles.map(r => <th key={r.id} className="text-center">{r.label.replace(/\n/g, ' ')}</th>)}
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium">
-                                                {subSaaS.map(item => (
-                                                    <tr key={item.id}>
-                                                        <td className="py-3 px-4 font-bold text-slate-800">{item.tool}</td>
-                                                        <td className="py-3 px-4 text-center font-mono text-slate-700">₱{(item.billing || 0).toLocaleString()}/mo</td>
-                                                        <td className="py-3 px-4 text-center font-mono font-bold text-slate-900">{item.users}</td>
-                                                        <td className="py-3 px-4 text-slate-600 italic text-[11px]">{item.reason || 'Examine seating parameters'}</td>
+                                            <tbody>
+                                                {processNodes.map(act => (
+                                                    <tr key={act.id}>
+                                                        <td className="font-bold">{act.label.replace(/\n/g, ' ')}</td>
+                                                        {roles.map(role => {
+                                                            const assign = raciAssignments[act.id]?.[role.id] || '';
+                                                            return <td key={role.id} className="text-center font-mono font-black">{assign || '—'}</td>;
+                                                        })}
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                                <div className="p-4 border border-emerald-200 rounded-lg bg-emerald-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans page-break-inside-avoid">
-                                    <div className="space-y-1 max-w-lg">
-                                        <strong className="text-emerald-800 uppercase block tracking-wider text-[10px] font-mono font-bold">Immediate Year 1 Profit Recapture Opportunity:</strong>
-                                        <p className="text-slate-700 leading-relaxed font-semibold">By eliminating the manual "Chaos Tax" time blocks and implementing optimized software license rules, we can put up to <strong className="text-emerald-700">{formatCurrency(totalAnnualWaste)}</strong> back into your gross margins.</p>
-                                    </div>
-                                    <div className="text-right shrink-0 font-sans">
-                                        <span className="text-[10px] text-slate-500 font-mono uppercase block font-bold">Total Potential Recapture</span>
-                                        <span className="text-lg font-extrabold text-emerald-600 font-mono">{formatCurrency(totalAnnualWaste)}</span>
-                                    </div>
+                    {printConfig.showSaas && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process waste and subscription waste are tracked separately so you know what to fix first." />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage (Chaos Tax)</div>
+                                    <div className="text-2xl font-black font-mono text-rose-700">{formatCurrency(annualChaosTax)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
+                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Fixable via SOPs, handoffs, and workflow redesign. {totalDailyWasteHours.toFixed(1)} hours lost daily across mapped processes.</p>
+                                    <div className="text-[10px] font-mono text-rose-600 mt-2">{formatCurrency(Math.round(annualChaosTax / 12))}/month</div>
                                 </div>
+                                <div className="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30 page-break-inside-avoid">
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">SaaS & License Waste</div>
+                                    <div className="text-2xl font-black font-mono text-amber-800">{formatCurrency(saasAnnualWaste)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
+                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Quick-recapture: cancel duplicates and right-size seats within 30 days.</p>
+                                    <div className="text-[10px] font-mono text-amber-700 mt-2">{formatCurrency(saasMonthlyWaste)}/month</div>
+                                </div>
+                            </div>
+                            {subSaaS.length > 0 && (
+                                <table className="report-table mb-6">
+                                    <thead>
+                                        <tr>
+                                            <th>Software</th>
+                                            <th className="text-center">Billing</th>
+                                            <th className="text-center">Seats</th>
+                                            <th className="text-right">Monthly</th>
+                                            <th>Recommendation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {subSaaS.map(item => (
+                                            <tr key={item.id}>
+                                                <td className="font-bold">{item.tool}</td>
+                                                <td className="text-center font-mono">₱{Number(item.billing || 0).toLocaleString()}</td>
+                                                <td className="text-center font-mono">{item.users}</td>
+                                                <td className="text-right font-mono font-bold text-amber-800">{formatCurrency((Number(item.billing) || 0) * (Number(item.users) || 0))}</td>
+                                                <td className="text-slate-600 italic text-[10px]">{item.reason || 'Review seat count and usage'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                            <div className="p-4 border border-emerald-300 rounded-xl bg-emerald-50/50 flex justify-between items-center page-break-inside-avoid">
+                                <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
+                                <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
                             </div>
                         </div>
                     )}
 
-                    {/* PAGE 4: SYNTHESIS */}
                     {printConfig.showSynthesis && (
-                        <div className="report-page print-force-break flex flex-col">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-8">
-                                <h2 className="text-xl font-black text-slate-900 uppercase">4. Executive Synthesis & Next Steps</h2>
-                                <p className="text-xs text-slate-500 mt-1">Operational maturity analysis and strategic transition recommendations.</p>
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="F" title="Operational Maturity & Cost of Inaction" subtitle="How ready your business is to scale — and what happens if nothing changes." />
+                            <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider">Maturity Scorecard</h3>
+                                    <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
+                                </div>
+                                <div className="space-y-4">
+                                    <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered" desc5="Unified" />
+                                    <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal" desc5="Standardized" />
+                                    <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous" desc5="Clear RACI" />
+                                    <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented" desc5="Consolidated" />
+                                </div>
                             </div>
-                            <div className="space-y-8">
-                                <div className="border border-slate-300 rounded-xl p-6 bg-slate-50 page-break-inside-avoid">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 mb-6 font-sans">Operational Maturity Scorecard</h3>
-                                    <div className="space-y-4">
-                                        <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered / Reactive" desc5="Unified / Proactive" />
-                                        <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal Knowledge" desc5="Standardized SOPs" />
-                                        <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous / Overlapping" desc5="Clear RACI / Tracked" />
-                                        <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented / Wasteful" desc5="Consolidated / High ROI" />
-                                    </div>
+                            <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Cost of Inaction</h3>
+                                <p className="text-xs text-slate-700 leading-relaxed mb-4">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong>, growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
+                                <div className="bg-white border border-rose-200 rounded-lg p-4 text-center"><div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Projected 3-Year Loss</div><div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(projected3YearLoss)}</div></div>
+                            </div>
+                            <div className="mt-6 border-l-4 border-brandTeal-600 bg-teal-50/50 p-5 rounded-r-xl page-break-inside-avoid">
+                                <h3 className="text-xs font-bold uppercase text-brandTeal-900 mb-2">Recommended Next Phase: {modByKey(synthesis.nextModuleId).title}</h3>
+                                <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {printConfig.showMatrix && activeItems.length > 0 && (
+                        <div className="report-page print-force-break font-sans text-xs">
+                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="All initiatives plotted by effort vs. impact. Numbers match the chart below." />
+                            <div className="flex justify-center my-4 page-break-inside-avoid">
+                                <svg viewBox="0 0 450 450" className="w-[400px] h-[400px] bg-slate-50 border border-slate-200 rounded-xl">
+                                    <rect x="40" y="40" width="185" height="185" fill="#f0fdf4" /><rect x="225" y="40" width="175" height="175" fill="#eff6ff" />
+                                    <rect x="30" y="225" width="170" height="185" fill="#f8fafc" /><rect x="225" y="225" width="185" height="185" fill="#fff1f2" />
+                                    <line x1="225" y1="40" x2="225" y2="410" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+                                    <line x1="40" y1="225" x2="410" y2="225" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
+                                    <rect x="40" y="40" width="370" height="370" fill="none" stroke="#64748b" strokeWidth="1.5" />
+                                    {activeItems.map((item, idx) => {
+                                        const effort = Number(item.effort) || 3; const impact = Number(item.impact) || 3;
+                                        const x = 40 + ((effort - 1) / 4) * 370; const y = 40 + ((5 - impact) / 4) * 370;
+                                        const dotColor = effort < 3 && impact >= 3 ? '#10b981' : effort >= 3 && impact >= 3 ? '#3b82f6' : effort >= 3 ? '#ef4444' : '#94a3b8';
+                                        return (<g key={item.id}><circle cx={x} cy={y} r="7" fill={dotColor} stroke="#fff" strokeWidth="1.5" /><text x={x} y={y + 3} fill="#fff" fontSize="7" fontWeight="bold" textAnchor="middle">{idx + 1}</text></g>);
+                                    })}
+                                </svg>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="border border-teal-200 rounded-lg p-3 page-break-inside-avoid bg-teal-50/20">
+                                    <strong className="text-teal-800 text-[10px] uppercase block mb-2">Quick Wins</strong>
+                                    <ul className="space-y-1">{quickWins.length ? quickWins.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
-                                <div className="border-2 border-rose-200 bg-rose-50/50 rounded-xl p-6 page-break-inside-avoid">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-rose-900 mb-2">The Cost of Inaction (COI) Forecast</h3>
-                                    <p className="text-xs text-slate-700 leading-relaxed mb-4">Based on your current baseline Chaos Tax of <strong>{formatCurrency(annualChaosTax)}/year</strong>, maintaining these current processes while adding your projected <strong>{synthesis.expectedGrowth} new team members</strong> over the next 3 years will aggressively compound margin leakage.</p>
-                                    <div className="bg-white border border-rose-200 rounded-lg p-4 text-center shadow-sm">
-                                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Projected 3-Year Operational Loss</div>
-                                        <div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(projected3YearLoss)}</div>
-                                    </div>
+                                <div className="border border-blue-200 rounded-lg p-3 page-break-inside-avoid bg-blue-50/20">
+                                    <strong className="text-blue-800 text-[10px] uppercase block mb-2">Major Projects</strong>
+                                    <ul className="space-y-1">{majorProjects.length ? majorProjects.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
-                                <div className="border-l-4 border-brandTeal-600 bg-brandTeal-50 p-6 rounded-r-xl page-break-inside-avoid font-sans">
-                                    <h3 className="text-sm font-bold uppercase tracking-widest text-brandTeal-900 mb-3">Strategic Recommendation: {synthesis.nextModuleId}</h3>
-                                    <p className="text-sm text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{synthesis.customPitch || "Select a module in the executive synthesis builder to generate your pitch."}</p>
+                                <div className="border border-slate-300 rounded-lg p-3 page-break-inside-avoid bg-slate-50/40">
+                                    <strong className="text-slate-700 text-[10px] uppercase block mb-2">Fill-ins</strong>
+                                    <ul className="space-y-1">{fillIns.length ? fillIns.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                </div>
+                                <div className="border border-rose-200 rounded-lg p-3 page-break-inside-avoid bg-rose-50/20">
+                                    <strong className="text-rose-800 text-[10px] uppercase block mb-2">Deprioritize</strong>
+                                    <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* PAGE 5: PRIORITIZATION MATRIX PRINTABLE WITH INTEGRATED CHART */}
-                    {printConfig.showMatrix && (
-                        <div className="report-page print-force-break flex flex-col font-sans text-xs">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-6">
-                                <h2 className="text-xl font-black text-slate-900 uppercase">5. Action Prioritization Matrix</h2>
-                                <p className="text-xs text-slate-500 mt-1">Balancing strategic impact against systemic execution complexity.</p>
+                    {printConfig.showFindings && riskProfiles.length > 0 && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="H" title="Operational Risk Profiles" subtitle="Issues that need attention before scaling headcount or adding new tools." />
+                            <div className="space-y-3">
+                                {riskProfiles.map((rp, i) => (
+                                    <div key={i} className={`text-xs p-4 border rounded-lg page-break-inside-avoid ${severityClass[rp.severity] || severityClass.slate}`}>
+                                        <strong className={`block mb-1 ${severityTitle[rp.severity]}`}>{rp.title}</strong>
+                                        <p className="text-slate-700 leading-relaxed">{rp.text}</p>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="space-y-4 flex-1">
-                                <p className="text-slate-600 leading-relaxed">
-                                    Each audited process step has been classified into four quadrant markers based on execution effort and bottom-line impact. Operational planning targets immediate release of high-friction areas while staging high-effort initiatives.
-                                </p>
+                        </div>
+                    )}
 
-                                {/* PRINT OPTIMIZED VECTOR CHART */}
-                                <div className="flex justify-center my-6 page-break-inside-avoid print:my-4">
-                                    <svg viewBox="0 0 450 450" className="w-[420px] h-[420px] bg-slate-50 border border-slate-300 rounded-xl overflow-hidden">
-                                        {/* Quadrant Back Shading */}
-                                        <rect x="40" y="40" width="185" height="185" fill="#f0fdf4" /> {/* Quick Wins */}
-                                        <rect x="225" y="40" width="175" height="175" fill="#eff6ff" /> {/* Major Projects */}
-                                        <rect x="30" y="225" width="170" height="185" fill="#f8fafc" /> {/* Fill-ins */}
-                                        <rect x="225" y="225" width="185" height="185" fill="#fff1f2" /> {/* Money Pits */}
-
-                                        {/* Axis Borders */}
-                                        <line x1="225" y1="40" x2="225" y2="410" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
-                                        <line x1="40" y1="225" x2="410" y2="225" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
-
-                                        <rect x="40" y="40" width="370" height="370" fill="none" stroke="#64748b" strokeWidth="1.5" />
-
-                                        {/* Text Identifiers inside PDF Quadrants */}
-                                        <text x="50" y="60" fill="#16803d" fontSize="9" fontWeight="800" fillOpacity="0.7">⚡ QUICK WINS</text>
-                                        <text x="400" y="60" textAnchor="end" fill="#1d4ed8" fontSize="9" fontWeight="800" fillOpacity="0.7">🚀 MAJOR PROJECTS</text>
-                                        <text x="50" y="400" fill="#475569" fontSize="9" fontWeight="800" fillOpacity="0.7">⚙️ FILL-INS</text>
-                                        <text x="400" y="400" textAnchor="end" fill="#b91c1c" fontSize="9" fontWeight="800" fillOpacity="0.7">🚨 MONEY PITS</text>
-
-                                        {/* Grid Scale Labels */}
-                                        {[1, 2, 3, 4, 5].map((val) => {
-                                            const stepX = 40 + ((val - 1) / 4) * 370;
-                                            const stepY = 40 + ((5 - val) / 4) * 370;
-                                            return (
-                                                <g key={val}>
-                                                    <text x={stepX} y="425" fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle">{val}</text>
-                                                    <text x="25" y={stepY + 3} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="end">{val}</text>
-                                                </g>
-                                            );
-                                        })}
-
-                                        <text x="225" y="442" fill="#334155" fontSize="8" fontWeight="bold" textAnchor="middle">EXECUTION EFFORT (1-5) ➔</text>
-                                        <text x="12" y="225" fill="#334155" fontSize="8" fontWeight="bold" textAnchor="middle" transform="rotate(-90, 12, 225)">BOTTOM-LINE IMPACT (1-5) ➔</text>
-
-                                        {/* Render plotted items with numbers corresponding to list indices */}
-                                        {activeItems.map((item, idx) => {
-                                            const effort = Number(item.effort) || 3;
-                                            const impact = Number(item.impact) || 3;
-                                            const x = 40 + ((effort - 1) / 4) * 370;
-                                            const y = 40 + ((5 - impact) / 4) * 370;
-
-                                            let dotColor = "#94a3b8"; // Fill-ins
-                                            if (effort < 3 && impact >= 3) dotColor = "#10b981";
-                                            if (effort >= 3 && impact >= 3) dotColor = "#3b82f6";
-                                            if (effort >= 3 && impact < 3) dotColor = "#ef4444";
-
-                                            return (
-                                                <g key={item.id}>
-                                                    <circle cx={x} cy={y} r="7" fill={dotColor} stroke="#ffffff" strokeWidth="1.5" />
-                                                    <text x={x} y={y + 2.5} fill="#ffffff" fontSize="7" fontWeight="bold" textAnchor="middle" stroke="#000000" strokeWidth="1" paintOrder="stroke" className="font-mono">
-                                                        {idx + 1}
-                                                    </text>
-                                                </g>
-                                            );
-                                        })}
-                                    </svg>
+                    {printConfig.showNextSteps && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="I" title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
+                            <div className="space-y-4 text-sm">
+                                <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50/40 rounded-r-lg page-break-inside-avoid">
+                                    <strong className="text-emerald-900 text-xs uppercase tracking-wider block mb-1">Week 1–2 — Quick wins</strong>
+                                    <p className="text-slate-700 text-xs leading-relaxed">{quickWins.length ? quickWins.slice(0, 3).map(i => i.text).join('; ') : 'Cancel unused SaaS seats and fix the highest-leak workflow step identified above.'}</p>
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {/* Quick Wins */}
-                                    <div className="border border-teal-200 bg-teal-50/25 rounded-xl p-4 page-break-inside-avoid">
-                                        <div className="border-b border-teal-200 pb-2 mb-3 flex justify-between items-center">
-                                            <strong className="text-teal-800 text-xs font-bold uppercase tracking-wider">⚡ Quick Wins</strong>
-                                            <span className="text-[8px] font-mono text-teal-600 uppercase font-extrabold bg-teal-100/60 px-2 py-0.5 rounded">High Impact • Low Effort</span>
+                                <div className="p-4 border-l-4 border-blue-500 bg-blue-50/40 rounded-r-lg page-break-inside-avoid">
+                                    <strong className="text-blue-900 text-xs uppercase tracking-wider block mb-1">Week 3–6 — Process fixes</strong>
+                                    <p className="text-slate-700 text-xs leading-relaxed">{majorProjects.length ? majorProjects.slice(0, 2).map(i => i.text).join('; ') : 'Document top workflows and assign RACI owners for every handoff.'}</p>
+                                </div>
+                                <div className="p-4 border-l-4 border-brandTeal-600 bg-teal-50/40 rounded-r-lg page-break-inside-avoid">
+                                    <strong className="text-brandTeal-900 text-xs uppercase tracking-wider block mb-1">Week 7–12 — Structural changes</strong>
+                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-day fix list with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
+                                </div>
+                            </div>
+                            <div className="mt-8 p-5 border border-slate-200 rounded-xl bg-slate-50 page-break-inside-avoid">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-700 mb-3">Kolthoff Engagement Path</h4>
+                                <div className="grid grid-cols-3 gap-3 text-[10px]">
+                                    {modules.filter(m => m.key !== 'MOD 1').map(mod => (
+                                        <div key={mod.id} className="p-3 bg-white border border-slate-200 rounded-lg">
+                                            <strong className="text-slate-900 block mb-1 uppercase">{mod.key}: {mod.title}</strong>
+                                            <p className="text-slate-500 leading-relaxed">{mod.phase}</p>
                                         </div>
-                                        <ul className="space-y-2 text-slate-700 list-inside">
-                                            {activeItems.map((item, idx) => {
-                                                const effort = Number(item.effort) || 3;
-                                                const impact = Number(item.impact) || 3;
-                                                if (effort < 3 && impact >= 3) {
-                                                    return (
-                                                        <li key={item.id} className="leading-relaxed font-semibold pl-1 text-[11px] list-none flex gap-1.5 items-start">
-                                                            <span className="font-mono font-bold text-[9px] bg-slate-200 rounded px-1.5 py-0.5 shrink-0">{idx + 1}</span>
-                                                            <span>{item.text}</span>
-                                                        </li>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                            {quickWins.length === 0 && <li className="italic text-slate-400 pl-1 text-[11px] list-none">No items configured in this quadrant.</li>}
-                                        </ul>
-                                    </div>
-
-                                    {/* Major Projects */}
-                                    <div className="border border-blue-200 bg-blue-50/25 rounded-xl p-4 page-break-inside-avoid">
-                                        <div className="border-b border-blue-200 pb-2 mb-3 flex justify-between items-center">
-                                            <strong className="text-blue-800 text-xs font-bold uppercase tracking-wider">🚀 Major Projects</strong>
-                                            <span className="text-[8px] font-mono text-blue-600 uppercase font-extrabold bg-blue-100 px-2 py-0.5 rounded">High Impact • High Effort</span>
-                                        </div>
-                                        <ul className="space-y-2 text-slate-700 list-inside">
-                                            {activeItems.map((item, idx) => {
-                                                const effort = Number(item.effort) || 3;
-                                                const impact = Number(item.impact) || 3;
-                                                if (effort >= 3 && impact >= 3) {
-                                                    return (
-                                                        <li key={item.id} className="leading-relaxed font-semibold pl-1 text-[11px] list-none flex gap-1.5 items-start">
-                                                            <span className="font-mono font-bold text-[9px] bg-slate-200 rounded px-1.5 py-0.5 shrink-0">{idx + 1}</span>
-                                                            <span>{item.text}</span>
-                                                        </li>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                            {majorProjects.length === 0 && <li className="italic text-slate-400 pl-1 text-[11px] list-none">No items configured in this quadrant.</li>}
-                                        </ul>
-                                    </div>
-
-                                    {/* Fill-ins */}
-                                    <div className="border border-slate-300 bg-slate-50/50 rounded-xl p-4 page-break-inside-avoid">
-                                        <div className="border-b border-slate-300 pb-2 mb-3 flex justify-between items-center">
-                                            <strong className="text-slate-700 text-xs font-bold uppercase tracking-wider">⚙️ Fill-ins</strong>
-                                            <span className="text-[8px] font-mono text-slate-600 uppercase font-extrabold bg-slate-200/60 px-2 py-0.5 rounded">Low Impact • Low Effort</span>
-                                        </div>
-                                        <ul className="space-y-2 text-slate-600 list-inside">
-                                            {activeItems.map((item, idx) => {
-                                                const effort = Number(item.effort) || 3;
-                                                const impact = Number(item.impact) || 3;
-                                                if (effort < 3 && impact < 3) {
-                                                    return (
-                                                        <li key={item.id} className="leading-relaxed font-semibold pl-1 text-[11px] list-none flex gap-1.5 items-start">
-                                                            <span className="font-mono font-bold text-[9px] bg-slate-200 rounded px-1.5 py-0.5 shrink-0">{idx + 1}</span>
-                                                            <span>{item.text}</span>
-                                                        </li>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                            {fillIns.length === 0 && <li className="italic text-slate-400 pl-1 text-[11px] list-none">No items configured in this quadrant.</li>}
-                                        </ul>
-                                    </div>
-
-                                    {/* Money Pits */}
-                                    <div className="border border-rose-200 bg-rose-50/20 rounded-xl p-4 page-break-inside-avoid">
-                                        <div className="border-b border-rose-200 pb-2 mb-3 flex justify-between items-center">
-                                            <strong className="text-rose-800 text-xs font-bold uppercase tracking-wider">🚨 Money Pits</strong>
-                                            <span className="text-[8px] font-mono text-rose-600 uppercase font-extrabold bg-rose-100/60 px-2 py-0.5 rounded">Low Impact • High Effort</span>
-                                        </div>
-                                        <ul className="space-y-2 text-slate-700 list-inside">
-                                            {activeItems.map((item, idx) => {
-                                                const effort = Number(item.effort) || 3;
-                                                const impact = Number(item.impact) || 3;
-                                                if (effort >= 3 && impact < 3) {
-                                                    return (
-                                                        <li key={item.id} className="leading-relaxed font-semibold pl-1 text-[11px] list-none flex gap-1.5 items-start">
-                                                            <span className="font-mono font-bold text-[9px] bg-slate-200 rounded px-1.5 py-0.5 shrink-0">{idx + 1}</span>
-                                                            <span>{item.text}</span>
-                                                        </li>
-                                                    );
-                                                }
-                                                return null;
-                                            })}
-                                            {moneyPits.length === 0 && <li className="italic text-slate-400 pl-1 text-[11px] list-none">No items configured in this quadrant.</li>}
-                                        </ul>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* PAGE 6: AI STRATEGIC AUDITOR SECTION (COMPLETELY QUALITATIVE OPERATIONAL METRICS Breakdown - NO FORMULAS) */}
-                    {printConfig.showAIReport && (
-                        <div className="report-page print-force-break flex flex-col">
-                            <div className="border-b-2 border-slate-900 pb-4 mb-8">
-                                <h2 className="text-xl font-black text-slate-900 uppercase flex items-center gap-2">
-                                    6. Dynamic AI Strategic Audit & Recovery Plan
-                                </h2>
-                                <p className="text-xs text-slate-500 mt-1">Algorithmic process vulnerability assessment and Kolthoff Consulting framework alignment.</p>
-                            </div>
-
-                            <div className="space-y-8 flex-1">
-                                <div className="border-l-4 border-slate-900 pl-4 py-2 bg-slate-50 rounded-r-lg p-4 page-break-inside-avoid">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Mathematical Auditing Blueprint</h3>
-                                    <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                                        This strategic audit calculates critical bottom-line leakage vectors contributing to the annual operational tax. Calculations are derived qualitatively using direct wait-state audits, software register metrics, and team scale factors.
-                                    </p>
-                                    <div className="space-y-4 text-slate-800 text-[11px] bg-white border border-slate-200 rounded-lg p-4 shadow-sm leading-relaxed">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div>
-                                                <h5 className="font-bold text-slate-900 uppercase text-[10px] mb-1">1. Chaos Tax Metrics</h5>
-                                                <p className="text-slate-600">Calculates process wait-state bottlenecks. Analyzes individual process delays multiplied by local staff volume, then scales the result across monthly loaded billing rates to show active operational margin erosion.</p>
-                                            </div>
-                                            <div>
-                                                <h5 className="font-bold text-slate-900 uppercase text-[10px] mb-1">2. Cost of Inaction (COI)</h5>
-                                                <p className="text-slate-600">Calculates compounding organizational drag. Extrapolates standard process wait times into future scaling projections, multiplying waste by expected headcount expansion to forecast compounding future loss.</p>
-                                            </div>
-                                            <div>
-                                                <h5 className="font-bold text-slate-900 uppercase text-[10px] mb-1">3. SaaS Subscription Drain</h5>
-                                                <p className="text-slate-600">Audits structural bill leakage. Tracks direct out-of-pocket waste generated by inactive account seats, duplicate utility tiers, and unutilized software access across all delivery pipelines.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4 page-break-inside-avoid">
-                                    <h4 className="font-bold text-xs uppercase text-slate-900 tracking-wider">Identified Risk Classifications</h4>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        {synthesis.communication <= 2 && (
-                                            <div className="text-xs p-3.5 border border-amber-200 bg-amber-50 rounded-lg">
-                                                <strong className="text-amber-800 block mb-1">Risk Profile A: Manual Handover Friction</strong>
-                                                <p className="text-slate-700 leading-relaxed font-semibold">Critical communications are running on unmonitored channels. Inefficient loops between BD, Creatives, and PMO force massive manual follow-up times.</p>
-                                            </div>
-                                        )}
-                                        {synthesis.documentation <= 2 && (
-                                            <div className="text-xs p-3.5 border border-rose-200 bg-rose-50/50 rounded-lg">
-                                                <strong className="text-rose-800 block mb-1">Risk Profile B: Operational Tribal Dependency</strong>
-                                                <p className="text-slate-700 leading-relaxed font-semibold">The workspace documentation maturity is rated critical. Relying on tribal knowledge leaves execution workflows fragile to employee attrition and service delivery drift.</p>
-                                            </div>
-                                        )}
-                                        {saasMonthlyWaste > 1000 && (
-                                            <div className="text-xs p-3.5 border border-slate-200 bg-slate-50 rounded-lg">
-                                                <strong className="text-slate-800 block mb-1">Risk Profile C: Subscription Bill Leakage</strong>
-                                                <p className="text-slate-700 leading-relaxed font-semibold">Software accounts suffer from over-allocation. Cancelling duplicate or idle seats will instantly claw back {formatCurrency(saasAnnualWaste)}/year directly into your operational budgets.</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="p-6 border border-brandTeal-500/30 rounded-xl bg-slate-50/80 space-y-4 page-break-inside-avoid">
-                                    <h4 className="font-bold text-xs uppercase text-brandTeal-700 tracking-widest font-mono">Structural Transition Map (Modules 2 - 4)</h4>
-                                    <p className="text-xs text-slate-700 leading-relaxed">
-                                        To stop this profit leak and protect your upcoming campaigns, authorize your transition path through our remaining operational frameworks:
-                                    </p>
-                                    <div className="grid grid-cols-3 gap-4 text-xs font-sans mt-3">
-                                        <div className="p-3 border border-slate-200 bg-white rounded-lg flex flex-col justify-between">
-                                            <div>
-                                                <strong className="text-slate-900 block font-bold mb-1 uppercase tracking-wider text-[10px]">Module 2: How Your Business Runs</strong>
-                                                <p className="text-slate-600 text-[10px] leading-relaxed">Map fixed RACI boundaries and deploy secure SOP Vaults around high-risk handovers.</p>
-                                            </div>
-                                        </div>
-                                        <div className="p-3 border border-slate-200 bg-white rounded-lg flex flex-col justify-between">
-                                            <div>
-                                                <strong className="text-slate-900 block font-bold mb-1 uppercase tracking-wider text-[10px]">Module 3: Workspace Automation</strong>
-                                                <p className="text-slate-600 text-[10px] leading-relaxed">Eliminate follow-up lag with automated quoting engines and tracking boards.</p>
-                                            </div>
-                                        </div>
-                                        <div className="p-3 border border-slate-200 bg-white rounded-lg flex flex-col justify-between">
-                                            <div>
-                                                <strong className="text-slate-900 block font-bold mb-1 uppercase tracking-wider text-[10px]">Module 4: Fractional COO</strong>
-                                                <p className="text-slate-600 text-[10px] leading-relaxed">Establish continuous governance parameters to permanently prevent process decay.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-4 border-t border-slate-200 flex justify-between items-center text-xs font-semibold">
-                                        <span className="text-slate-600">Advance your process maturity at:</span>
-                                        <a href="http://www.kolthoff-consulting.com" target="_blank" className="text-brandTeal-600 hover:underline font-bold text-sm tracking-wider">www.kolthoff-consulting.com</a>
-                                    </div>
-                                </div>
+                    {printConfig.showAppendix && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
+                            <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
+                                <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
+                                <p><strong>SaaS waste:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
+                                <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
                             </div>
                         </div>
                     )}
-
                 </div>
             );
         };
@@ -1569,11 +1575,12 @@
 
             // View State
             const [activeNav, setActiveNav] = useState('flowcharts');
-            const [printConfig, setPrintConfig] = useState({ showFlowcharts: true, showRaci: false, showSaas: true, showSynthesis: true, showMatrix: true, showAIReport: true });
+            const [printConfig, setPrintConfig] = useState(() => ({ ...(DRH().PRINT_PRESETS?.full || {}) }));
+            const [printPreset, setPrintPreset] = useState('full');
 
-            // Deep States
             const [clientCompany, setClientCompany] = useState('');
             const [preparedBy, setPreparedBy] = useState('Reinhard Ludwig A. Kolthoff');
+            const [orgChartMembers, setOrgChartMembers] = useState([]);
 
             const [diagnosisInit] = useState(() => {
                 const id = `tab-${Date.now()}`;
@@ -1647,9 +1654,16 @@
                     setRaciAssignments(profile.raciAssignments || {});
                     setOrgChartXml(window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '');
                     setOrgChartSvg(profile.orgChart?.svgCache || '');
+                    setOrgChartMembers(profile.orgChart?.members || []);
 
                     if (profile.synthesis) {
                         const loadedSynthesis = { ...profile.synthesis };
+                        if (!Array.isArray(loadedSynthesis.staffFeedbackThemes) || loadedSynthesis.staffFeedbackThemes.length === 0) {
+                            loadedSynthesis.staffFeedbackThemes = [''];
+                        }
+                        if (!loadedSynthesis.privacyGroundRules) {
+                            loadedSynthesis.privacyGroundRules = createDefaultSynthesis().privacyGroundRules;
+                        }
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
@@ -1674,6 +1688,9 @@
                         if (!loadedSynthesis.matrix || !Array.isArray(loadedSynthesis.matrix.items)) {
                             loadedSynthesis.matrix = { items: [] };
                         }
+                        if (!loadedSynthesis.nextModuleId || loadedSynthesis.nextModuleId === 'MOD 1') {
+                            loadedSynthesis.nextModuleId = 'MOD 2';
+                        }
                         setSynthesis(loadedSynthesis);
                     } else {
                         setSynthesis(createDefaultSynthesis());
@@ -1692,8 +1709,46 @@
                 totalAnnualChaosTax += tax.annual;
                 totalDailyWasteHours += tax.dailyHours;
             });
-            const growthMultiplier = 1 + (synthesis.expectedGrowth * 0.1);
-            const projected3YearLoss = Math.round(totalAnnualChaosTax * 3 * growthMultiplier);
+            const saasAnnualForCoi = subSaaS.reduce((acc, curr) => acc + ((Number(curr.billing) || 0) * (Number(curr.users) || 0)), 0) * 12;
+            const projected3YearLoss = DRH().computeCoiForecast?.(totalAnnualChaosTax, saasAnnualForCoi, synthesis.expectedGrowth) ?? Math.round(totalAnnualChaosTax * 3);
+
+            const reportValidation = useMemo(() => DRH().validateReportReadiness?.({
+                tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
+            }) || { ready: true, warnings: [] }, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments]);
+
+            const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
+
+            const applyPrintPreset = (preset) => {
+                const cfg = DRH().PRINT_PRESETS?.[preset];
+                if (cfg) { setPrintPreset(preset); setPrintConfig({ ...cfg }); }
+            };
+
+            const autoPitchedRef = useRef(null);
+            useEffect(() => { autoPitchedRef.current = null; }, [activeProfileId]);
+            useEffect(() => {
+                if (!activeProfileId || autoPitchedRef.current === activeProfileId) return;
+                if (synthesis.customPitch?.trim()) {
+                    autoPitchedRef.current = activeProfileId;
+                    return;
+                }
+                const modId = synthesis.nextModuleId || 'MOD 2';
+                const totalWaste = totalAnnualChaosTax + saasAnnualForCoi;
+                const pitch = DRH().buildModulePitch?.(modId, totalWaste, formatCurrency, EC_MODULES());
+                if (pitch) {
+                    setSynthesis(prev => ({ ...prev, customPitch: pitch }));
+                    autoPitchedRef.current = activeProfileId;
+                }
+            }, [activeProfileId, totalAnnualChaosTax, saasAnnualForCoi, synthesis.customPitch, synthesis.nextModuleId]);
+
+            const handlePrintReport = () => {
+                const lines = [...(reportValidation.errors || []), ...(reportValidation.warnings || [])];
+                if (lines.length > 0) {
+                    const msg = lines.map((l) => `• ${l}`).join('\n');
+                    const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
+                    if (!proceed) return;
+                }
+                window.print();
+            };
 
             const handleSaveToCloud = async () => {
                 if (authError) return triggerToast("❌ Sync Disabled (GCP Key Issue)");
@@ -1708,16 +1763,18 @@
                     await window.firestoreSetDoc(profileRef, {
                         subSaaS,
                         raciAssignments,
+                        preparedBy,
                         annualOperationalLeakage: totalAnnualChaosTax,
                         chaosTax,
                         synthesis,
                         orgChart: {
                             drawioXml: orgChartXml,
                             svgCache: orgChartSvg,
-                            members: window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || [],
+                            members: window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || orgChartMembers,
                             updatedAt: new Date().toISOString(),
                         },
                     }, { merge: true });
+                    setOrgChartMembers(window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || orgChartMembers);
                     if (window.PortalSync?.syncProfileToPortalIfExists) {
                         try {
                             const profileSnap = await window.getDoc(profileRef);
@@ -1742,7 +1799,7 @@
 
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
                         <div className="p-6 border-b border-brandNavy-800 flex justify-between items-center group">
-                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Mod1: Diagnoses Report</span></div>
+                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Module 1: Waste-to-Peso Report</span></div>
                             <div className="relative">
                                 <div className={`w-2 h-2 rounded-full cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
                                 {authError && <div className="absolute right-0 top-full mt-2 w-48 bg-rose-950/90 border border-rose-500/50 p-2 rounded text-[9px] text-rose-200 hidden group-hover:block z-50">Sync Disabled (Offline)</div>}
@@ -1765,7 +1822,7 @@
                             <button onClick={() => setActiveNav('saas')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'saas' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.CreditCard /> 4. SaaS Bill Audit</button>
                             <button onClick={() => setActiveNav('synthesis')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'synthesis' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.TrendingUp /> 5. Strategy & Priorities</button>
                             <div className="pt-6 mt-4 border-t border-brandNavy-800">
-                                <button onClick={() => setActiveNav('report')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all border ${activeNav === 'report' ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-slate-300 border-slate-600 hover:bg-slate-800'}`}><Icons.Print /> Preview Final Report</button>
+                                <button onClick={() => setActiveNav('report')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all border ${activeNav === 'report' ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-slate-300 border-slate-600 hover:bg-slate-800'}`}><Icons.Print /> Preview Waste-to-Peso Report</button>
                             </div>
                         </nav>
 
@@ -1829,23 +1886,84 @@
                                 />
                             )}
                             {activeNav === 'saas' && <SaaSAuditBuilder subSaaS={subSaaS} setSubSaaS={setSubSaaS} />}
-                            {activeNav === 'synthesis' && <SynthesisBuilder synthesis={synthesis} setSynthesis={setSynthesis} annualChaosTax={totalAnnualChaosTax} projected3YearLoss={projected3YearLoss} subSaaS={subSaaS} />}
+                            {activeNav === 'synthesis' && (
+                                <SynthesisBuilder
+                                    synthesis={synthesis}
+                                    setSynthesis={setSynthesis}
+                                    annualChaosTax={totalAnnualChaosTax}
+                                    projected3YearLoss={projected3YearLoss}
+                                    subSaaS={subSaaS}
+                                    tabs={tabs}
+                                    raciAssignments={raciAssignments}
+                                    orgChartMembers={orgChartMembers}
+                                />
+                            )}
                             {activeNav === 'report' && (
-                                <div className="w-full flex flex-col items-center animate-fade-in">
-                                    <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex flex-col sm:flex-row justify-between items-center no-print shadow-sm w-full shrink-0 gap-4">
-                                        <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest pl-4">
-                                            <span className="text-slate-900 border-r border-slate-300 pr-4">Print Sections:</span>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600"><input type="checkbox" checked={printConfig.showFlowcharts} onChange={e => setPrintConfig({...printConfig, showFlowcharts: e.target.checked})} className="accent-brandTeal-500" /> 1. Diagnostics</label>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600"><input type="checkbox" checked={printConfig.showRaci} onChange={e => setPrintConfig({...printConfig, showRaci: e.target.checked})} className="accent-brandTeal-500" /> 2. RACI</label>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600"><input type="checkbox" checked={printConfig.showSaas} onChange={e => setPrintConfig({...printConfig, showSaas: e.target.checked})} className="accent-brandTeal-500" /> 3. Financial Leakage</label>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600"><input type="checkbox" checked={printConfig.showSynthesis} onChange={e => setPrintConfig({...printConfig, showSynthesis: e.target.checked})} className="accent-brandTeal-500" /> 4. Synthesis</label>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600 text-brandTeal-600"><input type="checkbox" checked={printConfig.showMatrix} onChange={e => setPrintConfig({...printConfig, showMatrix: e.target.checked})} className="accent-brandTeal-500" /> 5. Prioritization Matrix</label>
-                                            <label className="flex items-center gap-1.5 cursor-pointer hover:text-brandTeal-600 text-brandTeal-600"><input type="checkbox" checked={printConfig.showAIReport} onChange={e => setPrintConfig({...printConfig, showAIReport: e.target.checked})} className="accent-brandTeal-500 animate-pulse" /> 6. AI strategic Audit</label>
+                                <div className="w-full flex flex-col items-center animate-fade-in min-h-full">
+                                    <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 flex flex-col gap-4 no-print shadow-sm w-full shrink-0">
+                                        <div className="flex flex-wrap justify-between items-center gap-4 px-2">
+                                            <div>
+                                                <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Waste-to-Peso Report Preview</h2>
+                                                <p className="text-[10px] text-slate-500 mt-0.5">{clientCompany} · {reportDate}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing (3–4 pp)</button>
+                                                <button type="button" onClick={() => applyPrintPreset('full')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full Diagnostic</button>
+                                                <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
+                                            </div>
                                         </div>
-                                        <button onClick={() => window.print()} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg mr-4 transition-colors"><Icons.Print /> Print Custom PDF</button>
+                                        <div className="flex flex-wrap items-end gap-4 px-2 pb-1">
+                                            <div className="min-w-[200px]">
+                                                <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Prepared by</label>
+                                                <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                            </div>
+                                            <div className="flex flex-wrap gap-3 text-[9px] font-bold text-slate-500 uppercase tracking-wider items-center flex-1">
+                                                {[
+                                                    ['showExecutiveSummary', 'Summary'],
+                                                    ['showLeakageRanking', 'Rankings'],
+                                                    ['showOrgChart', 'Org Chart'],
+                                                    ['showFlowcharts', 'Workflows'],
+                                                    ['showRaci', 'RACI'],
+                                                    ['showSaas', 'Financials'],
+                                                    ['showSynthesis', 'Maturity'],
+                                                    ['showMatrix', 'Matrix'],
+                                                    ['showFindings', 'Risks'],
+                                                    ['showNextSteps', 'Next Steps'],
+                                                    ['showAppendix', 'Appendix'],
+                                                ].map(([key, label]) => (
+                                                    <label key={key} className="flex items-center gap-1 cursor-pointer hover:text-brandTeal-600">
+                                                        <input type="checkbox" checked={!!printConfig[key]} onChange={e => { setPrintPreset('custom'); setPrintConfig({ ...printConfig, [key]: e.target.checked }); }} className="accent-brandTeal-500" />
+                                                        {label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {reportValidation.warnings.length > 0 && (
+                                            <div className={`mx-2 p-3 rounded-lg border ${reportValidation.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                                                <div className={`text-[10px] font-bold uppercase mb-1 ${reportValidation.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>Before you print</div>
+                                                <ul className={`text-[10px] space-y-0.5 list-disc list-inside ${reportValidation.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
+                                                    {(reportValidation.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
+                                                    {reportValidation.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="w-full flex justify-center bg-slate-200 py-12 px-4 print:py-0 print:bg-transparent">
-                                        <ExecutiveReport clientCompany={clientCompany} preparedBy={preparedBy} tabs={tabs} raciAssignments={raciAssignments} subSaaS={subSaaS} annualChaosTax={totalAnnualChaosTax} totalDailyWasteHours={totalDailyWasteHours} synthesis={synthesis} projected3YearLoss={projected3YearLoss} printConfig={printConfig} />
+                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:bg-transparent">
+                                        <ExecutiveReport
+                                            clientCompany={clientCompany}
+                                            preparedBy={preparedBy}
+                                            tabs={tabs}
+                                            raciAssignments={raciAssignments}
+                                            subSaaS={subSaaS}
+                                            annualChaosTax={totalAnnualChaosTax}
+                                            totalDailyWasteHours={totalDailyWasteHours}
+                                            synthesis={synthesis}
+                                            projected3YearLoss={projected3YearLoss}
+                                            printConfig={printConfig}
+                                            orgChartSvg={orgChartSvg}
+                                            orgChartMembers={orgChartMembers}
+                                            reportDate={reportDate}
+                                        />
                                     </div>
                                 </div>
                             )}
