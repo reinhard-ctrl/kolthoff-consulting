@@ -78,6 +78,7 @@
   }
 
   const WASTE_TO_PESO_ASSET_TITLE = 'Waste-to-Peso Report';
+  const LOOM_WALKTHROUGH_ASSET_TITLE = 'Mod 1 Walkthrough Video';
   const STAFF_DIRECTORY_ASSET_TITLE = 'Team List & Privacy Ground Rules';
   const FEEDBACK_FORM_ASSET_TITLE = 'Anonymous Staff Feedback Form';
 
@@ -101,6 +102,7 @@
     const synthesis = profile?.synthesis || {};
     let existing = [...(profile?.customAssets || [])];
     existing = upsertCustomAssetByTitle(existing, WASTE_TO_PESO_ASSET_TITLE, synthesis.clientDeliverableUrl);
+    existing = upsertCustomAssetByTitle(existing, LOOM_WALKTHROUGH_ASSET_TITLE, synthesis.loomWalkthroughUrl);
     existing = upsertCustomAssetByTitle(existing, STAFF_DIRECTORY_ASSET_TITLE, synthesis.staffDirectoryDeliverableUrl);
     existing = upsertCustomAssetByTitle(existing, FEEDBACK_FORM_ASSET_TITLE, synthesis.feedbackFormUrl);
     return existing;
@@ -301,7 +303,7 @@
     mergePortalAssets,
     mergeActionItems,
     WASTE_TO_PESO_ASSET_TITLE,
-    WASTE_TO_PESO_ASSET_TITLE,
+    LOOM_WALKTHROUGH_ASSET_TITLE,
     STAFF_DIRECTORY_ASSET_TITLE,
     FEEDBACK_FORM_ASSET_TITLE,
     upsertCustomAssetByTitle,
