@@ -48,4 +48,28 @@ assert.equal(migrated.length, 1);
 assert.equal(migrated[0].name, 'Legacy User');
 assert.equal(migrated[0].role, 'Manager');
 
+function rosterRowsToMembers(rows) {
+  const members = rows.map((row, i) => ({
+    id: row.id || `m${i}`,
+    name: row.name.trim(),
+    role: row.title.trim(),
+    department: row.department.trim(),
+    managerId: null,
+  }));
+  const byName = new Map(members.filter((m) => m.name).map((m) => [m.name.toLowerCase(), m.id]));
+  rows.forEach((row, i) => {
+    const reportsTo = row.reportsTo?.trim();
+    if (!reportsTo) return;
+    const managerId = byName.get(reportsTo.toLowerCase());
+    if (managerId && managerId !== members[i].id) members[i].managerId = managerId;
+  });
+  return members;
+}
+
+const membersFromRoster = rosterRowsToMembers([
+  { id: '1', name: 'CEO', title: 'Chief', department: 'Exec', reportsTo: '' },
+  { id: '2', name: 'VP', title: 'VP Ops', department: 'Ops', reportsTo: 'CEO' },
+]);
+assert.equal(membersFromRoster[1].managerId, '1');
+
 console.log('org-chart.test.mjs: all assertions passed');

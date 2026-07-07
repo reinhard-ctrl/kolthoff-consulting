@@ -118,3 +118,50 @@ export function managerName(members: OrgChartMember[], managerId: string | null)
   if (!managerId) return '—';
   return members.find((m) => m.id === managerId)?.name || '—';
 }
+
+export interface OrgChartRosterRow {
+  id: string;
+  name: string;
+  title: string;
+  department: string;
+  reportsTo: string;
+}
+
+export function emptyRosterRow(): OrgChartRosterRow {
+  return { id: `roster-${Date.now()}`, name: '', title: '', department: '', reportsTo: '' };
+}
+
+export function membersToRosterRows(members: OrgChartMember[]): OrgChartRosterRow[] {
+  return members
+    .filter((m) => m.name.trim())
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      title: m.role,
+      department: m.department,
+      reportsTo: managerName(members, m.managerId) === '—' ? '' : managerName(members, m.managerId),
+    }));
+}
+
+/** Convert Policy Studio-style roster rows to portal-compatible members. */
+export function rosterRowsToMembers(rows: OrgChartRosterRow[]): OrgChartMember[] {
+  const members: OrgChartMember[] = rows.map((row) => ({
+    id: row.id || createOrgMemberId(),
+    name: row.name.trim(),
+    role: row.title.trim(),
+    department: row.department.trim(),
+    managerId: null,
+  }));
+  const byName = new Map(
+    members.filter((m) => m.name).map((m) => [m.name.toLowerCase(), m.id]),
+  );
+  rows.forEach((row, i) => {
+    const reportsTo = row.reportsTo?.trim();
+    if (!reportsTo) return;
+    const managerId = byName.get(reportsTo.toLowerCase());
+    if (managerId && managerId !== members[i]?.id) {
+      members[i].managerId = managerId;
+    }
+  });
+  return members;
+}
