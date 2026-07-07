@@ -81,6 +81,7 @@
     <div id="root"></div>
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
+    <script src="../../shared/mod-gating.js?v=20250707-mod2-gate-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250707-diagnosis-bpmn-v1"></script>
@@ -104,6 +105,23 @@
         }
         const WORKFLOW_APP = window.WorkflowTabs?.parseWorkflowAppFromSearch?.(window.location.search) || 'workflow';
         const IS_DIAGNOSIS_MODE = WORKFLOW_APP === 'diagnosis';
+        const MG = () => window.ModGating || {};
+
+        const Mod2LockedPanel = ({ profile, appLabel }) => {
+            const reportHref = IS_EMBED ? '/admin/app/diagnosis-reports' : '/apps/delivery/diagnoses_report.html';
+            const client = window.EngagementConfig?.getClientDisplayName?.(profile) || profile?.clientCompany || 'this workspace';
+            return (
+                <div className="flex flex-col items-center justify-center flex-1 min-h-[360px] p-10 text-center max-w-lg mx-auto">
+                    <div className="w-14 h-14 rounded-full bg-brandAmber-500/10 border border-brandAmber-500/30 flex items-center justify-center text-brandAmber-400 text-2xl mb-4">🔒</div>
+                    <h2 className="text-lg font-bold text-white mb-2">Module 2 locked</h2>
+                    <p className="text-sm text-slate-400 leading-relaxed mb-6">
+                        Complete Module 1 (Waste-to-Peso Report) for <span className="text-slate-200 font-semibold">{client}</span> before editing {appLabel}.
+                    </p>
+                    <a href={reportHref} className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold uppercase tracking-wider rounded-lg">Open Waste-to-Peso Report</a>
+                    <p className="text-[10px] text-slate-500 mt-4">Mark Mod 1 complete after the client deliverable is uploaded and synced.</p>
+                </div>
+            );
+        };
 
         const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520 }) => {
             const iframeRef = useRef(null);
@@ -500,6 +518,7 @@
             const handleSaveToCloud = async () => {
                 if (authError) return triggerToast("❌ Sync Disabled (GCP Key Issue)");
                 if (!isAuthed || !activeProfileId) return;
+                if (mod2Locked) return triggerToast('❌ Complete Mod 1 before saving Mod 2 workflows');
                 setIsSaving(true);
                 try {
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
@@ -562,6 +581,12 @@
 
             const profileLabel = (p) => window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
 
+            const activeProfile = useMemo(
+                () => workbookProfiles.find((p) => p.id === activeProfileId) || null,
+                [workbookProfiles, activeProfileId],
+            );
+            const mod2Locked = !IS_DIAGNOSIS_MODE && !MG().isMod1Complete?.(activeProfile);
+
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
             return (
@@ -620,6 +645,10 @@
                         )}
 
                         <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' ? 'overflow-hidden' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                            {mod2Locked ? (
+                                <Mod2LockedPanel profile={activeProfile} appLabel="to-be workflows (Mod 2)" />
+                            ) : (
+                            <>
                             {activeNav === 'flowcharts' && (
                                 <BpmnWorkflowStudio
                                     tabs={tabs}
@@ -641,6 +670,8 @@
                                     raciAssignments={raciAssignments}
                                     setRaciAssignments={setRaciAssignments}
                                 />
+                            )}
+                            </>
                             )}
                         </div>
                     </main>
