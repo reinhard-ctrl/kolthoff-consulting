@@ -49,7 +49,7 @@ assert.equal(links.contractId, 'contract-p1');
 const roadmap = EC.buildDefaultPortalRoadmap();
 assert.equal(roadmap.length, 4);
 assert.equal(roadmap[0].phase, 'MOD 1: Business Leak Scan');
-assert.equal(roadmap[0].status, 'In Progress');
+assert.equal(roadmap[0].status, 'active');
 
 // Planner payload integration (helpers expect EngagementConfig on window)
 const helpersCode = readFileSync(join(root, 'apps/delivery/project_planner_helpers.js'), 'utf8');

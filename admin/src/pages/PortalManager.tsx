@@ -36,10 +36,48 @@ interface WorkbookProfile {
   customAssets?: Array<{ title?: string; category?: string; link?: string }>;
 }
 
+interface FieldOption {
+  value: string;
+  label: string;
+}
+
 interface FieldDef {
   key: string;
   label: string;
   placeholder?: string;
+  inputType?: 'text' | 'select' | 'date' | 'textarea';
+  options?: FieldOption[];
+}
+
+const ROADMAP_STATUS_OPTIONS: FieldOption[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active (in progress)' },
+  { value: 'completed', label: 'Completed' },
+];
+
+const CONTRACT_STATUS_OPTIONS: FieldOption[] = [
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Paid', label: 'Paid' },
+  { value: 'Partial', label: 'Partial' },
+  { value: 'Overdue', label: 'Overdue' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Draft', label: 'Draft' },
+];
+
+const ACTION_TYPE_OPTIONS: FieldOption[] = [
+  { value: 'upload', label: 'Secure upload' },
+  { value: 'review', label: 'Review link' },
+  { value: 'link', label: 'External link' },
+];
+
+const ACTION_STATUS_OPTIONS: FieldOption[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'complete', label: 'Complete' },
+];
+
+function toDateInputValue(value: string | number | undefined): string {
+  const raw = String(value ?? '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : '';
 }
 
 const ARRAY_SECTIONS: Record<
@@ -59,31 +97,32 @@ const ARRAY_SECTIONS: Record<
   },
   roadmap: {
     title: 'Strategic Roadmap',
-    template: { title: 'New Milestone', status: 'pending', date: 'TBD', details: '...' },
+    template: { title: 'New Milestone', status: 'pending', date: '', details: '' },
     fields: [
       { key: 'title', label: 'Milestone Title', placeholder: 'New Milestone' },
-      { key: 'status', label: 'Status', placeholder: 'pending' },
-      { key: 'date', label: 'Target Date', placeholder: 'TBD' },
-      { key: 'details', label: 'Details', placeholder: '...' },
+      { key: 'status', label: 'Status', inputType: 'select', options: ROADMAP_STATUS_OPTIONS },
+      { key: 'date', label: 'Target Date', inputType: 'date' },
+      { key: 'details', label: 'Details (shown on client portal)', inputType: 'textarea', placeholder: 'Milestone scope, deliverables, or notes for the client…' },
     ],
   },
   actionItems: {
     title: 'Client Action Items',
-    template: { title: 'New Action', desc: '...', type: 'upload', status: 'pending' },
+    template: { title: 'New Action', desc: '', type: 'upload', status: 'pending', link: '' },
     fields: [
       { key: 'title', label: 'Action Title', placeholder: 'New Action' },
-      { key: 'desc', label: 'Description', placeholder: '...' },
-      { key: 'type', label: 'Action Type', placeholder: 'upload' },
-      { key: 'status', label: 'Status', placeholder: 'pending' },
+      { key: 'desc', label: 'Description', inputType: 'textarea', placeholder: 'Instructions shown on the client dashboard…' },
+      { key: 'type', label: 'Action Type', inputType: 'select', options: ACTION_TYPE_OPTIONS },
+      { key: 'status', label: 'Status', inputType: 'select', options: ACTION_STATUS_OPTIONS },
+      { key: 'link', label: 'Link URL (review / external link types)', placeholder: 'https://…' },
     ],
   },
   contracts: {
     title: 'Contracts & Billing',
-    template: { title: 'New Contract', date: 'TBD', status: 'Pending', link: '' },
+    template: { title: 'New Contract', date: '', status: 'Pending', link: '' },
     fields: [
       { key: 'title', label: 'Document Outline', placeholder: 'New Contract' },
-      { key: 'date', label: 'Date Issued', placeholder: 'TBD' },
-      { key: 'status', label: 'Status', placeholder: 'Pending' },
+      { key: 'date', label: 'Date Issued', inputType: 'date' },
+      { key: 'status', label: 'Status', inputType: 'select', options: CONTRACT_STATUS_OPTIONS },
       { key: 'link', label: 'Google Drive URL', placeholder: 'https://drive.google.com/...' },
     ],
   },
@@ -304,6 +343,76 @@ export default function PortalManager() {
     });
   };
 
+  const renderArrayField = (
+    section: keyof typeof ARRAY_SECTIONS,
+    idx: number,
+    field: FieldDef,
+    item: ArrayItem,
+  ) => {
+    const fieldId = `portal-${section}-${idx}-${field.key}`;
+    const rawValue = String(item[field.key] ?? '');
+    const inputClass = 'w-full bg-brandNavy-900 border border-brandNavy-700 rounded px-2 py-1 text-xs';
+
+    if (field.inputType === 'select' && field.options) {
+      return (
+        <select
+          id={fieldId}
+          value={rawValue}
+          onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
+          className={inputClass}
+        >
+          {field.options.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      );
+    }
+
+    if (field.inputType === 'date') {
+      return (
+        <input
+          id={fieldId}
+          type="date"
+          value={toDateInputValue(item[field.key])}
+          onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
+          className={inputClass}
+        />
+      );
+    }
+
+    if (field.inputType === 'textarea') {
+      return (
+        <textarea
+          id={fieldId}
+          rows={2}
+          value={rawValue}
+          onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
+          placeholder={field.placeholder ?? field.label}
+          className={`${inputClass} resize-y min-h-[52px]`}
+        />
+      );
+    }
+
+    return (
+      <input
+        id={fieldId}
+        value={rawValue}
+        onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
+        placeholder={field.placeholder ?? field.label}
+        className={inputClass}
+      />
+    );
+  };
+
+  const sectionHelp: Partial<Record<keyof typeof ARRAY_SECTIONS, string>> = {
+    actionItems:
+      'Secure upload files go to Firebase Storage at artifacts/{tenant}/files/{accessCode}/ — not the Document Vault. Find them in Firebase Console → Storage, or in core_audit_log (action: portal_upload). Set status to Complete after review.',
+    roadmap:
+      'Status, target date, and details appear on the client portal Strategic Roadmap tab.',
+    contracts:
+      'Status and date appear on the client portal Contracts & Billing tab. Invoice rows from Collections sync automatically.',
+  };
+
   return (
     <div className="relative">
       {toast && (
@@ -454,6 +563,20 @@ export default function PortalManager() {
                       <h3 className="text-xs font-bold uppercase text-slate-400">{title}</h3>
                       <button onClick={() => addArrayItem(section, template)} className="text-xs bg-brandNavy-800 px-2 py-1 rounded">+ Add</button>
                     </div>
+                    {sectionHelp[section] && (
+                      <p className="text-[11px] text-slate-500 leading-relaxed border border-brandNavy-800 rounded p-2 bg-brandNavy-950/50">
+                        {sectionHelp[section]}
+                        {section === 'actionItems' && activeCode && (
+                          <>
+                            {' '}
+                            Upload path:{' '}
+                            <code className="text-brandTeal-400 font-mono text-[10px]">
+                              artifacts/&#123;tenant&#125;/files/{activeCode}/
+                            </code>
+                          </>
+                        )}
+                      </p>
+                    )}
                     {items.length > 0 && (
                       <div className="hidden md:flex flex-wrap gap-2 px-3">
                         {fields.map((field) => (
@@ -467,15 +590,9 @@ export default function PortalManager() {
                     {items.map((item, idx) => (
                       <div key={item.id ?? idx} className="flex flex-wrap gap-2 items-end bg-brandNavy-950 p-3 rounded border border-brandNavy-800">
                         {fields.map((field) => (
-                          <div key={field.key} className="flex-1 min-w-[120px]">
+                          <div key={field.key} className={`flex-1 min-w-[120px] ${field.inputType === 'textarea' ? 'md:basis-full' : ''}`}>
                             <label htmlFor={`portal-${section}-${idx}-${field.key}`} className="md:sr-only text-[10px] text-slate-500 block mb-0.5">{field.label}</label>
-                            <input
-                              id={`portal-${section}-${idx}-${field.key}`}
-                              value={String(item[field.key] ?? '')}
-                              onChange={(e) => updateArray(section, idx, field.key, e.target.value)}
-                              placeholder={field.placeholder ?? field.label}
-                              className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded px-2 py-1 text-xs"
-                            />
+                            {renderArrayField(section, idx, field, item)}
                           </div>
                         ))}
                         <button onClick={() => removeArrayItem(section, idx)} className="text-red-400 text-xs px-2 pb-1 shrink-0">Remove</button>

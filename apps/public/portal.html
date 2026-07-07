@@ -100,6 +100,23 @@
 
         const formatCurrency = (val) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(val || 0);
 
+        const normalizeRoadmapStatus = (status) => {
+            const normalized = String(status || '').trim().toLowerCase();
+            if (normalized === 'completed' || normalized === 'complete') return 'completed';
+            if (normalized === 'active' || normalized === 'in progress') return 'active';
+            return 'pending';
+        };
+
+        const formatPortalDate = (value) => {
+            const raw = String(value || '').trim();
+            if (!raw || raw.toUpperCase() === 'TBD') return '—';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                const [year, month, day] = raw.split('-').map(Number);
+                return new Date(year, month - 1, day).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+            return raw;
+        };
+
         function App() {
             const [activeTab, setActiveTab] = useState('dashboard');
             const [uploadSimulating, setUploadSimulating] = useState(false);
@@ -516,10 +533,11 @@
                         <div className="space-y-8 relative">
                             {roadmapItems.length === 0 && <p className="text-center text-sm text-slate-500">No roadmap items added yet.</p>}
                             {roadmapItems.map((item, idx) => {
+                                const status = normalizeRoadmapStatus(item.status);
                                 let statusColor, statusBg, dotColor;
-                                if (item.status === 'completed') {
+                                if (status === 'completed') {
                                     statusColor = 'text-emerald-400'; statusBg = 'bg-emerald-500/10 border-emerald-500/30'; dotColor = 'bg-emerald-500 shadow-[0_0_10px_#10b981]';
-                                } else if (item.status === 'active') {
+                                } else if (status === 'active') {
                                     statusColor = 'text-brandTeal-400'; statusBg = 'bg-brandTeal-500/10 border-brandTeal-500/30'; dotColor = 'bg-brandTeal-500 shadow-[0_0_15px_#14b8a6] animate-pulse';
                                 } else {
                                     statusColor = 'text-slate-500'; statusBg = 'bg-brandNavy-800 border-brandNavy-700'; dotColor = 'bg-brandNavy-700';
@@ -534,12 +552,14 @@
                                         <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] glass-panel border border-brandNavy-800 rounded-xl p-5 shadow-lg transition-all hover:border-brandNavy-600">
                                             <div className="flex justify-between items-start mb-1">
                                                 <span className={`text-[10px] font-bold uppercase tracking-wider font-mono px-2 py-0.5 rounded border ${statusBg} ${statusColor}`}>
-                                                    {item.status}
+                                                    {status}
                                                 </span>
-                                                <span className="text-[10px] font-mono text-slate-500 font-bold">{item.date}</span>
+                                                <span className="text-[10px] font-mono text-slate-500 font-bold">{formatPortalDate(item.date)}</span>
                                             </div>
-                                            <h4 className={`font-bold text-sm mt-2 ${item.status === 'pending' ? 'text-slate-400' : 'text-white'}`}>{item.title}</h4>
-                                            <p className="text-xs text-slate-400 mt-2 leading-relaxed">{item.details}</p>
+                                            <h4 className={`font-bold text-sm mt-2 ${status === 'pending' ? 'text-slate-400' : 'text-white'}`}>{item.title}</h4>
+                                            {item.details ? (
+                                                <p className="text-xs text-slate-400 mt-2 leading-relaxed">{item.details}</p>
+                                            ) : null}
                                         </div>
                                     </div>
                                 );
@@ -662,8 +682,8 @@
                                         <td className="p-4 font-bold text-slate-200">
                                             {doc.title}
                                         </td>
-                                        <td className="p-4 text-xs text-slate-500 font-mono">{doc.date || '—'}</td>
-                                        <td className="p-4 text-xs text-slate-500 font-mono">{doc.dueDate || '—'}</td>
+                                        <td className="p-4 text-xs text-slate-500 font-mono">{formatPortalDate(doc.date)}</td>
+                                        <td className="p-4 text-xs text-slate-500 font-mono">{formatPortalDate(doc.dueDate)}</td>
                                         <td className="p-4 text-xs text-brandTeal-400 font-mono text-right">{formatAmount(doc.amount)}</td>
                                         <td className="p-4">
                                             <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${statusClass(doc.status)}`}>

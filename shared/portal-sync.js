@@ -136,9 +136,11 @@
     const defaultRoadmap = engagement.buildDefaultPortalRoadmap?.() || [];
     const base = existing?.roadmap?.length ? existing.roadmap : defaultRoadmap;
     const roadmap = base.map((item, i) => {
-      if (i === 0) return { ...item, status: 'Complete' };
-      if (i === 1) return { ...item, status: 'In Progress' };
-      return { ...item, status: item.status === 'Complete' ? 'Complete' : 'Pending' };
+      if (i === 0) return { ...item, status: 'completed' };
+      if (i === 1) return { ...item, status: 'active' };
+      const prior = String(item.status || '').trim().toLowerCase();
+      const done = prior === 'completed' || prior === 'complete';
+      return { ...item, status: done ? 'completed' : 'pending' };
     });
     const mod2 = mods[1];
     return {

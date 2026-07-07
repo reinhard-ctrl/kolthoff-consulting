@@ -77,8 +77,8 @@ const mod1Patch = PS.buildMod1CompletePortalPatch({
   roadmap: EC.buildDefaultPortalRoadmap(),
   currentPhase: EC.MODULES[0].portalPhase,
 });
-assert.equal(mod1Patch.roadmap[0].status, 'Complete');
-assert.equal(mod1Patch.roadmap[1].status, 'In Progress');
+assert.equal(mod1Patch.roadmap[0].status, 'completed');
+assert.equal(mod1Patch.roadmap[1].status, 'active');
 assert.equal(mod1Patch.currentPhase, EC.MODULES[1].portalPhase);
 
 const stamped = PS.stampMod1TasksDelivered(
