@@ -156,7 +156,9 @@
       id: i + 1,
       phase: m.portalPhase,
       title: m.title,
-      status: i === 0 ? 'In Progress' : 'Pending',
+      status: i === 0 ? 'active' : 'pending',
+      date: '',
+      details: '',
     }));
   }
 
