@@ -446,20 +446,46 @@
             );
         };
 
-        const WorkflowBuilderEmbedPanel = ({ activeProfileId, setActiveNav, onSave, isSaving, authError, workbookProfiles, profileLabel, setActiveProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-workflow-errorboundary-v1' });
+        const DiagnosisSectionNav = ({ activeNav, setActiveNav }) => {
+            const sections = [
+                { id: 'flowcharts', label: '1. Workflow' },
+                { id: 'orgchart', label: '2. Org Chart' },
+                { id: 'raci', label: '3. RACI' },
+                { id: 'saas', label: '4. SaaS' },
+                { id: 'synthesis', label: '5. Strategy' },
+                { id: 'report', label: '6. Report' },
+            ];
+            return (
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mr-1">Sections</span>
+                    {sections.map(({ id, label }) => (
+                        <button
+                            key={id}
+                            type="button"
+                            onClick={() => setActiveNav(id)}
+                            className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${activeNav === id ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            );
+        };
+
+        const DiagnosisWorkspacePicker = ({ activeProfileId, setActiveProfileId, workbookProfiles, profileLabel, authError }) => (
+            <div className="max-w-md">
+                <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-1 block">Active Workspace</label>
+                <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 outline-none focus:border-brandTeal-500" disabled={!!authError}>
+                    {workbookProfiles.length === 0 && <option value="">{authError ? 'Offline' : 'Loading…'}</option>}
+                    {workbookProfiles.map(p => <option key={p.id} value={p.id}>{profileLabel(p)}</option>)}
+                </select>
+            </div>
+        );
+
+        const WorkflowBuilderEmbedPanel = ({ activeNav, activeProfileId, setActiveNav, onSave, isSaving, authError, workbookProfiles, profileLabel, setActiveProfileId }) => {
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-diagnosis-section-nav-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
-            const sectionBtn = (id, label) => (
-                <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveNav(id)}
-                    className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${id === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}
-                >
-                    {label}
-                </button>
-            );
             return (
                 <div className="flex flex-col h-full min-h-0">
                     <div className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-4 py-3 flex flex-col gap-3 no-print">
@@ -475,38 +501,28 @@
                                 </button>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mr-1">Sections</span>
-                            {sectionBtn('flowcharts', '1. Workflow')}
-                            {sectionBtn('orgchart', '2. Org Chart')}
-                            {sectionBtn('raci', '3. RACI')}
-                            {sectionBtn('saas', '4. SaaS')}
-                            {sectionBtn('synthesis', '5. Strategy')}
-                            {sectionBtn('report', '6. Report')}
-                        </div>
-                        <div className="max-w-md">
-                            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-1 block">Active Workspace</label>
-                            <select value={activeProfileId} onChange={(e) => setActiveProfileId(e.target.value)} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-xs font-semibold text-slate-200 outline-none focus:border-brandTeal-500" disabled={!!authError}>
-                                {workbookProfiles.length === 0 && <option value="">{authError ? 'Offline' : 'Loading…'}</option>}
-                                {workbookProfiles.map(p => <option key={p.id} value={p.id}>{profileLabel(p)}</option>)}
-                            </select>
-                        </div>
+                        <DiagnosisSectionNav activeNav={activeNav} setActiveNav={setActiveNav} />
+                        <DiagnosisWorkspacePicker activeProfileId={activeProfileId} setActiveProfileId={setActiveProfileId} workbookProfiles={workbookProfiles} profileLabel={profileLabel} authError={authError} />
                     </div>
                     <iframe src={builderUrl} className="flex-1 w-full min-h-0 border-0 bg-brandNavy-950" title="Workflow Builder embed" />
                 </div>
             );
         };
 
-        const OrgChartBuilderPanel = ({ orgChartXml, setOrgChartXml, setOrgChartSvg, onSave, isSaving, authError }) => (
+        const OrgChartBuilderPanel = ({ activeNav, setActiveNav, activeProfileId, setActiveProfileId, workbookProfiles, profileLabel, orgChartXml, setOrgChartXml, setOrgChartSvg, onSave, isSaving, authError }) => (
             <div className="flex flex-col h-full min-h-0">
-                <div className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-4 py-3 flex flex-wrap justify-between items-start gap-3 no-print">
-                    <div>
-                        <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">Organization Chart (As-Is)</h2>
-                        <p className="text-xs text-slate-400 mt-1 max-w-xl">Map reporting lines with draw.io org chart shapes. Saves to <code className="text-brandTeal-400">workbook_profiles.orgChart</code> — Policy Studio can sync this into the Org Chart Policy.</p>
+                <div className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-4 py-3 flex flex-col gap-3 no-print">
+                    <div className="flex flex-wrap justify-between items-start gap-3">
+                        <div>
+                            <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">Organization Chart (As-Is)</h2>
+                            <p className="text-xs text-slate-400 mt-1 max-w-xl">Map reporting lines with draw.io org chart shapes. Saves to <code className="text-brandTeal-400">workbook_profiles.orgChart</code> — Policy Studio can sync this into the Org Chart Policy.</p>
+                        </div>
+                        <button type="button" onClick={onSave} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
+                            {isSaving ? 'Syncing…' : 'Sync Org Chart'}
+                        </button>
                     </div>
-                    <button type="button" onClick={onSave} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
-                        {isSaving ? 'Syncing…' : 'Sync Org Chart'}
-                    </button>
+                    <DiagnosisSectionNav activeNav={activeNav} setActiveNav={setActiveNav} />
+                    <DiagnosisWorkspacePicker activeProfileId={activeProfileId} setActiveProfileId={setActiveProfileId} workbookProfiles={workbookProfiles} profileLabel={profileLabel} authError={authError} />
                 </div>
                 <div className="flex-1 min-h-0 p-4">
                     <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={setOrgChartSvg} height="100%" />
@@ -1810,6 +1826,7 @@
                         <div className={`flex-1 overflow-y-auto ${activeNav === 'flowcharts' ? '' : activeNav === 'report' ? 'w-full' : 'p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
                                 <WorkflowBuilderEmbedPanel
+                                    activeNav={activeNav}
                                     activeProfileId={activeProfileId}
                                     setActiveProfileId={setActiveProfileId}
                                     setActiveNav={setActiveNav}
@@ -1822,6 +1839,12 @@
                             )}
                             {activeNav === 'orgchart' && (
                                 <OrgChartBuilderPanel
+                                    activeNav={activeNav}
+                                    setActiveNav={setActiveNav}
+                                    activeProfileId={activeProfileId}
+                                    setActiveProfileId={setActiveProfileId}
+                                    workbookProfiles={workbookProfiles}
+                                    profileLabel={profileLabel}
                                     orgChartXml={orgChartXml}
                                     setOrgChartXml={setOrgChartXml}
                                     setOrgChartSvg={setOrgChartSvg}
