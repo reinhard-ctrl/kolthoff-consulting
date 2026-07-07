@@ -111,4 +111,14 @@ const mod1CompletePatch = PS.buildPortalPatchFromProfile(
 );
 assert.ok(mod1CompletePatch.assets.some((a) => a.title === PS.WASTE_TO_PESO_ASSET_TITLE));
 
+const multiAssets = PS.upsertMod1DeliverableAssets({
+  customAssets: [],
+  synthesis: {
+    clientDeliverableUrl: 'https://drive.google.com/file/d/report',
+    staffDirectoryDeliverableUrl: 'https://drive.google.com/file/d/directory',
+    feedbackFormUrl: 'https://docs.google.com/forms/d/abc/viewform',
+  },
+});
+assert.equal(multiAssets.length, 3);
+
 console.log('portal-sync.test.mjs: all assertions passed');

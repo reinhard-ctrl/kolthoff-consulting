@@ -110,4 +110,20 @@ describe('diagnosis-report-helpers', () => {
     });
     assert.equal(ready.ready, true);
   });
+
+  it('normalizeStaffDirectoryRows filters empty names', () => {
+    const rows = DRH.normalizeStaffDirectoryRows([
+      { name: 'Jane', role: 'CEO', department: 'Exec', reportsTo: '' },
+      { label: '', role: 'Ghost' },
+    ]);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].name, 'Jane');
+    assert.equal(rows[0].title, 'CEO');
+  });
+
+  it('buildFeedbackFormQrUrl encodes form link', () => {
+    const qr = DRH.buildFeedbackFormQrUrl('https://forms.example/test');
+    assert.match(qr, /qrserver\.com/);
+    assert.match(qr, /forms\.example/);
+  });
 });

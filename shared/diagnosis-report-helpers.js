@@ -352,6 +352,30 @@
     return { ready, warnings, errors };
   }
 
+  const DEFAULT_FEEDBACK_LAUNCH_GUIDE =
+    '1. Duplicate the Kolthoff anonymous feedback form template into your Google account.\n' +
+    '2. Set the form to collect no names or email addresses.\n' +
+    '3. Share the form link with staff (QR poster, Viber group, or email) for 5–7 business days.\n' +
+    '4. Export themes only — paste summarized themes into Strategy (no raw submissions or names).\n' +
+    '5. Upload the printed launch guide or form link to the client portal if requested.';
+
+  function normalizeStaffDirectoryRows(members) {
+    return (members || [])
+      .map((m) => ({
+        name: String(m.name || m.label || '').trim(),
+        title: String(m.role || m.title || '').trim(),
+        department: String(m.department || '').trim(),
+        reportsTo: String(m.reportsTo || m.manager || '').trim(),
+      }))
+      .filter((row) => row.name);
+  }
+
+  function buildFeedbackFormQrUrl(formUrl) {
+    const url = String(formUrl || '').trim();
+    if (!url) return '';
+    return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(url)}`;
+  }
+
   function validateMod1Handoff(ctx) {
     const base = validateReportReadiness(ctx);
     const { synthesis = {}, tasks = [] } = ctx;
@@ -366,9 +390,16 @@
     }
 
     const m102InScope = (tasks || []).some((t) => t.id === 'm1-02' && t.selected !== false);
+    const m101InScope = (tasks || []).some((t) => t.id === 'm1-01' && t.selected !== false);
     const feedbackThemes = (synthesis.staffFeedbackThemes || []).filter((t) => t && String(t).trim());
+    if (m102InScope && !String(synthesis.feedbackFormUrl || '').trim()) {
+      warnings.push('Staff Feedback (m1-02) is in SOW scope — add the anonymous feedback form URL.');
+    }
     if (m102InScope && feedbackThemes.length === 0) {
       warnings.push('Staff Feedback (m1-02) is in SOW scope — add at least one anonymous feedback theme.');
+    }
+    if (m101InScope && !(ctx.orgChartMembers || []).some((m) => String(m.name || m.label || '').trim())) {
+      warnings.push('Team List (m1-01) is in SOW scope — add staff in the Org Chart section and print the directory.');
     }
 
     const ready =
@@ -427,6 +458,9 @@
     buildModulePitch,
     validateReportReadiness,
     validateMod1Handoff,
+    DEFAULT_FEEDBACK_LAUNCH_GUIDE,
+    normalizeStaffDirectoryRows,
+    buildFeedbackFormQrUrl,
     PRINT_PRESETS,
   };
 

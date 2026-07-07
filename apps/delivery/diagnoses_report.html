@@ -89,8 +89,13 @@
             @page { size: portrait; margin: 18mm 14mm; }
             .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
             .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
+            body.printing-staff-directory aside,
+            body.printing-staff-directory main,
+            body.printing-staff-directory .no-print { display: none !important; }
+            body.printing-staff-directory .staff-directory-print-root { display: block !important; }
             .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
         }
+        .staff-directory-print-root { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
         .report-kpi { background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%); border: 1px solid #e2e8f0; border-radius: 12px; }
         .report-kpi-value { font-family: "Playfair Display", serif; }
@@ -120,8 +125,8 @@
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
-    <script src="../../shared/portal-sync.js?v=20250707-mod1-handoff-v2"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-mod1-handoff-v2"></script>
+    <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v3"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-mod1-deliverables-v3"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -176,6 +181,9 @@
             staffFeedbackThemes: [''],
             loomWalkthroughUrl: '',
             clientDeliverableUrl: '',
+            feedbackFormUrl: '',
+            feedbackLaunchGuide: DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '',
+            staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
         });
@@ -274,7 +282,7 @@
             },
             orgchart: {
                 title: '2. Organization Chart (As-Is)',
-                description: 'Map reporting lines with draw.io org chart shapes. Saves to `workbook_profiles.orgChart` — Policy Studio can sync this into the Org Chart Policy.',
+                description: 'Map reporting lines with draw.io org chart shapes. Print the staff directory (m1-01) and sync to the client portal when ready.',
             },
             raci: {
                 title: '3. RACI Architecture',
@@ -325,6 +333,87 @@
                 <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={setOrgChartSvg} height="100%" />
             </div>
         );
+
+        const StaffDirectoryPrintDoc = ({ clientCompany, preparedBy, orgChartMembers, privacyGroundRules, reportDate }) => {
+            const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
+            return (
+                <div className="staff-directory-print-root report-doc bg-white text-slate-900 p-8">
+                    <div className="report-accent-bar mb-4" />
+                    <div className="flex justify-between items-start gap-4 mb-6">
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-700">Module 1 Deliverable · m1-01</p>
+                            <h1 className="text-2xl font-serif font-bold text-slate-900 mt-1">Team List & Privacy Ground Rules</h1>
+                            <p className="text-sm text-slate-600 mt-1">{clientCompany || 'Client workspace'}</p>
+                        </div>
+                        <div className="text-right text-[10px] text-slate-500 font-mono">
+                            <div>{reportDate}</div>
+                            {preparedBy && <div className="mt-1">Prepared by {preparedBy}</div>}
+                        </div>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">Active staff directory as of the Mod 1 leak scan. Roles and reporting lines are advisory — not legal advice.</p>
+                    {rows.length > 0 ? (
+                        <table className="report-table mb-6">
+                            <thead><tr><th>Name</th><th>Role / Title</th><th>Department</th><th>Reports To</th></tr></thead>
+                            <tbody>
+                                {rows.map((row, i) => (
+                                    <tr key={i}>
+                                        <td className="font-semibold">{row.name}</td>
+                                        <td>{row.title || '—'}</td>
+                                        <td>{row.department || '—'}</td>
+                                        <td>{row.reportsTo || '—'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p className="text-sm text-slate-500 italic mb-6">No roster entries — apply the org chart diagram and sync to populate this directory.</p>
+                    )}
+                    {privacyGroundRules && privacyGroundRules.trim() && (
+                        <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                            <h2 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Privacy Ground Rules</h2>
+                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{privacyGroundRules.trim()}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const StaffDirectoryPanel = ({ orgChartMembers, synthesis, setSynthesis, onPrint, onSave, isSaving, authError }) => {
+            const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
+            return (
+                <div className="no-print shrink-0 border-t border-brandNavy-800 bg-brandNavy-950 p-4 space-y-3">
+                    <div className="flex flex-wrap justify-between items-start gap-3">
+                        <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-white">Staff Directory (m1-01)</h3>
+                            <p className="text-[10px] text-slate-400 mt-1">Print a standalone team list with privacy rules — separate from the Waste-to-Peso PDF.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={onPrint} disabled={rows.length === 0} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase disabled:opacity-40">Print Directory</button>
+                            <button type="button" onClick={onSave} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">{isSaving ? 'Syncing…' : 'Sync'}</button>
+                        </div>
+                    </div>
+                    {rows.length > 0 ? (
+                        <div className="max-h-32 overflow-y-auto border border-brandNavy-800 rounded-lg">
+                            <table className="w-full text-[10px] text-left">
+                                <thead className="bg-brandNavy-900 text-slate-400 uppercase tracking-wider"><tr><th className="p-2">Name</th><th className="p-2">Role</th><th className="p-2">Reports To</th></tr></thead>
+                                <tbody className="divide-y divide-brandNavy-800 text-slate-300">
+                                    {rows.slice(0, 8).map((row, i) => (
+                                        <tr key={i}><td className="p-2 font-semibold">{row.name}</td><td className="p-2">{row.title || '—'}</td><td className="p-2">{row.reportsTo || '—'}</td></tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {rows.length > 8 && <p className="text-[9px] text-slate-500 p-2">+{rows.length - 8} more in print view</p>}
+                        </div>
+                    ) : (
+                        <p className="text-[10px] text-slate-500 italic">Apply the org chart diagram above, then sync — roster rows appear here.</p>
+                    )}
+                    <div>
+                        <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Directory PDF link (optional — Google Drive)</label>
+                        <input type="url" value={synthesis.staffDirectoryDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, staffDirectoryDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                    </div>
+                </div>
+            );
+        };
 
         const WorkflowTabPicker = ({ tabs, activeTabId, setActiveTabId, label = 'Workflow tab' }) => (
             <div className="max-w-md">
@@ -701,6 +790,29 @@
                                         <div className="text-xs text-slate-400 italic">Complete workflow delays, SaaS audit, and maturity scores to generate findings.</div>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-4">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Anonymous Feedback Channel (m1-02)</h3>
+                                <p className="text-[10px] text-slate-400">Deploy the staff survey — share the form link or QR, then import themes (no names) below.</p>
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Google Form URL</label>
+                                    <input type="url" value={synthesis.feedbackFormUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackFormUrl: e.target.value }))} placeholder="https://docs.google.com/forms/d/…/viewform" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Launch guide (share with client HR)</label>
+                                    <textarea rows="5" value={synthesis.feedbackLaunchGuide || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, feedbackLaunchGuide: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none" />
+                                </div>
+                                {synthesis.feedbackFormUrl?.trim() && (
+                                    <div className="flex flex-wrap items-start gap-4 pt-2 border-t border-brandNavy-800">
+                                        <img src={DRH().buildFeedbackFormQrUrl?.(synthesis.feedbackFormUrl)} alt="Feedback form QR code" className="w-[120px] h-[120px] border border-brandNavy-700 rounded-lg bg-white p-2" />
+                                        <div className="flex flex-col gap-2 text-[10px]">
+                                            <a href={synthesis.feedbackFormUrl} target="_blank" rel="noreferrer" className="font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">Open form ↗</a>
+                                            <button type="button" onClick={() => { navigator.clipboard?.writeText(synthesis.feedbackFormUrl); }} className="font-bold uppercase text-slate-400 hover:text-white text-left">Copy form link</button>
+                                            <p className="text-slate-500 max-w-xs leading-relaxed">Print or post the QR in staff areas. Sync to cloud pushes the form link to the client portal vault.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-3">
@@ -1480,6 +1592,9 @@
                         if (!loadedSynthesis.privacyGroundRules) {
                             loadedSynthesis.privacyGroundRules = createDefaultSynthesis().privacyGroundRules;
                         }
+                        if (!loadedSynthesis.feedbackLaunchGuide) {
+                            loadedSynthesis.feedbackLaunchGuide = DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '';
+                        }
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
@@ -1542,7 +1657,24 @@
                 tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
                 workflowUpdatedAt, reportDataUpdatedAt,
                 tasks: activeProfile?.tasks || [],
-            }) || reportValidation, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation]);
+                orgChartMembers,
+            }) || reportValidation, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation, orgChartMembers]);
+
+            const handlePrintStaffDirectory = () => {
+                const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
+                if (!rows.length) {
+                    triggerToast('❌ Add staff in the org chart first');
+                    return;
+                }
+                document.body.classList.add('printing-staff-directory');
+                window.print();
+            };
+
+            useEffect(() => {
+                const clearPrintMode = () => document.body.classList.remove('printing-staff-directory');
+                window.addEventListener('afterprint', clearPrintMode);
+                return () => window.removeEventListener('afterprint', clearPrintMode);
+            }, []);
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
@@ -1729,9 +1861,12 @@
                                     }
                                     if (activeNav === 'orgchart') {
                                         return (
-                                            <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
-                                                {isSaving ? 'Syncing…' : 'Sync Org Chart'}
-                                            </button>
+                                            <>
+                                                <button type="button" onClick={handlePrintStaffDirectory} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase">Print Directory</button>
+                                                <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
+                                                    {isSaving ? 'Syncing…' : 'Sync Org Chart'}
+                                                </button>
+                                            </>
                                         );
                                     }
                                     return null;
@@ -1744,11 +1879,24 @@
                                 <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
                             )}
                             {activeNav === 'orgchart' && (
-                                <OrgChartBuilderPanel
-                                    orgChartXml={orgChartXml}
-                                    setOrgChartXml={setOrgChartXml}
-                                    setOrgChartSvg={setOrgChartSvg}
-                                />
+                                <div className="flex flex-col h-full min-h-0">
+                                    <div className="flex-1 min-h-0">
+                                        <OrgChartBuilderPanel
+                                            orgChartXml={orgChartXml}
+                                            setOrgChartXml={setOrgChartXml}
+                                            setOrgChartSvg={setOrgChartSvg}
+                                        />
+                                    </div>
+                                    <StaffDirectoryPanel
+                                        orgChartMembers={orgChartMembers}
+                                        synthesis={synthesis}
+                                        setSynthesis={setSynthesis}
+                                        onPrint={handlePrintStaffDirectory}
+                                        onSave={handleSaveToCloud}
+                                        isSaving={isSaving}
+                                        authError={authError}
+                                    />
+                                </div>
                             )}
                             {activeNav === 'raci' && (
                                 <RaciBuilder
@@ -1855,6 +2003,13 @@
                             )}
                         </div>
                     </main>
+                    <StaffDirectoryPrintDoc
+                        clientCompany={clientCompany}
+                        preparedBy={preparedBy}
+                        orgChartMembers={orgChartMembers}
+                        privacyGroundRules={synthesis.privacyGroundRules}
+                        reportDate={reportDate}
+                    />
                 </div>
             );
         }
