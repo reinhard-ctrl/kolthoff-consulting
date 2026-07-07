@@ -396,6 +396,7 @@ function AppRoutes() {
         {!isAgencyOpsStarter() && <Route path="/onboard" element={<Navigate to="/tenants?tab=onboard" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/org-chart" element={<Navigate to="/app/diagnosis-reports" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/app/diagnosis-reports" replace />} />}
+        {!isAgencyOpsStarter() && <Route path="/app/workflow-builder" element={<Navigate to="/app/policy-studio" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
         {!isAgencyOpsStarter() && <Route path="/contracts" element={<ContractLedger />} />}
         {!isAgencyOpsStarter() && <Route path="/agency-ops-manager" element={<AgencyOpsManager />} />}

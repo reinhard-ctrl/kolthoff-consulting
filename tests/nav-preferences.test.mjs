@@ -34,7 +34,6 @@ const DEFAULT_NAV_GROUPS = [
     items: [
       { id: 'diagnosis-reports' },
       { id: 'policy-studio' },
-      { id: 'workflow-builder' },
     ],
   },
   {
@@ -166,7 +165,7 @@ const movedPrefs = {
   assignments: {
     command: ['dashboard'],
     operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections', 'portals'],
-    delivery: ['diagnosis-reports', 'policy-studio', 'workflow-builder'],
+    delivery: ['diagnosis-reports', 'policy-studio'],
     product: ['tenants', 'agency-ops-manager'],
     analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
     client: ['client-portal', 'marketing'],
@@ -189,7 +188,7 @@ const corruptPrefs = {
   assignments: {
     ...movedPrefs.assignments,
     operations: ['crm-pipeline', 'project-planner', 'project-planner', 'contracts', 'portals'],
-    delivery: ['project-planner', 'diagnosis-reports', 'policy-studio', 'workflow-builder'],
+    delivery: ['project-planner', 'diagnosis-reports', 'policy-studio'],
   },
 };
 const cleaned = applyNavPreferences(DEFAULT_NAV_GROUPS, corruptPrefs);
