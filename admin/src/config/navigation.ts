@@ -18,13 +18,14 @@ export type NavGroup = {
 
 /**
  * Shipped sidebar layout (fallback when no org layout saved in Firestore).
- * Order: Command → Project Management → Deliverables → Product → Analytics → Client.
+ * Order: Command → Project Management → Deliverables → Product → Analytics.
  */
 export const DEFAULT_NAV_GROUPS: NavGroup[] = [
   {
     id: 'command',
     label: 'Command',
     items: [
+      { id: 'marketing', label: 'Marketing Site', type: 'embed', href: '/', openInNewTab: true },
       { id: 'dashboard', label: 'Dashboard', type: 'route', path: '/' },
     ],
   },
@@ -36,7 +37,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'project-planner', label: 'Project Planner', type: 'embed', href: '/apps/delivery/project_planner.html' },
       { id: 'contracts', label: 'Contract Ledger', type: 'route', path: '/contracts' },
       { id: 'collections', label: 'Collections', type: 'route', path: '/collections' },
-      { id: 'portals', label: 'Portal Manager', type: 'route', path: '/portals' },
     ],
   },
   {
@@ -51,8 +51,9 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     id: 'product',
     label: 'Product',
     items: [
+      { id: 'portals', label: 'Portal Admin', type: 'route', path: '/portals' },
       { id: 'tenants', label: 'Workspace Admin', type: 'route', path: '/tenants' },
-      { id: 'agency-ops-manager', label: 'Agency Ops Manager', type: 'route', path: '/agency-ops-manager' },
+      { id: 'agency-ops-manager', label: 'Agency Ops Admin', type: 'route', path: '/agency-ops-manager' },
     ],
   },
   {
@@ -62,13 +63,6 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
       { id: 'firm-analytics', label: 'Firm Analytics', type: 'embed', href: '/apps/analytics/firm_analytics_dashboard.html' },
       { id: 'resource-capacity', label: 'Resource Capacity', type: 'embed', href: '/apps/analytics/resource_capacity_manager.html' },
       { id: 'time-variance', label: 'Time Variance', type: 'embed', href: '/apps/analytics/time_tracking_variance_analyzer.html' },
-    ],
-  },
-  {
-    id: 'client',
-    label: 'Client Experience',
-    items: [
-      { id: 'marketing', label: 'Marketing Site', type: 'embed', href: '/', openInNewTab: true },
     ],
   },
 ];
