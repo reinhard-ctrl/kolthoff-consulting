@@ -675,12 +675,6 @@
     return match ? match[1] : '';
   }
 
-  function buildFeedbackFormTemplateCopyUrl(templateIdOrUrl) {
-    const formId = extractGoogleFormId(templateIdOrUrl || M102_FEEDBACK_FORM_TEMPLATE.templateFormId);
-    if (!formId) return '';
-    return `https://docs.google.com/forms/d/${formId}/copy`;
-  }
-
   function buildFeedbackFormViewUrl(templateIdOrUrl) {
     const formId = extractGoogleFormId(templateIdOrUrl || M102_FEEDBACK_FORM_TEMPLATE.templateFormId);
     if (!formId) return '';
@@ -691,12 +685,8 @@
     return M102_FEEDBACK_FORM_TEMPLATE;
   }
 
-  function isM102FeedbackFormTemplateReady() {
-    return !!String(M102_FEEDBACK_FORM_TEMPLATE.templateFormId || '').trim();
-  }
-
   const DEFAULT_FEEDBACK_LAUNCH_GUIDE =
-    '1. Click “Save copy to Google Drive” above to duplicate the Kolthoff m1-02 form template.\n' +
+    '1. Open the Kolthoff m1-02 form template and make a copy in Google Forms for this client.\n' +
     '2. In your copy: Form → Settings → confirm “Collect email addresses” is OFF, then publish.\n' +
     '3. Paste the live viewform link above and share it with staff (QR poster, Viber, or email) for 5–7 business days.\n' +
     '4. Export themes only — paste summarized themes below (no raw submissions or names).\n' +
@@ -1020,9 +1010,7 @@
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     M102_FEEDBACK_FORM_TEMPLATE,
     getM102FeedbackFormTemplate,
-    isM102FeedbackFormTemplateReady,
     extractGoogleFormId,
-    buildFeedbackFormTemplateCopyUrl,
     buildFeedbackFormViewUrl,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
