@@ -3,10 +3,6 @@
  * Run: node tests/nav-preferences.test.mjs
  */
 import assert from 'node:assert/strict';
-import { pathToFileURL } from 'node:url';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
 
 // Compile-free test: duplicate the core logic by importing built admin bundle is heavy.
 // Instead inline minimal copies of DEFAULT_NAV_GROUPS shape for regression test.
@@ -15,7 +11,7 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'command',
     label: 'Command',
-    items: [{ id: 'dashboard' }],
+    items: [{ id: 'marketing' }, { id: 'dashboard' }],
   },
   {
     id: 'operations',
@@ -25,7 +21,6 @@ const DEFAULT_NAV_GROUPS = [
       { id: 'project-planner' },
       { id: 'contracts' },
       { id: 'collections' },
-      { id: 'portals' },
     ],
   },
   {
@@ -39,17 +34,17 @@ const DEFAULT_NAV_GROUPS = [
   {
     id: 'product',
     label: 'Product',
-    items: [{ id: 'tenants' }, { id: 'agency-ops-manager' }],
+    items: [{ id: 'portals' }, { id: 'tenants' }, { id: 'agency-ops-manager' }],
   },
   {
     id: 'analytics',
     label: 'Analytics',
-    items: [{ id: 'firm-analytics' }, { id: 'resource-capacity' }, { id: 'time-variance' }],
-  },
-  {
-    id: 'client',
-    label: 'Client Experience',
-    items: [{ id: 'client-portal' }, { id: 'marketing' }],
+    items: [
+      { id: 'firm-analytics' },
+      { id: 'resource-capacity' },
+      { id: 'time-variance' },
+      { id: 'client-portal' },
+    ],
   },
 ];
 
@@ -148,32 +143,37 @@ function assertNoDuplicates(groups) {
 
 assert.equal(
   DEFAULT_NAV_GROUPS.map((g) => g.id).join(','),
-  'command,operations,delivery,product,analytics,client',
+  'command,operations,delivery,product,analytics',
 );
-assert.equal(DEFAULT_NAV_GROUPS.find((g) => g.id === 'command')?.items.map((i) => i.id).join(','), 'dashboard');
+assert.equal(
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'command')?.items.map((i) => i.id).join(','),
+  'marketing,dashboard',
+);
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'operations')?.items.map((i) => i.id).join(','),
-  'crm-pipeline,project-planner,contracts,collections,portals',
+  'crm-pipeline,project-planner,contracts,collections',
 );
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'product')?.items.map((i) => i.id).join(','),
-  'tenants,agency-ops-manager',
+  'portals,tenants,agency-ops-manager',
 );
-
+assert.equal(
+  DEFAULT_NAV_GROUPS.find((g) => g.id === 'analytics')?.items.map((i) => i.id).join(','),
+  'firm-analytics,resource-capacity,time-variance,client-portal',
+);
 assert.equal(
   DEFAULT_NAV_GROUPS.find((g) => g.id === 'delivery')?.items.map((i) => i.id).join(','),
   'diagnosis-reports,policy-studio',
 );
 
 const movedPrefs = {
-  groupOrder: ['command', 'operations', 'delivery', 'product', 'analytics', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'product', 'analytics'],
   assignments: {
-    command: ['dashboard'],
-    operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections', 'portals'],
+    command: ['marketing', 'dashboard'],
+    operations: ['crm-pipeline', 'project-planner', 'contracts', 'collections'],
     delivery: ['diagnosis-reports', 'policy-studio'],
-    product: ['tenants', 'agency-ops-manager'],
-    analytics: ['firm-analytics', 'resource-capacity', 'time-variance'],
-    client: ['client-portal', 'marketing'],
+    product: ['portals', 'tenants', 'agency-ops-manager'],
+    analytics: ['firm-analytics', 'resource-capacity', 'time-variance', 'client-portal'],
   },
 };
 
@@ -187,12 +187,16 @@ assert.equal(
   applied.find((g) => g.id === 'delivery')?.items.some((i) => i.id === 'diagnosis-reports'),
   true,
 );
+assert.equal(
+  applied.find((g) => g.id === 'product')?.items.map((i) => i.id).join(','),
+  'portals,tenants,agency-ops-manager',
+);
 
 const corruptPrefs = {
   groupOrder: movedPrefs.groupOrder,
   assignments: {
     ...movedPrefs.assignments,
-    operations: ['crm-pipeline', 'project-planner', 'project-planner', 'contracts', 'portals'],
+    operations: ['crm-pipeline', 'project-planner', 'project-planner', 'contracts', 'collections'],
     delivery: ['project-planner', 'diagnosis-reports', 'policy-studio'],
   },
 };
@@ -201,13 +205,13 @@ assertNoDuplicates(cleaned);
 assert.equal(allItemIds(cleaned).filter((id) => id === 'project-planner').length, 1);
 
 const hiddenPrefs = {
-  groupOrder: ['command', 'operations', 'delivery', 'product', 'client'],
+  groupOrder: ['command', 'operations', 'delivery', 'product'],
   hiddenGroups: ['analytics'],
   assignments: movedPrefs.assignments,
 };
 const hiddenApplied = applyNavPreferences(DEFAULT_NAV_GROUPS, hiddenPrefs);
 assert.equal(hiddenApplied.some((g) => g.id === 'analytics'), false);
-assert.equal(hiddenApplied.length, 5);
+assert.equal(hiddenApplied.length, 4);
 
 const labeledPrefs = {
   ...movedPrefs,
