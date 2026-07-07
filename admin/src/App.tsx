@@ -6,7 +6,6 @@ import { onSnapshot } from 'firebase/firestore';
 import Dashboard from './pages/Dashboard';
 import AgencyOpsDashboard from './pages/AgencyOpsDashboard';
 import Tenants from './pages/Tenants';
-import OrgChart from './pages/OrgChart';
 import PortalManager from './pages/PortalManager';
 import ContractLedger from './pages/ContractLedger';
 import AgencyOpsManager from './pages/AgencyOpsManager';
@@ -395,8 +394,8 @@ function AppRoutes() {
         <Route path="/" element={isAgencyOpsStarter() ? <AgencyOpsDashboard /> : <Dashboard />} />
         {!isAgencyOpsStarter() && <Route path="/tenants" element={<Tenants />} />}
         {!isAgencyOpsStarter() && <Route path="/onboard" element={<Navigate to="/tenants?tab=onboard" replace />} />}
-        {!isAgencyOpsStarter() && <Route path="/org-chart" element={<OrgChart />} />}
-        {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/org-chart" replace />} />}
+        {!isAgencyOpsStarter() && <Route path="/org-chart" element={<Navigate to="/app/diagnosis-reports" replace />} />}
+        {!isAgencyOpsStarter() && <Route path="/intake" element={<Navigate to="/app/diagnosis-reports" replace />} />}
         {!isAgencyOpsStarter() && <Route path="/portals" element={<PortalManager />} />}
         {!isAgencyOpsStarter() && <Route path="/contracts" element={<ContractLedger />} />}
         {!isAgencyOpsStarter() && <Route path="/agency-ops-manager" element={<AgencyOpsManager />} />}

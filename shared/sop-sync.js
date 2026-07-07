@@ -3,6 +3,35 @@
  * Sets window.SopSync for HTML apps.
  */
 (function (global) {
+  function emptySopDiagram() {
+    return { drawioXml: '', svgCache: '', lastDiagramEditAt: null };
+  }
+
+  function diagramFromPresent(present) {
+    const DE = global.DiagramEditor;
+    const norm = DE?.normalizeWorkflowPresent?.(present) || {};
+    return {
+      drawioXml: norm.drawioXml || '',
+      svgCache: norm.svgCache || '',
+      lastDiagramEditAt: Date.now(),
+    };
+  }
+
+  function resolveWorkflowTab(profile, options) {
+    const opts = options || {};
+    const wt = global.WorkflowTabs?.getWorkflowTabs?.(profile);
+    const tabs = wt?.tabs || [];
+    if (opts.tabId) {
+      const byId = tabs.find((t) => t.id === opts.tabId);
+      if (byId) return byId;
+    }
+    if (opts.tabName) {
+      const normalized = String(opts.tabName).trim().toLowerCase();
+      return tabs.find((t) => String(t.name || '').trim().toLowerCase() === normalized) || null;
+    }
+    return null;
+  }
+
   function buildSopFromWorkflowTab(tab, profile) {
     const DE = global.DiagramEditor;
     const vm = DE?.getWorkflowViewModel(tab?.present) || { tasks: [], lanes: [] };
@@ -69,12 +98,60 @@
         informed: iRoles.join(', ') || 'Finance/Management',
       },
       steps: mappedSteps,
+      diagram: diagramFromPresent(tab?.present),
       link: {
         source: 'workflow-builder',
         workflowTabId: tab.id,
+        workbookWorkflowField: 'workflowBuilder',
         lastSyncedAt: Date.now(),
       },
     };
+  }
+
+  /** Preserve diagram/link when loading saved policy SOPs. */
+  function mergeSopDocument(defaultSop, loadedSop) {
+    const base = defaultSop && typeof defaultSop === 'object' ? defaultSop : {};
+    const loaded = loadedSop && typeof loadedSop === 'object' ? loadedSop : {};
+    return {
+      ...base,
+      ...loaded,
+      docControl: { ...(base.docControl || {}), ...(loaded.docControl || {}) },
+      raci: { ...(base.raci || {}), ...(loaded.raci || {}) },
+      diagram: {
+        ...emptySopDiagram(),
+        ...(base.diagram || {}),
+        ...(loaded.diagram || {}),
+      },
+      link: { ...(base.link || {}), ...(loaded.link || {}) },
+      steps: Array.isArray(loaded.steps) ? loaded.steps : base.steps || [],
+    };
+  }
+
+  function refreshSopStepsFromDiagram(sop, profile) {
+    if (!sop?.diagram?.drawioXml) return null;
+    const tab = {
+      id: sop.link?.workflowTabId || sop.id,
+      name: sop.title,
+      present: sop.diagram,
+    };
+    const rebuilt = buildSopFromWorkflowTab(tab, profile);
+    if (!rebuilt) return null;
+    return {
+      ...sop,
+      steps: rebuilt.steps,
+      raci: rebuilt.raci,
+    };
+  }
+
+  function syncSopFromWorkspace(sop, profile) {
+    const tab = resolveWorkflowTab(profile, {
+      tabId: sop?.link?.workflowTabId,
+      tabName: sop?.title,
+    });
+    if (!tab) return null;
+    const built = buildSopFromWorkflowTab(tab, profile);
+    if (!built) return null;
+    return { ...built, id: sop.id };
   }
 
   /** Merge generated SOPs into policy pack data by tab title (case-insensitive). */
@@ -96,9 +173,14 @@
   }
 
   const bundle = {
+    emptySopDiagram,
+    resolveWorkflowTab,
     buildSopFromWorkflowTab,
     buildSopsFromWorkflowTabs,
+    mergeSopDocument,
     mergeSopsIntoPolicyData,
+    refreshSopStepsFromDiagram,
+    syncSopFromWorkspace,
   };
 
   global.SopSync = bundle;
