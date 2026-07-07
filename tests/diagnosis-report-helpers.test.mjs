@@ -71,8 +71,14 @@ describe('diagnosis-report-helpers', () => {
     assert.match(pitch, /How Your Business Runs/);
   });
 
-  it('validateReportReadiness returns warnings for empty data', () => {
-    const result = DRH.validateReportReadiness({ tabs: [], subSaaS: [], synthesis: { matrix: { items: [] } } });
+  it('validateReportReadiness returns errors when matrix is empty', () => {
+    const result = DRH.validateReportReadiness({
+      tabs: [{ id: 'a', name: 'Sales', present: {} }],
+      subSaaS: [{ id: 1, tool: 'X', billing: 100, users: 1 }],
+      synthesis: { matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 4 }] } },
+      DiagramEditor: mockDiagramEditor,
+    });
+    assert.equal(result.errors.length, 0);
     assert.ok(result.warnings.length > 0);
   });
 });

@@ -320,8 +320,10 @@
 
     if (!hasWorkflow) warnings.push('No workflow steps mapped — add at least one process in the Workflow Builder.');
     if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for peso calculations.');
+    if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 1) — diagrams save separately.');
     if (!subSaaS.length) warnings.push('SaaS audit is empty — add subscription rows for software savings.');
     if (matrixCount < 3) warnings.push('Fewer than 3 priority items — generate or add fixes for the 90-day plan.');
+    if (matrixCount === 0) errors.push('No 90-day fix items — add priorities in Strategy or click Generate from Diagnosis.');
     if (!orgChartSvg) warnings.push('Org chart not exported — open Org Chart section and save.');
     if (Object.keys(raciAssignments).length === 0) warnings.push('RACI grid is empty — assign roles to workflow steps.');
 

@@ -121,7 +121,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-waste-to-peso-v2"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -174,6 +174,7 @@
             nextModuleId: 'MOD 2',
             customPitch: '',
             staffFeedbackThemes: [''],
+            privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             matrix: { items: [] },
         });
 
@@ -764,6 +765,7 @@
 
             const [newItemText, setNewItemText] = useState('');
             const [selectedItemId, setSelectedItemId] = useState(null);
+            const [feedbackPaste, setFeedbackPaste] = useState('');
 
             const generatePitch = (modId) => {
                 const pitch = DRH().buildModulePitch?.(modId, totalAnnualWaste, formatCurrency, EC_MODULES()) || '';
@@ -800,7 +802,7 @@
 
             const addPriorityItem = () => {
                 if (!newItemText || !newItemText.trim()) return;
-                const newItem = { id: 'item-' + Date.now(), text: newItemText.trim(), effort: 3, impact: 3 };
+                const newItem = { id: 'item-' + Date.now(), text: newItemText.trim(), effort: 3, impact: 3, owner: '', targetWeek: '', expectedSavings: 0 };
                 setSynthesis(prev => ({
                     ...prev,
                     matrix: {
@@ -861,6 +863,12 @@
                 ...prev,
                 staffFeedbackThemes: (prev.staffFeedbackThemes || []).filter((_, i) => i !== idx),
             }));
+            const importFeedbackLines = () => {
+                const lines = feedbackPaste.split('\n').map((l) => l.trim()).filter(Boolean);
+                if (!lines.length) return;
+                setSynthesis(prev => ({ ...prev, staffFeedbackThemes: lines }));
+                setFeedbackPaste('');
+            };
 
             return (
                 <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
@@ -910,6 +918,17 @@
                                     </div>
                                 ))}
                                 <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme</button>
+                                <div className="pt-3 border-t border-brandNavy-800 space-y-2">
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Import from survey (one theme per line)</label>
+                                    <textarea rows="3" value={feedbackPaste} onChange={(e) => setFeedbackPaste(e.target.value)} placeholder="Paste anonymous feedback themes here…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500 resize-none" />
+                                    <button type="button" onClick={importFeedbackLines} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">Import lines</button>
+                                </div>
+                            </div>
+
+                            <div className="glass-panel rounded-2xl p-6 shadow-xl bg-brandNavy-900 border border-brandNavy-800 space-y-3">
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Privacy Ground Rules (Mod 1)</h3>
+                                <p className="text-[10px] text-slate-400">One-page summary printed with the org chart section. Not legal advice.</p>
+                                <textarea rows="4" value={synthesis.privacyGroundRules || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, privacyGroundRules: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none" />
                             </div>
                         </div>
 
@@ -1067,6 +1086,20 @@
                                                         />
                                                     </div>
                                                 </div>
+                                                <div className="grid grid-cols-3 gap-2 pt-1">
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Owner</label>
+                                                        <input type="text" value={item.owner || ''} onChange={e => updateItemScore(item.id, 'owner', e.target.value)} placeholder="Name / role" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Target week</label>
+                                                        <input type="text" value={item.targetWeek || ''} onChange={e => updateItemScore(item.id, 'targetWeek', e.target.value)} placeholder="Week 1–2" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Est. savings/mo</label>
+                                                        <input type="number" min="0" value={item.expectedSavings || 0} onChange={e => updateItemScore(item.id, 'expectedSavings', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -1150,20 +1183,28 @@
                 {topFixes.length > 0 && (
                     <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
                         <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes — Next 90 Days</h3>
-                        <div className="space-y-0">
-                            {topFixes.map((item, idx) => (
-                                <div key={item.id} className="report-fix-row">
-                                    <div className="report-fix-num">{idx + 1}</div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-slate-900 text-sm leading-snug">{item.text}</div>
-                                        <div className="flex flex-wrap gap-2 mt-1.5">
-                                            {item.targetWeek && <span className="report-badge report-badge-teal">{item.targetWeek}</span>}
-                                            {item.expectedSavings > 0 && <span className="report-badge report-badge-rose">~{formatCurrency(item.expectedSavings)}/mo savings</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <table className="report-table">
+                            <thead>
+                                <tr>
+                                    <th className="w-8">#</th>
+                                    <th>Fix</th>
+                                    <th className="w-[18%]">Owner</th>
+                                    <th className="w-[14%]">Target</th>
+                                    <th className="w-[14%] text-right">Savings/mo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {topFixes.map((item, idx) => (
+                                    <tr key={item.id}>
+                                        <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
+                                        <td className="font-semibold text-slate-900">{item.text}</td>
+                                        <td className="text-slate-600">{item.owner || '—'}</td>
+                                        <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
+                                        <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>
@@ -1265,6 +1306,12 @@
                                         ))}
                                     </tbody>
                                 </table>
+                            )}
+                            {synthesis.privacyGroundRules && synthesis.privacyGroundRules.trim() && (
+                                <div className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Privacy Ground Rules</h4>
+                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{synthesis.privacyGroundRules.trim()}</p>
+                                </div>
                             )}
                         </div>
                     )}
@@ -1614,6 +1661,9 @@
                         if (!Array.isArray(loadedSynthesis.staffFeedbackThemes) || loadedSynthesis.staffFeedbackThemes.length === 0) {
                             loadedSynthesis.staffFeedbackThemes = [''];
                         }
+                        if (!loadedSynthesis.privacyGroundRules) {
+                            loadedSynthesis.privacyGroundRules = createDefaultSynthesis().privacyGroundRules;
+                        }
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
@@ -1671,6 +1721,33 @@
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
                 if (cfg) { setPrintPreset(preset); setPrintConfig({ ...cfg }); }
+            };
+
+            const autoPitchedRef = useRef(null);
+            useEffect(() => { autoPitchedRef.current = null; }, [activeProfileId]);
+            useEffect(() => {
+                if (!activeProfileId || autoPitchedRef.current === activeProfileId) return;
+                if (synthesis.customPitch?.trim()) {
+                    autoPitchedRef.current = activeProfileId;
+                    return;
+                }
+                const modId = synthesis.nextModuleId || 'MOD 2';
+                const totalWaste = totalAnnualChaosTax + saasAnnualForCoi;
+                const pitch = DRH().buildModulePitch?.(modId, totalWaste, formatCurrency, EC_MODULES());
+                if (pitch) {
+                    setSynthesis(prev => ({ ...prev, customPitch: pitch }));
+                    autoPitchedRef.current = activeProfileId;
+                }
+            }, [activeProfileId, totalAnnualChaosTax, saasAnnualForCoi, synthesis.customPitch, synthesis.nextModuleId]);
+
+            const handlePrintReport = () => {
+                const lines = [...(reportValidation.errors || []), ...(reportValidation.warnings || [])];
+                if (lines.length > 0) {
+                    const msg = lines.map((l) => `• ${l}`).join('\n');
+                    const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
+                    if (!proceed) return;
+                }
+                window.print();
             };
 
             const handleSaveToCloud = async () => {
@@ -1832,7 +1909,7 @@
                                             <div className="flex items-center gap-2">
                                                 <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing (3–4 pp)</button>
                                                 <button type="button" onClick={() => applyPrintPreset('full')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full Diagnostic</button>
-                                                <button type="button" onClick={() => window.print()} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
+                                                <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-5 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-colors"><Icons.Print /> Print PDF</button>
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-end gap-4 px-2 pb-1">
@@ -1862,10 +1939,11 @@
                                             </div>
                                         </div>
                                         {reportValidation.warnings.length > 0 && (
-                                            <div className="mx-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                                <div className="text-[10px] font-bold uppercase text-amber-800 mb-1">Before you print</div>
-                                                <ul className="text-[10px] text-amber-900 space-y-0.5 list-disc list-inside">
-                                                    {reportValidation.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                                            <div className={`mx-2 p-3 rounded-lg border ${reportValidation.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                                                <div className={`text-[10px] font-bold uppercase mb-1 ${reportValidation.errors?.length ? 'text-rose-800' : 'text-amber-800'}`}>Before you print</div>
+                                                <ul className={`text-[10px] space-y-0.5 list-disc list-inside ${reportValidation.errors?.length ? 'text-rose-900' : 'text-amber-900'}`}>
+                                                    {(reportValidation.errors || []).map((w, i) => <li key={`e-${i}`}>{w}</li>)}
+                                                    {reportValidation.warnings.map((w, i) => <li key={`w-${i}`}>{w}</li>)}
                                                 </ul>
                                             </div>
                                         )}
