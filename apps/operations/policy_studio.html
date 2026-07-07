@@ -189,8 +189,11 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
         const MG = () => window.ModGating || {};
+        const IS_EMBED = Boolean(window.KOLTHOFF_EMBED);
+        const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until Mod 1 (Waste-to-Peso Report) is delivered.';
 
-        const Mod2LockedPanel = ({ profile }) => {
+        const Mod2LockedPanel = ({ profile, onLockedAction }) => {
+            const reportHref = IS_EMBED ? '/admin/app/diagnosis-reports' : '/apps/delivery/diagnoses_report.html';
             const client = window.EngagementConfig?.getClientDisplayName?.(profile) || profile?.clientCompany || 'this workspace';
             return (
                 <div className="flex flex-col items-center justify-center flex-1 min-h-[50vh] p-10 text-center max-w-lg mx-auto">
@@ -199,7 +202,24 @@
                     <p className="text-sm text-slate-400 leading-relaxed mb-6">
                         Playbooks and policies (Module 2) unlock after the Waste-to-Peso Report is delivered for <span className="text-slate-200 font-semibold">{client}</span>.
                     </p>
-                    <a href="/admin/app/diagnosis-reports" className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold uppercase tracking-wider rounded-lg">Open Waste-to-Peso Report</a>
+                    <a
+                        href={reportHref}
+                        target={IS_EMBED ? '_parent' : '_self'}
+                        rel={IS_EMBED ? 'noopener noreferrer' : undefined}
+                        className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold uppercase tracking-wider rounded-lg"
+                    >
+                        Open Waste-to-Peso Report
+                    </a>
+                    <p className="text-[10px] text-slate-500 mt-4 leading-relaxed">Mark Mod 1 complete after the client deliverable is uploaded and synced.</p>
+                    {onLockedAction && (
+                        <button
+                            type="button"
+                            onClick={onLockedAction}
+                            className="mt-4 text-[10px] font-bold uppercase tracking-wider text-brandAmber-400 hover:text-brandAmber-300 underline underline-offset-2"
+                        >
+                            Why am I seeing this?
+                        </button>
+                    )}
                 </div>
             );
         };
@@ -648,7 +668,7 @@
             
             const [isSaving, setIsSaving] = useState(false);
             const [isPublishing, setIsPublishing] = useState(false);
-            const [toastMessage, setToastMessage] = useState(null);
+            const [toast, setToast] = useState(null);
             
             const [workbookProfiles, setWorkbookProfiles] = useState([]);
             const [activeProfileId, setActiveProfileId] = useState("");
@@ -828,9 +848,18 @@
                 return () => unsub();
             }, [activeProfileId, user, isStandalone]);
 
-            const triggerToast = (msg) => {
-                setToastMessage(msg);
-                setTimeout(() => setToastMessage(null), 3000);
+            const inferToastTone = (msg) => {
+                const text = String(msg || '');
+                if (text.includes('🔒') || /locked|Complete Mod 1/i.test(text)) return 'lock';
+                if (text.startsWith('❌')) return 'error';
+                if (text.startsWith('⚠')) return 'warning';
+                return 'success';
+            };
+
+            const triggerToast = (msg, tone) => {
+                const resolvedTone = tone || inferToastTone(msg);
+                setToast({ message: msg, tone: resolvedTone });
+                setTimeout(() => setToast(null), resolvedTone === 'lock' ? 4500 : 3000);
             };
 
             const handleSaveToCloud = async () => {
@@ -843,7 +872,7 @@
                     return;
                 }
                 if (!isAuthed || !activeProfileId) return;
-                if (mod2Locked) return triggerToast('❌ Complete Mod 1 before editing Policy Studio');
+                if (mod2Locked) return triggerToast(MOD2_LOCK_TOAST, 'lock');
                 setIsSaving(true);
                 try {
                     const policyRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'policy_documents', activeProfileId);
@@ -1319,6 +1348,29 @@
 
             const mod2Locked = !isStandalone && !MG().isMod1Complete?.(activeProfile);
 
+            const notifyMod2Locked = () => triggerToast(MOD2_LOCK_TOAST, 'lock');
+
+            const runIfUnlocked = (action) => {
+                if (mod2Locked) {
+                    notifyMod2Locked();
+                    return;
+                }
+                action();
+            };
+
+            const toastToneClass = {
+                success: 'bg-brandTeal-600 border-brandTeal-400 text-white',
+                error: 'bg-rose-600 border-rose-400 text-white',
+                warning: 'bg-brandAmber-500 border-brandAmber-400 text-brandNavy-955',
+                lock: 'bg-brandAmber-500 border-brandAmber-300 text-brandNavy-955 shadow-[0_0_24px_rgba(245,158,11,0.35)]',
+            };
+            const toastToneIcon = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                lock: '🔒',
+            };
+
             const renderDashboard = () => {
                 if (!activeClient) return <div>Loading Data...</div>;
                 
@@ -1743,9 +1795,14 @@
             return (
                 <div className="flex flex-col h-screen overflow-hidden bg-brandNavy-955 font-sans">
                     
-                    {toastMessage && (
-                        <div role="alert" aria-live="assertive" className="fixed bottom-6 right-6 z-[100] bg-brandTeal-600 text-white font-sans text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border border-brandTeal-404 flex items-center gap-2 animate-bounce">
-                            <span aria-hidden="true" className="text-sm">✓</span>{toastMessage}
+                    {toast && (
+                        <div
+                            role="alert"
+                            aria-live="assertive"
+                            className={`fixed bottom-6 right-6 z-[100] font-sans text-xs font-bold px-4 py-3 rounded-xl shadow-2xl border flex items-center gap-2 ${toast.tone === 'lock' ? 'animate-pulse' : 'animate-bounce'} ${toastToneClass[toast.tone] || toastToneClass.success}`}
+                        >
+                            <span aria-hidden="true" className="text-sm">{toastToneIcon[toast.tone] || toastToneIcon.success}</span>
+                            {toast.message}
                         </div>
                     )}
 
@@ -1766,9 +1823,9 @@
                             
                             <div className="flex items-center gap-4 ml-auto">
                                 <button 
-                                    onClick={handleSaveToCloud} 
+                                    onClick={() => runIfUnlocked(handleSaveToCloud)} 
                                     disabled={isSaving || (authError && !isStandalone)} 
-                                    className={`px-5 py-1.5 rounded flex items-center shadow-lg transition-all text-[10px] uppercase tracking-wider font-bold ${authError && !isStandalone ? 'bg-brandNavy-800 text-slate-500 cursor-not-allowed border border-brandNavy-700' : 'bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955'}`}
+                                    className={`px-5 py-1.5 rounded flex items-center shadow-lg transition-all text-[10px] uppercase tracking-wider font-bold ${authError && !isStandalone ? 'bg-brandNavy-800 text-slate-500 cursor-not-allowed border border-brandNavy-700' : mod2Locked ? 'bg-brandNavy-800 text-slate-500 border border-brandAmber-500/30 hover:border-brandAmber-400/50' : 'bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955'}`}
                                 >
                                     {isSaving ? "Saving..." : (isStandalone ? "💾 Save Locally" : "💾 Save to Cloud")}
                                 </button>
@@ -1776,9 +1833,9 @@
                                 {!isStandalone && (
                                     <button
                                         type="button"
-                                        onClick={handlePublishToVault}
+                                        onClick={() => runIfUnlocked(handlePublishToVault)}
                                         disabled={isPublishing || authError || !isAuthed}
-                                        className="px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-50 text-brandTeal-400 border border-brandTeal-500/40 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all"
+                                        className={`px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-50 text-brandTeal-400 border font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'border-brandAmber-500/30 opacity-70' : 'border-brandTeal-500/40'}`}
                                     >
                                         {isPublishing ? 'Publishing...' : '📋 Publish to Vault'}
                                     </button>
@@ -1786,8 +1843,8 @@
                                 
                                 <button 
                                     type="button"
-                                    onClick={handleExportJSON} 
-                                    className="px-5 py-1.5 bg-brandAmber-500 hover:bg-brandAmber-600 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all"
+                                    onClick={() => runIfUnlocked(handleExportJSON)} 
+                                    className={`px-5 py-1.5 bg-brandAmber-500 hover:bg-brandAmber-600 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                 >
                                     <Icons.Download /> Export JSON
                                 </button>
@@ -1795,24 +1852,24 @@
                                 {!isStandalone && (
                                     <button 
                                         type="button"
-                                        onClick={handleExportStandalone} 
+                                        onClick={() => runIfUnlocked(handleExportStandalone)} 
                                         disabled={isSaving}
-                                        className="px-5 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all"
+                                        className={`px-5 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                     >
                                         <Icons.Archive /> Export Client Vault File
                                     </button>
                                 )}
                                 <button 
                                     type="button"
-                                    onClick={() => setIsEditMode(!isEditMode)} 
-                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center border transition-all ${isEditMode ? 'bg-brandNavy-900 border-brandNavy-700 text-slate-300 hover:text-white' : 'bg-brandTeal-600/20 border-brandTeal-500 text-brandTeal-404'}`}
+                                    onClick={() => runIfUnlocked(() => setIsEditMode(!isEditMode))} 
+                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center border transition-all ${isEditMode ? 'bg-brandNavy-900 border-brandNavy-700 text-slate-300 hover:text-white' : 'bg-brandTeal-600/20 border-brandTeal-500 text-brandTeal-404'} ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/30' : ''}`}
                                 >
                                     {isEditMode ? <><Icons.Eye /> <span className="ml-1">Preview Mode</span></> : <><Icons.Edit /> <span className="ml-1">Edit Mode</span></>}
                                 </button>
                                 <button 
                                     type="button"
-                                    onClick={() => window.print()} 
-                                    className="px-5 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all"
+                                    onClick={() => runIfUnlocked(() => window.print())} 
+                                    className={`px-5 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                 >
                                     <Icons.Print /> Export PDF
                                 </button>
@@ -1820,9 +1877,16 @@
                         </div>
                     </header>
 
+                    {!isStandalone && mod2Locked && (
+                        <div className="shrink-0 bg-brandAmber-500/10 border-b border-brandAmber-500/30 px-6 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider text-brandAmber-400 no-print">
+                            <span aria-hidden="true">🔒</span>
+                            Mod 1 delivery required — complete the Waste-to-Peso Report to unlock Policy Studio
+                        </div>
+                    )}
+
                     {/* Main Layout */}
                     {!isStandalone && mod2Locked ? (
-                        <Mod2LockedPanel profile={activeProfile} />
+                        <Mod2LockedPanel profile={activeProfile} onLockedAction={notifyMod2Locked} />
                     ) : (
                     <div className="max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-8 flex-1 items-start h-[calc(100vh-4rem)] overflow-hidden">
                         
