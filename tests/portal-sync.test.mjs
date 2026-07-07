@@ -117,10 +117,15 @@ const multiAssets = PS.upsertMod1DeliverableAssets({
   customAssets: [],
   synthesis: {
     clientDeliverableUrl: 'https://drive.google.com/file/d/report',
+    loomWalkthroughUrl: 'https://www.loom.com/share/abc123',
     staffDirectoryDeliverableUrl: 'https://drive.google.com/file/d/directory',
     feedbackFormUrl: 'https://docs.google.com/forms/d/abc/viewform',
   },
 });
-assert.equal(multiAssets.length, 3);
+assert.equal(multiAssets.length, 4);
+assert.equal(
+  multiAssets.find((a) => a.title === PS.LOOM_WALKTHROUGH_ASSET_TITLE)?.link,
+  'https://www.loom.com/share/abc123',
+);
 
 console.log('portal-sync.test.mjs: all assertions passed');

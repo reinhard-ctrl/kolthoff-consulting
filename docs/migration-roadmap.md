@@ -13,7 +13,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **Stable** | Staff and clients complete core flows without 404s, auth loops, silent deploy failures, or iframe breakage. CI deploys green; break-glass passcode always works. |
 | **Fast** | Admin + workspace load in &lt;3s on warm cache; Google SSO completes without popup/COOP hangs; Functions cold-start provisioning does not block login. |
 | **Optimized** | One admin shell, minimal duplicate chrome, immutable asset caching, no 800KB+ un-split bundles long-term. |
-| **Full function — Consulting** | CRM → Planner → Contract → Portal → Org Chart → Collections for MOD engagements; workspace modules usable when sold. |
+| **Full function — Consulting** | CRM → Planner → Contract → Portal → Waste-to-Peso Report → Collections for MOD engagements; workspace modules usable when sold. |
 | **Full function — Products** | PRO 1 lead-to-cash: CRM product deal → Planner package → Sign → Auto-provision Agency Ops → Subscription billing in Collections. |
 
 **Definition of platform complete:** P4 verified on production + P5 App Check enforced + P6 React migration for daily apps + PRO auto-provision reliable + Kolthoff MOD onboarding wizard (P7).
@@ -90,7 +90,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 |------|---------------|--------|
 | Sell | CRM Pipeline, Project Planner | ✅ Production |
 | Contract | Contract Ledger, `contract_sign.html` | ✅ Production |
-| Deliver | Org Chart, Diagnosis, Policy, Workflow | ✅ Production (HTML embeds) |
+| Deliver | Waste-to-Peso Report (org chart, as-is workflow, diagnosis), Policy Studio, Workflow Builder (Mod 2) | ✅ Production (HTML embeds) |
 | Client view | Portal, org chart sync | ✅ Production — P4 verified |
 | Bill | Collections (milestones + care plan) | ✅ Production |
 | Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ P4 section D verified |
@@ -148,7 +148,7 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 |------|-----------|-----|
 | **Consulting sell→cash** | CRM, Planner, Contract, Collections | Planner buffer vs signed quote |
 | **Client experience** | Portal token auth, org chart, uploads | ✅ P4 verified |
-| **Delivery tools** | Diagnosis, Policy→Vault, Workflow tabs | HTML embeds — migrate in P6 |
+| **Delivery tools** | Waste-to-Peso Report, Policy→Vault, Workflow tabs (Mod 2 gated) | HTML embeds — migrate in P6 |
 | **Analytics** | Firm, Capacity, Time | Manual entry; planner baselines exist |
 | **Workspace** | SSO embed, module nav | Approvals/Messenger depth |
 | **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | ✅ P4 verified |
@@ -181,10 +181,10 @@ Kolthoff OS is the **reference operating system** for how you deliver MOD 1–4 
 ┌───────────────┐           ┌───────────────┐           ┌───────────────┐
 │  COMMAND      │           │  DELIVERY     │           │  CLIENT       │
 │  /admin/      │           │  Planner      │           │  Portal       │
-│  React SPA    │           │  Diagnosis    │           │  Contract Sign│
-│  Dashboard    │           │  Policy/WF    │           │  Marketing /  │
-│  Tenants      │           │  CRM          │           │               │
-│  Org Chart    │           │  Analytics×3  │           │               │
+│  React SPA    │           │  Planner      │           │  Contract Sign│
+│  Dashboard    │           │  Waste-to-Peso│           │  Marketing /  │
+│  Tenants      │           │  Policy/WF    │           │               │
+│  Portals      │           │  CRM          │           │               │
 │  Portals      │           │               │           │               │
 │  Contracts    │           │  (HTML+CDN)   │           │  (HTML+CDN)   │
 │  Master Admin │           │               │           │               │
@@ -213,20 +213,19 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 |-------|-----|------|----------|
 | Command | Admin console | React (Vite) | **Production** — sidebar, embeds, quick actions |
 | Command | Tenant Manager | React | **Production** — flags, invites, password reset |
-| Command | Org Chart | React | **Production** — roster editor, hierarchy preview, portal sync |
 | Command | Portal Manager | React | **Production** — SOW import, sync-from-profile |
 | Command | Contract Ledger | React | **Production** — client sign links |
 | Command | Master Admin | React | **Basic** — tickets OK; blueprints list-only |
 | Command | Agency Ops Manager | React | **Production** — PRO tenant provisioning, branding, demo clients |
 | Delivery | Project Planner | HTML/React CDN | **Production** — engagement hub writer; PRO 1 Agency Ops package |
-| Delivery | Diagnosis Reports | HTML/React CDN | **Production** — merged workflow tabs |
+| Delivery | Waste-to-Peso Report | HTML/React CDN | **Production** — Mod 1 hub: org chart, as-is workflow, diagnosis PDF, handoff |
 | Operations | CRM Pipeline | HTML/React CDN | **Production** — canonical CRM + share links |
-| Operations | Policy Studio | HTML/React CDN | **Production** — portal auto-sync on save |
-| Operations | Workflow Builder | HTML/React CDN | **Production** — slice-based tab persistence |
+| Operations | Policy Studio | HTML/React CDN | **Production** — portal auto-sync on save; Mod 2 gated until Mod 1 complete |
+| Operations | Workflow Builder | HTML/React CDN | **Production** — slice-based tab persistence; Mod 2 to-be mode gated until Mod 1 complete |
 | Analytics | Firm / Capacity / Time | HTML/React CDN | **Functional** — manual data entry |
 | Workspace | Core Workspace | React (Vite) | **Production shell** — embed in admin; Messenger/Approvals/Vault/CRM MVP |
 | Client | Portal | HTML/React CDN | **Production** — custom-token auth via `generatePortalToken` |
-| Client | ~~Intake form~~ | — | **Removed** — replaced by Org Chart (staff builds roster; syncs to portal Organization tab) |
+| Client | ~~Intake form~~ | — | **Removed** — org chart + staff directory live in Waste-to-Peso Report; syncs to portal Organization tab |
 | Client | Contract sign | HTML/React CDN | **Production** — scoped Firestore rules |
 | Public | Marketing site | Static HTML | **Production** |
 
@@ -303,7 +302,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **Contract e-sign** | Scoped Firestore rules; expanded `contract_sign.html` |
 | **Workflow tabs** | `diagnosisWorkflow` / `workflowBuilder` slices via `shared/workflow-tabs.js` |
 | **Portal sync** | `portal-sync.js` + admin lib — auto-sync on planner/diagnosis/policy save |
-| **Org Chart** | React `/admin/org-chart` — roster editor, portal Organization tab sync |
+| **Org chart (Mod 1)** | Embedded in Waste-to-Peso Report — draw.io org chart tab, staff directory print, portal Organization sync |
 | **Planner polish** | Compact header, Gantt label fixes, engagement package callout |
 | **Google SSO (P5)** | `provisionGoogleStaff`, staff rules hardening, App Check bootstrap |
 | **CRM links** | `links.crmDealId`, share links, public CRM view |
@@ -332,7 +331,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | # | Deliverable | Status | Outcome |
 |---|-------------|--------|---------|
 | 2.5.1 | **Portal custom-token auth** | ✅ Done | `generatePortalToken` wired; scoped `portal_client` Firestore + Storage rules |
-| 2.5.2 | ~~**Intake submit on production**~~ | ✅ Superseded | Client intake form removed; Org Chart + portal sync replaces intake flow |
+| 2.5.2 | ~~**Intake submit on production**~~ | ✅ Superseded | Client intake form removed; org chart in Waste-to-Peso Report + portal sync replaces intake flow |
 | 2.5.3 | **Client error UX** | ✅ Done | Inline errors on portal login/upload and intake submit |
 
 ### 2.5B — Still open (data & workspace)
@@ -561,7 +560,7 @@ flowchart TB
 | Metric | Target when migration complete |
 |--------|-------------------------------|
 | Client contract sign completion rate | >95% without staff intervention |
-| Org chart → portal sync | Automatic on save from `/admin/org-chart` |
+| Org chart → portal sync | Automatic on save from Waste-to-Peso Report org chart tab |
 | Portal progress accuracy | Matches planner module state without manual edit |
 | Staff apps in React / admin shell | 100% of delivery + ops |
 | Time to provision new client tenant | <15 minutes via admin |
@@ -588,4 +587,4 @@ flowchart TB
 
 ---
 
-*Last updated: 6 July 2026 — **Platform plan complete.** P4 signed off; Core Workspace + Agency Ops engineering closed (#217). Smoke **27/27**. Phase 4 content + first PRO sale are yours. Eng backlog (optional): App Check, P6 React migration.*
+*Last updated: 7 July 2026 — **Waste-to-Peso Mod 1 roadmap complete** (Slices 1–8). P4 signed off; Core Workspace + Agency Ops engineering closed (#217). Smoke **27/27**. Phase 4 content + first PRO sale are yours. Eng backlog (optional): App Check, P6 React migration.*
