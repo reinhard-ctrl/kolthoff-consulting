@@ -180,7 +180,7 @@
     <div id="root"></div>
 
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
-    <script src="../../shared/mod-gating.js?v=20250707-mod2-gate-v1"></script>
+    <script src="../../shared/mod-gating.js?v=20250707-mod2-admin-unlock-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-sop-bpmn-v1"></script>
@@ -192,7 +192,7 @@
         const IS_EMBED = Boolean(window.KOLTHOFF_EMBED);
         const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until Mod 1 (Waste-to-Peso Report) is delivered.';
 
-        const Mod2LockedPanel = ({ profile, onLockedAction }) => {
+        const Mod2LockedPanel = ({ profile, onLockedAction, canAdminUnlock, onAdminUnlock }) => {
             const reportHref = IS_EMBED ? '/admin/app/diagnosis-reports' : '/apps/delivery/diagnoses_report.html';
             const client = window.EngagementConfig?.getClientDisplayName?.(profile) || profile?.clientCompany || 'this workspace';
             return (
@@ -210,6 +210,15 @@
                     >
                         Open Waste-to-Peso Report
                     </a>
+                    {canAdminUnlock && onAdminUnlock && (
+                        <button
+                            type="button"
+                            onClick={onAdminUnlock}
+                            className="mt-4 px-5 py-2.5 bg-brandNavy-800 hover:bg-brandNavy-700 border border-brandAmber-500/40 text-brandAmber-300 text-xs font-bold uppercase tracking-wider rounded-lg"
+                        >
+                            Unlock Policy Studio (admin)
+                        </button>
+                    )}
                     <p className="text-[10px] text-slate-500 mt-4 leading-relaxed">Mark Mod 1 complete after the client deliverable is uploaded and synced.</p>
                     {onLockedAction && (
                         <button
@@ -665,6 +674,8 @@
             const [user, setUser] = useState(null);
             const [isAuthed, setIsAuthed] = useState(isStandalone); // Skip Firebase Auth entirely in Standalone Mode
             const [authError, setAuthError] = useState(null);
+            const [canAdminBypassMod2, setCanAdminBypassMod2] = useState(isStandalone);
+            const [adminMod2Unlock, setAdminMod2Unlock] = useState(false);
             
             const [isSaving, setIsSaving] = useState(false);
             const [isPublishing, setIsPublishing] = useState(false);
@@ -710,6 +721,26 @@
                     if (window.firebaseAuth && window.signInAnonymously) {
                         clearInterval(checkInterval);
                         
+                        const resolveAdminMod2Permission = async (authUser) => {
+                            if (!authUser) return false;
+                            try {
+                                const { claims } = await authUser.getIdTokenResult();
+                                if (claims.role === 'kolthoff_admin' || claims.role === 'admin') return true;
+                            } catch {
+                                /* continue */
+                            }
+                            if (window.hasAdminSession) {
+                                try {
+                                    if (await window.hasAdminSession()) return true;
+                                } catch {
+                                    /* continue */
+                                }
+                            }
+                            const email = authUser.email?.toLowerCase();
+                            const isGoogle = authUser.providerData?.some((p) => p.providerId === 'google.com');
+                            return Boolean(isGoogle && email?.endsWith('@kolthoff-consulting.com'));
+                        };
+
                         const initAuth = async () => {
                             try {
                                 if (window.initialAuthToken) {
@@ -717,10 +748,14 @@
                                         await window.signInWithCustomToken(window.firebaseAuth, window.initialAuthToken);
                                     } catch (tokenErr) {
                                         console.warn("Token auth failed, trying anonymous auth fallback:", tokenErr);
-                                        await window.kolthoffStaffReady
+                                        await window.kolthoffStaffReady;
                                     }
                                 } else {
-                                    await window.kolthoffStaffReady
+                                    await window.kolthoffStaffReady;
+                                }
+                                const current = window.firebaseAuth?.currentUser;
+                                if (current) {
+                                    setCanAdminBypassMod2(await resolveAdminMod2Permission(current));
                                 }
                             } catch (e) {
                                 console.error("Firebase Auth Blocked:", e);
@@ -729,13 +764,15 @@
                         };
                         initAuth();
 
-                        const unsubscribe = window.onAuthStateChanged(window.firebaseAuth, (currentUser) => {
+                        const unsubscribe = window.onAuthStateChanged(window.firebaseAuth, async (currentUser) => {
                             setUser(currentUser);
                             if (currentUser) {
                                 setIsAuthed(true);
                                 setAuthError(null);
+                                setCanAdminBypassMod2(await resolveAdminMod2Permission(currentUser));
                             } else {
                                 setIsAuthed(false);
+                                setCanAdminBypassMod2(false);
                             }
                         });
                         return () => unsubscribe();
@@ -1346,9 +1383,38 @@
                 return workbookProfiles.find(p => p.id === activeProfileId);
             }, [activeProfileId, workbookProfiles, isStandalone, activeClient]);
 
-            const mod2Locked = !isStandalone && !MG().isMod1Complete?.(activeProfile);
+            const mod2Locked = MG().isMod2Locked?.(activeProfile, {
+                standalone: isStandalone,
+                profileId: activeProfileId,
+                adminUnlock: adminMod2Unlock,
+            }) ?? (!isStandalone && !MG().isMod1Complete?.(activeProfile));
+
+            useEffect(() => {
+                if (isStandalone || !activeProfileId) {
+                    setAdminMod2Unlock(false);
+                    return;
+                }
+                setAdminMod2Unlock(MG().hasAdminMod2Unlock?.(activeProfileId) ?? false);
+            }, [activeProfileId, isStandalone]);
 
             const notifyMod2Locked = () => triggerToast(MOD2_LOCK_TOAST, 'lock');
+
+            const handleAdminMod2Unlock = () => {
+                if (!canAdminBypassMod2 || !activeProfileId) {
+                    notifyMod2Locked();
+                    return;
+                }
+                MG().setAdminMod2Unlock?.(activeProfileId, true);
+                setAdminMod2Unlock(true);
+                triggerToast('🔓 Policy Studio unlocked for this workspace (admin override)', 'warning');
+            };
+
+            const handleAdminMod2Relock = () => {
+                if (!activeProfileId) return;
+                MG().setAdminMod2Unlock?.(activeProfileId, false);
+                setAdminMod2Unlock(false);
+                triggerToast('🔒 Admin override cleared — Mod 1 delivery required', 'lock');
+            };
 
             const runIfUnlocked = (action) => {
                 if (mod2Locked) {
@@ -1884,9 +1950,22 @@
                         </div>
                     )}
 
+                    {!isStandalone && !mod2Locked && !MG().isMod1Complete?.(activeProfile) && adminMod2Unlock && (
+                        <div className="shrink-0 bg-brandAmber-500/10 border-b border-brandAmber-500/30 px-6 py-2 flex flex-wrap items-center justify-center gap-3 text-[10px] font-bold uppercase tracking-wider text-brandAmber-300 no-print">
+                            <span aria-hidden="true">🔓</span>
+                            <span>Admin override — Mod 1 not yet delivered for this workspace</span>
+                            <button type="button" onClick={handleAdminMod2Relock} className="underline underline-offset-2 hover:text-white normal-case tracking-normal font-semibold">Re-lock</button>
+                        </div>
+                    )}
+
                     {/* Main Layout */}
                     {!isStandalone && mod2Locked ? (
-                        <Mod2LockedPanel profile={activeProfile} onLockedAction={notifyMod2Locked} />
+                        <Mod2LockedPanel
+                            profile={activeProfile}
+                            onLockedAction={notifyMod2Locked}
+                            canAdminUnlock={canAdminBypassMod2}
+                            onAdminUnlock={handleAdminMod2Unlock}
+                        />
                     ) : (
                     <div className="max-w-[1400px] w-full mx-auto px-6 py-8 flex gap-8 flex-1 items-start h-[calc(100vh-4rem)] overflow-hidden">
                         

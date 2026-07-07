@@ -78,22 +78,61 @@
 
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            body, #root, .flex.h-screen, .overflow-y-auto { height: auto !important; overflow: visible !important; display: block !important; background: white !important; color: #0f172a !important; font-family: "Montserrat", sans-serif !important; margin: 0 !important; padding: 0 !important; }
-            .luxury-gradient { background: none !important; }
+
+            html, body, #root,
+            html.kolthoff-embed, html.kolthoff-embed body, html.kolthoff-embed #root {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                color: #0f172a !important;
+            }
+
+            /* Unclip flex/scroll shells so every report-page reaches the print engine */
+            body.printing-report .flex,
+            body.printing-report main,
+            body.printing-report main > div,
+            body.printing-report .report-print-surface,
+            body.printing-report .report-doc,
+            body.printing-report .report-page {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                flex: none !important;
+            }
+
+            body.printing-report aside,
+            body.printing-report .no-print,
+            body.printing-staff-directory aside,
+            body.printing-staff-directory main,
+            body.printing-staff-directory .no-print {
+                display: none !important;
+            }
+
+            body.printing-staff-directory .staff-directory-print-root { display: block !important; }
+
             .no-print { display: none !important; }
+            .luxury-gradient { background: none !important; }
             .print-only { display: block !important; }
             .print-force-break { page-break-before: always !important; }
-            main { padding: 0 !important; }
-            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 20px !important; }
-            .overflow-x-auto, .max-h-\[220px\], .max-h-72, .max-h-52, .overflow-y-auto { max-height: none !important; overflow: visible !important; }
+            main { padding: 0 !important; margin: 0 !important; }
+            .report-print-surface { background: white !important; padding: 0 !important; }
+            .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; padding: 20px !important; page-break-inside: auto !important; }
+            .overflow-hidden, .overflow-x-auto, .overflow-y-auto,
+            .max-h-\[220px\], .max-h-72, .max-h-80, .max-h-64, .max-h-52, .max-h-\[500px\] {
+                max-height: none !important;
+                overflow: visible !important;
+            }
             @page { size: portrait; margin: 18mm 14mm; }
             .report-kpi-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
             .report-section-title { font-size: 11px !important; letter-spacing: 0.12em !important; }
-            body.printing-staff-directory aside,
-            body.printing-staff-directory main,
-            body.printing-staff-directory .no-print { display: none !important; }
-            body.printing-staff-directory .staff-directory-print-root { display: block !important; }
             .report-table th, .report-table td { padding: 8px 10px !important; font-size: 10px !important; }
+            .report-table tr { page-break-inside: avoid; }
         }
         .staff-directory-print-root { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
@@ -1753,10 +1792,19 @@
             };
 
             useEffect(() => {
-                const clearPrintMode = () => document.body.classList.remove('printing-staff-directory');
+                const clearPrintMode = () => {
+                    document.body.classList.remove('printing-staff-directory', 'printing-report');
+                };
+                const onBeforePrint = () => {
+                    if (activeNav === 'report') document.body.classList.add('printing-report');
+                };
                 window.addEventListener('afterprint', clearPrintMode);
-                return () => window.removeEventListener('afterprint', clearPrintMode);
-            }, []);
+                window.addEventListener('beforeprint', onBeforePrint);
+                return () => {
+                    window.removeEventListener('afterprint', clearPrintMode);
+                    window.removeEventListener('beforeprint', onBeforePrint);
+                };
+            }, [activeNav]);
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
@@ -1795,6 +1843,7 @@
                     const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
                     if (!proceed) return;
                 }
+                document.body.classList.add('printing-report');
                 window.print();
             };
 
@@ -1962,7 +2011,7 @@
                             />
                         )}
 
-                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-y-auto w-full' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-y-auto w-full pb-32' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
                                 <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
                             )}
@@ -2070,7 +2119,7 @@
                                             </div>
                                         )}
                                     </div>
-                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:bg-transparent">
+                                    <div className="w-full flex justify-center bg-slate-200/80 py-10 px-4 print:py-0 print:bg-transparent report-print-surface">
                                         <ExecutiveReport
                                             clientCompany={clientCompany}
                                             preparedBy={preparedBy}
