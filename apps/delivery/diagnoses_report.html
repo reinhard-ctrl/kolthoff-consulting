@@ -239,7 +239,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-m102-form-template-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250707-m102-form-template-v2"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -553,7 +553,6 @@
             const template = DRH().getM102FeedbackFormTemplate?.() || {};
             const copyUrl = DRH().buildFeedbackFormTemplateCopyUrl?.() || '';
             const previewUrl = DRH().buildFeedbackFormViewUrl?.() || '';
-            const templateReady = DRH().isM102FeedbackFormTemplateReady?.() || !!copyUrl;
             const questionItems = (template.questions || []).filter((q) => q.type !== 'section');
 
             const openTemplateCopy = () => {
@@ -575,7 +574,7 @@
                             <button
                                 type="button"
                                 onClick={openTemplateCopy}
-                                disabled={!templateReady}
+                                disabled={!copyUrl}
                                 className="px-3 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-[10px] font-bold uppercase disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 Save copy to Google Drive
@@ -587,16 +586,9 @@
                             )}
                         </div>
                     </div>
-                    {!templateReady && (
-                        <p className="text-[10px] text-amber-300/90 leading-relaxed">
-                            Master template not provisioned yet. Run <span className="font-mono">node scripts/provision-m102-feedback-form.mjs</span> once with Google credentials, then redeploy.
-                        </p>
-                    )}
-                    {templateReady && (
-                        <p className="text-[10px] text-slate-500 leading-relaxed">
-                            Opens Google&apos;s copy dialog — the template saves to your Drive. Publish your copy, then paste the live viewform link below.
-                        </p>
-                    )}
+                    <p className="text-[10px] text-slate-500 leading-relaxed">
+                        Opens Google&apos;s copy dialog — the template saves to your Drive. Publish your copy, then paste the live viewform link below.
+                    </p>
                     <details className="text-[10px] text-slate-400">
                         <summary className="cursor-pointer font-bold uppercase tracking-wider text-slate-500 hover:text-brandTeal-300">Template questions ({questionItems.length})</summary>
                         <ol className="mt-2 space-y-1.5 list-decimal list-inside text-slate-300">

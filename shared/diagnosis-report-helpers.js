@@ -595,8 +595,7 @@
 
   /**
    * Canonical Mod 1 anonymous staff feedback Google Form template (m1-02).
-   * Provision the live master copy once: node scripts/provision-m102-feedback-form.mjs
-   * Then commit the returned form ID into templateFormId below.
+   * Master form lives in Kolthoff Google Drive — update templateFormId if the template moves.
    */
   const M102_FEEDBACK_FORM_TEMPLATE = {
     taskId: 'm1-02',
@@ -608,9 +607,6 @@
       'Leadership reviews summarized themes only (no raw submissions or identifiers).',
     settings: {
       collectEmail: false,
-      limitOneResponse: false,
-      allowResponseEdits: false,
-      publishAfterProvision: true,
     },
     questions: [
       {
@@ -667,8 +663,8 @@
         required: false,
       },
     ],
-    /** Drive file ID of the Kolthoff master template — set by scripts/provision-m102-feedback-form.mjs */
-    templateFormId: '',
+    /** Kolthoff master template — share in Drive as Anyone with the link → Editor */
+    templateFormId: '1A8MHTf3JXnYYUSH1zAClqcXQUWVZ1rrc94BsRvueEt8',
   };
 
   function extractGoogleFormId(urlOrId) {

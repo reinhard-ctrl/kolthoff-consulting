@@ -190,8 +190,9 @@ describe('diagnosis-report-helpers', () => {
     assert.match(template.description, /anonymous/i);
   });
 
-  it('isM102FeedbackFormTemplateReady is false until templateFormId is provisioned', () => {
-    assert.equal(DRH.isM102FeedbackFormTemplateReady(), false);
+  it('isM102FeedbackFormTemplateReady is true when templateFormId is set', () => {
+    assert.equal(DRH.isM102FeedbackFormTemplateReady(), true);
+    assert.ok(DRH.buildFeedbackFormTemplateCopyUrl().includes('/copy'));
   });
 
   it('normalizeReportDiagramSvg removes fixed dimensions for responsive print scaling', () => {
