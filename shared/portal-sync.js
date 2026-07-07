@@ -146,6 +146,9 @@
     return {
       roadmap,
       currentPhase: mod2?.portalPhase || 'MOD 2: How Your Business Runs',
+      mod2UnlockedAt: new Date().toISOString(),
+      mod1CompleteNotice:
+        'Module 1 (Business Leak Scan) is complete. Your consultant is now delivering Module 2 — How Your Business Runs (playbooks, policies, and to-be workflows).',
     };
   }
 
