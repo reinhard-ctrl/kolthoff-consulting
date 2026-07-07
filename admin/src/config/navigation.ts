@@ -44,7 +44,7 @@ export const DEFAULT_NAV_GROUPS: NavGroup[] = [
     label: 'Deliverables',
     items: [
       { id: 'org-chart', label: 'Org Chart', type: 'route', path: '/org-chart' },
-      { id: 'diagnosis-reports', label: 'Diagnosis Reports', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
+      { id: 'diagnosis-reports', label: 'Waste-to-Peso Report', type: 'embed', href: '/apps/delivery/diagnoses_report.html' },
       { id: 'policy-studio', label: 'Policy Studio', type: 'embed', href: '/apps/operations/policy_studio.html' },
       { id: 'workflow-builder', label: 'Workflow Builder', type: 'embed', href: '/apps/operations/workflow_builder.html' },
     ],
