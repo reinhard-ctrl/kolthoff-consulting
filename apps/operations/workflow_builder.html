@@ -82,12 +82,166 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250706-bpmn-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
         const IS_EMBED = document.documentElement.classList.contains('workflow-embed');
         const WORKFLOW_APP = window.WorkflowTabs?.parseWorkflowAppFromSearch?.(window.location.search) || 'workflow';
         const IS_DIAGNOSIS_MODE = WORKFLOW_APP === 'diagnosis';
+
+        const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520 }) => {
+            const iframeRef = useRef(null);
+            const readyRef = useRef(false);
+            const configuredRef = useRef(false);
+            const pendingXmlRef = useRef(xml);
+
+            const postAction = (payload) => {
+                iframeRef.current?.contentWindow?.postMessage(JSON.stringify(payload), '*');
+            };
+
+            const sendLoad = (diagramXml) => {
+                postAction({
+                    action: 'load',
+                    xml: diagramXml || window.DiagramEditor?.BLANK_BPMN_XML || '',
+                    autosave: 1,
+                });
+            };
+
+            const requestExport = (format) => {
+                postAction({
+                    action: 'export',
+                    format,
+                    xml: format === 'xml',
+                    spin: 'Exporting diagram…',
+                });
+            };
+
+            useEffect(() => {
+                pendingXmlRef.current = xml;
+                if (readyRef.current && configuredRef.current) sendLoad(xml);
+            }, [xml]);
+
+            useEffect(() => {
+                const handler = (evt) => {
+                    if (!evt.data || typeof evt.data !== 'string') return;
+                    let msg;
+                    try { msg = JSON.parse(evt.data); } catch { return; }
+
+                    if (msg.event === 'configure') {
+                        configuredRef.current = true;
+                        postAction({
+                            action: 'configure',
+                            config: window.DiagramEditor?.getPreset(preset)?.configure || {},
+                        });
+                    }
+                    if (msg.event === 'init') {
+                        readyRef.current = true;
+                        sendLoad(pendingXmlRef.current);
+                    }
+                    if (msg.event === 'export') {
+                        if (msg.format === 'xml' && msg.xml && onXmlChange) onXmlChange(msg.xml);
+                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data && onSvgExport) onSvgExport(msg.data);
+                    }
+                    if (msg.event === 'autosave' && msg.xml && onXmlChange) onXmlChange(msg.xml);
+                };
+                window.addEventListener('message', handler);
+                return () => window.removeEventListener('message', handler);
+            }, [preset, onXmlChange, onSvgExport]);
+
+            return (
+                <div className="flex flex-col gap-3 h-full min-h-0">
+                    <div className="flex flex-wrap gap-2 no-print shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => { requestExport('xml'); requestExport('xmlsvg'); }}
+                            className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                            Apply Diagram
+                        </button>
+                    </div>
+                    <iframe
+                        ref={iframeRef}
+                        src={window.DiagramEditor?.getDrawioEmbedUrl() || 'https://embed.diagrams.net/?embed=1&proto=json&configure=1'}
+                        className="w-full flex-1 min-h-[420px] border border-brandNavy-800 rounded-xl bg-white"
+                        style={{ height: typeof height === 'number' ? height : undefined }}
+                        title="draw.io BPMN editor"
+                    />
+                </div>
+            );
+        };
+
+        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, showLeakagePanel }) => {
+            const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+            const present = window.DiagramEditor?.normalizeWorkflowPresent(activeTab?.present) || { drawioXml: '', format: 'bpmn' };
+            const isLegacy = present.format === 'legacy';
+
+            const updatePresent = (patch) => {
+                setTabs((prev) => prev.map((t) => (t.id === activeTabId ? { ...t, present: { ...window.DiagramEditor.normalizeWorkflowPresent(t.present), ...patch, format: 'bpmn' } } : t)));
+            };
+
+            const handleXmlChange = (drawioXml) => updatePresent({ drawioXml });
+            const handleSvgExport = (svgCache) => updatePresent({ svgCache });
+
+            const updateCellMeta = (cellId, field, value) => {
+                setTabs((prev) => prev.map((t) => {
+                    if (t.id !== activeTabId) return t;
+                    const norm = window.DiagramEditor.normalizeWorkflowPresent(t.present);
+                    const cellMeta = { ...(norm.cellMeta || {}), [cellId]: { ...(norm.cellMeta?.[cellId] || {}), [field]: value } };
+                    return { ...t, present: { ...norm, cellMeta, format: norm.format === 'legacy' ? 'bpmn' : norm.format } };
+                }));
+            };
+
+            const vm = window.DiagramEditor?.getWorkflowViewModel(activeTab?.present) || { tasks: [], lanes: [] };
+
+            return (
+                <div className="flex flex-col h-full min-h-0">
+                    <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-brandNavy-800 bg-brandNavy-950 no-print overflow-x-auto">
+                        {tabs.map((tab) => (
+                            <div key={tab.id} className={`flex items-center gap-1 px-2 py-1 rounded-lg border ${tab.id === activeTabId ? 'border-brandTeal-500 bg-brandNavy-800' : 'border-brandNavy-800 bg-brandNavy-900'}`}>
+                                <button type="button" onClick={() => setActiveTabId(tab.id)} className="text-[10px] font-bold uppercase text-slate-200">{tab.name}</button>
+                                {tabs.length > 1 && (
+                                    <button type="button" aria-label="Close tab" onClick={(e) => closeTab(e, tab.id)} className="text-slate-500 hover:text-rose-400"><Icons.Close /></button>
+                                )}
+                            </div>
+                        ))}
+                        <button type="button" onClick={addNewTab} className="text-[10px] font-bold uppercase text-brandTeal-400 px-2 py-1 border border-brandTeal-500/30 rounded-lg">+ Tab</button>
+                    </div>
+
+                    {isLegacy && (
+                        <div className="shrink-0 mx-4 mt-3 p-3 rounded-lg border border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-100 no-print">
+                            Legacy canvas detected. Build the BPMN 2.0 diagram below — saving replaces the old format with draw.io standard shapes.
+                        </div>
+                    )}
+
+                    <div className="flex-1 min-h-0 p-4">
+                        <DrawIoEmbed
+                            preset="bpmn"
+                            xml={isLegacy ? window.DiagramEditor.BLANK_BPMN_XML : present.drawioXml}
+                            onXmlChange={handleXmlChange}
+                            onSvgExport={handleSvgExport}
+                            height="100%"
+                        />
+                    </div>
+
+                    {showLeakagePanel && vm.tasks.length > 0 && (
+                        <div className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 p-4 no-print max-h-56 overflow-y-auto">
+                            <h3 className="text-[10px] font-mono uppercase tracking-wider text-rose-400 font-bold mb-2">Task Leakage (Mod 1 Chaos Tax)</h3>
+                            <div className="space-y-2">
+                                {vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event').map((task) => (
+                                    <div key={task.id} className="grid grid-cols-4 gap-2 items-center text-[10px]">
+                                        <div className="col-span-1 font-semibold text-slate-200 truncate" title={task.label}>{task.label}</div>
+                                        <input type="number" min="0" placeholder="Delay mins" value={task.delayMinutes || 0} onChange={(e) => updateCellMeta(task.id, 'delayMinutes', Number(e.target.value))} className="bg-brandNavy-950 border border-rose-500/30 rounded px-2 py-1 text-rose-300 font-mono" />
+                                        <input type="number" min="0" placeholder="Staff" value={task.affectedStaff || 1} onChange={(e) => updateCellMeta(task.id, 'affectedStaff', Number(e.target.value))} className="bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 font-mono" />
+                                        <input type="number" min="0" placeholder="Hourly rate" value={task.hourlyRate || 150} onChange={(e) => updateCellMeta(task.id, 'hourlyRate', Number(e.target.value))} className="bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 font-mono" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
         const Icons = {
             Layout: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
@@ -1164,8 +1318,9 @@
 
         // --- SUITE SUB-COMPONENTS ---
         const RaciBuilder = ({ activeTab, raciAssignments, setRaciAssignments }) => {
-            const raciActivities = activeTab.present.nodes.filter(n => n.type === 'process' || n.type === 'approval').sort((a,b) => a.x - b.x); 
-            const roles = activeTab.present.lanes.sort((a,b) => a.y - b.y);
+            const vm = window.DiagramEditor?.getWorkflowViewModel(activeTab?.present) || { tasks: [], lanes: [] };
+            const raciActivities = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
+            const roles = vm.lanes.length ? vm.lanes : [{ id: 'lane-default', label: 'Responsible Role', owner: '' }];
 
             const handleRaciChange = (actId, roleId, val) => {
                 const copy = { ...raciAssignments };
@@ -1178,7 +1333,7 @@
                 <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
                     <div>
                         <h2 className="text-2xl font-bold text-white mb-2">Role Architecture & RACI Grid</h2>
-                        <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">Assign strict execution boundaries across the selected workflow. Roles are automatically mapped from your Organization Unit lanes in the Diagrammer.</p>
+                        <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">Assign RACI boundaries across BPMN tasks. Swimlanes from the draw.io diagram become role columns.</p>
                     </div>
 
                     <div className="glass-panel rounded-2xl p-6 shadow-xl overflow-x-auto bg-brandNavy-900 border border-brandNavy-800">
@@ -1198,7 +1353,7 @@
                             <tbody className="divide-y divide-brandNavy-800/50">
                                 {raciActivities.map(act => (
                                     <tr key={act.id} className="hover:bg-brandNavy-800/30 transition-colors">
-                                        <td className="py-3 px-3 font-semibold text-slate-300">{act.label.replace('\n', ' ')}</td>
+                                        <td className="py-3 px-3 font-semibold text-slate-300">{act.label}</td>
                                         {roles.map(role => {
                                             const assign = raciAssignments[act.id]?.[role.id] || '';
                                             let badgeClass = "border border-brandNavy-700 text-slate-500 bg-brandNavy-950";
@@ -1236,7 +1391,13 @@
 
             const [activeNav, setActiveNav] = useState('flowcharts');
             
-            const createEmptyTab = (id, name) => ({ id, name, past: [], present: { ...EMPTY_CANVAS }, future: [] });
+            const createEmptyTab = (id, name) => ({
+                id,
+                name,
+                past: [],
+                present: window.DiagramEditor?.createEmptyWorkflowPresent?.() || { drawioXml: '', svgCache: '', cellMeta: {}, format: 'bpmn' },
+                future: [],
+            });
 
             const [workflowInit] = useState(() => {
                 const id = 'tab-' + Date.now();
@@ -1352,9 +1513,8 @@
                         
                         <nav className="p-4 flex-1 overflow-y-auto space-y-2">
                             <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
-                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 1. Workflow Diagrammer</button>
+                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 1. BPMN Workflow</button>
                             <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 2. RACI Architecture</button>
-                            <button onClick={() => setActiveNav('orgchart')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'orgchart' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Sitemap /> 3. Org Chart Builder</button>
                         </nav>
 
                         <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950">
@@ -1379,38 +1539,25 @@
                         {activeNav !== 'flowcharts' && (
                             <header data-app-chrome className="shrink-0 bg-brandNavy-955/80 backdrop-blur-md border-b border-brandNavy-800 px-8 py-4 flex justify-between items-center no-print">
                                 <h2 className="text-sm font-bold text-brandTeal-400 font-mono tracking-widest uppercase">
-                                    {activeNav === 'raci' ? '2. Accountability' : activeNav === 'orgchart' ? '3. Organization Chart' : 'Studio'}
+                                    {activeNav === 'raci' ? '2. Accountability' : 'BPMN 2.0 Workflow Studio'}
                                 </h2>
                             </header>
                         )}
 
-                        <div className={`flex-1 overflow-y-auto ${activeNav === 'flowcharts' ? '' : 'p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' ? 'overflow-hidden' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
-                                <WorkflowCanvasBuilder 
-                                    tabs={tabs} setTabs={setTabs} activeTabId={activeTabId} setActiveTabId={setActiveTabId}
-                                    undo={() => setTabs(prev => prev.map(t => { if (t.id !== activeTabId || t.past.length === 0) return t; const p = t.past[t.past.length-1]; return { ...t, past: t.past.slice(0, -1), present: p, future: [t.present, ...t.future] }; }))}
-                                    redo={() => setTabs(prev => prev.map(t => { if (t.id !== activeTabId || t.future.length === 0) return t; const n = t.future[0]; return { ...t, past: [...t.past, t.present], present: n, future: t.future.slice(1) }; }))}
-                                    pushToPast={() => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, past: [...t.past, t.present], future: [] } : t))}
-                                    updatePresentOnly={(n) => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, present: n } : t))}
-                                    commitUpdate={(n) => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, past: [...t.past, t.present], present: n, future: [] } : t))}
-                                    addNewTab={() => { const id = 'tab-'+Date.now(); setTabs([...tabs, createEmptyTab(id, 'New Diagram')]); setActiveTabId(id); }}
+                                <BpmnWorkflowStudio
+                                    tabs={tabs}
+                                    setTabs={setTabs}
+                                    activeTabId={activeTabId}
+                                    setActiveTabId={setActiveTabId}
+                                    addNewTab={() => { const id = 'tab-' + Date.now(); setTabs([...tabs, createEmptyTab(id, IS_DIAGNOSIS_MODE ? 'As-Is Process' : 'To-Be Process')]); setActiveTabId(id); }}
                                     closeTab={(e, id) => { e.stopPropagation(); if (tabs.length === 1) return; const newT = tabs.filter(t => t.id !== id); setTabs(newT); if (activeTabId === id) setActiveTabId(newT[0].id); }}
                                     renameTab={(id, name) => setTabs(tabs.map(t => t.id === id ? { ...t, name } : t))}
-                                    exportData={() => { const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tabs)); a.download = "workflow_workspace.json"; a.click(); }}
-                                    importData={(e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { const p = JSON.parse(ev.target.result); if(Array.isArray(p)){ setTabs(p); setActiveTabId(p[0].id); } } catch(err){ alert("Invalid File."); } }; r.readAsText(f); e.target.value = null; }}
+                                    showLeakagePanel={IS_DIAGNOSIS_MODE}
                                 />
                             )}
                             {activeNav === 'raci' && <RaciBuilder activeTab={activeTab} raciAssignments={raciAssignments} setRaciAssignments={setRaciAssignments} />}
-                            {activeNav === 'orgchart' && (
-                                <OrgChartBuilder 
-                                    activeTab={activeTab}
-                                    pushToPast={() => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, past: [...t.past, t.present], future: [] } : t))}
-                                    updatePresentOnly={(n) => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, present: n } : t))}
-                                    commitUpdate={(n) => setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, past: [...t.past, t.present], present: n, future: [] } : t))}
-                                    setSelectedElement={setSelectedElement}
-                                    selectedElement={selectedElement}
-                                />
-                            )}
                         </div>
                     </main>
                 </div>

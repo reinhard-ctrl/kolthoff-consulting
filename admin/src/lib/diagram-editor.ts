@@ -77,3 +77,12 @@ export function getPreset(presetId: DiagramPresetId) {
     },
   };
 }
+
+export function createEmptyWorkflowPresent() {
+  return {
+    format: 'bpmn' as const,
+    drawioXml: BLANK_BPMN_XML,
+    svgCache: '',
+    cellMeta: {} as Record<string, Record<string, unknown>>,
+  };
+}

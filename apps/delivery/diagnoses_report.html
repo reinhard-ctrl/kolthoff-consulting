@@ -101,6 +101,7 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250706-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
@@ -393,7 +394,7 @@
                         <div className="flex flex-wrap justify-between items-start gap-3">
                             <div>
                                 <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">Workflow Diagrammer</h2>
-                                <p className="text-xs text-slate-400 mt-1 max-w-xl">Map how work runs today (as-is). Saves to the Mod 1 diagnosis workflow slice — separate from Mod 2 to-be workflows in Policy Studio.</p>
+                                <p className="text-xs text-slate-400 mt-1 max-w-xl">Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram.</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <a href={builderUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 rounded text-[10px] font-bold uppercase">Open Full Screen</a>
@@ -426,8 +427,9 @@
 
         // --- SUITE SUB-COMPONENTS ---
         const RaciBuilder = ({ activeTab, raciAssignments, setRaciAssignments }) => {
-            const raciActivities = activeTab.present.nodes.filter(n => n.type === 'process' || n.type === 'approval').sort((a,b) => a.x - b.x); // Sort visually left to right
-            const roles = activeTab.present.lanes.sort((a,b) => a.y - b.y);
+            const vm = window.DiagramEditor?.getWorkflowViewModel(activeTab?.present) || { tasks: [], lanes: [] };
+            const raciActivities = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
+            const roles = vm.lanes.length ? vm.lanes : [{ id: 'lane-default', label: 'Responsible Role', owner: '' }];
 
             const handleRaciChange = (actId, roleId, val) => {
                 const copy = { ...raciAssignments };
@@ -1007,12 +1009,10 @@
                                 </div>
                                 <div className="space-y-6">
                                     {tabs.map(tab => {
-                                        const processNodes = tab.present.nodes.filter(n => n.type === 'process' || n.type === 'approval').sort((a,b) => a.x - b.x);
-                                        let tabAnnualTax = 0;
-                                        processNodes.forEach(n => {
-                                            const sHours = ((Number(n.delayMinutes)||0) * (Number(n.affectedStaff)||1)) / 60;
-                                            tabAnnualTax += sHours * (Number(n.hourlyRate)||0) * 22 * 12;
-                                        });
+                                        const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
+                                        const processNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
+                                        const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
+                                        const tabAnnualTax = tabTax.annual;
 
                                         return (
                                             <div key={tab.id} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50 page-break-inside-avoid mt-4">
@@ -1020,6 +1020,9 @@
                                                     <span className="font-extrabold text-slate-900 text-xs font-sans uppercase tracking-wider">{tab.name}</span>
                                                     <span className="font-mono text-rose-600 font-bold text-xs uppercase">Chaos Tax: {formatCurrency(Math.round(tabAnnualTax / 12))}/mo</span>
                                                 </div>
+                                                {vm.svgCache && (
+                                                    <img src={vm.svgCache} alt={`${tab.name} BPMN diagram`} className="w-full max-h-72 object-contain border border-slate-200 rounded bg-white mb-4" />
+                                                )}
                                                 <div className="space-y-3 pl-2">
                                                     {processNodes.map((step, sIdx) => {
                                                         const sHours = parseFloat((((Number(step.delayMinutes)||0) * (Number(step.affectedStaff)||1)) / 60).toFixed(2));
@@ -1027,7 +1030,7 @@
                                                         return (
                                                             <div key={step.id} className="text-xs flex justify-between items-start gap-4 border-l-2 border-slate-200 pl-4 py-0.5 page-break-inside-avoid">
                                                                 <div className="space-y-1">
-                                                                    <div className="font-bold text-slate-900">{sIdx + 1}. {step.label.replace('\n', ' ')} <span className="text-[10px] font-mono text-slate-400 font-semibold">({step.duration})</span></div>
+                                                                    <div className="font-bold text-slate-900">{sIdx + 1}. {step.label} <span className="text-[10px] font-mono text-slate-400 font-semibold">({step.duration})</span></div>
                                                                     <div className="text-slate-600 font-medium leading-relaxed">{step.description || 'No description provided.'}</div>
                                                                 </div>
                                                                 <div className="text-right shrink-0 font-mono text-[10px] text-slate-600">
@@ -1056,8 +1059,9 @@
                             </div>
                             <div className="space-y-8 flex-1">
                                 {tabs.map(tab => {
-                                    const processNodes = tab.present.nodes.filter(n => n.type === 'process' || n.type === 'approval').sort((a,b) => a.x - b.x);
-                                    const roles = tab.present.lanes.sort((a,b) => a.y - b.y);
+                                    const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
+                                    const processNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
+                                    const roles = vm.lanes;
                                     if(processNodes.length === 0) return null;
                                     return (
                                         <div key={`raci-${tab.id}`} className="border border-slate-200 rounded-lg overflow-hidden text-xs page-break-inside-avoid mb-6">
@@ -1077,7 +1081,7 @@
                                                 <tbody className="divide-y divide-slate-100 font-semibold">
                                                     {processNodes.map(act => (
                                                         <tr key={act.id}>
-                                                            <td className="py-3.5 px-4 font-bold text-slate-900 bg-slate-50/20">{act.label.replace('\n', ' ')}</td>
+                                                            <td className="py-3.5 px-4 font-bold text-slate-900 bg-slate-50/20">{act.label}</td>
                                                             {roles.map(role => {
                                                                 const assign = raciAssignments[act.id]?.[role.id] || '';
                                                                 let badgeStyle = "text-slate-400 font-normal";
@@ -1601,13 +1605,10 @@
             let totalAnnualChaosTax = 0;
             let totalDailyWasteHours = 0;
             tabs.forEach(tab => {
-                tab.present.nodes.forEach(n => {
-                    if (n.type === 'process' || n.type === 'approval') {
-                        const dailyWasteHours = ((Number(n.delayMinutes)||0) * (Number(n.affectedStaff)||1)) / 60;
-                        totalDailyWasteHours += dailyWasteHours;
-                        totalAnnualChaosTax += dailyWasteHours * (Number(n.hourlyRate)||0) * 22 * 12;
-                    }
-                });
+                const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [] };
+                const tax = window.DiagramEditor?.computeTabChaosTax?.(vm.tasks) || { annual: 0, dailyHours: 0 };
+                totalAnnualChaosTax += tax.annual;
+                totalDailyWasteHours += tax.dailyHours;
             });
             const growthMultiplier = 1 + (synthesis.expectedGrowth * 0.1);
             const projected3YearLoss = Math.round(totalAnnualChaosTax * 3 * growthMultiplier);

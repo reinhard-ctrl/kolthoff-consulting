@@ -182,7 +182,7 @@
     <script src="../../shared/engagement-config.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250706-drawio-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250706-bpmn-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1077,36 +1077,31 @@
             // --- SYNC WORKFLOW DIAGRAM AS SOP MANUAL ---
             const handleSyncSopFromTab = (tab) => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
-                
-                const sortedNodes = (tab.present?.nodes || [])
-                    .filter(n => n.type === 'process' || n.type === 'approval')
-                    .sort((a, b) => a.x - b.x);
+                const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
+                const sortedNodes = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
 
                 if (sortedNodes.length === 0) {
-                    triggerToast("⚠️ This workflow diagram has no process or approval nodes to import.");
+                    triggerToast('⚠️ This BPMN diagram has no tasks to import. Add BPMN task shapes in Workflow Builder first.');
                     return;
                 }
 
-                // Resolve RACI roles dynamically from active profile RACI assignments matrix and swimlanes
                 const rRoles = [];
                 const aRoles = [];
                 const cRoles = [];
                 const iRoles = [];
 
-                sortedNodes.forEach(node => {
-                    const lane = tab.present?.lanes?.find(l => l.id === node.roleId);
-                    if (lane) {
-                        const name = lane.label.replace(/\n/g, ' ');
-                        if (!rRoles.includes(name)) rRoles.push(name);
+                sortedNodes.forEach((node) => {
+                    if (node.owner && node.owner !== 'Unassigned' && !rRoles.includes(node.owner)) {
+                        rRoles.push(node.owner);
                     }
                 });
 
                 if (profile?.raciAssignments) {
-                    sortedNodes.forEach(node => {
+                    sortedNodes.forEach((node) => {
                         const nodeRaci = profile.raciAssignments[node.id];
                         if (nodeRaci) {
                             Object.entries(nodeRaci).forEach(([laneId, value]) => {
-                                const lane = tab.present?.lanes?.find(l => l.id === laneId);
+                                const lane = vm.lanes.find((l) => l.id === laneId);
                                 if (lane) {
                                     const name = lane.label.replace(/\n/g, ' ');
                                     if (value === 'R' && !rRoles.includes(name)) rRoles.push(name);
@@ -1119,16 +1114,13 @@
                     });
                 }
 
-                const mappedSteps = sortedNodes.map(node => {
-                    const lane = tab.present?.lanes?.find(l => l.id === node.roleId);
-                    return {
-                        id: node.id,
-                        action: node.label.replace(/\n/g, ' '),
-                        owner: lane ? lane.label.replace(/\n/g, ' ') : 'Unassigned',
-                        duration: node.duration || '1 Hour',
-                        details: node.description || 'Proceed with standard operational precautions as outlined in Mod2 diagrammer.'
-                    };
-                });
+                const mappedSteps = sortedNodes.map((node) => ({
+                    id: node.id,
+                    action: node.label,
+                    owner: node.owner || 'Unassigned',
+                    duration: node.duration || '1 Hour',
+                    details: node.description || 'Proceed with standard operational precautions as defined in the BPMN workflow.',
+                }));
 
                 const uniqueLanes = [...new Set(mappedSteps.map(s => s.owner).filter(o => o !== 'Unassigned'))];
 
@@ -2539,7 +2531,8 @@
                                         }
 
                                         return availableTabs.map(tab => {
-                                            const pNodesCount = (tab.present?.nodes || []).filter(n => n.type === 'process' || n.type === 'approval').length;
+                                            const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
+                                            const pNodesCount = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event').length;
                                             return (
                                                 <div 
                                                     key={tab.id}
@@ -2548,7 +2541,7 @@
                                                 >
                                                     <div>
                                                         <h4 className="text-xs font-bold text-slate-100 group-hover:text-brandTeal-404 transition-colors">{tab.name}</h4>
-                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">{pNodesCount} Process Blocks · {tab.present?.lanes?.length || 0} Swimlanes</p>
+                                                        <p className="text-[10px] text-slate-400 mt-1 font-mono">{pNodesCount} BPMN Tasks · {vm.lanes.length || 0} Swimlanes</p>
                                                     </div>
                                                     <button type="button" className="text-[10px] font-bold uppercase bg-brandTeal-500/10 text-brandTeal-404 border border-brandTeal-500/20 px-2.5 py-1 rounded group-hover:bg-brandTeal-500 group-hover:text-brandNavy-955 transition-all">Import</button>
                                                 </div>
