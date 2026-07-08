@@ -48,6 +48,21 @@ export interface Withholding2307Record {
   createdAt: number;
 }
 
+export interface Registration2303Record {
+  id: string;
+  clientCompany: string;
+  profileId?: string;
+  tin: string;
+  corNumber?: string;
+  issueDate?: string;
+  rdo?: string;
+  taxType?: string;
+  verifiedDate: string;
+  certificateRef?: string;
+  notes?: string;
+  createdAt: number;
+}
+
 export {
   INVOICE_STATUSES,
   formatInvoiceNumber,
@@ -66,6 +81,7 @@ export {
   outstandingAmount,
   invoicesToCsv,
   withholding2307ToCsv,
+  registration2303ToCsv,
   formatBillingPeriodLabel,
   currentBillingPeriod,
   suggestRetainerMonthlySuffix,
