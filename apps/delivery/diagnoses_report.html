@@ -593,24 +593,56 @@
             },
         };
 
-        const DiagnosisSectionChrome = ({ sectionId, clientCompany, actions }) => {
+        const DiagnosisSectionChrome = ({ sectionId, clientCompany }) => {
             const meta = DIAGNOSIS_SECTION_META[sectionId];
             if (!meta) return null;
             return (
                 <header data-diagnosis-section-header className="shrink-0 bg-brandNavy-900 border-b border-brandNavy-800 px-6 py-4 flex flex-col gap-2 no-print">
-                    <div className="flex flex-wrap justify-between items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                            <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">{meta.title}</h2>
-                            <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">{meta.description}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 shrink-0">
-                            {actions}
-                            {clientCompany && (
-                                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider hidden sm:inline">{clientCompany}</span>
-                            )}
-                        </div>
+                    <div className="min-w-0">
+                        <h2 className="text-sm font-bold text-brandTeal-400 font-mono uppercase tracking-widest">{meta.title}</h2>
+                        <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">{meta.description}</p>
+                        {clientCompany && (
+                            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mt-2">{clientCompany}</p>
+                        )}
                     </div>
                 </header>
+            );
+        };
+
+        const DiagnosisSidebarActions = ({ activeNav, activeProfileId, isSaving, authError, onSave, onPrintStaffDirectory, hasStaffRows }) => {
+            if (activeNav === 'report') return null;
+
+            const btnBase = 'w-full flex justify-center items-center gap-2 py-2.5 rounded text-[10px] font-bold uppercase transition-all disabled:opacity-50';
+            const btnSecondary = `${btnBase} bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 border border-brandNavy-700`;
+            const btnPrimary = `${btnBase} bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955`;
+
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v2' });
+            if (activeProfileId) builderParams.set('profile', activeProfileId);
+            const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
+
+            return (
+                <div className="space-y-2">
+                    <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-bold px-0.5">Section actions</p>
+                    {activeNav === 'orgchart' && (
+                        <button type="button" onClick={onPrintStaffDirectory} disabled={!hasStaffRows} className={btnSecondary}>
+                            <Icons.Print /> Print Directory
+                        </button>
+                    )}
+                    {activeNav === 'flowcharts' && (
+                        <a href={builderUrl} target="_blank" rel="noreferrer" className={btnSecondary}>
+                            Open Full Screen
+                        </a>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onSave}
+                        disabled={isSaving || !!authError}
+                        className={btnPrimary}
+                        title="Auto-save runs after edits — use this to save immediately"
+                    >
+                        <Icons.Cloud /> {isSaving ? 'Saving…' : 'Save now'}
+                    </button>
+                </div>
             );
         };
 
@@ -720,18 +752,13 @@
             );
         };
 
-        const StaffDirectoryPanel = ({ orgChartMembers, synthesis, setSynthesis, onPrint }) => {
+        const StaffDirectoryPanel = ({ orgChartMembers, synthesis, setSynthesis }) => {
             const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
             return (
                 <div className="no-print shrink-0 border-t border-brandNavy-800 bg-brandNavy-950 p-4 space-y-3">
-                    <div className="flex flex-wrap justify-between items-start gap-3">
-                        <div>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-white">Staff Directory (m1-01)</h3>
-                            <p className="text-[10px] text-slate-400 mt-1">Print a standalone team list with privacy rules — separate from the Waste-to-Peso PDF.</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <button type="button" onClick={onPrint} disabled={rows.length === 0} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase disabled:opacity-40">Print Directory</button>
-                        </div>
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-white">Staff Directory (m1-01)</h3>
+                        <p className="text-[10px] text-slate-400 mt-1">Print a standalone team list with privacy rules — use Print Directory in the sidebar.</p>
                     </div>
                     {rows.length > 0 ? (
                         <div className="max-h-32 overflow-y-auto border border-brandNavy-800 rounded-lg">
@@ -2615,8 +2642,17 @@
                             </div>
                         </nav>
 
-                        <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950">
-                            <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
+                        <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950 space-y-3">
+                            <DiagnosisSidebarActions
+                                activeNav={activeNav}
+                                activeProfileId={activeProfileId}
+                                isSaving={isSaving}
+                                authError={authError}
+                                onSave={() => handleSectionSave()}
+                                onPrintStaffDirectory={handlePrintStaffDirectory}
+                                hasStaffRows={(DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || []).length > 0}
+                            />
+                            <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider pt-1 border-t border-brandNavy-800">
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${authError ? 'bg-rose-500' : isSaving ? 'bg-amber-400 animate-pulse' : isAuthed ? 'bg-emerald-500' : 'bg-slate-600'}`} />
                                 <span className="text-slate-400">
                                     {authError ? 'Offline — edits stay local' : isSaving ? 'Saving…' : activeNav === 'report' ? 'Preview mode' : 'Auto-save on'}
@@ -2630,39 +2666,6 @@
                             <DiagnosisSectionChrome
                                 sectionId={activeNav}
                                 clientCompany={clientCompany}
-                                actions={(() => {
-                                    const saveBtn = activeNav === 'report' ? null : (
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSectionSave()}
-                                            disabled={isSaving || !!authError}
-                                            className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 border border-brandNavy-700 rounded text-[10px] font-bold uppercase disabled:opacity-50"
-                                            title="Auto-save runs after edits — use this to save immediately"
-                                        >
-                                            {isSaving ? 'Saving…' : 'Save now'}
-                                        </button>
-                                    );
-                                    if (activeNav === 'flowcharts') {
-                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v2' });
-                                        if (activeProfileId) builderParams.set('profile', activeProfileId);
-                                        const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
-                                        return (
-                                            <>
-                                                <a href={builderUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 rounded text-[10px] font-bold uppercase">Open Full Screen</a>
-                                                {saveBtn}
-                                            </>
-                                        );
-                                    }
-                                    if (activeNav === 'orgchart') {
-                                        return (
-                                            <>
-                                                <button type="button" onClick={handlePrintStaffDirectory} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase">Print Directory</button>
-                                                {saveBtn}
-                                            </>
-                                        );
-                                    }
-                                    return saveBtn;
-                                })()}
                             />
                         )}
 
@@ -2684,7 +2687,6 @@
                                         orgChartMembers={orgChartMembers}
                                         synthesis={synthesis}
                                         setSynthesis={setSynthesis}
-                                        onPrint={handlePrintStaffDirectory}
                                     />
                                 </div>
                             )}
