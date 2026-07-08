@@ -362,3 +362,34 @@ export function withholding2307ToCsv(records) {
   };
   return [header, ...rows].map((row) => row.map(escape).join(',')).join('\n');
 }
+
+export function registration2303ToCsv(records) {
+  const header = [
+    'Client',
+    'TIN',
+    'COR Number',
+    'Issue Date',
+    'RDO',
+    'Tax Type',
+    'Verified Date',
+    'Certificate Ref',
+    'Notes',
+  ];
+  const rows = (records || []).map((r) => [
+    r.clientCompany,
+    r.tin || '',
+    r.corNumber || '',
+    r.issueDate || '',
+    r.rdo || '',
+    r.taxType || '',
+    r.verifiedDate || '',
+    r.certificateRef || '',
+    r.notes || '',
+  ]);
+  const escape = (val) => {
+    const s = String(val ?? '');
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  return [header, ...rows].map((row) => row.map(escape).join(',')).join('\n');
+}

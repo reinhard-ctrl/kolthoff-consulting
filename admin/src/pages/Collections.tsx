@@ -11,9 +11,11 @@ import {
   isOverdue,
   outstandingAmount,
   withholding2307ToCsv,
+  registration2303ToCsv,
   formatBillingPeriodLabel,
   type InvoiceRecord,
   type Withholding2307Record,
+  type Registration2303Record,
 } from '../lib/invoices';
 import {
   buildProMonthlyInvoiceDraft,
@@ -29,6 +31,7 @@ interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
+  clientTin?: string;
   quoteId?: string;
   engagementType?: string;
   productId?: string;
@@ -48,7 +51,7 @@ interface ContractRecord {
   signedAt?: string;
 }
 
-type TabId = 'collections' | 'subscriptions' | '2307';
+type TabId = 'collections' | 'subscriptions' | '2307' | '2303';
 
 function statusBadge(status: string) {
   if (status === 'paid') return <span className="text-emerald-400 text-xs uppercase font-bold">Paid</span>;
@@ -76,6 +79,7 @@ export default function Collections() {
   const [tab, setTab] = useState<TabId>('collections');
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [withholding, setWithholding] = useState<Withholding2307Record[]>([]);
+  const [registrations, setRegistrations] = useState<Registration2303Record[]>([]);
   const [profiles, setProfiles] = useState<WorkbookProfile[]>([]);
   const [contracts, setContracts] = useState<ContractRecord[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -93,6 +97,18 @@ export default function Collections() {
     certificateRef: '',
     notes: '',
   });
+  const [w2303Form, setW2303Form] = useState({
+    profileId: '',
+    clientCompany: '',
+    tin: '',
+    corNumber: '',
+    issueDate: '',
+    rdo: '',
+    taxType: '',
+    verifiedDate: new Date().toISOString().slice(0, 10),
+    certificateRef: '',
+    notes: '',
+  });
 
   useEffect(() => {
     const unsubs = [
@@ -105,6 +121,11 @@ export default function Collections() {
         const list: Withholding2307Record[] = [];
         snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Withholding2307Record));
         setWithholding(list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+      }),
+      onSnapshot(adminCol('registration_2303'), (snap) => {
+        const list: Registration2303Record[] = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Registration2303Record));
+        setRegistrations(list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
       }),
       onSnapshot(adminCol('workbook_profiles'), (snap) => {
         const list: WorkbookProfile[] = [];
@@ -247,6 +268,55 @@ export default function Collections() {
         notes: '',
       });
       showToast('Form 2307 certificate logged.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const select2303Profile = (profileId: string) => {
+    const profile = profiles.find((p) => p.id === profileId);
+    setW2303Form((prev) => ({
+      ...prev,
+      profileId,
+      clientCompany: profile ? getClientDisplayName(profile) : prev.clientCompany,
+      tin: profile?.clientTin || prev.tin,
+    }));
+  };
+
+  const add2303 = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!w2303Form.clientCompany.trim() || !w2303Form.tin.trim()) return;
+    setProcessing(true);
+    try {
+      const id = `w2303-${Date.now()}`;
+      const record: Registration2303Record = {
+        id,
+        clientCompany: w2303Form.clientCompany.trim(),
+        profileId: w2303Form.profileId || undefined,
+        tin: w2303Form.tin.trim(),
+        corNumber: w2303Form.corNumber.trim() || undefined,
+        issueDate: w2303Form.issueDate || undefined,
+        rdo: w2303Form.rdo.trim() || undefined,
+        taxType: w2303Form.taxType.trim() || undefined,
+        verifiedDate: w2303Form.verifiedDate,
+        certificateRef: w2303Form.certificateRef.trim() || undefined,
+        notes: w2303Form.notes.trim() || undefined,
+        createdAt: Date.now(),
+      };
+      await setDoc(adminDoc('registration_2303', id), record);
+      setW2303Form({
+        profileId: '',
+        clientCompany: '',
+        tin: '',
+        corNumber: '',
+        issueDate: '',
+        rdo: '',
+        taxType: '',
+        verifiedDate: new Date().toISOString().slice(0, 10),
+        certificateRef: '',
+        notes: '',
+      });
+      showToast('Form 2303 COR logged.');
     } finally {
       setProcessing(false);
     }
@@ -417,6 +487,13 @@ export default function Collections() {
           className={`px-4 py-2 rounded-lg text-xs font-bold uppercase ${tab === '2307' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-400'}`}
         >
           Form 2307
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('2303')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold uppercase ${tab === '2303' ? 'bg-brandTeal-500 text-brandNavy-955' : 'bg-brandNavy-800 text-slate-400'}`}
+        >
+          Form 2303
         </button>
       </div>
 
@@ -648,6 +725,169 @@ export default function Collections() {
               </tbody>
             </table>
             {withholding.length === 0 && <p className="p-4 text-slate-500 italic text-sm">No Form 2307 certificates logged yet.</p>}
+          </div>
+        </div>
+      )}
+
+      {tab === '2303' && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          <form onSubmit={add2303} className="glass-panel p-5 space-y-3">
+            <h2 className="font-bold text-sm uppercase tracking-wider text-slate-300">Log Certificate of Registration</h2>
+            <p className="text-[10px] text-slate-500 leading-relaxed">
+              BIR Form 2303 (COR) confirms a client&apos;s tax registration. Verify before first invoice or contract signing.
+            </p>
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 block mb-1">Link to planner profile</label>
+              <select
+                value={w2303Form.profileId}
+                onChange={(e) => select2303Profile(e.target.value)}
+                className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm"
+              >
+                <option value="">— Manual entry —</option>
+                {profiles
+                  .slice()
+                  .sort((a, b) => getClientDisplayName(a).localeCompare(getClientDisplayName(b)))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {getClientDisplayName(p)}{p.quoteId ? ` · ${p.quoteId}` : ''}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 block mb-1">Registered name</label>
+              <input
+                required
+                value={w2303Form.clientCompany}
+                onChange={(e) => setW2303Form({ ...w2303Form, clientCompany: e.target.value })}
+                className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">TIN</label>
+                <input
+                  required
+                  placeholder="000-000-000-000"
+                  value={w2303Form.tin}
+                  onChange={(e) => setW2303Form({ ...w2303Form, tin: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">COR number</label>
+                <input
+                  value={w2303Form.corNumber}
+                  onChange={(e) => setW2303Form({ ...w2303Form, corNumber: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 font-mono text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Issue date</label>
+                <input
+                  type="date"
+                  value={w2303Form.issueDate}
+                  onChange={(e) => setW2303Form({ ...w2303Form, issueDate: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Verified date</label>
+                <input
+                  type="date"
+                  value={w2303Form.verifiedDate}
+                  onChange={(e) => setW2303Form({ ...w2303Form, verifiedDate: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">RDO</label>
+                <input
+                  placeholder="e.g. 39 South QC"
+                  value={w2303Form.rdo}
+                  onChange={(e) => setW2303Form({ ...w2303Form, rdo: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Tax type</label>
+                <select
+                  value={w2303Form.taxType}
+                  onChange={(e) => setW2303Form({ ...w2303Form, taxType: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+                >
+                  <option value="">— Select —</option>
+                  <option value="VAT">VAT</option>
+                  <option value="NON-VAT">Non-VAT</option>
+                  <option value="PERCENTAGE">Percentage Tax</option>
+                  <option value="EXEMPT">Tax Exempt</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 block mb-1">Certificate reference</label>
+              <input
+                placeholder="Scan filename or Drive link"
+                value={w2303Form.certificateRef}
+                onChange={(e) => setW2303Form({ ...w2303Form, certificateRef: e.target.value })}
+                className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] uppercase text-slate-500 block mb-1">Notes</label>
+              <textarea
+                value={w2303Form.notes}
+                onChange={(e) => setW2303Form({ ...w2303Form, notes: e.target.value })}
+                rows={2}
+                className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 resize-none"
+              />
+            </div>
+            <button type="submit" disabled={processing} className="w-full py-2 bg-brandTeal-500 text-brandNavy-955 font-bold rounded-lg text-xs uppercase">
+              Add 2303 record
+            </button>
+          </form>
+
+          <div className="glass-panel overflow-hidden">
+            <div className="flex justify-between items-center px-4 py-3 border-b border-brandNavy-800">
+              <span className="text-[10px] font-mono uppercase text-slate-500">Certificates of registration</span>
+              <button
+                type="button"
+                onClick={() => downloadCsv(`kolthoff-2303-${new Date().toISOString().slice(0, 10)}.csv`, registration2303ToCsv(registrations))}
+                className="text-[10px] font-bold uppercase text-brandTeal-400"
+              >
+                Export CSV
+              </button>
+            </div>
+            <table className="w-full text-left text-sm">
+              <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
+                <tr>
+                  <th className="p-3">Client</th>
+                  <th className="p-3">TIN</th>
+                  <th className="p-3">Tax type</th>
+                  <th className="p-3">Verified</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-brandNavy-800">
+                {registrations.map((row) => (
+                  <tr key={row.id}>
+                    <td className="p-3">
+                      <div className="font-bold">{row.clientCompany}</div>
+                      {row.corNumber && <div className="text-[10px] font-mono text-slate-500 mt-0.5">COR {row.corNumber}</div>}
+                    </td>
+                    <td className="p-3 font-mono text-xs">{row.tin}</td>
+                    <td className="p-3 text-xs text-slate-400">{row.taxType || '—'}</td>
+                    <td className="p-3 text-xs text-slate-500">{row.verifiedDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {registrations.length === 0 && (
+              <p className="p-4 text-slate-500 italic text-sm">No Form 2303 certificates logged yet.</p>
+            )}
           </div>
         </div>
       )}

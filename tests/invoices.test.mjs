@@ -10,6 +10,7 @@ import {
   computeInvoiceAmounts,
   formatInvoiceNumber,
   invoicesToCsv,
+  registration2303ToCsv,
   mergePortalContractsFromInvoices,
   outstandingAmount,
   portalStatusLabel,
@@ -110,5 +111,22 @@ assert.equal(addendumInvoice.invoiceNumber, 'INV-2026-APARRIA1');
 assert.equal(addendumInvoice.documentType, 'addendum');
 assert.equal(addendumInvoice.addendumRef, 'KC-2026-APARRI-A1');
 assert.equal(addendumInvoice.id, 'inv-p1-A1');
+
+const corCsv = registration2303ToCsv([
+  {
+    clientCompany: 'Acme Corp',
+    tin: '123-456-789-000',
+    corNumber: 'COR-2024-001',
+    issueDate: '2024-01-15',
+    rdo: '39 South QC',
+    taxType: 'VAT',
+    verifiedDate: '2026-07-01',
+    certificateRef: 'drive-link',
+    notes: 'Verified on onboarding',
+  },
+]);
+assert.ok(corCsv.includes('TIN'));
+assert.ok(corCsv.includes('123-456-789-000'));
+assert.ok(corCsv.includes('COR-2024-001'));
 
 console.log('invoices.test.mjs: all assertions passed');
