@@ -453,11 +453,12 @@
             future: [],
         });
 
-        const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520 }) => {
+        const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520, hideApplyButton = false, exportControllerRef }) => {
             const iframeRef = useRef(null);
             const readyRef = useRef(false);
             const configuredRef = useRef(false);
             const pendingXmlRef = useRef(xml);
+            const exportWaitRef = useRef(null);
             const presetData = window.DiagramEditor?.getPreset(preset);
             const embedUrl = window.DiagramEditor?.getDrawioEmbedUrl({
                 libs: presetData?.embedLibs || presetData?.configure?.defaultLibraries?.split(';')[0] || 'bpmn',
@@ -473,6 +474,28 @@
                     : window.DiagramEditor?.BLANK_BPMN_XML;
                 postAction({ action: 'load', xml: diagramXml || blank || '', autosave: 1 });
             };
+
+            const maybeFinishExport = () => {
+                const pending = exportWaitRef.current;
+                if (!pending || !pending.gotXml || !pending.gotSvg) return;
+                pending.resolve({ xml: pending.xml || '', svg: pending.svg || '' });
+                exportWaitRef.current = null;
+            };
+
+            const applyDiagram = () => new Promise((resolve, reject) => {
+                exportWaitRef.current = { resolve, reject, gotXml: false, gotSvg: false, xml: '', svg: '' };
+                postAction({ action: 'export', format: 'xml', xml: true, spin: 'Saving…' });
+                postAction({ action: 'export', format: 'xmlsvg', spin: 'Saving…' });
+                setTimeout(() => {
+                    if (!exportWaitRef.current) return;
+                    exportWaitRef.current.reject(new Error('Diagram export timed out'));
+                    exportWaitRef.current = null;
+                }, 20000);
+            });
+
+            useEffect(() => {
+                if (exportControllerRef) exportControllerRef.current = { applyDiagram };
+            });
 
             useEffect(() => {
                 pendingXmlRef.current = xml;
@@ -493,8 +516,21 @@
                         sendLoad(pendingXmlRef.current);
                     }
                     if (msg.event === 'export') {
-                        if (msg.format === 'xml' && msg.xml && onXmlChange) onXmlChange(msg.xml);
-                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data && onSvgExport) onSvgExport(msg.data);
+                        if (msg.format === 'xml' && msg.xml) {
+                            if (onXmlChange) onXmlChange(msg.xml);
+                            if (exportWaitRef.current) {
+                                exportWaitRef.current.gotXml = true;
+                                exportWaitRef.current.xml = msg.xml;
+                            }
+                        }
+                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data) {
+                            if (onSvgExport) onSvgExport(msg.data);
+                            if (exportWaitRef.current) {
+                                exportWaitRef.current.gotSvg = true;
+                                exportWaitRef.current.svg = msg.data;
+                            }
+                        }
+                        maybeFinishExport();
                     }
                     if (msg.event === 'autosave' && msg.xml && onXmlChange) onXmlChange(msg.xml);
                 };
@@ -504,15 +540,17 @@
 
             return (
                 <div className="flex flex-col gap-3 h-full min-h-0">
-                    <div className="flex flex-wrap gap-2 no-print shrink-0">
-                        <button
-                            type="button"
-                            onClick={() => { postAction({ action: 'export', format: 'xml', xml: true, spin: 'Exporting…' }); postAction({ action: 'export', format: 'xmlsvg', spin: 'Exporting…' }); }}
-                            className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                            Apply Diagram
-                        </button>
-                    </div>
+                    {!hideApplyButton && (
+                        <div className="flex flex-wrap gap-2 no-print shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => applyDiagram().catch(() => {})}
+                                className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                                Apply Diagram
+                            </button>
+                        </div>
+                    )}
                     <iframe ref={iframeRef} src={embedUrl} className="w-full flex-1 min-h-0 border border-brandNavy-800 rounded-xl bg-white" style={typeof height === 'number' ? { height } : height === '100%' ? { height: '100%' } : undefined} title="draw.io editor" />
                 </div>
             );
@@ -535,23 +573,23 @@
         const DIAGNOSIS_SECTION_META = {
             orgchart: {
                 title: '1. Organization Chart (As-Is)',
-                description: 'Map reporting lines with draw.io org chart shapes. Print the staff directory (m1-01) and sync to the client portal when ready.',
+                description: 'Map reporting lines with draw.io org chart shapes. Changes auto-save — or click Save to Cloud to apply the diagram and sync immediately.',
             },
             flowcharts: {
                 title: '2. Workflow Diagrammer',
-                description: 'Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram.',
+                description: 'Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram. Auto-saves after edits.',
             },
             raci: {
                 title: '3. RACI Matrix',
-                description: 'Assign strict execution boundaries across the selected workflow. Roles are mapped from Organization Unit lanes in the workflow builder.',
+                description: 'Assign strict execution boundaries across the selected workflow. Roles are mapped from Organization Unit lanes in the workflow builder. Auto-saves after edits.',
             },
             saas: {
                 title: '4. SaaS Bill Audit',
-                description: 'Inventory current subscriptions to identify unused seats, duplicate tools, and generate immediate cost-recovery recommendations.',
+                description: 'Inventory current subscriptions to identify unused seats, duplicate tools, and generate immediate cost-recovery recommendations. Auto-saves after edits.',
             },
             synthesis: {
                 title: '5. Strategy & Priorities',
-                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Waste-to-Peso Report.',
+                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Waste-to-Peso Report. Auto-saves after edits.',
             },
         };
 
@@ -595,18 +633,46 @@
             );
         };
 
-        const WorkflowBuilderEmbedPanel = ({ activeProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-collapsible-leakage-v1' });
+        const WorkflowBuilderEmbedPanel = ({ activeProfileId, iframeRef }) => {
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             return (
-                <iframe src={builderUrl} className="w-full h-full min-h-0 border-0 bg-brandNavy-950" title="Workflow Builder embed" />
+                <iframe ref={iframeRef} src={builderUrl} className="w-full h-full min-h-0 border-0 bg-brandNavy-950" title="Workflow Builder embed" />
             );
         };
 
-        const OrgChartBuilderPanel = ({ orgChartXml, setOrgChartXml, setOrgChartSvg }) => (
+        const requestWorkflowEmbedSave = (iframe, { applyDiagram = true } = {}) => new Promise((resolve, reject) => {
+            if (!iframe?.contentWindow) {
+                reject(new Error('Workflow builder not ready'));
+                return;
+            }
+            const requestId = `save-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const timeout = setTimeout(() => {
+                window.removeEventListener('message', handler);
+                reject(new Error('Workflow save timed out'));
+            }, 25000);
+            const handler = (evt) => {
+                if (!evt.data || typeof evt.data !== 'string') return;
+                let msg;
+                try { msg = JSON.parse(evt.data); } catch { return; }
+                if (msg?.type !== 'kolthoff-workflow-save-result' || msg.requestId !== requestId) return;
+                clearTimeout(timeout);
+                window.removeEventListener('message', handler);
+                if (msg.ok) resolve(msg);
+                else reject(new Error(msg.error || 'Workflow save failed'));
+            };
+            window.addEventListener('message', handler);
+            iframe.contentWindow.postMessage(JSON.stringify({
+                type: 'kolthoff-workflow-save-request',
+                requestId,
+                applyDiagram,
+            }), '*');
+        });
+
+        const OrgChartBuilderPanel = ({ orgChartXml, setOrgChartXml, setOrgChartSvg, exportControllerRef }) => (
             <div className="w-full h-full min-h-0 flex flex-col">
-                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={(svg) => setOrgChartSvg(printReadySvg(svg))} height="100%" />
+                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={(svg) => setOrgChartSvg(printReadySvg(svg))} height="100%" hideApplyButton exportControllerRef={exportControllerRef} />
             </div>
         );
 
@@ -654,7 +720,7 @@
             );
         };
 
-        const StaffDirectoryPanel = ({ orgChartMembers, synthesis, setSynthesis, onPrint, onSave, isSaving, authError }) => {
+        const StaffDirectoryPanel = ({ orgChartMembers, synthesis, setSynthesis, onPrint }) => {
             const rows = DRH().normalizeStaffDirectoryRows?.(orgChartMembers) || [];
             return (
                 <div className="no-print shrink-0 border-t border-brandNavy-800 bg-brandNavy-950 p-4 space-y-3">
@@ -665,7 +731,6 @@
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <button type="button" onClick={onPrint} disabled={rows.length === 0} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase disabled:opacity-40">Print Directory</button>
-                            <button type="button" onClick={onSave} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">{isSaving ? 'Syncing…' : 'Sync'}</button>
                         </div>
                     </div>
                     {rows.length > 0 ? (
@@ -681,7 +746,7 @@
                             {rows.length > 8 && <p className="text-[9px] text-slate-500 p-2">+{rows.length - 8} more in print view</p>}
                         </div>
                     ) : (
-                        <p className="text-[10px] text-slate-500 italic">Apply the org chart diagram above, then sync — roster rows appear here.</p>
+                        <p className="text-[10px] text-slate-500 italic">Save the org chart above — roster rows appear here after sync.</p>
                     )}
                     <div>
                         <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Directory PDF link (optional — Google Drive)</label>
@@ -1694,7 +1759,7 @@
                                 />
                             ) : (
                                 <p className="text-xs text-slate-500 italic mb-4 p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    Org chart diagram not exported yet. Open the Org Chart section, click <strong>Apply Diagram</strong>, then Sync to Cloud — the chart will appear here on refresh.
+                                    Org chart diagram not exported yet. Open the Org Chart section and click <strong>Save to Cloud</strong> — the chart will appear here on refresh.
                                 </p>
                             )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
@@ -2104,6 +2169,10 @@
             const [synthesis, setSynthesis] = useState(createDefaultSynthesis);
             const [orgChartXml, setOrgChartXml] = useState('');
             const [orgChartSvg, setOrgChartSvg] = useState('');
+            const orgChartExportRef = useRef(null);
+            const workflowIframeRef = useRef(null);
+            const autoSaveReadyRef = useRef(false);
+            const autoSaveTimerRef = useRef(null);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -2142,6 +2211,10 @@
                 }, (err) => console.error("Firestore Snapshot Sync Error:", err));
                 return () => unsubscribe();
             }, [user]);
+
+            useEffect(() => {
+                autoSaveReadyRef.current = false;
+            }, [activeProfileId]);
 
             useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
@@ -2217,6 +2290,8 @@
                     } else {
                         setSynthesis(createDefaultSynthesis());
                     }
+                    autoSaveReadyRef.current = false;
+                    setTimeout(() => { autoSaveReadyRef.current = true; }, 1200);
                 }
             }, [activeProfileId, workbookProfiles]);
 
@@ -2344,13 +2419,22 @@
                 window.print();
             };
 
-            const handleSaveToCloud = async () => {
-                if (authError) return triggerToast("❌ Sync Disabled (GCP Key Issue)");
-                if (!isAuthed || !activeProfileId) return;
+            const handleSaveToCloud = async ({ silent = false, skipWorkflowTabs = false, orgOverride = null } = {}) => {
+                if (authError) {
+                    if (!silent) triggerToast("❌ Sync Disabled (GCP Key Issue)");
+                    return false;
+                }
+                if (!isAuthed || !activeProfileId) return false;
                 setIsSaving(true);
                 try {
                     const EC = window.EngagementConfig || {};
+                    const WT = window.WorkflowTabs;
                     const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                    const profileSnap = await window.getDoc(profileRef);
+                    const existing = profileSnap.exists() ? profileSnap.data() : {};
+                    const tabsPayload = skipWorkflowTabs ? {} : (WT?.buildWorkflowTabsPayload?.('diagnosis', tabs, activeTabId, existing) || {});
+                    const savedOrgXml = orgOverride?.xml ?? orgChartXml;
+                    const savedOrgSvg = orgOverride?.svg ?? orgChartSvg;
                     const chaosTax = EC.buildChaosTaxPayload
                         ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
                         : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
@@ -2358,37 +2442,100 @@
                         synthesis,
                         customAssets: activeProfile?.customAssets,
                     }) ?? activeProfile?.customAssets ?? [];
-                    await window.firestoreSetDoc(profileRef, {
+                    const savePayload = {
+                        ...tabsPayload,
                         subSaaS,
                         raciAssignments,
                         preparedBy,
                         customAssets,
-                        annualOperationalLeakage: totalAnnualChaosTax,
-                        chaosTax,
                         synthesis,
                         diagnosisReportUpdatedAt: Date.now(),
                         orgChart: {
-                            drawioXml: orgChartXml,
-                            svgCache: orgChartSvg,
-                            members: window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || orgChartMembers,
+                            drawioXml: savedOrgXml,
+                            svgCache: savedOrgSvg,
+                            members: window.DiagramEditor?.parseRosterFromDrawioXml?.(savedOrgXml) || orgChartMembers,
                             updatedAt: new Date().toISOString(),
                         },
-                    }, { merge: true });
-                    setOrgChartMembers(window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || orgChartMembers);
+                    };
+                    if (!skipWorkflowTabs) {
+                        savePayload.annualOperationalLeakage = totalAnnualChaosTax;
+                        savePayload.chaosTax = chaosTax;
+                    }
+                    await window.firestoreSetDoc(profileRef, savePayload, { merge: true });
+                    if (orgOverride?.xml) setOrgChartXml(orgOverride.xml);
+                    if (orgOverride?.svg) setOrgChartSvg(orgOverride.svg);
+                    setOrgChartMembers(window.DiagramEditor?.parseRosterFromDrawioXml?.(savedOrgXml) || orgChartMembers);
                     setReportDataUpdatedAt(Date.now());
+                    if (tabsPayload.diagnosisWorkflow?.updatedAt) setWorkflowUpdatedAt(tabsPayload.diagnosisWorkflow.updatedAt);
                     if (window.PortalSync?.syncProfileToPortalIfExists) {
                         try {
-                            const profileSnap = await window.getDoc(profileRef);
-                            const profileData = profileSnap.exists() ? { id: activeProfileId, ...profileSnap.data() } : { id: activeProfileId, subSaaS, chaosTax, annualOperationalLeakage: totalAnnualChaosTax };
+                            const freshSnap = await window.getDoc(profileRef);
+                            const profileData = freshSnap.exists() ? { id: activeProfileId, ...freshSnap.data() } : { id: activeProfileId, subSaaS, chaosTax, annualOperationalLeakage: totalAnnualChaosTax };
                             await window.PortalSync.syncProfileToPortalIfExists(profileData, { syncIntakeAssets: true });
                         } catch (portalErr) {
                             console.warn('Portal sync skipped:', portalErr);
                         }
                     }
-                    triggerToast("💾 Saved to Cloud!");
-                } catch (e) { triggerToast("❌ Error saving."); }
-                setIsSaving(false);
+                    if (!silent) triggerToast("💾 Saved to Cloud!");
+                    return true;
+                } catch (e) {
+                    if (!silent) triggerToast("❌ Error saving.");
+                    return false;
+                } finally {
+                    setIsSaving(false);
+                }
             };
+
+            const handleSectionSave = async ({ silent = false } = {}) => {
+                if (authError || !isAuthed || !activeProfileId) return false;
+                setIsSaving(true);
+                try {
+                    let orgOverride = null;
+                    if (activeNav === 'orgchart') {
+                        const exported = await orgChartExportRef.current?.applyDiagram?.();
+                        if (exported?.xml) {
+                            orgOverride = {
+                                xml: exported.xml,
+                                svg: printReadySvg(exported.svg || ''),
+                            };
+                        }
+                    } else if (activeNav === 'flowcharts') {
+                        await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true });
+                        return await handleSaveToCloud({ silent, skipWorkflowTabs: true });
+                    }
+                    return await handleSaveToCloud({ silent, orgOverride });
+                } catch (e) {
+                    if (!silent) triggerToast(`❌ ${e.message || 'Save failed'}`);
+                    setIsSaving(false);
+                    return false;
+                }
+            };
+
+            useEffect(() => {
+                if (!autoSaveReadyRef.current || authError || !isAuthed || !activeProfileId || isSaving) return;
+                if (activeNav === 'report') return;
+
+                clearTimeout(autoSaveTimerRef.current);
+                const delayMs = ['orgchart', 'flowcharts'].includes(activeNav) ? 5000 : 3000;
+                autoSaveTimerRef.current = setTimeout(() => {
+                    handleSectionSave({ silent: true }).catch(() => {});
+                }, delayMs);
+
+                return () => clearTimeout(autoSaveTimerRef.current);
+            }, [
+                activeNav,
+                orgChartXml,
+                orgChartSvg,
+                tabs,
+                activeTabId,
+                raciAssignments,
+                subSaaS,
+                synthesis,
+                preparedBy,
+                authError,
+                isAuthed,
+                activeProfileId,
+            ]);
 
             const handleMarkMod1Complete = async () => {
                 if (authError || !isAuthed || !activeProfileId) return;
@@ -2469,8 +2616,8 @@
                         </nav>
 
                         <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950">
-                            <button onClick={handleSaveToCloud} disabled={isSaving || !!authError} className={`w-full flex justify-center items-center gap-2 py-3 rounded text-xs font-bold transition-all ${authError ? 'bg-brandNavy-850 text-slate-500 border border-brandNavy-700' : 'bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200'}`}>
-                                {authError ? <Icons.AlertCircle /> : <Icons.Cloud />} {isSaving ? "Syncing..." : (authError ? "Offline Mode" : "Sync to Cloud")}
+                            <button onClick={() => handleSectionSave()} disabled={isSaving || !!authError} className={`w-full flex justify-center items-center gap-2 py-3 rounded text-xs font-bold transition-all ${authError ? 'bg-brandNavy-850 text-slate-500 border border-brandNavy-700' : 'bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200'}`}>
+                                {authError ? <Icons.AlertCircle /> : <Icons.Cloud />} {isSaving ? "Saving..." : (authError ? "Offline Mode" : "Save to Cloud")}
                             </button>
                         </div>
                     </aside>
@@ -2481,16 +2628,24 @@
                                 sectionId={activeNav}
                                 clientCompany={clientCompany}
                                 actions={(() => {
+                                    const saveBtn = (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSectionSave()}
+                                            disabled={isSaving || !!authError}
+                                            className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Saving…' : 'Save to Cloud'}
+                                        </button>
+                                    );
                                     if (activeNav === 'flowcharts') {
-                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-collapsible-leakage-v1' });
+                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v1' });
                                         if (activeProfileId) builderParams.set('profile', activeProfileId);
                                         const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
                                         return (
                                             <>
                                                 <a href={builderUrl} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 rounded text-[10px] font-bold uppercase">Open Full Screen</a>
-                                                <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
-                                                    {isSaving ? 'Syncing…' : 'Sync to Cloud'}
-                                                </button>
+                                                {saveBtn}
                                             </>
                                         );
                                     }
@@ -2498,20 +2653,18 @@
                                         return (
                                             <>
                                                 <button type="button" onClick={handlePrintStaffDirectory} className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 rounded text-[10px] font-bold uppercase">Print Directory</button>
-                                                <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50">
-                                                    {isSaving ? 'Syncing…' : 'Sync Org Chart'}
-                                                </button>
+                                                {saveBtn}
                                             </>
                                         );
                                     }
-                                    return null;
+                                    return saveBtn;
                                 })()}
                             />
                         )}
 
                         <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-hidden w-full flex flex-col min-h-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
-                                <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} />
+                                <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} iframeRef={workflowIframeRef} />
                             )}
                             {activeNav === 'orgchart' && (
                                 <div className="flex flex-col h-full min-h-0">
@@ -2520,6 +2673,7 @@
                                             orgChartXml={orgChartXml}
                                             setOrgChartXml={setOrgChartXml}
                                             setOrgChartSvg={setOrgChartSvg}
+                                            exportControllerRef={orgChartExportRef}
                                         />
                                     </div>
                                     <StaffDirectoryPanel
@@ -2527,9 +2681,6 @@
                                         synthesis={synthesis}
                                         setSynthesis={setSynthesis}
                                         onPrint={handlePrintStaffDirectory}
-                                        onSave={handleSaveToCloud}
-                                        isSaving={isSaving}
-                                        authError={authError}
                                     />
                                 </div>
                             )}
