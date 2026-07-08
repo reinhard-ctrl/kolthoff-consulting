@@ -160,6 +160,7 @@
             }
 
             body.printing-report aside,
+            body.printing-report main,
             body.printing-report .no-print,
             body.printing-report .staff-directory-print-root,
             body.printing-staff-directory aside,
@@ -168,12 +169,8 @@
                 display: none !important;
             }
 
-            body.printing-report main,
-            body.printing-report main > div,
-            body.printing-report .report-print-surface,
-            html.kolthoff-embed body.printing-report main,
-            html.kolthoff-embed body.printing-report main > div,
-            html.kolthoff-embed body.printing-report .report-print-surface {
+            body.printing-report #root > div.flex,
+            body.printing-report .report-print-root {
                 display: block !important;
                 visibility: visible !important;
                 overflow: visible !important;
@@ -182,6 +179,7 @@
                 max-height: none !important;
                 position: static !important;
                 flex: none !important;
+                width: 100% !important;
             }
 
             body.printing-staff-directory .staff-directory-print-root { display: block !important; }
@@ -251,7 +249,8 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-            .report-diagram-img {
+            .report-diagram-img,
+            .report-diagram-inline svg {
                 display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
@@ -266,6 +265,12 @@
                 opacity: 1 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+            .report-diagram-inline {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
             }
             .report-diagram-figure,
             .report-diagram-figure__canvas,
@@ -292,6 +297,14 @@
             }
         }
         .staff-directory-print-root { display: none; }
+        .report-print-root { display: none; }
+        .report-diagram-inline svg {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            max-height: min(72vh, 560px);
+        }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         .report-doc { font-family: "Montserrat", sans-serif; }
@@ -1406,12 +1419,17 @@
 
         const ReportDiagramFigure = ({ src, alt, caption }) => {
             const diagramSrc = useMemo(() => printReadySvg(src), [src]);
-            if (!diagramSrc) return null;
+            const inlineSvg = useMemo(() => DRH().decodeReportDiagramSvgMarkup?.(src) || '', [src]);
+            if (!diagramSrc && !inlineSvg) return null;
             return (
                 <figure className="report-diagram-figure">
                     <div className="report-diagram-figure__canvas">
                         <div className="report-diagram-frame">
-                            <img src={diagramSrc} alt={alt} className="report-diagram-img" />
+                            {inlineSvg ? (
+                                <div className="report-diagram-img report-diagram-inline" dangerouslySetInnerHTML={{ __html: inlineSvg }} aria-label={alt} role="img" />
+                            ) : (
+                                <img src={diagramSrc} alt={alt} className="report-diagram-img" />
+                            )}
                         </div>
                     </div>
                     {caption && <figcaption className="report-diagram-figure__caption">{caption}</figcaption>}
@@ -2177,6 +2195,23 @@
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
+            const executiveReportProps = useMemo(() => ({
+                clientCompany,
+                preparedBy,
+                tabs,
+                raciAssignments,
+                subSaaS,
+                annualChaosTax: totalAnnualChaosTax,
+                totalDailyWasteHours,
+                synthesis,
+                projected3YearLoss,
+                printConfig,
+                orgChartSvg,
+                orgChartMembers,
+                reportDate,
+                profileTasks: activeProfile?.tasks || [],
+            }), [clientCompany, preparedBy, tabs, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks]);
+
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
                 if (cfg) { setPrintPreset(preset); setPrintConfig({ ...cfg }); }
@@ -2527,22 +2562,7 @@
                                         </details>
                                     </div>
                                     <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:flex-none print:block print:h-auto print:min-h-0 print:overflow-visible print:py-0 print:px-0 print:bg-transparent">
-                                        <ExecutiveReport
-                                            clientCompany={clientCompany}
-                                            preparedBy={preparedBy}
-                                            tabs={tabs}
-                                            raciAssignments={raciAssignments}
-                                            subSaaS={subSaaS}
-                                            annualChaosTax={totalAnnualChaosTax}
-                                            totalDailyWasteHours={totalDailyWasteHours}
-                                            synthesis={synthesis}
-                                            projected3YearLoss={projected3YearLoss}
-                                            printConfig={printConfig}
-                                            orgChartSvg={orgChartSvg}
-                                            orgChartMembers={orgChartMembers}
-                                            reportDate={reportDate}
-                                            profileTasks={activeProfile?.tasks || []}
-                                        />
+                                        <ExecutiveReport {...executiveReportProps} />
                                     </div>
                                 </div>
                             )}
@@ -2555,6 +2575,9 @@
                         privacyGroundRules={synthesis.privacyGroundRules}
                         reportDate={reportDate}
                     />
+                    <div className="report-print-root bg-white text-slate-900">
+                        <ExecutiveReport {...executiveReportProps} />
+                    </div>
                 </div>
             );
         }
