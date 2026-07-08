@@ -573,7 +573,7 @@
         const DIAGNOSIS_SECTION_META = {
             orgchart: {
                 title: '1. Organization Chart (As-Is)',
-                description: 'Map reporting lines with draw.io org chart shapes. Changes auto-save — or click Save to Cloud to apply the diagram and sync immediately.',
+                description: 'Map reporting lines with draw.io org chart shapes. Edits auto-save after a few seconds.',
             },
             flowcharts: {
                 title: '2. Workflow Diagrammer',
@@ -634,7 +634,7 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId, iframeRef }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v1' });
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v2' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             return (
@@ -2616,9 +2616,12 @@
                         </nav>
 
                         <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950">
-                            <button onClick={() => handleSectionSave()} disabled={isSaving || !!authError} className={`w-full flex justify-center items-center gap-2 py-3 rounded text-xs font-bold transition-all ${authError ? 'bg-brandNavy-850 text-slate-500 border border-brandNavy-700' : 'bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200'}`}>
-                                {authError ? <Icons.AlertCircle /> : <Icons.Cloud />} {isSaving ? "Saving..." : (authError ? "Offline Mode" : "Save to Cloud")}
-                            </button>
+                            <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-wider">
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${authError ? 'bg-rose-500' : isSaving ? 'bg-amber-400 animate-pulse' : isAuthed ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                                <span className="text-slate-400">
+                                    {authError ? 'Offline — edits stay local' : isSaving ? 'Saving…' : activeNav === 'report' ? 'Preview mode' : 'Auto-save on'}
+                                </span>
+                            </div>
                         </div>
                     </aside>
 
@@ -2628,18 +2631,19 @@
                                 sectionId={activeNav}
                                 clientCompany={clientCompany}
                                 actions={(() => {
-                                    const saveBtn = (
+                                    const saveBtn = activeNav === 'report' ? null : (
                                         <button
                                             type="button"
                                             onClick={() => handleSectionSave()}
                                             disabled={isSaving || !!authError}
-                                            className="px-3 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 rounded text-[10px] font-bold uppercase disabled:opacity-50"
+                                            className="px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 border border-brandNavy-700 rounded text-[10px] font-bold uppercase disabled:opacity-50"
+                                            title="Auto-save runs after edits — use this to save immediately"
                                         >
-                                            {isSaving ? 'Saving…' : 'Save to Cloud'}
+                                            {isSaving ? 'Saving…' : 'Save now'}
                                         </button>
                                     );
                                     if (activeNav === 'flowcharts') {
-                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v1' });
+                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-unified-save-v2' });
                                         if (activeProfileId) builderParams.set('profile', activeProfileId);
                                         const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
                                         return (
