@@ -450,7 +450,7 @@
                 description: 'Map how work runs today using draw.io BPMN 2.0 shapes. Saves to the Mod 1 as-is slice (`diagnosisWorkflow`). Set task leakage in the panel below the diagram.',
             },
             raci: {
-                title: '3. RACI Architecture',
+                title: '3. RACI Matrix',
                 description: 'Assign strict execution boundaries across the selected workflow. Roles are mapped from Organization Unit lanes in the workflow builder.',
             },
             saas: {
@@ -2242,8 +2242,8 @@
                             <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-bold mb-3 px-1">Editors & Builders</p>
                             <Mod1DeliverableStrip items={mod1Deliverables} />
                             <button onClick={() => setActiveNav('orgchart')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'orgchart' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Sitemap /> 1. Org Chart</button>
-                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 2. Workflow Builder</button>
-                            <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 3. RACI Architecture</button>
+                            <button onClick={() => setActiveNav('flowcharts')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'flowcharts' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Layout /> 2. Workflow</button>
+                            <button onClick={() => setActiveNav('raci')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'raci' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.Users /> 3. RACI Matrix</button>
                             <button onClick={() => setActiveNav('saas')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'saas' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.CreditCard /> 4. SaaS Bill Audit</button>
                             <button onClick={() => setActiveNav('synthesis')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'synthesis' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.TrendingUp /> 5. Strategy & Priorities</button>
                             <div className="pt-6 mt-4 border-t border-brandNavy-800">
