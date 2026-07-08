@@ -1031,9 +1031,12 @@
   }
 
   function isReportDiagramFilledShape(tag, attrs) {
-    if (tag === 'rect' || tag === 'ellipse' || tag === 'circle' || tag === 'polygon') return true;
-    if (tag !== 'path') return false;
     const fill = getSvgAttribute(attrs, 'fill').trim().toLowerCase();
+    if (tag === 'rect' || tag === 'ellipse' || tag === 'circle' || tag === 'polygon') {
+      if (!fill || fill === 'none' || fill === 'transparent') return false;
+      return true;
+    }
+    if (tag !== 'path') return false;
     return fill && fill !== 'none' && fill !== 'transparent';
   }
 
@@ -1131,24 +1134,90 @@
     return injectReportDiagramPresentationStyles(next);
   }
 
+  function readSvgLengthAttr(attrs, name) {
+    const match = attrs.match(new RegExp(`\\b${name}="([^"]+)"`, 'i'));
+    if (!match) return null;
+    const value = parseFloat(match[1]);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function ensureReportDiagramDataUri(src) {
+    if (!src || typeof src !== 'string') return '';
+    const trimmed = src.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('data:image/svg+xml')) return trimmed;
+    if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) {
+      const svgMarkup = trimmed.startsWith('<?xml')
+        ? trimmed.replace(/^[\s\S]*?(<svg[\s\S]*)$/i, '$1')
+        : trimmed;
+      return `data:image/svg+xml,${encodeURIComponent(svgMarkup)}`;
+    }
+    return trimmed;
+  }
+
+  function finalizeReportDiagramSvgRoot(svgText) {
+    return svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
+      let next = attrs
+        .replace(/\swidth="[^"]*"/gi, '')
+        .replace(/\sheight="[^"]*"/gi, '')
+        .replace(/\spreserveAspectRatio="[^"]*"/gi, '');
+
+      let viewBox = parseSvgViewBox(next);
+      if (!viewBox) {
+        const width = readSvgLengthAttr(attrs, 'width');
+        const height = readSvgLengthAttr(attrs, 'height');
+        if (width && height) {
+          viewBox = [0, 0, width, height];
+          next += ` viewBox="0 0 ${width} ${height}"`;
+        }
+      }
+
+      if (viewBox) {
+        const width = Math.max(1, Math.round(viewBox[2]));
+        const height = Math.max(1, Math.round(viewBox[3]));
+        next += ` width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"`;
+      } else {
+        next += ' preserveAspectRatio="xMidYMid meet"';
+      }
+      return `<svg${next}>`;
+    });
+  }
+
+  function decodeReportDiagramSvgPayload(uri) {
+    const commaIdx = uri.indexOf(',');
+    if (commaIdx < 0) return '';
+    const meta = uri.slice(0, commaIdx);
+    const payload = uri.slice(commaIdx + 1);
+    if (/;base64/i.test(meta)) {
+      if (typeof atob === 'function') return atob(payload);
+      if (typeof Buffer !== 'undefined') return Buffer.from(payload, 'base64').toString('utf8');
+      return payload;
+    }
+    return decodeURIComponent(payload);
+  }
+
+  function decodeReportDiagramSvgMarkup(src) {
+    const uri = normalizeReportDiagramSvg(ensureReportDiagramDataUri(src));
+    if (!uri || !uri.startsWith('data:image/svg+xml')) return '';
+    try {
+      const text = decodeReportDiagramSvgPayload(uri);
+      return text && /<svg[\s>]/i.test(text) ? text : '';
+    } catch {
+      return '';
+    }
+  }
+
   function normalizeReportDiagramSvg(svgDataUri) {
-    if (!svgDataUri || typeof svgDataUri !== 'string') return svgDataUri || '';
-    if (!svgDataUri.startsWith('data:image/svg+xml')) return svgDataUri;
+    const prepared = ensureReportDiagramDataUri(svgDataUri);
+    if (!prepared || !prepared.startsWith('data:image/svg+xml')) return prepared || svgDataUri || '';
 
     try {
-      const commaIdx = svgDataUri.indexOf(',');
-      if (commaIdx < 0) return svgDataUri;
-      const meta = svgDataUri.slice(0, commaIdx);
-      const payload = svgDataUri.slice(commaIdx + 1);
+      const commaIdx = prepared.indexOf(',');
+      if (commaIdx < 0) return prepared;
+      const meta = prepared.slice(0, commaIdx);
+      const payload = prepared.slice(commaIdx + 1);
       const isBase64 = /;base64/i.test(meta);
-      const decodePayload = () => {
-        if (isBase64) {
-          if (typeof atob === 'function') return atob(payload);
-          if (typeof Buffer !== 'undefined') return Buffer.from(payload, 'base64').toString('utf8');
-          return payload;
-        }
-        return decodeURIComponent(payload);
-      };
+      const decodePayload = () => decodeReportDiagramSvgPayload(prepared);
       const encodePayload = (text) => {
         if (isBase64) {
           if (typeof btoa === 'function') return btoa(text);
@@ -1160,24 +1229,12 @@
 
       let svgText = decodePayload();
       svgText = enhanceReportDiagramProfessionalPresentation(svgText);
-      svgText = svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
-        const widthMatch = attrs.match(/\bwidth="([\d.]+)/i);
-        const heightMatch = attrs.match(/\bheight="([\d.]+)/i);
-        let next = attrs
-          .replace(/\swidth="[^"]*"/gi, '')
-          .replace(/\sheight="[^"]*"/gi, '')
-          .replace(/\spreserveAspectRatio="[^"]*"/gi, '');
-        if (!/\bviewBox=/i.test(next) && widthMatch && heightMatch) {
-          next += ` viewBox="0 0 ${widthMatch[1]} ${heightMatch[1]}"`;
-        }
-        next += ' width="100%" height="100%" preserveAspectRatio="xMidYMid meet"';
-        return `<svg${next}>`;
-      });
+      svgText = finalizeReportDiagramSvgRoot(svgText);
 
       const encodedPrefix = isBase64 ? ';base64,' : ',';
       return `${meta}${encodedPrefix}${encodePayload(svgText)}`;
     } catch {
-      return svgDataUri;
+      return prepared;
     }
   }
 
@@ -1254,6 +1311,8 @@
     buildFeedbackFormViewUrl,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
+    ensureReportDiagramDataUri,
+    decodeReportDiagramSvgMarkup,
     enhanceReportDiagramConnectorVisibility,
     enhanceReportDiagramProfessionalPresentation,
     buildLinkQrUrl,

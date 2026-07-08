@@ -194,10 +194,19 @@ describe('diagnosis-report-helpers', () => {
     const raw = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#fff"/></svg>');
     const normalized = DRH.normalizeReportDiagramSvg(raw);
     const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
-    assert.match(svgText, /^<svg[^>]*width="100%"/);
-    assert.match(svgText, /height="100%"/);
+    assert.match(svgText, /width="1600"/);
+    assert.match(svgText, /height="900"/);
     assert.match(svgText, /viewBox="0 0 1600 900"/);
-    assert.doesNotMatch(svgText, /^<svg[^>]*width="1600"/);
+    assert.doesNotMatch(svgText, /width="100%"/);
+  });
+
+  it('normalizeReportDiagramSvg wraps raw svg markup in a data uri', () => {
+    const raw = '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#fff"/></svg>';
+    const normalized = DRH.normalizeReportDiagramSvg(raw);
+    assert.match(normalized, /^data:image\/svg\+xml,/);
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    assert.match(svgText, /width="640"/);
+    assert.match(svgText, /height="480"/);
   });
 
   it('normalizeReportDiagramSvg boosts connector strokes and arrow markers for PDF preview', () => {
