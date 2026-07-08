@@ -48,6 +48,11 @@
       display: flex !important;
       visibility: visible !important;
     }
+    /* Diagnosis report: keep section toolbar (Save now, Print Directory) in admin embed */
+    html.kolthoff-embed [data-diagnosis-section-header] {
+      display: flex !important;
+      flex-direction: column;
+    }
     html.kolthoff-embed main,
     html.kolthoff-embed .flex.h-screen {
       height: 100% !important;
