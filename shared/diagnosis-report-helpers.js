@@ -891,12 +891,19 @@
   /**
    * Strip fixed pixel dimensions from draw.io SVG exports so report/print CSS can scale
    * diagrams to the printable page width without clipping the right edge.
-   * Also boosts connector strokes and arrow markers for readable PDF preview scaling.
+   * Connector strokes are clamped thin (never boosted) so org lines and workflow arrows
+   * stay proportional when the diagram scales down for PDF print.
    */
-  const REPORT_DIAGRAM_CONNECTOR_STROKE = '#1e293b';
-  const REPORT_DIAGRAM_MIN_STROKE = 2.25;
-  const REPORT_DIAGRAM_STROKE_MULT = 1.85;
-  const REPORT_DIAGRAM_MARKER_SCALE = 2.4;
+  const REPORT_DIAGRAM_CONNECTOR_STROKE = '#64748b';
+  const REPORT_DIAGRAM_MIN_STROKE = 0.75;
+  const REPORT_DIAGRAM_MAX_STROKE = 1;
+  const REPORT_DIAGRAM_MARKER_MAX = 6;
+
+  function clampReportDiagramStroke(width, min, max) {
+    const sw = Number(width);
+    if (!Number.isFinite(sw) || sw <= 0) return min;
+    return Math.min(max, Math.max(min, sw));
+  }
 
   function parseSvgStrokeWidth(attrs) {
     const match = attrs.match(/\bstroke-width="([\d.]+)"/i);
@@ -913,17 +920,18 @@
     return !fill || fill === 'none' || fill === 'transparent';
   }
 
-  function boostReportDiagramConnectorAttrs(attrs) {
+  function normalizeReportDiagramConnectorAttrs(attrs) {
     let next = attrs;
-    const boosted = Math.max(
+    const strokeWidth = clampReportDiagramStroke(
+      parseSvgStrokeWidth(next),
       REPORT_DIAGRAM_MIN_STROKE,
-      parseSvgStrokeWidth(next) * REPORT_DIAGRAM_STROKE_MULT
+      REPORT_DIAGRAM_MAX_STROKE
     );
 
     if (/\bstroke-width="/i.test(next)) {
-      next = next.replace(/\bstroke-width="[\d.]+"/i, `stroke-width="${boosted}"`);
+      next = next.replace(/\bstroke-width="[\d.]+"/i, `stroke-width="${strokeWidth}"`);
     } else {
-      next += ` stroke-width="${boosted}"`;
+      next += ` stroke-width="${strokeWidth}"`;
     }
 
     if (/\bstroke="/i.test(next)) {
@@ -932,22 +940,29 @@
       next += ` stroke="${REPORT_DIAGRAM_CONNECTOR_STROKE}"`;
     }
 
-    if (!/\bvector-effect="/i.test(next)) next += ' vector-effect="non-scaling-stroke"';
+    next = next.replace(/\svector-effect="non-scaling-stroke"/gi, '');
     if (!/\bstroke-linecap="/i.test(next)) next += ' stroke-linecap="round"';
     if (!/\bstroke-linejoin="/i.test(next)) next += ' stroke-linejoin="round"';
     return next;
+  }
+
+  function normalizeReportDiagramMarkerSize(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return 4;
+    return Math.round(Math.min(REPORT_DIAGRAM_MARKER_MAX, Math.max(3, n * 0.75)));
   }
 
   function scaleReportDiagramMarkers(svgText) {
     return svgText.replace(/<marker\b([^>]*)>([\s\S]*?)<\/marker>/gi, (full, attrs, inner) => {
       let nextAttrs = attrs;
       nextAttrs = nextAttrs.replace(/\bmarkerWidth="([\d.]+)"/i, (_, value) =>
-        `markerWidth="${Math.round(Math.max(Number(value) * REPORT_DIAGRAM_MARKER_SCALE, 10))}"`
+        `markerWidth="${normalizeReportDiagramMarkerSize(value)}"`
       );
       nextAttrs = nextAttrs.replace(/\bmarkerHeight="([\d.]+)"/i, (_, value) =>
-        `markerHeight="${Math.round(Math.max(Number(value) * REPORT_DIAGRAM_MARKER_SCALE, 10))}"`
+        `markerHeight="${normalizeReportDiagramMarkerSize(value)}"`
       );
-      if (!/\bmarkerUnits=/i.test(nextAttrs)) nextAttrs += ' markerUnits="userSpaceOnUse"';
+      nextAttrs = nextAttrs.replace(/\bmarkerUnits="userSpaceOnUse"/i, 'markerUnits="strokeWidth"');
+      if (!/\bmarkerUnits=/i.test(nextAttrs)) nextAttrs += ' markerUnits="strokeWidth"';
 
       const nextInner = inner
         .replace(/<path\b([^>]*)\bfill="[^"]*"([^>]*)(\/>|>)/gi, (match, before, after, close) =>
@@ -961,34 +976,18 @@
     });
   }
 
-  function injectReportDiagramConnectorStyles(svgText) {
-    const styleBlock =
-      '<style type="text/css"><![CDATA[' +
-      'path[marker-end],path[marker-start],line,polyline{' +
-      `stroke:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
-      `stroke-width:${REPORT_DIAGRAM_MIN_STROKE}!important;` +
-      'vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round;' +
-      '}' +
-      'marker path,marker polygon{' +
-      `fill:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
-      `stroke:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
-      '}' +
-      ']]></style>';
-    if (/<style[\s>]/i.test(svgText)) return svgText;
-    return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${styleBlock}`);
-  }
-
   function enhanceReportDiagramConnectorVisibility(svgText) {
     let next = scaleReportDiagramMarkers(svgText);
     next = next.replace(/<(path|line|polyline)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
       if (!isReportDiagramConnector(tag.toLowerCase(), attrs)) return match;
-      return `<${tag}${boostReportDiagramConnectorAttrs(attrs)}${close}`;
+      return `<${tag}${normalizeReportDiagramConnectorAttrs(attrs)}${close}`;
     });
-    return injectReportDiagramConnectorStyles(next);
+    return next;
   }
 
-  const REPORT_DIAGRAM_SHAPE_STROKE = '#334155';
-  const REPORT_DIAGRAM_SHAPE_STROKE_MIN = 1.5;
+  const REPORT_DIAGRAM_SHAPE_STROKE = '#64748b';
+  const REPORT_DIAGRAM_SHAPE_STROKE_MIN = 0.75;
+  const REPORT_DIAGRAM_SHAPE_STROKE_MAX = 1;
   const REPORT_DIAGRAM_TEXT_FILL = '#0f172a';
   const REPORT_DIAGRAM_FONT_STACK = 'Montserrat, Helvetica, Arial, sans-serif';
   const REPORT_DIAGRAM_FILL_REMAP = {
@@ -1053,7 +1052,7 @@
       next += ` stroke="${REPORT_DIAGRAM_SHAPE_STROKE}"`;
     }
     const sw = parseSvgStrokeWidth(next);
-    const boosted = Math.max(REPORT_DIAGRAM_SHAPE_STROKE_MIN, sw);
+    const boosted = clampReportDiagramStroke(sw, REPORT_DIAGRAM_SHAPE_STROKE_MIN, REPORT_DIAGRAM_SHAPE_STROKE_MAX);
     if (/\bstroke-width="/i.test(next)) {
       next = next.replace(/\bstroke-width="[\d.]+"/i, `stroke-width="${boosted}"`);
     } else {
