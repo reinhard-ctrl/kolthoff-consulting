@@ -246,13 +246,12 @@ describe('diagnosis-report-helpers', () => {
       );
     const normalized = DRH.normalizeReportDiagramSvg(raw);
     const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
-    assert.match(svgText, /stroke-width="2\.25"/);
-    assert.match(svgText, /vector-effect="non-scaling-stroke"/);
-    assert.match(svgText, /markerWidth="14"/);
-    assert.match(svgText, /stroke="#1e293b"/);
+    assert.match(svgText, /stroke-width="1\.1"/);
+    assert.doesNotMatch(svgText, /vector-effect="non-scaling-stroke"/);
+    assert.match(svgText, /markerWidth="8"/);
+    assert.match(svgText, /stroke="#475569"/);
     assert.match(svgText, /<style[\s>]/i);
     assert.doesNotMatch(svgText, /stroke="#cccccc"/);
-    assert.doesNotMatch(svgText, /marker-end="url\(#arrow\)"\/ vector-effect/);
   });
 
   it('normalizeReportDiagramSvg applies professional presentation polish', () => {
