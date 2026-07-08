@@ -200,6 +200,28 @@ describe('diagnosis-report-helpers', () => {
     assert.doesNotMatch(svgText, /^<svg[^>]*width="1600"/);
   });
 
+  it('normalizeReportDiagramSvg boosts connector strokes and arrow markers for PDF preview', () => {
+    const raw =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400">' +
+          '<defs><marker id="arrow" markerWidth="6" markerHeight="6" orient="auto">' +
+          '<path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/></marker></defs>' +
+          '<rect x="50" y="150" width="120" height="60" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1"/>' +
+          '<path d="M 170 180 L 300 180" fill="none" stroke="#cccccc" stroke-width="1" marker-end="url(#arrow)"/>' +
+          '</svg>'
+      );
+    const normalized = DRH.normalizeReportDiagramSvg(raw);
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    assert.match(svgText, /stroke-width="2\.25"/);
+    assert.match(svgText, /vector-effect="non-scaling-stroke"/);
+    assert.match(svgText, /markerWidth="14"/);
+    assert.match(svgText, /stroke="#1e293b"/);
+    assert.match(svgText, /<style[\s>]/i);
+    assert.doesNotMatch(svgText, /stroke="#cccccc"/);
+    assert.doesNotMatch(svgText, /marker-end="url\(#arrow\)"\/ vector-effect/);
+  });
+
   it('buildMod1DeliverableStatus tracks in-scope deliverables', () => {
     const items = DRH.buildMod1DeliverableStatus({
       tasks: [

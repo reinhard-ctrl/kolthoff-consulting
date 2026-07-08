@@ -891,7 +891,102 @@
   /**
    * Strip fixed pixel dimensions from draw.io SVG exports so report/print CSS can scale
    * diagrams to the printable page width without clipping the right edge.
+   * Also boosts connector strokes and arrow markers for readable PDF preview scaling.
    */
+  const REPORT_DIAGRAM_CONNECTOR_STROKE = '#1e293b';
+  const REPORT_DIAGRAM_MIN_STROKE = 2.25;
+  const REPORT_DIAGRAM_STROKE_MULT = 1.85;
+  const REPORT_DIAGRAM_MARKER_SCALE = 2.4;
+
+  function parseSvgStrokeWidth(attrs) {
+    const match = attrs.match(/\bstroke-width="([\d.]+)"/i);
+    return match ? Number(match[1]) : 1;
+  }
+
+  function isReportDiagramConnector(tag, attrs) {
+    if (/marker-(start|end)=/i.test(attrs)) return true;
+    if (tag === 'line') return true;
+    if (tag === 'polyline') return true;
+    if (tag !== 'path') return false;
+    const fillMatch = attrs.match(/\bfill="([^"]*)"/i);
+    const fill = fillMatch ? fillMatch[1].trim().toLowerCase() : 'none';
+    return !fill || fill === 'none' || fill === 'transparent';
+  }
+
+  function boostReportDiagramConnectorAttrs(attrs) {
+    let next = attrs;
+    const boosted = Math.max(
+      REPORT_DIAGRAM_MIN_STROKE,
+      parseSvgStrokeWidth(next) * REPORT_DIAGRAM_STROKE_MULT
+    );
+
+    if (/\bstroke-width="/i.test(next)) {
+      next = next.replace(/\bstroke-width="[\d.]+"/i, `stroke-width="${boosted}"`);
+    } else {
+      next += ` stroke-width="${boosted}"`;
+    }
+
+    if (/\bstroke="/i.test(next)) {
+      next = next.replace(/\bstroke="[^"]*"/i, `stroke="${REPORT_DIAGRAM_CONNECTOR_STROKE}"`);
+    } else {
+      next += ` stroke="${REPORT_DIAGRAM_CONNECTOR_STROKE}"`;
+    }
+
+    if (!/\bvector-effect="/i.test(next)) next += ' vector-effect="non-scaling-stroke"';
+    if (!/\bstroke-linecap="/i.test(next)) next += ' stroke-linecap="round"';
+    if (!/\bstroke-linejoin="/i.test(next)) next += ' stroke-linejoin="round"';
+    return next;
+  }
+
+  function scaleReportDiagramMarkers(svgText) {
+    return svgText.replace(/<marker\b([^>]*)>([\s\S]*?)<\/marker>/gi, (full, attrs, inner) => {
+      let nextAttrs = attrs;
+      nextAttrs = nextAttrs.replace(/\bmarkerWidth="([\d.]+)"/i, (_, value) =>
+        `markerWidth="${Math.round(Math.max(Number(value) * REPORT_DIAGRAM_MARKER_SCALE, 10))}"`
+      );
+      nextAttrs = nextAttrs.replace(/\bmarkerHeight="([\d.]+)"/i, (_, value) =>
+        `markerHeight="${Math.round(Math.max(Number(value) * REPORT_DIAGRAM_MARKER_SCALE, 10))}"`
+      );
+      if (!/\bmarkerUnits=/i.test(nextAttrs)) nextAttrs += ' markerUnits="userSpaceOnUse"';
+
+      const nextInner = inner
+        .replace(/<path\b([^>]*)\bfill="[^"]*"([^>]*)(\/>|>)/gi, (match, before, after, close) =>
+          `<path${before}fill="${REPORT_DIAGRAM_CONNECTOR_STROKE}"${after}${close}`
+        )
+        .replace(/<polygon\b([^>]*)\bfill="[^"]*"([^>]*)(\/>|>)/gi, (match, before, after, close) =>
+          `<polygon${before}fill="${REPORT_DIAGRAM_CONNECTOR_STROKE}"${after}${close}`
+        );
+
+      return `<marker${nextAttrs}>${nextInner}</marker>`;
+    });
+  }
+
+  function injectReportDiagramConnectorStyles(svgText) {
+    const styleBlock =
+      '<style type="text/css"><![CDATA[' +
+      'path[marker-end],path[marker-start],line,polyline{' +
+      `stroke:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
+      `stroke-width:${REPORT_DIAGRAM_MIN_STROKE}!important;` +
+      'vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round;' +
+      '}' +
+      'marker path,marker polygon{' +
+      `fill:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
+      `stroke:${REPORT_DIAGRAM_CONNECTOR_STROKE}!important;` +
+      '}' +
+      ']]></style>';
+    if (/<style[\s>]/i.test(svgText)) return svgText;
+    return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${styleBlock}`);
+  }
+
+  function enhanceReportDiagramConnectorVisibility(svgText) {
+    let next = scaleReportDiagramMarkers(svgText);
+    next = next.replace(/<(path|line|polyline)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
+      if (!isReportDiagramConnector(tag.toLowerCase(), attrs)) return match;
+      return `<${tag}${boostReportDiagramConnectorAttrs(attrs)}${close}`;
+    });
+    return injectReportDiagramConnectorStyles(next);
+  }
+
   function normalizeReportDiagramSvg(svgDataUri) {
     if (!svgDataUri || typeof svgDataUri !== 'string') return svgDataUri || '';
     if (!svgDataUri.startsWith('data:image/svg+xml')) return svgDataUri;
@@ -920,6 +1015,7 @@
       };
 
       let svgText = decodePayload();
+      svgText = enhanceReportDiagramConnectorVisibility(svgText);
       svgText = svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
         const widthMatch = attrs.match(/\bwidth="([\d.]+)/i);
         const heightMatch = attrs.match(/\bheight="([\d.]+)/i);
@@ -1014,6 +1110,7 @@
     buildFeedbackFormViewUrl,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
+    enhanceReportDiagramConnectorVisibility,
     buildLinkQrUrl,
     buildFeedbackFormQrUrl,
     isMod1TaskInScope,
