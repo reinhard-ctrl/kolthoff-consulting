@@ -446,6 +446,70 @@
     return isBpmnLane(style) || isBpmnPool(style) || /group/i.test(style);
   }
 
+  function getFlowNodeSortKey(node, cellById) {
+    const cell = cellById.get(node.id);
+    const x = node.x ?? cell?.x ?? 0;
+    const y = node.y ?? cell?.y ?? 0;
+    return { x, y, label: node.label || '' };
+  }
+
+  /** Order BPMN shapes by sequence flow edges; fall back to canvas position for ties and orphans. */
+  function orderNodesByFlowSequence(nodes, cells) {
+    const list = nodes || [];
+    if (list.length <= 1) return list.slice();
+
+    const nodeIds = new Set(list.map((n) => n.id));
+    const cellById = new Map((cells || []).map((c) => [c.id, c]));
+    const compareNodes = (aId, bId) => {
+      const a = getFlowNodeSortKey(list.find((n) => n.id === aId) || { id: aId }, cellById);
+      const b = getFlowNodeSortKey(list.find((n) => n.id === bId) || { id: bId }, cellById);
+      return a.x - b.x || a.y - b.y || a.label.localeCompare(b.label);
+    };
+
+    const adjacency = new Map();
+    const inDegree = new Map();
+    nodeIds.forEach((id) => {
+      adjacency.set(id, []);
+      inDegree.set(id, 0);
+    });
+
+    (cells || []).forEach((cell) => {
+      if (!cell.edge || !cell.source || !cell.target) return;
+      if (!nodeIds.has(cell.source) || !nodeIds.has(cell.target)) return;
+      adjacency.get(cell.source).push(cell.target);
+      inDegree.set(cell.target, (inDegree.get(cell.target) || 0) + 1);
+    });
+
+    adjacency.forEach((targets, source) => {
+      targets.sort(compareNodes);
+    });
+
+    const queue = [...nodeIds].filter((id) => inDegree.get(id) === 0).sort(compareNodes);
+    const orderedIds = [];
+    const seen = new Set();
+
+    while (queue.length) {
+      const id = queue.shift();
+      if (seen.has(id)) continue;
+      seen.add(id);
+      orderedIds.push(id);
+      (adjacency.get(id) || []).forEach((next) => {
+        inDegree.set(next, inDegree.get(next) - 1);
+        if (inDegree.get(next) === 0) {
+          queue.push(next);
+          queue.sort(compareNodes);
+        }
+      });
+    }
+
+    const nodeById = new Map(list.map((n) => [n.id, n]));
+    const ordered = orderedIds.map((id) => nodeById.get(id)).filter(Boolean);
+    const remaining = list
+      .filter((n) => !seen.has(n.id))
+      .sort((a, b) => compareNodes(a.id, b.id));
+    return [...ordered, ...remaining];
+  }
+
   function parseBpmnFromDrawioXml(xml) {
     const cells = parseDrawioXmlCells(xml);
     const lanes = cells
@@ -483,10 +547,11 @@
           duration: '1 Hour',
           description: '',
         };
-      })
-      .sort((a, b) => a.x - b.x || a.y - b.y);
+      });
 
-    return { tasks, lanes };
+    const orderedTasks = orderNodesByFlowSequence(tasks, cells);
+
+    return { tasks: orderedTasks, lanes };
   }
 
   function getLegacyWorkflowViewModel(present) {
@@ -581,6 +646,7 @@
     getPreset,
     parseRosterFromDrawioXml,
     parseDrawioXmlCells,
+    orderNodesByFlowSequence,
     parseBpmnFromDrawioXml,
     membersToDrawioXml,
     resolveWorkspaceOrgChartXml,
