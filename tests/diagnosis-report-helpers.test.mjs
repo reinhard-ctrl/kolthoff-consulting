@@ -233,7 +233,7 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(DRH.getMatrixQuadrantMeta(4, 2).key, 'moneyPit');
   });
 
-  it('normalizeReportDiagramSvg boosts connector strokes and arrow markers for PDF preview', () => {
+  it('normalizeReportDiagramSvg thins connector strokes and arrow markers for PDF print', () => {
     const raw =
       'data:image/svg+xml,' +
       encodeURIComponent(
@@ -241,18 +241,18 @@ describe('diagnosis-report-helpers', () => {
           '<defs><marker id="arrow" markerWidth="6" markerHeight="6" orient="auto">' +
           '<path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/></marker></defs>' +
           '<rect x="50" y="150" width="120" height="60" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1"/>' +
-          '<path d="M 170 180 L 300 180" fill="none" stroke="#cccccc" stroke-width="1" marker-end="url(#arrow)"/>' +
+          '<path d="M 170 180 L 300 180" fill="none" stroke="#cccccc" stroke-width="2" marker-end="url(#arrow)"/>' +
           '</svg>'
       );
     const normalized = DRH.normalizeReportDiagramSvg(raw);
     const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
-    assert.match(svgText, /stroke-width="2\.25"/);
-    assert.match(svgText, /vector-effect="non-scaling-stroke"/);
-    assert.match(svgText, /markerWidth="14"/);
-    assert.match(svgText, /stroke="#1e293b"/);
-    assert.match(svgText, /<style[\s>]/i);
+    assert.match(svgText, /stroke-width="1"/);
+    assert.doesNotMatch(svgText, /vector-effect="non-scaling-stroke"/);
+    assert.match(svgText, /markerWidth="5"/);
+    assert.match(svgText, /markerUnits="strokeWidth"/);
+    assert.match(svgText, /stroke="#64748b"/);
     assert.doesNotMatch(svgText, /stroke="#cccccc"/);
-    assert.doesNotMatch(svgText, /marker-end="url\(#arrow\)"\/ vector-effect/);
+    assert.doesNotMatch(svgText, /stroke-width="2\.25"/);
   });
 
   it('normalizeReportDiagramSvg applies professional presentation polish', () => {
