@@ -209,6 +209,30 @@ describe('diagnosis-report-helpers', () => {
     assert.match(svgText, /height="480"/);
   });
 
+  it('extractReportDiagramSvgMarkup pulls svg from draw.io xmlsvg wrappers', () => {
+    const wrapped =
+      '<content xmlns="http://www.w3.org/1999/xhtml">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240"><rect width="320" height="240" fill="#fff"/></svg>' +
+      '</content>';
+    const extracted = DRH.extractReportDiagramSvgMarkup(wrapped);
+    assert.match(extracted, /^<svg[\s>]/i);
+    assert.match(extracted, /width="320"/);
+    const normalized = DRH.normalizeReportDiagramSvg(wrapped);
+    assert.match(normalized, /^data:image\/svg\+xml,/);
+  });
+
+  it('truncateReportLabel shortens long initiative names for matrix labels', () => {
+    const long = 'Automate invoice approval workflow across finance and operations teams';
+    const short = DRH.truncateReportLabel(long, 30);
+    assert.equal(short.length, 30);
+    assert.match(short, /…$/);
+  });
+
+  it('getMatrixQuadrantMeta classifies quick wins and money pits', () => {
+    assert.equal(DRH.getMatrixQuadrantMeta(2, 4).key, 'quickWin');
+    assert.equal(DRH.getMatrixQuadrantMeta(4, 2).key, 'moneyPit');
+  });
+
   it('normalizeReportDiagramSvg boosts connector strokes and arrow markers for PDF preview', () => {
     const raw =
       'data:image/svg+xml,' +
