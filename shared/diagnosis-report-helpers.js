@@ -1141,15 +1141,52 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  function extractReportDiagramSvgMarkup(src) {
+    if (!src || typeof src !== 'string') return '';
+    let text = src.trim();
+    if (!text) return '';
+
+    if (text.startsWith('data:image/svg+xml')) {
+      try {
+        text = decodeReportDiagramSvgPayload(text);
+      } catch {
+        return '';
+      }
+    }
+
+    if (text.startsWith('<?xml')) {
+      text = text.replace(/^[\s\S]*?(<svg[\s\S]*)$/i, '$1');
+    }
+
+    const svgMatch = text.match(/<svg[\s\S]*<\/svg>/i);
+    if (svgMatch) return svgMatch[0];
+    if (/^<svg[\s>]/i.test(text)) return text;
+    return '';
+  }
+
+  function truncateReportLabel(text, maxLen = 34) {
+    const value = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!value) return '';
+    if (value.length <= maxLen) return value;
+    return `${value.slice(0, Math.max(1, maxLen - 1)).trim()}…`;
+  }
+
+  function getMatrixQuadrantMeta(effort, impact) {
+    const e = Number(effort) || 3;
+    const i = Number(impact) || 3;
+    if (e < 3 && i >= 3) return { key: 'quickWin', label: 'Quick Wins', color: '#059669', bg: '#ecfdf5' };
+    if (e >= 3 && i >= 3) return { key: 'majorProject', label: 'Major Projects', color: '#2563eb', bg: '#eff6ff' };
+    if (e >= 3) return { key: 'moneyPit', label: 'Deprioritize', color: '#dc2626', bg: '#fff1f2' };
+    return { key: 'fillIn', label: 'Fill-ins', color: '#64748b', bg: '#f8fafc' };
+  }
+
   function ensureReportDiagramDataUri(src) {
     if (!src || typeof src !== 'string') return '';
     const trimmed = src.trim();
     if (!trimmed) return '';
     if (trimmed.startsWith('data:image/svg+xml')) return trimmed;
-    if (trimmed.startsWith('<svg') || trimmed.startsWith('<?xml')) {
-      const svgMarkup = trimmed.startsWith('<?xml')
-        ? trimmed.replace(/^[\s\S]*?(<svg[\s\S]*)$/i, '$1')
-        : trimmed;
+    const svgMarkup = extractReportDiagramSvgMarkup(trimmed);
+    if (svgMarkup) {
       return `data:image/svg+xml,${encodeURIComponent(svgMarkup)}`;
     }
     return trimmed;
@@ -1197,13 +1234,15 @@
   }
 
   function decodeReportDiagramSvgMarkup(src) {
-    const uri = normalizeReportDiagramSvg(ensureReportDiagramDataUri(src));
-    if (!uri || !uri.startsWith('data:image/svg+xml')) return '';
+    const extracted = extractReportDiagramSvgMarkup(src);
+    if (!extracted) return '';
+    const uri = normalizeReportDiagramSvg(ensureReportDiagramDataUri(extracted));
+    if (!uri || !uri.startsWith('data:image/svg+xml')) return extracted;
     try {
       const text = decodeReportDiagramSvgPayload(uri);
-      return text && /<svg[\s>]/i.test(text) ? text : '';
+      return text && /<svg[\s>]/i.test(text) ? text : extracted;
     } catch {
-      return '';
+      return extracted;
     }
   }
 
@@ -1253,7 +1292,7 @@
       showMatrix: true,
       showFindings: true,
       showNextSteps: true,
-      showAppendix: false,
+      showAppendix: true,
       showFeedbackAppendix: true,
     },
     briefing: {
@@ -1312,7 +1351,10 @@
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
     ensureReportDiagramDataUri,
+    extractReportDiagramSvgMarkup,
     decodeReportDiagramSvgMarkup,
+    truncateReportLabel,
+    getMatrixQuadrantMeta,
     enhanceReportDiagramConnectorVisibility,
     enhanceReportDiagramProfessionalPresentation,
     buildLinkQrUrl,

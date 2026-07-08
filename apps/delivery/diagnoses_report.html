@@ -116,9 +116,21 @@
             margin-right: auto;
         }
         .report-matrix-chart {
-            width: min(100%, 400px);
+            width: min(100%, 520px);
             height: auto;
             aspect-ratio: 1 / 1;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .report-matrix-chart__frame {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        .report-print-footer {
+            display: none;
         }
 
         html, body, #root { height: 100%; }
@@ -249,8 +261,7 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-            .report-diagram-img,
-            .report-diagram-inline svg {
+            .report-diagram-img {
                 display: block !important;
                 width: 100% !important;
                 max-width: 100% !important;
@@ -266,12 +277,6 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .report-diagram-inline {
-                display: block !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                overflow: visible !important;
-            }
             .report-diagram-figure,
             .report-diagram-figure__canvas,
             .report-diagram-frame {
@@ -280,9 +285,21 @@
                 overflow: visible !important;
             }
             .report-matrix-chart {
-                width: min(100%, 360px) !important;
+                width: min(100%, 520px) !important;
                 max-width: 100% !important;
                 height: auto !important;
+            }
+            .report-print-footer {
+                display: block !important;
+                text-align: center;
+                font-size: 8px !important;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: #94a3b8 !important;
+                margin-top: 1.5rem !important;
+                padding-top: 0.75rem !important;
+                border-top: 1px solid #e2e8f0 !important;
+                page-break-inside: avoid !important;
             }
             .report-workflow-tab { page-break-inside: auto !important; break-inside: auto !important; }
             @page { size: A4 portrait; margin: 15mm 12mm; }
@@ -298,12 +315,8 @@
         }
         .staff-directory-print-root { display: none; }
         .report-print-root { display: none; }
-        .report-diagram-inline svg {
-            display: block;
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            max-height: min(72vh, 560px);
+        .report-print-surface .report-diagram-img {
+            background: #ffffff;
         }
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -1419,23 +1432,94 @@
 
         const ReportDiagramFigure = ({ src, alt, caption }) => {
             const diagramSrc = useMemo(() => printReadySvg(src), [src]);
-            const inlineSvg = useMemo(() => DRH().decodeReportDiagramSvgMarkup?.(src) || '', [src]);
-            if (!diagramSrc && !inlineSvg) return null;
+            if (!diagramSrc) return null;
             return (
                 <figure className="report-diagram-figure">
                     <div className="report-diagram-figure__canvas">
                         <div className="report-diagram-frame">
-                            {inlineSvg ? (
-                                <div className="report-diagram-img report-diagram-inline" dangerouslySetInnerHTML={{ __html: inlineSvg }} aria-label={alt} role="img" />
-                            ) : (
-                                <img src={diagramSrc} alt={alt} className="report-diagram-img" />
-                            )}
+                            <img src={diagramSrc} alt={alt} className="report-diagram-img" loading="eager" decoding="sync" />
                         </div>
                     </div>
                     {caption && <figcaption className="report-diagram-figure__caption">{caption}</figcaption>}
                 </figure>
             );
         };
+
+        const ReportPriorityMatrixChart = ({ items }) => {
+            const width = 520;
+            const height = 520;
+            const margin = 54;
+            const plotW = width - margin * 2;
+            const plotH = height - margin * 2;
+            const midX = margin + plotW / 2;
+            const midY = margin + plotH / 2;
+
+            const getCoords = (effort, impact) => ({
+                x: margin + ((Number(effort) - 1) / 4) * plotW,
+                y: margin + ((5 - Number(impact)) / 4) * plotH,
+            });
+
+            return (
+                <div className="report-matrix-chart__frame page-break-inside-avoid">
+                    <svg viewBox={`0 0 ${width} ${height}`} className="report-matrix-chart" role="img" aria-label="Full prioritization matrix">
+                        <rect x={margin} y={margin} width={plotW / 2} height={plotH / 2} fill="#ecfdf5" />
+                        <rect x={midX} y={margin} width={plotW / 2} height={plotH / 2} fill="#eff6ff" />
+                        <rect x={margin} y={midY} width={plotW / 2} height={plotH / 2} fill="#f8fafc" />
+                        <rect x={midX} y={midY} width={plotW / 2} height={plotH / 2} fill="#fff1f2" />
+
+                        <text x={margin + 12} y={margin + 18} fill="#047857" fontSize="10" fontWeight="800" opacity="0.55">QUICK WINS</text>
+                        <text x={width - margin - 12} y={margin + 18} textAnchor="end" fill="#1d4ed8" fontSize="10" fontWeight="800" opacity="0.55">MAJOR PROJECTS</text>
+                        <text x={margin + 12} y={height - margin - 10} fill="#64748b" fontSize="10" fontWeight="800" opacity="0.55">FILL-INS</text>
+                        <text x={width - margin - 12} y={height - margin - 10} textAnchor="end" fill="#be123c" fontSize="10" fontWeight="800" opacity="0.55">DEPRIORITIZE</text>
+
+                        <line x1={midX} y1={margin} x2={midX} y2={height - margin} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4,4" />
+                        <line x1={margin} y1={midY} x2={width - margin} y2={midY} stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4,4" />
+                        <rect x={margin} y={margin} width={plotW} height={plotH} fill="none" stroke="#64748b" strokeWidth="1.5" />
+
+                        {[1, 2, 3, 4, 5].map((val) => {
+                            const effortX = margin + ((val - 1) / 4) * plotW;
+                            const impactY = margin + ((5 - val) / 4) * plotH;
+                            return (
+                                <g key={val}>
+                                    <line x1={effortX} y1={height - margin} x2={effortX} y2={height - margin + 6} stroke="#64748b" strokeWidth="1.5" />
+                                    <text x={effortX} y={height - margin + 20} fill="#64748b" fontSize="10" fontFamily="Montserrat, sans-serif" textAnchor="middle">{val}</text>
+                                    <line x1={margin - 6} y1={impactY} x2={margin} y2={impactY} stroke="#64748b" strokeWidth="1.5" />
+                                    <text x={margin - 12} y={impactY + 3} fill="#64748b" fontSize="10" fontFamily="Montserrat, sans-serif" textAnchor="end">{val}</text>
+                                </g>
+                            );
+                        })}
+
+                        <text x={width / 2} y={height - 8} fill="#0f766e" fontSize="10" fontWeight="800" textAnchor="middle" letterSpacing="1.2">EXECUTION EFFORT (1 = easy, 5 = hard)</text>
+                        <text x={12} y={height / 2} fill="#0f766e" fontSize="10" fontWeight="800" textAnchor="middle" letterSpacing="1.2" transform={`rotate(-90, 12, ${height / 2})`}>BOTTOM-LINE IMPACT (1 = low, 5 = high)</text>
+
+                        {items.map((item, idx) => {
+                            const { x, y } = getCoords(item.effort, item.impact);
+                            const meta = DRH().getMatrixQuadrantMeta?.(item.effort, item.impact) || { color: '#64748b' };
+                            const label = DRH().truncateReportLabel?.(item.text, 30) || item.text;
+                            const labelY = y > midY ? y - 16 : y + 24;
+                            return (
+                                <g key={item.id}>
+                                    <circle cx={x} cy={y} r="9" fill={meta.color} stroke="#ffffff" strokeWidth="2" />
+                                    <text x={x} y={y + 3.5} fill="#ffffff" fontSize="8" fontWeight="800" textAnchor="middle">{idx + 1}</text>
+                                    {label && (
+                                        <text x={x} y={labelY} fill="#334155" fontSize="7.5" fontWeight="600" textAnchor="middle" fontFamily="Montserrat, sans-serif">
+                                            {label}
+                                        </text>
+                                    )}
+                                </g>
+                            );
+                        })}
+                    </svg>
+                </div>
+            );
+        };
+
+        const ReportDocumentFooter = ({ clientCompany, reportDate, preparedBy }) => (
+            <div className="report-print-footer">
+                Kolthoff Consulting · Confidential Client Deliverable · {clientCompany} · {reportDate}
+                {preparedBy ? ` · Prepared by ${preparedBy}` : ''}
+            </div>
+        );
 
         const ReportSectionHeader = ({ number, title, subtitle }) => (
             <div className="mb-6 page-break-inside-avoid">
@@ -1451,6 +1535,7 @@
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
+                    <div className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-400 mb-3">Kolthoff Consulting · Confidential Client Deliverable</div>
                     <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Waste-to-Peso Report</h1>
                     <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
                 </div>
@@ -1836,38 +1921,38 @@
 
                     {printConfig.showMatrix && activeItems.length > 0 && (
                         <div className="report-page font-sans text-xs">
-                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="All initiatives plotted by effort vs. impact. Numbers match the chart below." />
-                            <div className="flex justify-center my-4 page-break-inside-avoid">
-                                <svg viewBox="0 0 450 450" className="report-matrix-chart bg-slate-50 border border-slate-200 rounded-xl">
-                                    <rect x="40" y="40" width="185" height="185" fill="#f0fdf4" /><rect x="225" y="40" width="175" height="175" fill="#eff6ff" />
-                                    <rect x="30" y="225" width="170" height="185" fill="#f8fafc" /><rect x="225" y="225" width="185" height="185" fill="#fff1f2" />
-                                    <line x1="225" y1="40" x2="225" y2="410" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
-                                    <line x1="40" y1="225" x2="410" y2="225" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="3,3" />
-                                    <rect x="40" y="40" width="370" height="370" fill="none" stroke="#64748b" strokeWidth="1.5" />
-                                    {activeItems.map((item, idx) => {
-                                        const effort = Number(item.effort) || 3; const impact = Number(item.impact) || 3;
-                                        const x = 40 + ((effort - 1) / 4) * 370; const y = 40 + ((5 - impact) / 4) * 370;
-                                        const dotColor = effort < 3 && impact >= 3 ? '#10b981' : effort >= 3 && impact >= 3 ? '#3b82f6' : effort >= 3 ? '#ef4444' : '#94a3b8';
-                                        return (<g key={item.id}><circle cx={x} cy={y} r="7" fill={dotColor} stroke="#fff" strokeWidth="1.5" /><text x={x} y={y + 3} fill="#fff" fontSize="7" fontWeight="bold" textAnchor="middle">{idx + 1}</text></g>);
-                                    })}
-                                </svg>
+                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="Every 90-day initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
+                            <div className="flex justify-center my-4">
+                                <ReportPriorityMatrixChart items={activeItems} />
                             </div>
                             <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div className="border border-teal-200 rounded-lg p-3 page-break-inside-avoid bg-teal-50/20">
                                     <strong className="text-teal-800 text-[10px] uppercase block mb-2">Quick Wins</strong>
-                                    <ul className="space-y-1">{quickWins.length ? quickWins.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                    <ul className="space-y-1">{quickWins.length ? quickWins.map((item) => {
+                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                                 <div className="border border-blue-200 rounded-lg p-3 page-break-inside-avoid bg-blue-50/20">
                                     <strong className="text-blue-800 text-[10px] uppercase block mb-2">Major Projects</strong>
-                                    <ul className="space-y-1">{majorProjects.length ? majorProjects.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                    <ul className="space-y-1">{majorProjects.length ? majorProjects.map((item) => {
+                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                                 <div className="border border-slate-300 rounded-lg p-3 page-break-inside-avoid bg-slate-50/40">
                                     <strong className="text-slate-700 text-[10px] uppercase block mb-2">Fill-ins</strong>
-                                    <ul className="space-y-1">{fillIns.length ? fillIns.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                    <ul className="space-y-1">{fillIns.length ? fillIns.map((item) => {
+                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                                 <div className="border border-rose-200 rounded-lg p-3 page-break-inside-avoid bg-rose-50/20">
                                     <strong className="text-rose-800 text-[10px] uppercase block mb-2">Deprioritize</strong>
-                                    <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item, idx) => <li key={item.id} className="text-[10px] text-slate-700 font-medium">{idx + 1}. {item.text}</li>) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                    <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item) => {
+                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
                                 </div>
                             </div>
                             <table className="report-table">
@@ -1979,6 +2064,8 @@
                             </div>
                         </div>
                     )}
+
+                    <ReportDocumentFooter clientCompany={clientCompany} reportDate={reportDate} preparedBy={preparedBy} />
                 </div>
             );
         };
@@ -2066,7 +2153,13 @@
                     const diagnosisData = WT?.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
                     const reportTabs = diagnosisData.tabs || [];
                     if (reportTabs.length) {
-                        setTabs(WT.hydrateTabs(reportTabs));
+                        const hydrated = WT.hydrateTabs(reportTabs).map((tab) => ({
+                            ...tab,
+                            present: tab.present
+                                ? { ...tab.present, svgCache: printReadySvg(tab.present.svgCache || '') }
+                                : tab.present,
+                        }));
+                        setTabs(hydrated);
                         setActiveTabId(diagnosisData.activeTabId || reportTabs[0].id);
                     } else {
                         const id = `tab-${Date.now()}`;
