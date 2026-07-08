@@ -504,7 +504,7 @@
         };
 
         const WorkflowBuilderEmbedPanel = ({ activeProfileId }) => {
-            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-diagnosis-unified-chrome-v1' });
+            const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-collapsible-leakage-v1' });
             if (activeProfileId) builderParams.set('profile', activeProfileId);
             const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
             return (
@@ -2265,7 +2265,7 @@
                                 clientCompany={clientCompany}
                                 actions={(() => {
                                     if (activeNav === 'flowcharts') {
-                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250707-diagnosis-unified-chrome-v1' });
+                                        const builderParams = new URLSearchParams({ embed: '1', slice: 'diagnosis', v: '20250708-collapsible-leakage-v1' });
                                         if (activeProfileId) builderParams.set('profile', activeProfileId);
                                         const builderUrl = `/apps/operations/workflow_builder.html?${builderParams.toString()}`;
                                         return (
