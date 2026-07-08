@@ -126,11 +126,12 @@
             );
         };
 
-        const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520 }) => {
+        const DrawIoEmbed = ({ preset = 'bpmn', xml, onXmlChange, onSvgExport, height = 520, hideApplyButton = false, exportControllerRef }) => {
             const iframeRef = useRef(null);
             const readyRef = useRef(false);
             const configuredRef = useRef(false);
             const pendingXmlRef = useRef(xml);
+            const exportWaitRef = useRef(null);
             const presetData = window.DiagramEditor?.getPreset(preset);
             const embedUrl = window.DiagramEditor?.getDrawioEmbedUrl({
                 libs: presetData?.embedLibs || presetData?.configure?.defaultLibraries?.split(';')[0] || 'bpmn',
@@ -148,14 +149,27 @@
                 });
             };
 
-            const requestExport = (format) => {
-                postAction({
-                    action: 'export',
-                    format,
-                    xml: format === 'xml',
-                    spin: 'Exporting diagram…',
-                });
+            const maybeFinishExport = () => {
+                const pending = exportWaitRef.current;
+                if (!pending || !pending.gotXml || !pending.gotSvg) return;
+                pending.resolve({ xml: pending.xml || '', svg: pending.svg || '' });
+                exportWaitRef.current = null;
             };
+
+            const applyDiagram = () => new Promise((resolve, reject) => {
+                exportWaitRef.current = { resolve, reject, gotXml: false, gotSvg: false, xml: '', svg: '' };
+                postAction({ action: 'export', format: 'xml', xml: true, spin: 'Saving…' });
+                postAction({ action: 'export', format: 'xmlsvg', spin: 'Saving…' });
+                setTimeout(() => {
+                    if (!exportWaitRef.current) return;
+                    exportWaitRef.current.reject(new Error('Diagram export timed out'));
+                    exportWaitRef.current = null;
+                }, 20000);
+            });
+
+            useEffect(() => {
+                if (exportControllerRef) exportControllerRef.current = { applyDiagram };
+            });
 
             useEffect(() => {
                 pendingXmlRef.current = xml;
@@ -180,8 +194,21 @@
                         sendLoad(pendingXmlRef.current);
                     }
                     if (msg.event === 'export') {
-                        if (msg.format === 'xml' && msg.xml && onXmlChange) onXmlChange(msg.xml);
-                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data && onSvgExport) onSvgExport(msg.data);
+                        if (msg.format === 'xml' && msg.xml) {
+                            if (onXmlChange) onXmlChange(msg.xml);
+                            if (exportWaitRef.current) {
+                                exportWaitRef.current.gotXml = true;
+                                exportWaitRef.current.xml = msg.xml;
+                            }
+                        }
+                        if ((msg.format === 'xmlsvg' || msg.format === 'svg') && msg.data) {
+                            if (onSvgExport) onSvgExport(msg.data);
+                            if (exportWaitRef.current) {
+                                exportWaitRef.current.gotSvg = true;
+                                exportWaitRef.current.svg = msg.data;
+                            }
+                        }
+                        maybeFinishExport();
                     }
                     if (msg.event === 'autosave' && msg.xml && onXmlChange) onXmlChange(msg.xml);
                 };
@@ -191,27 +218,29 @@
 
             return (
                 <div className="flex flex-col gap-3 h-full min-h-0">
-                    <div className="flex flex-wrap gap-2 no-print shrink-0">
-                        <button
-                            type="button"
-                            onClick={() => { requestExport('xml'); requestExport('xmlsvg'); }}
-                            className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                            Apply Diagram
-                        </button>
-                    </div>
+                    {!hideApplyButton && (
+                        <div className="flex flex-wrap gap-2 no-print shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => applyDiagram().catch(() => {})}
+                                className="text-[10px] font-bold uppercase bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955 px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                                Apply Diagram
+                            </button>
+                        </div>
+                    )}
                     <iframe
                         ref={iframeRef}
                         src={embedUrl}
                         className="w-full flex-1 min-h-[420px] border border-brandNavy-800 rounded-xl bg-white"
-                        style={{ height: typeof height === 'number' ? height : undefined }}
+                        style={typeof height === 'number' ? { height } : height === '100%' ? { height: '100%' } : undefined}
                         title="draw.io BPMN editor"
                     />
                 </div>
             );
         };
 
-        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, showLeakagePanel }) => {
+        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, showLeakagePanel, diagramExportRef, hideApplyButton = false }) => {
             const [editingTabId, setEditingTabId] = useState(null);
             const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
             const present = window.DiagramEditor?.normalizeWorkflowPresent(activeTab?.present) || { drawioXml: '', format: 'bpmn' };
@@ -283,6 +312,8 @@
                             onXmlChange={handleXmlChange}
                             onSvgExport={handleSvgExport}
                             height="100%"
+                            hideApplyButton={hideApplyButton}
+                            exportControllerRef={diagramExportRef}
                         />
                     </div>
 
@@ -467,6 +498,10 @@
             const [tabs, setTabs] = useState(workflowInit.tabs);
             const [activeTabId, setActiveTabId] = useState(workflowInit.activeTabId);
             const [raciAssignments, setRaciAssignments] = useState({});
+            const diagramExportRef = useRef(null);
+            const autoSaveReadyRef = useRef(false);
+            const autoSaveTimerRef = useRef(null);
+            const applyDiagramAndSaveRef = useRef(null);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -510,6 +545,10 @@
             }, [user]);
 
             useEffect(() => {
+                autoSaveReadyRef.current = false;
+            }, [activeProfileId]);
+
+            useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
                 const WT = window.WorkflowTabs;
                 if (!profile) return;
@@ -523,14 +562,22 @@
                     setActiveTabId(id);
                 }
                 setRaciAssignments(profile.raciAssignments || {});
+                autoSaveReadyRef.current = false;
+                setTimeout(() => { autoSaveReadyRef.current = true; }, 1200);
             }, [activeProfileId, workbookProfiles]);
 
             const triggerToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
 
-            const handleSaveToCloud = async () => {
-                if (authError) return triggerToast("❌ Sync Disabled (GCP Key Issue)");
-                if (!isAuthed || !activeProfileId) return;
-                if (mod2Locked) return triggerToast('❌ Complete Mod 1 before saving Mod 2 workflows');
+            const handleSaveToCloud = async ({ silent = false } = {}) => {
+                if (authError) {
+                    if (!silent) triggerToast("❌ Sync Disabled (GCP Key Issue)");
+                    return false;
+                }
+                if (!isAuthed || !activeProfileId) return false;
+                if (mod2Locked) {
+                    if (!silent) triggerToast('❌ Complete Mod 1 before saving Mod 2 workflows');
+                    return false;
+                }
                 setIsSaving(true);
                 try {
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
@@ -580,16 +627,66 @@
                         const sops = window.SopSync.buildSopsFromWorkflowTabs(tabs, profileForSop);
                         if (sops.length) {
                             await window.setDoc(policyRef, window.SopSync.mergeSopsIntoPolicyData(policyData, sops), { merge: true });
-                            triggerToast(`💾 Saved + auto-synced ${sops.length} SOP(s) to Policy Studio!`);
-                        } else {
+                            if (!silent) triggerToast(`💾 Saved + auto-synced ${sops.length} SOP(s) to Policy Studio!`);
+                        } else if (!silent) {
                             triggerToast('💾 Saved to Cloud!');
                         }
-                    } else {
+                    } else if (!silent) {
                         triggerToast(IS_DIAGNOSIS_MODE ? '💾 Saved as-is workflows (Mod 1)!' : '💾 Saved to Cloud!');
                     }
-                } catch (e) { triggerToast("❌ Error saving."); }
-                setIsSaving(false);
+                    return true;
+                } catch (e) {
+                    if (!silent) triggerToast("❌ Error saving.");
+                    return false;
+                } finally {
+                    setIsSaving(false);
+                }
             };
+
+            const applyDiagramAndSave = async ({ silent = false, applyDiagram = true } = {}) => {
+                if (applyDiagram) await diagramExportRef.current?.applyDiagram?.();
+                return handleSaveToCloud({ silent });
+            };
+
+            applyDiagramAndSaveRef.current = applyDiagramAndSave;
+
+            useEffect(() => {
+                if (!IS_EMBED || !IS_DIAGNOSIS_MODE) return;
+                const handler = async (evt) => {
+                    if (!evt.data || typeof evt.data !== 'string') return;
+                    let msg;
+                    try { msg = JSON.parse(evt.data); } catch { return; }
+                    if (msg?.type !== 'kolthoff-workflow-save-request') return;
+                    const respond = (ok, error) => {
+                        window.parent.postMessage(JSON.stringify({
+                            type: 'kolthoff-workflow-save-result',
+                            requestId: msg.requestId,
+                            ok,
+                            error: error || null,
+                        }), '*');
+                    };
+                    try {
+                        await applyDiagramAndSaveRef.current?.({ silent: true, applyDiagram: msg.applyDiagram !== false });
+                        respond(true);
+                    } catch (e) {
+                        respond(false, e?.message || 'Workflow save failed');
+                    }
+                };
+                window.addEventListener('message', handler);
+                return () => window.removeEventListener('message', handler);
+            }, []);
+
+            useEffect(() => {
+                if (!IS_EMBED || !IS_DIAGNOSIS_MODE) return;
+                if (!autoSaveReadyRef.current || authError || !isAuthed || !activeProfileId || isSaving) return;
+
+                clearTimeout(autoSaveTimerRef.current);
+                autoSaveTimerRef.current = setTimeout(() => {
+                    applyDiagramAndSave({ silent: true }).catch(() => {});
+                }, 5000);
+
+                return () => clearTimeout(autoSaveTimerRef.current);
+            }, [tabs, activeTabId, raciAssignments, authError, isAuthed, activeProfileId, isSaving]);
 
             const profileLabel = (p) => window.EngagementConfig?.getClientDisplayName?.(p) || p.clientCompany || 'Untitled Company';
 
@@ -630,7 +727,7 @@
                         </nav>
 
                         <div className="p-4 border-t border-brandNavy-800 bg-brandNavy-950">
-                            <button onClick={handleSaveToCloud} disabled={isSaving || !!authError} className={`w-full flex justify-center items-center gap-2 py-3 rounded text-xs font-bold transition-all ${authError ? 'bg-brandNavy-850 text-slate-500 border border-brandNavy-700' : 'bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200'}`}>
+                            <button onClick={() => handleSaveToCloud()} disabled={isSaving || !!authError} className={`w-full flex justify-center items-center gap-2 py-3 rounded text-xs font-bold transition-all ${authError ? 'bg-brandNavy-850 text-slate-500 border border-brandNavy-700' : 'bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200'}`}>
                                 {authError ? <Icons.AlertCircle /> : <Icons.Cloud />} {isSaving ? "Syncing..." : (authError ? "Offline Mode" : "Sync to Cloud")}
                             </button>
                         </div>
@@ -638,12 +735,12 @@
                     )}
 
                     <main className="flex-1 overflow-hidden relative z-10 flex flex-col min-w-0">
-                        {IS_EMBED && (
+                        {IS_EMBED && !IS_DIAGNOSIS_MODE && (
                             <div className="shrink-0 bg-brandNavy-900/95 border-b border-brandNavy-800 px-4 py-2 flex justify-between items-center gap-2 no-print">
                                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                                    {IS_DIAGNOSIS_MODE ? 'Mod 1 · As-is workflow (diagnosisWorkflow)' : 'Mod 2 · To-be workflow (workflowBuilder)'}
+                                    Mod 2 · To-be workflow (workflowBuilder)
                                 </span>
-                                <button type="button" onClick={handleSaveToCloud} disabled={isSaving || !!authError} className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider ${authError ? 'bg-brandNavy-850 text-slate-500' : 'bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955'}`}>
+                                <button type="button" onClick={() => handleSaveToCloud()} disabled={isSaving || !!authError} className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider ${authError ? 'bg-brandNavy-850 text-slate-500' : 'bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955'}`}>
                                     {isSaving ? 'Syncing…' : 'Sync Diagram'}
                                 </button>
                             </div>
@@ -671,6 +768,8 @@
                                     closeTab={(e, id) => { e.stopPropagation(); if (tabs.length === 1) return; const newT = tabs.filter(t => t.id !== id); setTabs(newT); if (activeTabId === id) setActiveTabId(newT[0].id); }}
                                     renameTab={(id, name) => setTabs(tabs.map(t => t.id === id ? { ...t, name } : t))}
                                     showLeakagePanel={IS_DIAGNOSIS_MODE}
+                                    diagramExportRef={diagramExportRef}
+                                    hideApplyButton={IS_EMBED && IS_DIAGNOSIS_MODE}
                                 />
                             )}
                             {activeNav === 'raci' && (
