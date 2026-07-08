@@ -987,6 +987,150 @@
     return injectReportDiagramConnectorStyles(next);
   }
 
+  const REPORT_DIAGRAM_SHAPE_STROKE = '#334155';
+  const REPORT_DIAGRAM_SHAPE_STROKE_MIN = 1.5;
+  const REPORT_DIAGRAM_TEXT_FILL = '#0f172a';
+  const REPORT_DIAGRAM_FONT_STACK = 'Montserrat, Helvetica, Arial, sans-serif';
+  const REPORT_DIAGRAM_FILL_REMAP = {
+    '#dae8fc': '#f0fdfa',
+    '#d5e8d4': '#ecfdf5',
+    '#fff2cc': '#fffbeb',
+    '#f8cecc': '#fff1f2',
+    '#e1d5e7': '#f5f3ff',
+    '#ffffff': '#ffffff',
+  };
+  const REPORT_DIAGRAM_STROKE_REMAP = {
+    '#6c8ebf': '#0f766e',
+    '#82b366': '#059669',
+    '#d6b656': '#d97706',
+    '#b85450': '#e11d48',
+    '#9673a6': '#7c3aed',
+    '#000000': REPORT_DIAGRAM_SHAPE_STROKE,
+    '#666666': '#64748b',
+  };
+
+  function remapDiagramColor(value, map, fallback) {
+    if (!value || typeof value !== 'string') return fallback;
+    const key = value.trim().toLowerCase();
+    if (map[key]) return map[key];
+    const rgb = key.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
+    if (rgb) {
+      const hex =
+        '#' +
+        [rgb[1], rgb[2], rgb[3]]
+          .map((n) => Number(n).toString(16).padStart(2, '0'))
+          .join('');
+      if (map[hex]) return map[hex];
+    }
+    return value;
+  }
+
+  function getSvgAttribute(attrs, name) {
+    const match = attrs.match(new RegExp(`\\b${name}="([^"]*)"`, 'i'));
+    return match ? match[1] : '';
+  }
+
+  function isReportDiagramFilledShape(tag, attrs) {
+    if (tag === 'rect' || tag === 'ellipse' || tag === 'circle' || tag === 'polygon') return true;
+    if (tag !== 'path') return false;
+    const fill = getSvgAttribute(attrs, 'fill').trim().toLowerCase();
+    return fill && fill !== 'none' && fill !== 'transparent';
+  }
+
+  function boostReportDiagramShapeAttrs(attrs) {
+    let next = attrs;
+    const fill = getSvgAttribute(next, 'fill');
+    if (fill) {
+      next = next.replace(/\bfill="[^"]*"/i, `fill="${remapDiagramColor(fill, REPORT_DIAGRAM_FILL_REMAP, fill)}"`);
+    }
+    const stroke = getSvgAttribute(next, 'stroke');
+    if (stroke && stroke.toLowerCase() !== 'none') {
+      next = next.replace(/\bstroke="[^"]*"/i, `stroke="${remapDiagramColor(stroke, REPORT_DIAGRAM_STROKE_REMAP, stroke)}"`);
+    } else if (!stroke) {
+      next += ` stroke="${REPORT_DIAGRAM_SHAPE_STROKE}"`;
+    }
+    const sw = parseSvgStrokeWidth(next);
+    const boosted = Math.max(REPORT_DIAGRAM_SHAPE_STROKE_MIN, sw);
+    if (/\bstroke-width="/i.test(next)) {
+      next = next.replace(/\bstroke-width="[\d.]+"/i, `stroke-width="${boosted}"`);
+    } else {
+      next += ` stroke-width="${boosted}"`;
+    }
+    return next;
+  }
+
+  function boostReportDiagramTextAttrs(attrs) {
+    let next = attrs;
+    if (/\bfill="/i.test(next)) {
+      next = next.replace(/\bfill="[^"]*"/i, `fill="${REPORT_DIAGRAM_TEXT_FILL}"`);
+    } else {
+      next += ` fill="${REPORT_DIAGRAM_TEXT_FILL}"`;
+    }
+    if (!/\bfont-family="/i.test(next)) next += ` font-family="${REPORT_DIAGRAM_FONT_STACK}"`;
+    const fontSize = Number(getSvgAttribute(next, 'font-size'));
+    if (!Number.isFinite(fontSize) || fontSize < 11) {
+      if (/\bfont-size="/i.test(next)) {
+        next = next.replace(/\bfont-size="[\d.]+"/i, 'font-size="11"');
+      } else {
+        next += ' font-size="11"';
+      }
+    }
+    return next;
+  }
+
+  function parseSvgViewBox(attrs) {
+    const match = attrs.match(/\bviewBox="([^"]+)"/i);
+    if (!match) return null;
+    const parts = match[1].trim().split(/[\s,]+/).map(Number);
+    if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
+    return parts;
+  }
+
+  function ensureReportDiagramWhiteBackground(svgText, viewBox) {
+    if (!viewBox || /<rect[^>]*data-report-bg=/i.test(svgText)) return svgText;
+    const [x, y, w, h] = viewBox;
+    const bg = `<rect data-report-bg="1" x="${x}" y="${y}" width="${w}" height="${h}" fill="#ffffff" stroke="none"/>`;
+    return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${bg}`);
+  }
+
+  function expandReportDiagramViewBox(svgText, paddingRatio = 0.035) {
+    return svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
+      const viewBox = parseSvgViewBox(attrs);
+      if (!viewBox) return match;
+      const [x, y, w, h] = viewBox;
+      const padX = w * paddingRatio;
+      const padY = h * paddingRatio;
+      const nextViewBox = `${x - padX} ${y - padY} ${w + padX * 2} ${h + padY * 2}`;
+      const nextAttrs = attrs.replace(/\bviewBox="[^"]+"/i, `viewBox="${nextViewBox}"`);
+      return `<svg${nextAttrs}>`;
+    });
+  }
+
+  function injectReportDiagramPresentationStyles(svgText) {
+    const styleBlock =
+      '<style type="text/css" data-report-presentation-style="1"><![CDATA[' +
+      'svg{text-rendering:optimizeLegibility;shape-rendering:geometricPrecision;}' +
+      `text,tspan{font-family:${REPORT_DIAGRAM_FONT_STACK};fill:${REPORT_DIAGRAM_TEXT_FILL};}` +
+      ']]></style>';
+    if (/data-report-presentation-style=/i.test(svgText)) return svgText;
+    return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${styleBlock}`);
+  }
+
+  function enhanceReportDiagramProfessionalPresentation(svgText) {
+    let next = enhanceReportDiagramConnectorVisibility(svgText);
+    next = next.replace(/<(rect|ellipse|circle|polygon|path)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
+      if (!isReportDiagramFilledShape(tag.toLowerCase(), attrs)) return match;
+      return `<${tag}${boostReportDiagramShapeAttrs(attrs)}${close}`;
+    });
+    next = next.replace(/<(text|tspan)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
+      return `<${tag}${boostReportDiagramTextAttrs(attrs)}${close}`;
+    });
+    next = expandReportDiagramViewBox(next);
+    const viewBox = parseSvgViewBox(next.match(/<svg([^>]*)>/i)?.[1] || '');
+    next = ensureReportDiagramWhiteBackground(next, viewBox);
+    return injectReportDiagramPresentationStyles(next);
+  }
+
   function normalizeReportDiagramSvg(svgDataUri) {
     if (!svgDataUri || typeof svgDataUri !== 'string') return svgDataUri || '';
     if (!svgDataUri.startsWith('data:image/svg+xml')) return svgDataUri;
@@ -1015,7 +1159,7 @@
       };
 
       let svgText = decodePayload();
-      svgText = enhanceReportDiagramConnectorVisibility(svgText);
+      svgText = enhanceReportDiagramProfessionalPresentation(svgText);
       svgText = svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
         const widthMatch = attrs.match(/\bwidth="([\d.]+)/i);
         const heightMatch = attrs.match(/\bheight="([\d.]+)/i);
@@ -1111,6 +1255,7 @@
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
     enhanceReportDiagramConnectorVisibility,
+    enhanceReportDiagramProfessionalPresentation,
     buildLinkQrUrl,
     buildFeedbackFormQrUrl,
     isMod1TaskInScope,

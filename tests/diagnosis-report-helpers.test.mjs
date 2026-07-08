@@ -222,6 +222,26 @@ describe('diagnosis-report-helpers', () => {
     assert.doesNotMatch(svgText, /marker-end="url\(#arrow\)"\/ vector-effect/);
   });
 
+  it('normalizeReportDiagramSvg applies professional presentation polish', () => {
+    const raw =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">' +
+          '<rect x="20" y="40" width="120" height="60" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1"/>' +
+          '<text x="80" y="75" font-size="9" fill="#333333">Review</text>' +
+          '</svg>'
+      );
+    const normalized = DRH.normalizeReportDiagramSvg(raw);
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    assert.match(svgText, /data-report-bg="1"/);
+    assert.match(svgText, /fill="#f0fdfa"/);
+    assert.match(svgText, /stroke="#0f766e"/);
+    assert.match(svgText, /font-family="Montserrat/);
+    assert.match(svgText, /text-rendering:optimizeLegibility/);
+    assert.match(svgText, /viewBox="[^"]+"/);
+    assert.doesNotMatch(svgText, /viewBox="0 0 400 200"/);
+  });
+
   it('buildMod1DeliverableStatus tracks in-scope deliverables', () => {
     const items = DRH.buildMod1DeliverableStatus({
       tasks: [

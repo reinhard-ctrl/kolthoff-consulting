@@ -73,14 +73,35 @@
         .page-break-inside-avoid { page-break-inside: avoid; }
 
         /* Report diagram frames — screen preview + print scaling to paper width */
+        .report-diagram-figure {
+            margin: 0 0 1.25rem;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .report-diagram-figure__canvas {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            overflow: hidden;
+        }
+        .report-diagram-figure__caption {
+            margin-top: 0.5rem;
+            text-align: center;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
         .report-diagram-frame {
             width: 100%;
             max-width: 100%;
             min-width: 0;
             display: block;
-            margin-bottom: 1rem;
-            overflow: auto;
-            max-height: min(70vh, 520px);
+            margin-bottom: 0;
+            overflow: hidden;
+            max-height: none;
         }
         .report-diagram-img {
             display: block;
@@ -88,7 +109,7 @@
             max-width: 100%;
             min-width: 0;
             height: auto;
-            max-height: min(70vh, 520px);
+            max-height: min(72vh, 560px);
             object-fit: contain;
             object-position: center center;
             margin-left: auto;
@@ -189,6 +210,21 @@
                 word-break: break-word !important;
             }
             .report-page .flex { flex-wrap: wrap !important; }
+            .report-diagram-figure {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 1rem !important;
+            }
+            .report-diagram-figure__canvas {
+                padding: 0.65rem 0.85rem !important;
+                border-color: #cbd5e1 !important;
+                border-radius: 4px !important;
+                box-shadow: none !important;
+            }
+            .report-diagram-figure__caption {
+                color: #475569 !important;
+                font-size: 8px !important;
+            }
             .report-diagram-frame {
                 display: block !important;
                 width: 100% !important;
@@ -205,7 +241,7 @@
                 max-width: 100% !important;
                 min-width: 0 !important;
                 height: auto !important;
-                max-height: 170mm !important;
+                max-height: 165mm !important;
                 object-fit: contain !important;
                 object-position: center center !important;
                 margin-left: auto !important;
@@ -258,6 +294,9 @@
                 margin-right: auto;
                 box-sizing: border-box;
             }
+            .report-print-surface .report-diagram-figure__canvas {
+                box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+            }
         }
 
         .report-kpi { background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%); border: 1px solid #e2e8f0; border-radius: 12px; }
@@ -289,7 +328,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250708-report-diagram-arrows-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250708-report-diagram-pro-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1338,6 +1377,17 @@
             </div>
         );
 
+        const ReportDiagramFigure = ({ src, alt, caption }) => (
+            <figure className="report-diagram-figure">
+                <div className="report-diagram-figure__canvas">
+                    <div className="report-diagram-frame">
+                        <img src={src} alt={alt} className="report-diagram-img" />
+                    </div>
+                </div>
+                {caption && <figcaption className="report-diagram-figure__caption">{caption}</figcaption>}
+            </figure>
+        );
+
         const ReportSectionHeader = ({ number, title, subtitle }) => (
             <div className="mb-6 page-break-inside-avoid">
                 <div className="report-accent-bar mb-4" />
@@ -1503,9 +1553,11 @@
                         <div className="report-page">
                             <ReportSectionHeader number="A" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
                             {orgChartSvg && (
-                                <div className="report-diagram-frame border border-slate-200 rounded-lg bg-white mb-4">
-                                    <img src={printReadySvg(orgChartSvg)} alt="Organization chart" className="report-diagram-img border-0 rounded-lg" />
-                                </div>
+                                <ReportDiagramFigure
+                                    src={printReadySvg(orgChartSvg)}
+                                    alt="Organization chart"
+                                    caption="Figure A.1 — Organization chart (as-is)"
+                                />
                             )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
                                 <table className="report-table">
@@ -1530,7 +1582,7 @@
                         <div className="report-page">
                             <ReportSectionHeader number="B" title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
                             <div className="space-y-6">
-                                {workflowTabs.map(tab => {
+                                {workflowTabs.map((tab, tabIdx) => {
                                     const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
                                     const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                     const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
@@ -1541,9 +1593,11 @@
                                                 <span className="font-mono text-rose-600 font-bold text-xs">{formatCurrency(Math.round(tabTax.annual / 12))}/mo</span>
                                             </div>
                                             {vm.svgCache && (
-                                                <div className="report-diagram-frame border border-slate-200 rounded bg-white">
-                                                    <img src={printReadySvg(vm.svgCache)} alt={tab.name} className="report-diagram-img border-0 rounded" />
-                                                </div>
+                                                <ReportDiagramFigure
+                                                    src={printReadySvg(vm.svgCache)}
+                                                    alt={tab.name}
+                                                    caption={`Figure B.${tabIdx + 1} — ${tab.name} (as-is process map)`}
+                                                />
                                             )}
                                             <div className="space-y-2">
                                                 {processNodes.map((step, sIdx) => {
