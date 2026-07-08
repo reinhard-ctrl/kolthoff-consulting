@@ -168,6 +168,22 @@
                 display: none !important;
             }
 
+            body.printing-report main,
+            body.printing-report main > div,
+            body.printing-report .report-print-surface,
+            html.kolthoff-embed body.printing-report main,
+            html.kolthoff-embed body.printing-report main > div,
+            html.kolthoff-embed body.printing-report .report-print-surface {
+                display: block !important;
+                visibility: visible !important;
+                overflow: visible !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                position: static !important;
+                flex: none !important;
+            }
+
             body.printing-staff-directory .staff-directory-print-root { display: block !important; }
 
             /* Kill dark app shell + preview scroll padding so the PDF ends on white content */
@@ -246,6 +262,17 @@
                 object-position: center center !important;
                 margin-left: auto !important;
                 margin-right: auto !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .report-diagram-figure,
+            .report-diagram-figure__canvas,
+            .report-diagram-frame {
+                visibility: visible !important;
+                opacity: 1 !important;
+                overflow: visible !important;
             }
             .report-matrix-chart {
                 width: min(100%, 360px) !important;
@@ -328,7 +355,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250708-report-diagram-pro-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250708-report-diagram-print-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1377,16 +1404,20 @@
             </div>
         );
 
-        const ReportDiagramFigure = ({ src, alt, caption }) => (
-            <figure className="report-diagram-figure">
-                <div className="report-diagram-figure__canvas">
-                    <div className="report-diagram-frame">
-                        <img src={src} alt={alt} className="report-diagram-img" />
+        const ReportDiagramFigure = ({ src, alt, caption }) => {
+            const diagramSrc = useMemo(() => printReadySvg(src), [src]);
+            if (!diagramSrc) return null;
+            return (
+                <figure className="report-diagram-figure">
+                    <div className="report-diagram-figure__canvas">
+                        <div className="report-diagram-frame">
+                            <img src={diagramSrc} alt={alt} className="report-diagram-img" />
+                        </div>
                     </div>
-                </div>
-                {caption && <figcaption className="report-diagram-figure__caption">{caption}</figcaption>}
-            </figure>
-        );
+                    {caption && <figcaption className="report-diagram-figure__caption">{caption}</figcaption>}
+                </figure>
+            );
+        };
 
         const ReportSectionHeader = ({ number, title, subtitle }) => (
             <div className="mb-6 page-break-inside-avoid">
@@ -1552,12 +1583,16 @@
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page">
                             <ReportSectionHeader number="A" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
-                            {orgChartSvg && (
+                            {orgChartSvg ? (
                                 <ReportDiagramFigure
-                                    src={printReadySvg(orgChartSvg)}
+                                    src={orgChartSvg}
                                     alt="Organization chart"
                                     caption="Figure A.1 — Organization chart (as-is)"
                                 />
+                            ) : (
+                                <p className="text-xs text-slate-500 italic mb-4 p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    Org chart diagram not exported yet. Open the Org Chart section, click <strong>Apply Diagram</strong>, then Sync to Cloud — the chart will appear here on refresh.
+                                </p>
                             )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
                                 <table className="report-table">
@@ -1594,7 +1629,7 @@
                                             </div>
                                             {vm.svgCache && (
                                                 <ReportDiagramFigure
-                                                    src={printReadySvg(vm.svgCache)}
+                                                    src={vm.svgCache}
                                                     alt={tab.name}
                                                     caption={`Figure B.${tabIdx + 1} — ${tab.name} (as-is process map)`}
                                                 />
@@ -2395,7 +2430,7 @@
                                 />
                             )}
                             {activeNav === 'report' && (
-                                <div className="w-full h-full min-h-0 flex flex-col print:min-h-0">
+                                <div className="w-full h-full min-h-0 flex flex-col print:h-auto print:min-h-0 print:block">
                                     <div className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 no-print shadow-sm w-full shrink-0">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <div className="min-w-0">
@@ -2491,7 +2526,7 @@
                                             </div>
                                         </details>
                                     </div>
-                                    <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:py-0 print:px-0 print:bg-transparent">
+                                    <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:flex-none print:block print:h-auto print:min-h-0 print:overflow-visible print:py-0 print:px-0 print:bg-transparent">
                                         <ExecutiveReport
                                             clientCompany={clientCompany}
                                             preparedBy={preparedBy}
