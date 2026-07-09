@@ -275,6 +275,29 @@ describe('diagnosis-report-helpers', () => {
     assert.doesNotMatch(svgText, /viewBox="0 0 400 200"/);
   });
 
+  it('normalizeReportDiagramSvg crops sparse draw.io canvas whitespace for larger print diagrams', () => {
+    const raw =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200">' +
+          '<rect x="500" y="450" width="140" height="70" fill="#dae8fc" stroke="#6c8ebf" stroke-width="1"/>' +
+          '<rect x="780" y="450" width="140" height="70" fill="#d5e8d4" stroke="#82b366" stroke-width="1"/>' +
+          '<path d="M 640 485 L 780 485" fill="none" stroke="#cccccc" stroke-width="2"/>' +
+          '<text x="520" y="490" font-size="12" fill="#333333">Intake</text>' +
+          '</svg>'
+      );
+    const normalized = DRH.normalizeReportDiagramSvg(raw);
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    const viewBoxMatch = svgText.match(/viewBox="([^"]+)"/i);
+    assert.ok(viewBoxMatch);
+    const parts = viewBoxMatch[1].trim().split(/[\s,]+/).map(Number);
+    const vw = parts[2];
+    const vh = parts[3];
+    assert.ok(vw < 700, `expected tight width, got ${vw}`);
+    assert.ok(vh < 250, `expected tight height, got ${vh}`);
+    assert.ok(Number(svgText.match(/\bwidth="([\d.]+)"/i)?.[1]) < 700);
+  });
+
   it('buildMod1DeliverableStatus tracks in-scope deliverables', () => {
     const items = DRH.buildMod1DeliverableStatus({
       tasks: [

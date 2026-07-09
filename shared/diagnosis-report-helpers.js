@@ -1088,6 +1088,264 @@
     return parts;
   }
 
+  function pushSvgNumberPair(target, a, b) {
+    const x = Number(a);
+    const y = Number(b);
+    if (Number.isFinite(x) && Number.isFinite(y)) target.push([x, y]);
+  }
+
+  function expandSvgBounds(bounds, x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return bounds;
+    if (!bounds) return { minX: x, minY: y, maxX: x, maxY: y };
+    bounds.minX = Math.min(bounds.minX, x);
+    bounds.minY = Math.min(bounds.minY, y);
+    bounds.maxX = Math.max(bounds.maxX, x);
+    bounds.maxY = Math.max(bounds.maxY, y);
+    return bounds;
+  }
+
+  function expandSvgBoundsByBox(bounds, x, y, w, h, pad = 0) {
+    if (![x, y, w, h].every(Number.isFinite) || w <= 0 || h <= 0) return bounds;
+    bounds = expandSvgBounds(bounds, x - pad, y - pad);
+    bounds = expandSvgBounds(bounds, x + w + pad, y + h + pad);
+    return bounds;
+  }
+
+  function parseSvgPointsAttr(points) {
+    if (!points || typeof points !== 'string') return [];
+    const pairs = [];
+    const tokens = points.trim().split(/[\s,]+/).filter(Boolean);
+    for (let i = 0; i + 1 < tokens.length; i += 2) {
+      pushSvgNumberPair(pairs, tokens[i], tokens[i + 1]);
+    }
+    return pairs;
+  }
+
+  function parseSvgPathPoints(d) {
+    if (!d || typeof d !== 'string') return [];
+    const pairs = [];
+    const absCommands = /([MLHVCSQTAZ])([^MLHVCSQTAZ]*)/gi;
+    let match;
+    let cx = 0;
+    let cy = 0;
+    while ((match = absCommands.exec(d))) {
+      const cmd = match[1];
+      const args = match[2]
+        .trim()
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map(Number)
+        .filter(Number.isFinite);
+      const upper = cmd.toUpperCase();
+      const isRel = cmd !== upper;
+
+      const takePoint = (idx) => {
+        if (idx + 1 >= args.length) return null;
+        let x = args[idx];
+        let y = args[idx + 1];
+        if (isRel) {
+          x += cx;
+          y += cy;
+        }
+        cx = x;
+        cy = y;
+        pushSvgNumberPair(pairs, x, y);
+        return [x, y];
+      };
+
+      if (upper === 'Z') continue;
+      if (upper === 'M' || upper === 'L' || upper === 'T') {
+        for (let i = 0; i + 1 < args.length; i += 2) takePoint(i);
+        continue;
+      }
+      if (upper === 'H') {
+        for (let i = 0; i < args.length; i += 1) {
+          const x = isRel ? cx + args[i] : args[i];
+          cx = x;
+          pushSvgNumberPair(pairs, cx, cy);
+        }
+        continue;
+      }
+      if (upper === 'V') {
+        for (let i = 0; i < args.length; i += 1) {
+          const y = isRel ? cy + args[i] : args[i];
+          cy = y;
+          pushSvgNumberPair(pairs, cx, cy);
+        }
+        continue;
+      }
+      if (upper === 'C') {
+        for (let i = 0; i + 5 < args.length; i += 6) {
+          takePoint(i);
+          takePoint(i + 2);
+          takePoint(i + 4);
+        }
+        continue;
+      }
+      if (upper === 'S' || upper === 'Q') {
+        for (let i = 0; i + 3 < args.length; i += 4) {
+          takePoint(i);
+          takePoint(i + 2);
+        }
+        continue;
+      }
+      if (upper === 'A') {
+        for (let i = 0; i + 6 < args.length; i += 7) {
+          takePoint(i + 5);
+        }
+      }
+    }
+    return pairs;
+  }
+
+  function isLikelyReportDiagramBackgroundRect(attrs, canvasViewBox) {
+    if (/data-report-bg=/i.test(attrs)) return true;
+    const fill = getSvgAttribute(attrs, 'fill').trim().toLowerCase();
+    if (!fill || (fill !== '#ffffff' && fill !== '#fff' && fill !== 'white')) return false;
+    if (!canvasViewBox) return false;
+    const x = Number(getSvgAttribute(attrs, 'x') || 0);
+    const y = Number(getSvgAttribute(attrs, 'y') || 0);
+    const w = Number(getSvgAttribute(attrs, 'width'));
+    const h = Number(getSvgAttribute(attrs, 'height'));
+    if (![x, y, w, h].every(Number.isFinite)) return false;
+    const [cx, cy, cw, ch] = canvasViewBox;
+    const coversCanvas =
+      Math.abs(x - cx) <= cw * 0.02 &&
+      Math.abs(y - cy) <= ch * 0.02 &&
+      w >= cw * 0.92 &&
+      h >= ch * 0.92;
+    return coversCanvas;
+  }
+
+  function resolveReportDiagramCanvasViewBox(attrs) {
+    const fromViewBox = parseSvgViewBox(attrs);
+    if (fromViewBox) return fromViewBox;
+    const width = readSvgLengthAttr(attrs, 'width');
+    const height = readSvgLengthAttr(attrs, 'height');
+    if (width && height) return [0, 0, width, height];
+    return null;
+  }
+
+  function estimateReportDiagramContentBounds(svgText) {
+    let bounds = null;
+    const rootAttrs = svgText.match(/<svg([^>]*)>/i)?.[1] || '';
+    const canvasViewBox = resolveReportDiagramCanvasViewBox(rootAttrs);
+    const openTagRe = /<(rect|ellipse|circle|polygon|polyline|line|path|text|image|use)\b([^>]*)(\/>|>)/gi;
+    let match;
+    while ((match = openTagRe.exec(svgText))) {
+      const tag = match[1].toLowerCase();
+      const attrs = match[2] || '';
+      if (/data-report-bg=/i.test(attrs)) continue;
+
+      if (tag === 'rect' || tag === 'image' || tag === 'use') {
+        if (tag === 'rect' && isLikelyReportDiagramBackgroundRect(attrs, canvasViewBox)) continue;
+        const x = Number(getSvgAttribute(attrs, 'x') || 0);
+        const y = Number(getSvgAttribute(attrs, 'y') || 0);
+        const w = Number(getSvgAttribute(attrs, 'width'));
+        const h = Number(getSvgAttribute(attrs, 'height'));
+        const sw = Number(getSvgAttribute(attrs, 'stroke-width') || 0);
+        bounds = expandSvgBoundsByBox(bounds, x, y, w, h, Number.isFinite(sw) ? sw / 2 : 0);
+        continue;
+      }
+
+      if (tag === 'circle') {
+        const cx = Number(getSvgAttribute(attrs, 'cx'));
+        const cy = Number(getSvgAttribute(attrs, 'cy'));
+        const r = Number(getSvgAttribute(attrs, 'r'));
+        if ([cx, cy, r].every(Number.isFinite) && r > 0) {
+          bounds = expandSvgBoundsByBox(bounds, cx - r, cy - r, r * 2, r * 2);
+        }
+        continue;
+      }
+
+      if (tag === 'ellipse') {
+        const cx = Number(getSvgAttribute(attrs, 'cx'));
+        const cy = Number(getSvgAttribute(attrs, 'cy'));
+        const rx = Number(getSvgAttribute(attrs, 'rx'));
+        const ry = Number(getSvgAttribute(attrs, 'ry'));
+        if ([cx, cy, rx, ry].every(Number.isFinite) && rx > 0 && ry > 0) {
+          bounds = expandSvgBoundsByBox(bounds, cx - rx, cy - ry, rx * 2, ry * 2);
+        }
+        continue;
+      }
+
+      if (tag === 'line') {
+        const x1 = Number(getSvgAttribute(attrs, 'x1'));
+        const y1 = Number(getSvgAttribute(attrs, 'y1'));
+        const x2 = Number(getSvgAttribute(attrs, 'x2'));
+        const y2 = Number(getSvgAttribute(attrs, 'y2'));
+        bounds = expandSvgBounds(bounds, x1, y1);
+        bounds = expandSvgBounds(bounds, x2, y2);
+        continue;
+      }
+
+      if (tag === 'polygon' || tag === 'polyline') {
+        parseSvgPointsAttr(getSvgAttribute(attrs, 'points')).forEach(([x, y]) => {
+          bounds = expandSvgBounds(bounds, x, y);
+        });
+        continue;
+      }
+
+      if (tag === 'path') {
+        parseSvgPathPoints(getSvgAttribute(attrs, 'd')).forEach(([x, y]) => {
+          bounds = expandSvgBounds(bounds, x, y);
+        });
+        continue;
+      }
+
+      if (tag === 'text') {
+        const x = Number(getSvgAttribute(attrs, 'x'));
+        const y = Number(getSvgAttribute(attrs, 'y'));
+        const fontSize = Number(getSvgAttribute(attrs, 'font-size') || 12);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          const approxW = Math.max(24, fontSize * 6);
+          const approxH = Math.max(12, fontSize * 1.4);
+          bounds = expandSvgBoundsByBox(bounds, x - 2, y - approxH, approxW, approxH * 1.35);
+        }
+      }
+    }
+    return bounds;
+  }
+
+  function tightReportDiagramViewBox(svgText, paddingRatio = 0.02) {
+    return svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
+      const current = resolveReportDiagramCanvasViewBox(attrs);
+      const content = estimateReportDiagramContentBounds(svgText);
+      if (!content || !current) return match;
+
+      let minX = content.minX;
+      let minY = content.minY;
+      let maxX = content.maxX;
+      let maxY = content.maxY;
+      let w = maxX - minX;
+      let h = maxY - minY;
+      if (!(w > 1 && h > 1)) return match;
+
+      const [cx, cy, cw, ch] = current;
+      const areaRatio = (w * h) / Math.max(1, cw * ch);
+      const coversMostCanvas = areaRatio > 0.72;
+      const roughlyMatches =
+        Math.abs(minX - cx) < cw * 0.05 &&
+        Math.abs(minY - cy) < ch * 0.05 &&
+        Math.abs(w - cw) < cw * 0.1 &&
+        Math.abs(h - ch) < ch * 0.1;
+
+      // Dense diagrams that already fill the canvas keep the original frame.
+      if (coversMostCanvas || roughlyMatches) return match;
+
+      const padX = Math.max(8, w * paddingRatio);
+      const padY = Math.max(8, h * paddingRatio);
+      const nextViewBox = `${minX - padX} ${minY - padY} ${w + padX * 2} ${h + padY * 2}`;
+      let nextAttrs = attrs;
+      if (/\bviewBox="/i.test(nextAttrs)) {
+        nextAttrs = nextAttrs.replace(/\bviewBox="[^"]+"/i, `viewBox="${nextViewBox}"`);
+      } else {
+        nextAttrs += ` viewBox="${nextViewBox}"`;
+      }
+      return `<svg${nextAttrs}>`;
+    });
+  }
+
   function ensureReportDiagramWhiteBackground(svgText, viewBox) {
     if (!viewBox || /<rect[^>]*data-report-bg=/i.test(svgText)) return svgText;
     const [x, y, w, h] = viewBox;
@@ -1095,7 +1353,7 @@
     return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${bg}`);
   }
 
-  function expandReportDiagramViewBox(svgText, paddingRatio = 0.035) {
+  function expandReportDiagramViewBox(svgText, paddingRatio = 0.012) {
     return svgText.replace(/<svg([^>]*)>/i, (match, attrs) => {
       const viewBox = parseSvgViewBox(attrs);
       if (!viewBox) return match;
@@ -1127,6 +1385,8 @@
     next = next.replace(/<(text|tspan)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
       return `<${tag}${boostReportDiagramTextAttrs(attrs)}${close}`;
     });
+    // Crop unused draw.io canvas margins so diagrams fill the printable page width.
+    next = tightReportDiagramViewBox(next);
     next = expandReportDiagramViewBox(next);
     const viewBox = parseSvgViewBox(next.match(/<svg([^>]*)>/i)?.[1] || '');
     next = ensureReportDiagramWhiteBackground(next, viewBox);
@@ -1352,6 +1612,8 @@
     ensureReportDiagramDataUri,
     extractReportDiagramSvgMarkup,
     decodeReportDiagramSvgMarkup,
+    estimateReportDiagramContentBounds,
+    tightReportDiagramViewBox,
     truncateReportLabel,
     getMatrixQuadrantMeta,
     enhanceReportDiagramConnectorVisibility,

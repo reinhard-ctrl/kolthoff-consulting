@@ -82,7 +82,7 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 1rem 1.25rem;
+            padding: 0.5rem 0.65rem;
             overflow: hidden;
         }
         .report-diagram-figure__caption {
@@ -109,7 +109,7 @@
             max-width: 100%;
             min-width: 0;
             height: auto;
-            max-height: min(72vh, 560px);
+            max-height: min(88vh, 820px);
             object-fit: contain;
             object-position: center center;
             margin-left: auto;
@@ -242,7 +242,7 @@
                 margin-bottom: 1rem !important;
             }
             .report-diagram-figure__canvas {
-                padding: 0.65rem 0.85rem !important;
+                padding: 0.25rem 0.35rem !important;
                 border-color: #cbd5e1 !important;
                 border-radius: 4px !important;
                 box-shadow: none !important;
@@ -267,7 +267,7 @@
                 max-width: 100% !important;
                 min-width: 0 !important;
                 height: auto !important;
-                max-height: 165mm !important;
+                max-height: 240mm !important;
                 object-fit: contain !important;
                 object-position: center center !important;
                 margin-left: auto !important;
@@ -276,6 +276,16 @@
                 opacity: 1 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+            }
+            /* Give org/workflow diagrams a full printable page when possible */
+            .report-diagram-figure--featured {
+                page-break-before: auto !important;
+                break-before: auto !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .report-diagram-figure--featured .report-diagram-img {
+                max-height: 255mm !important;
             }
             .report-diagram-figure,
             .report-diagram-figure__canvas,
@@ -337,12 +347,12 @@
             .report-print-surface .report-page {
                 background: #ffffff !important;
                 color: #0f172a !important;
-                padding: 2.5rem 3rem;
+                padding: 2rem 2.25rem;
                 border-radius: 2px;
                 box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 12px 32px rgba(15, 23, 42, 0.12);
                 border: 1px solid #e2e8f0;
                 width: 100%;
-                max-width: 850px;
+                max-width: 900px;
                 margin-left: auto;
                 margin-right: auto;
                 box-sizing: border-box;
@@ -381,7 +391,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
-    <script src="../../shared/diagnosis-report-helpers.js?v=20250708-report-diagram-print-v2"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250709-report-diagram-size-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -1530,11 +1540,11 @@
             </div>
         );
 
-        const ReportDiagramFigure = ({ src, alt, caption }) => {
+        const ReportDiagramFigure = ({ src, alt, caption, featured = true }) => {
             const diagramSrc = useMemo(() => printReadySvg(src), [src]);
             if (!diagramSrc) return null;
             return (
-                <figure className="report-diagram-figure">
+                <figure className={`report-diagram-figure${featured ? ' report-diagram-figure--featured' : ''}`}>
                     <div className="report-diagram-figure__canvas">
                         <div className="report-diagram-frame">
                             <img src={diagramSrc} alt={alt} className="report-diagram-img" loading="eager" decoding="sync" />
