@@ -89,6 +89,7 @@
     const MOD_3 = H?.MOD_CATEGORIES?.mod3 ?? 'MOD 3 - Your Team Workspace';
     const MOD_4 = H?.MOD_CATEGORIES?.mod4 ?? 'MOD 4 - Care Plan';
     const PRO_1 = PC?.getProductById?.('pro1')?.category ?? 'PRO 1 - Agency Ops Platform';
+    const ADDON_HR = 'ADD-ON - HR Coaching';
     const defaultMod1Selected = (task) => task.id.startsWith('m1-') && task.id !== 'm1-06';
     if (STARTER_UI && PRODUCT.moduleLabels?.quotes) {
       document.title = `${PRODUCT.moduleLabels.quotes} | Cloud Synced`;
@@ -387,6 +388,39 @@
           activities: 'Maintain platform hosting, tenant updates, and standard support during business hours.',
           expectations: 'Submit support requests through the agreed channel; designate one admin contact.',
           output: 'Continuous access to your branded Agency Ops platform.'
+        }
+      },
+      {
+        id: 'addon-hr-01', category: ADDON_HR,
+        deliverable: 'HR Manager Coaching Sessions',
+        description: 'Four live coaching sessions (90 minutes each) for the owner or HR lead on hiring rhythm, difficult conversations, and day-to-day people management — operational advisory only, not legal counsel.',
+        estHours: 8, tier: 'senior', selected: false,
+        scopeDetails: {
+          activities: 'Run four structured coaching sessions with agendas tied to your current team pain points; capture action notes after each session.',
+          expectations: 'Owner or HR lead attends all sessions; share current org chart and top people-management challenges in advance.',
+          output: 'Session summaries with agreed next steps and a 30-day people-management action list.'
+        }
+      },
+      {
+        id: 'addon-hr-02', category: ADDON_HR,
+        deliverable: 'Performance Conversation Toolkit',
+        description: 'Templates and facilitation guides for quarterly check-ins, corrective conversations, and annual reviews — aligned to your handbook where available.',
+        estHours: 4, tier: 'associate', selected: false,
+        scopeDetails: {
+          activities: 'Draft conversation scripts, review forms, and a manager quick-reference guide; walk through one sample review cycle.',
+          expectations: 'Provide your current review cadence (if any) and sample role profiles or job titles.',
+          output: 'A digital toolkit your managers can reuse for structured performance conversations.'
+        }
+      },
+      {
+        id: 'addon-hr-03', category: ADDON_HR,
+        deliverable: 'Quarterly HR Operating Rhythm',
+        description: 'A one-page calendar of recurring HR touchpoints — onboarding check-ins, review windows, and compliance reminders — tailored to your team size.',
+        estHours: 2, tier: 'associate', selected: false,
+        scopeDetails: {
+          activities: 'Map onboarding, probation, review, and offboarding touchpoints to a quarterly calendar with owner assignments.',
+          expectations: 'Confirm headcount bands and who currently handles HR admin today.',
+          output: 'A printable quarterly HR rhythm sheet linked from your workspace or shared drive.'
         }
       }
     ];

@@ -86,6 +86,24 @@
       },
     },
     {
+      id: 'hr-coaching-package',
+      name: 'HR Coaching Package',
+      tagline: 'Live manager coaching plus performance conversation templates — billed separately from the base SOW.',
+      modules: [],
+      tasks: {
+        mode: 'include',
+        include: ['addon-hr-01', 'addon-hr-02', 'addon-hr-03'],
+      },
+      defaults: {
+        title: 'HR Coaching Package',
+        proposalObjectives: 'Strengthen people-management rhythm with live coaching for the owner or HR lead, reusable performance conversation templates, and a quarterly HR operating calendar — operational advisory only, not legal counsel.',
+        frictionBuffer: 10,
+        discountPercent: 0,
+        milestoneSplit: '50-50',
+        addendumTerms: 'This Addendum supplements the original Statement of Work. HR coaching and templates are operational advisory deliverables — client legal review is required before treating any handbook or policy language as binding. Session dates are subject to mutual scheduling.',
+      },
+    },
+    {
       id: 'custom',
       name: 'Custom Addendum',
       tagline: 'Start from a blank scope and build your own addendum tasks.',
