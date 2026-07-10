@@ -1,8 +1,25 @@
 # Kolthoff Operations Suite — Content Model
 
-This document describes the **canonical engagement content** shared across Project Planner, Diagnosis Reports, CRM, Contract Ledger, Portal Manager, and Cloud Functions.
+This document describes the **canonical engagement content** shared across Project Planner, Leak Scan Report (admin route: Diagnosis Reports), CRM, Contract Ledger, Portal Manager, and Cloud Functions.
 
 Implementation source: `shared/engagement-config.js` (HTML apps) and `admin/src/lib/engagement-config.ts` (React admin).
+
+## Naming & voice
+
+Use this hierarchy in client-facing copy (SOW, PDF, portal, marketing):
+
+| Layer | Canonical name | Notes |
+|-------|------------------|-------|
+| Module (engagement phase) | **Business Leak Scan** | Mod 1 — org chart, as-is workflows, SaaS audit, strategy |
+| Package (sales) | **Leak Scan** | Marketing and planner package id `leak-scan` |
+| Deliverable (client output) | **Leak Scan Report** | Printable PDF + handoff (Drive/Loom) |
+| Action plan | **90-Day Recovery Plan** | Top fixes inside the report; not a separate document name |
+| Metric | **Operational leakage** | Process delays + subscription overlap |
+| Branded hook (marketing only) | **Chaos Tax** | Calculator and homepage — always define as operational leakage |
+
+**Consultant-facing only:** admin nav route id `diagnosis-reports`, Firestore slice `diagnosisWorkflow`, internal comments may say "diagnosis report."
+
+**Avoid in client deliverables:** "waste," "money pit," "peso amounts," and currency-specific framing. Prefer *leakage*, *overlap*, *recovery*, and *recapture*.
 
 ## Anchor document: `workbook_profiles`
 

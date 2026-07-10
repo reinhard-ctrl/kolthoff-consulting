@@ -190,7 +190,7 @@
         const { useState, useMemo, useEffect, useRef } = React;
         const MG = () => window.ModGating || {};
         const IS_EMBED = Boolean(window.KOLTHOFF_EMBED);
-        const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until Mod 1 (Leak Scan Report) is delivered.';
+        const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until the Business Leak Scan (Mod 1) is complete.';
 
         const Mod2LockedPanel = ({ profile, onLockedAction, canAdminUnlock, onAdminUnlock }) => {
             const reportHref = IS_EMBED ? '/admin/app/diagnosis-reports' : '/apps/delivery/diagnoses_report.html';
@@ -198,9 +198,9 @@
             return (
                 <div className="flex flex-col items-center justify-center flex-1 min-h-[50vh] p-10 text-center max-w-lg mx-auto">
                     <div className="w-14 h-14 rounded-full bg-brandAmber-500/10 border border-brandAmber-500/30 flex items-center justify-center text-brandAmber-400 text-2xl mb-4">🔒</div>
-                    <h2 className="text-lg font-bold text-white mb-2">Policy Studio locked until Mod 1 delivery</h2>
+                    <h2 className="text-lg font-bold text-white mb-2">Policy Studio locked until Mod 1 is complete</h2>
                     <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                        Playbooks and policies (Module 2) unlock after the Leak Scan Report is delivered for <span className="text-slate-200 font-semibold">{client}</span>.
+                        Playbooks and policies (Module 2) unlock after the Business Leak Scan is complete and the Leak Scan Report is delivered for <span className="text-slate-200 font-semibold">{client}</span>.
                     </p>
                     <a
                         href={reportHref}
@@ -1946,7 +1946,7 @@
                     {!isStandalone && mod2Locked && (
                         <div className="shrink-0 bg-brandAmber-500/10 border-b border-brandAmber-500/30 px-6 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider text-brandAmber-400 no-print">
                             <span aria-hidden="true">🔒</span>
-                            Mod 1 delivery required — complete the Leak Scan Report to unlock Policy Studio
+                            Mod 1 delivery required — complete the Business Leak Scan and Leak Scan Report to unlock Policy Studio
                         </div>
                     )}
 
@@ -2826,7 +2826,7 @@
                                 </div>
                                 
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    Select a to-be workflow tab from <strong>Workflow Builder (Mod 2)</strong> to generate or update an operational SOP with BPMN diagram and step table. As-is diagrams from Diagnosis Reports are not imported — only the <code className="text-brandTeal-404">workflowBuilder</code> slice is used.
+                                    Select a to-be workflow tab from <strong>Workflow Builder (Mod 2)</strong> to generate or update an operational SOP with BPMN diagram and step table. As-is diagrams from the Leak Scan Report are not imported — only the <code className="text-brandTeal-404">workflowBuilder</code> slice is used.
                                 </p>
 
                                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 mt-2">
@@ -2837,7 +2837,7 @@
                                         if (availableTabs.length === 0) {
                                             return (
                                                 <div className="text-center py-8 text-xs text-slate-500 font-medium">
-                                                    No Mod 2 to-be workflows found. Build them in <strong>Workflow Builder</strong> (not Diagnosis Reports) — SOPs import from the to-be slice only.
+                                                    No Mod 2 to-be workflows found. Build them in <strong>Workflow Builder</strong> (not the Leak Scan Report) — SOPs import from the to-be slice only.
                                                 </div>
                                             );
                                         }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 1: Leak Scan Report | Cloud Synced</title>
+    <title>Business Leak Scan · Leak Scan Report | Cloud Synced</title>
  
     <!-- Custom SVG Logo Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' fill-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' fill-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
@@ -631,7 +631,7 @@
             },
             synthesis: {
                 title: '5. Strategy & Priorities',
-                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Leak Scan Report. Auto-saves after edits.',
+                description: 'Score operational maturity, capture staff feedback themes, and build the 90-Day Recovery Plan that feeds the Leak Scan Report. Auto-saves after edits.',
             },
         };
 
@@ -951,7 +951,7 @@
                         <div className="flex justify-between items-center border-b border-brandNavy-700 pb-4">
                             <h3 className="text-sm font-bold uppercase tracking-widest text-white">Subscription Register</h3>
                             <div className="flex items-center gap-4">
-                                <span className="text-xs font-mono text-slate-400">Total Waste Identified: <strong className="text-emerald-400 text-sm ml-1">{formatCurrency(totalMonthly)}/mo</strong></span>
+                                <span className="text-xs font-mono text-slate-400">Total Leakage Identified: <strong className="text-emerald-400 text-sm ml-1">{formatCurrency(totalMonthly)}/mo</strong></span>
                                 <button onClick={addSaaS} className="px-3 py-1.5 bg-brandTeal-500 text-brandNavy-955 font-bold text-[10px] uppercase tracking-wider rounded hover:bg-brandTeal-400 transition-colors">+ Add Software</button>
                             </div>
                         </div>
@@ -999,7 +999,7 @@
                 if (effort < 3 && impact >= 3) return { name: 'Quick Win', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30' };
                 if (effort >= 3 && impact >= 3) return { name: 'Major Project', color: 'text-blue-400 bg-blue-500/20 border-blue-500/30' };
                 if (effort < 3 && impact < 3) return { name: 'Fill-in', color: 'text-slate-400 bg-slate-500/20 border-slate-500/30' };
-                return { name: 'Money Pit', color: 'text-rose-400 bg-rose-50/20 border-rose-500/30' };
+                return { name: 'Deprioritize', color: 'text-rose-400 bg-rose-50/20 border-rose-500/30' };
             };
 
             return (
@@ -1010,13 +1010,13 @@
                             <rect x={margin} y={margin} width={(width-2*margin)/2} height={(height-2*margin)/2} fill="#052e16" fillOpacity="0.15" /> {/* Quick Wins */}
                             <rect x={margin + (width-2*margin)/2} y={margin} width={(width-2*margin)/2} height={(height-2*margin)/2} fill="#1e3a8a" fillOpacity="0.15" /> {/* Major Projects */}
                             <rect x={margin} y={margin + (height-2*margin)/2} width={(width-2*margin)/2} height={(height-2*margin)/2} fill="#1e293b" fillOpacity="0.2" /> {/* Fill-ins */}
-                            <rect x={margin + (width-2*margin)/2} y={margin + (height-2*margin)/2} width={(width-2*margin)/2} height={(height-2*margin)/2} fill="#881337" fillOpacity="0.15" /> {/* Money Pits */}
+                            <rect x={margin + (width-2*margin)/2} y={margin + (height-2*margin)/2} width={(width-2*margin)/2} height={(height-2*margin)/2} fill="#881337" fillOpacity="0.15" /> {/* Deprioritize */}
 
                             {/* Quadrant Text Identifiers in Background */}
                             <text x={margin + 15} y={margin + 25} fill="#34d399" fontSize="11" fontWeight="800" fillOpacity="0.3" letterSpacing="1">⚡ QUICK WINS</text>
                             <text x={width - margin - 15} y={margin + 25} textAnchor="end" fill="#60a5fa" fontSize="11" fontWeight="800" fillOpacity="0.3" letterSpacing="1">🚀 MAJOR PROJECTS</text>
                             <text x={margin + 15} y={height - margin - 15} fill="#94a3b8" fontSize="11" fontWeight="800" fillOpacity="0.3" letterSpacing="1">⚙️ FILL-INS</text>
-                            <text x={width - margin - 15} y={height - margin - 15} textAnchor="end" fill="#f87171" fontSize="11" fontWeight="800" fillOpacity="0.3" letterSpacing="1">🚨 MONEY PITS</text>
+                            <text x={width - margin - 15} y={height - margin - 15} textAnchor="end" fill="#f87171" fontSize="11" fontWeight="800" fillOpacity="0.3" letterSpacing="1">⏸ DEPRIORITIZE</text>
 
                             {/* Center Axes Lines */}
                             <line x1={width/2} y1={margin} x2={width/2} y2={height-margin} stroke="#334155" strokeWidth="2" strokeDasharray="4,4" />
@@ -1056,7 +1056,7 @@
                                 let dotColor = "#94a3b8"; // Fill-ins
                                 if (qDetails.name === 'Quick Win') dotColor = "#10b981";
                                 if (qDetails.name === 'Major Project') dotColor = "#3b82f6";
-                                if (qDetails.name === 'Money Pit') dotColor = "#ef4444";
+                                if (qDetails.name === 'Deprioritize') dotColor = "#ef4444";
 
                                 return (
                                     <g 
@@ -1191,7 +1191,7 @@
                 if (effort < 3 && impact >= 3) return { name: 'Quick Win', color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30' };
                 if (effort >= 3 && impact >= 3) return { name: 'Major Project', color: 'text-blue-400 bg-blue-500/20 border-blue-500/30' };
                 if (effort < 3 && impact < 3) return { name: 'Fill-in', color: 'text-slate-400 bg-slate-500/20 border-slate-500/30' };
-                return { name: 'Money Pit', color: 'text-rose-400 bg-rose-50/20 border-rose-500/30' };
+                return { name: 'Deprioritize', color: 'text-rose-400 bg-rose-50/20 border-rose-500/30' };
             };
 
             // Dynamically computed diagnostic insights from live workbook data
@@ -1382,8 +1382,8 @@
                     <div className="glass-panel rounded-2xl p-6 shadow-xl space-y-6 bg-brandNavy-900 border border-brandNavy-800">
                         <div className="border-b border-brandNavy-700 pb-3 flex flex-wrap justify-between items-center gap-3">
                             <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">4. 90-Day Fix Order Planner</h3>
-                                <p className="text-xs text-slate-400 mt-1">Build the prioritized fix list for the Leak Scan Report. Top 5 by impact ÷ effort appear on page 1.</p>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">4. 90-Day Recovery Plan</h3>
+                                <p className="text-xs text-slate-400 mt-1">Build the prioritized recovery plan for the Leak Scan Report. Top 5 by impact ÷ effort appear on page 1.</p>
                             </div>
                             <button type="button" onClick={generateFromDiagnosis} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
                                 Generate from Diagnosis
@@ -1679,13 +1679,13 @@
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
                     <div className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-400 mb-3">Kolthoff Consulting · Confidential Client Deliverable</div>
                     <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Leak Scan Report</h1>
-                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
+                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and your 90-Day Recovery Plan to address it.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Prepared for</span><span className="font-bold text-slate-900 text-sm">{clientCompany}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Report date</span><span className="font-mono text-slate-700">{reportDate}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Lead strategist</span><span className="text-slate-700">{preparedBy}</span></div>
-                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span></div>
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span><p className="text-[9px] text-slate-400 mt-1 leading-relaxed max-w-xs">{DRH().MATURITY_INDEX_EXPLAINER || 'Operational readiness across communication, documentation, accountability, and software use.'}</p></div>
                 </div>
                 {showExecutiveLetter && executiveLetter && executiveLetter.trim() && (
                     <div className="mb-8 p-5 border border-slate-200 rounded-xl bg-slate-50/80 page-break-inside-avoid">
@@ -1699,19 +1699,19 @@
                         <div className="report-kpi-value text-2xl font-black text-rose-700">{formatCurrency(totalAnnualWaste)}</div>
                     </div>
                     <div className="report-kpi p-5 text-center">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Waste</div>
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Leakage</div>
                         <div className="report-kpi-value text-xl font-black text-rose-600">{formatCurrency(processAnnual)}</div>
                         <div className="text-[9px] text-slate-400 mt-1">Manual delays & rework</div>
                     </div>
                     <div className="report-kpi p-5 text-center">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">SaaS Waste</div>
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Subscription Overlap</div>
                         <div className="report-kpi-value text-xl font-black text-amber-700">{formatCurrency(saasAnnual)}</div>
                         <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
                     </div>
                 </div>
                 {topFixes.length > 0 && (
                     <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes — Next 90 Days</h3>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 5 Fixes</h3>
                         <table className="report-table">
                             <thead>
                                 <tr>
@@ -1801,6 +1801,19 @@
                             loomWalkthroughUrl={synthesis.loomWalkthroughUrl}
                             showExecutiveLetter={printConfig.showExecutiveLetter !== false}
                         />
+                    )}
+
+                    {printConfig.showExecutiveSummary && (
+                        <div className="report-page page-break-inside-avoid">
+                            <ReportSectionHeader title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
+                            <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
+                                <li className="page-break-inside-avoid"><strong>Start with the video walkthrough</strong> — scan the QR code on the cover or open the Loom link your consultant shared.</li>
+                                <li className="page-break-inside-avoid"><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan table on page 1 — these are your action priorities.</li>
+                                <li className="page-break-inside-avoid"><strong>Review process maps</strong> (Section B) for the highest-leak workflow — delay minutes drive the leakage numbers.</li>
+                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 5 fix before your next leadership meeting.</li>
+                                <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the recommended next-phase notes — playbooks and policies turn findings into daily rhythm.</li>
+                            </ol>
+                        </div>
                     )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
@@ -1985,16 +1998,16 @@
 
                     {printConfig.showSaas && (
                         <div className="report-page">
-                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process waste and subscription waste are tracked separately so you know what to fix first." />
+                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap are tracked separately so you know what to fix first." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
-                                    <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage (Chaos Tax)</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage</div>
                                     <div className="text-2xl font-black font-mono text-rose-700">{formatCurrency(annualChaosTax)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
                                     <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Fixable via SOPs, handoffs, and workflow redesign. {totalDailyWasteHours.toFixed(1)} hours lost daily across mapped processes.</p>
                                     <div className="text-[10px] font-mono text-rose-600 mt-2">{formatCurrency(Math.round(annualChaosTax / 12))}/month</div>
                                 </div>
                                 <div className="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30 page-break-inside-avoid">
-                                    <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">SaaS & License Waste</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">Subscription Overlap</div>
                                     <div className="text-2xl font-black font-mono text-amber-800">{formatCurrency(saasAnnualWaste)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
                                     <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Quick-recapture: cancel duplicates and right-size seats within 30 days.</p>
                                     <div className="text-[10px] font-mono text-amber-700 mt-2">{formatCurrency(saasMonthlyWaste)}/month</div>
@@ -2068,7 +2081,7 @@
 
                     {printConfig.showMatrix && activeItems.length > 0 && (
                         <div className="report-page font-sans text-xs">
-                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="Every 90-day initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
+                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="Every 90-Day Recovery Plan initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
                             <div className="flex justify-center my-4">
                                 <ReportPriorityMatrixChart items={activeItems} />
                             </div>
@@ -2162,7 +2175,7 @@
                                 </div>
                                 <div className="p-4 border-l-4 border-brandTeal-600 bg-teal-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-brandTeal-900 text-xs uppercase tracking-wider block mb-1">Week 7–12 — Structural changes</strong>
-                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-day fix list with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
+                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-Day Recovery Plan with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
                                     {synthesis.loomWalkthroughUrl && synthesis.loomWalkthroughUrl.trim() && (
                                         <p className="text-slate-700 text-xs mt-2"><strong>Video walkthrough:</strong> <span className="font-mono text-brandTeal-700 break-all">{synthesis.loomWalkthroughUrl.trim()}</span></p>
                                     )}
@@ -2187,7 +2200,7 @@
                             <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
-                                <p><strong>SaaS waste:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
+                                <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
                                 <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
                             </div>
                         </div>
@@ -2693,7 +2706,7 @@
 
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
                         <div className="p-6 border-b border-brandNavy-800 flex justify-between items-center group">
-                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Module 1: Leak Scan Report</span></div>
+                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest block">Business Leak Scan</span><span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5 block">Leak Scan Report · delivery hub</span></div>
                             <div className="relative">
                                 <div className={`w-2 h-2 rounded-full cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
                                 {authError && <div className="absolute right-0 top-full mt-2 w-48 bg-rose-950/90 border border-rose-500/50 p-2 rounded text-[9px] text-rose-200 hidden group-hover:block z-50">Sync Disabled (Offline)</div>}

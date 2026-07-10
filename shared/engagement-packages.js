@@ -18,7 +18,7 @@
         excludeFromModules: ['m1-06']
       },
       defaults: {
-        proposalObjectives: 'Find where your team loses time and money through scattered chats, duplicate software, and manual rework — and leave with a prioritized 90-day fix list.',
+        proposalObjectives: 'Find where your team loses time and money through scattered chats, duplicate software, and manual rework — and leave with a prioritized 90-Day Recovery Plan.',
         frictionBuffer: 9,
         discountPercent: 0,
         milestoneSplit: 'auto'

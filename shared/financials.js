@@ -130,7 +130,7 @@ export function computeBillingMilestones(ctx) {
       arr.push({
         label: 'Gate 1: Module 1 Commitment — Business Leak Scan',
         amount: Math.round(m1Net * taxMultiplier),
-        desc: 'Authorized immediately at initial signup. Deliverable yields a Leak Scan Report and prioritized fix list from your leak scan.',
+        desc: 'Authorized immediately at initial signup. Deliverable yields a Leak Scan Report and 90-Day Recovery Plan from your leak scan.',
       });
     }
     if (m2Net > 0) {

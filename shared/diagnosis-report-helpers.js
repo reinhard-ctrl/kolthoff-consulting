@@ -19,6 +19,9 @@
     'Week 11–12',
   ];
 
+  const MATURITY_INDEX_EXPLAINER =
+    'Operational readiness across team communication, process documentation, handoff accountability, and software use.';
+
   const MATURITY_RUBRIC = {
     communication: {
       label: 'Team Communication',
@@ -528,7 +531,7 @@
     const mod3 = list.find((m) => m.key === 'MOD 3');
     const mod4 = list.find((m) => m.key === 'MOD 4');
     const pitches = {
-      'MOD 1': `Module 1 identified ${fmt(totalAnnualWaste)} in annual operational leakage. Use the 90-day fix list below before investing in new tools or headcount.`,
+      'MOD 1': `Module 1 identified ${fmt(totalAnnualWaste)} in annual operational leakage. Use the 90-Day Recovery Plan below before investing in new tools or headcount.`,
       'MOD 2': `To recover ${fmt(totalAnnualWaste)} lost annually to manual delays, we recommend ${mod2?.title || 'Module 2'} — clear order playbooks, roles charts, and an employee handbook your team can follow.`,
       'MOD 3': `With core processes defined, the next step is ${mod3?.title || 'Module 3'}. We launch your workspace, digitize approval forms, and train your team for daily use.`,
       'MOD 4': `To maintain operational integrity after go-live, we recommend ${mod4?.title || 'Module 4'} — hosting, bi-weekly check-ins, and semi-annual health checks.`,
@@ -574,14 +577,14 @@
     const hasLeakage = buildStepLeakageList(tabs, DiagramEditor).length > 0;
 
     if (!hasWorkflow) warnings.push('No workflow steps mapped — add at least one process in the Workflow Builder.');
-    if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for peso calculations.');
+    if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for leakage calculations.');
     if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 2) — diagrams save separately.');
     if (workflowUpdatedAt && reportDataUpdatedAt && workflowUpdatedAt > reportDataUpdatedAt) {
       warnings.push('Workflow was saved after your last report sync — click Sync to Cloud here to refresh chaos tax in the PDF.');
     }
     if (!subSaaS.length) warnings.push('SaaS audit is empty — add subscription rows for software savings.');
-    if (matrixCount < 3) warnings.push('Fewer than 3 priority items — generate or add fixes for the 90-day plan.');
-    if (matrixCount === 0) errors.push('No 90-day fix items — add priorities in Strategy or click Generate from Diagnosis.');
+    if (matrixCount < 3) warnings.push('Fewer than 3 priority items — generate or add fixes for the 90-Day Recovery Plan.');
+    if (matrixCount === 0) errors.push('No 90-Day Recovery Plan items — add priorities in Strategy or click Generate from Diagnosis.');
     if (!orgChartSvg) warnings.push('Org chart not exported — open Org Chart section and save.');
     if (Object.keys(raciAssignments).length === 0) warnings.push('RACI grid is empty — assign roles to workflow steps.');
 
@@ -804,7 +807,7 @@
         && !!String(synthesis.clientDeliverableUrl || '').trim()
         && !!String(synthesis.loomWalkthroughUrl || '').trim(),
       !top5Check.ready ? 'Complete Top 5 (owner + week)' : 'Add Drive PDF + Loom URLs in Client Handoff',
-      'Build fix list and client handoff links',
+      'Build 90-Day Recovery Plan and client handoff links',
     );
 
     return items;
@@ -844,7 +847,7 @@
       );
     }
     if (totalAnnual > 0) {
-      parts.push(` Total identified leakage is ${formatCurrency(totalAnnual)}/year (process delays + subscription waste).`);
+      parts.push(` Total identified leakage is ${formatCurrency(totalAnnual)}/year (process delays + subscription overlap).`);
     }
     if (recapture.annual > 0 && top5.length > 0) {
       parts.push(
@@ -1588,6 +1591,7 @@
   const DiagnosisReportHelpers = {
     QUADRANT,
     TARGET_WEEK_OPTIONS,
+    MATURITY_INDEX_EXPLAINER,
     MATURITY_RUBRIC,
     getQuadrant,
     stepMonthlyLoss,
