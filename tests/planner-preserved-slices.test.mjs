@@ -81,6 +81,7 @@ const plannerState = {
   invoiceBillToRep: '',
   invoiceBillToAddress: '',
   invoiceBillToTin: '',
+  invoicePartySource: 'client',
   useCustomSponsor: false,
   sponsorCompany: '',
   sponsorRep: '',

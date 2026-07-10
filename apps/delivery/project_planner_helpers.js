@@ -632,7 +632,7 @@
     return pkg?.defaults || {};
   }
 
-  function resolveInvoiceBillTo(state) {
+  function resolveInvoiceBillTo(state, addendum = null) {
     if (state.useCustomInvoiceBillTo) {
       return {
         company: state.invoiceBillToCompany || '',
@@ -641,12 +641,20 @@
         tin: state.invoiceBillToTin || '',
       };
     }
-    return {
-      company: state.clientCompany || '',
-      rep: state.clientRep || '',
-      address: state.clientAddress || '',
-      tin: state.clientTin || '',
-    };
+    if (getInvoicePartySource(state, addendum) === 'sponsor') {
+      return resolveSponsorParty(state);
+    }
+    return resolveClientParty(state);
+  }
+
+  function getInvoicePartySource(state, addendum = null) {
+    if (addendum) {
+      return getAddendumPartySource(addendum, state);
+    }
+    if (state.invoicePartySource === 'sponsor' || state.invoicePartySource === 'client') {
+      return state.invoicePartySource;
+    }
+    return state.contractPartySource === 'sponsor' ? 'sponsor' : 'client';
   }
 
   function resolveClientParty(state) {
@@ -856,6 +864,7 @@
       invoiceBillToRep: state.invoiceBillToRep || '',
       invoiceBillToAddress: state.invoiceBillToAddress || '',
       invoiceBillToTin: state.invoiceBillToTin || '',
+      invoicePartySource: state.invoicePartySource === 'sponsor' ? 'sponsor' : 'client',
       useCustomSponsor: Boolean(state.useCustomSponsor),
       sponsorCompany: state.sponsorCompany || '',
       sponsorRep: state.sponsorRep || '',
@@ -901,15 +910,16 @@
   function validatePrintReadiness(view, ctx) {
     const issues = [];
     const warnings = [];
-    const billTo = resolveInvoiceBillTo(ctx);
+    const billTo = resolveInvoiceBillTo(ctx, ctx.invoiceTargetAddendum || ctx.activeAddendum || null);
 
     if (view === 'invoice') {
-      if (!billTo.company?.trim()) issues.push('Invoice bill-to company name is missing.');
-      if (!billTo.rep?.trim()) issues.push('Invoice bill-to representative name is missing.');
-      if (billTo.tin && !ctx.validateTIN(billTo.tin)) issues.push('Invoice bill-to TIN format is invalid.');
-      if (!billTo.address?.trim()) warnings.push('Invoice bill-to registered address is empty.');
-
       const addendum = ctx.invoiceTargetAddendum || null;
+      const partyLabel = getInvoicePartySource(ctx, addendum) === 'sponsor' ? 'Sponsor' : 'Client';
+      if (!billTo.company?.trim()) issues.push(`${partyLabel} company name is missing for invoice bill-to.`);
+      if (!billTo.rep?.trim()) issues.push(`${partyLabel} representative name is missing for invoice bill-to.`);
+      if (billTo.tin && ctx.validateTIN && !ctx.validateTIN(billTo.tin)) issues.push('Invoice bill-to TIN format is invalid.');
+      if (!billTo.address?.trim()) warnings.push(`${partyLabel} registered address is empty for invoice bill-to.`);
+
       if (addendum) {
         if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
         if (!(addendum.tasks || []).filter((t) => t.selected).length) {
@@ -1198,6 +1208,7 @@
     payloadFingerprint,
     validatePrintReadiness,
     resolveInvoiceBillTo,
+    getInvoicePartySource,
     resolveClientParty,
     resolveSponsorParty,
     resolveContractParty,

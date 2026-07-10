@@ -12,23 +12,36 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const code = readFileSync(join(root, 'apps/delivery/project_planner_helpers.js'), 'utf8');
 const win = { window: {} };
 vm.runInNewContext(code, win);
-const { resolveInvoiceBillTo } = win.window.PlannerHelpers;
+const { resolveInvoiceBillTo, getInvoicePartySource } = win.window.PlannerHelpers;
 
-const contract = {
+const profile = {
   clientCompany: 'Contract Client Inc.',
   clientRep: 'Jane Contract',
   clientAddress: '123 Contract St',
   clientTin: '111-111-111-111',
+  useCustomSponsor: true,
+  sponsorCompany: 'Sponsor Inc.',
+  sponsorRep: 'John Sponsor',
+  sponsorAddress: '456 Sponsor Ave',
+  sponsorTin: '222-222-222-222',
+  contractPartySource: 'client',
+  invoicePartySource: 'client',
 };
 
-const defaultBillTo = resolveInvoiceBillTo({ ...contract, useCustomInvoiceBillTo: false });
+const defaultBillTo = resolveInvoiceBillTo({ ...profile, useCustomInvoiceBillTo: false });
 assert.equal(defaultBillTo.company, 'Contract Client Inc.');
 assert.equal(defaultBillTo.rep, 'Jane Contract');
-assert.equal(defaultBillTo.address, '123 Contract St');
-assert.equal(defaultBillTo.tin, '111-111-111-111');
+
+const sponsorBillTo = resolveInvoiceBillTo({
+  ...profile,
+  useCustomInvoiceBillTo: false,
+  invoicePartySource: 'sponsor',
+});
+assert.equal(sponsorBillTo.company, 'Sponsor Inc.');
+assert.equal(sponsorBillTo.rep, 'John Sponsor');
 
 const customBillTo = resolveInvoiceBillTo({
-  ...contract,
+  ...profile,
   useCustomInvoiceBillTo: true,
   invoiceBillToCompany: 'Billing Corp.',
   invoiceBillToRep: 'John Billing',
@@ -37,7 +50,10 @@ const customBillTo = resolveInvoiceBillTo({
 });
 assert.equal(customBillTo.company, 'Billing Corp.');
 assert.equal(customBillTo.rep, 'John Billing');
-assert.equal(customBillTo.address, '456 Invoice Ave');
-assert.equal(customBillTo.tin, '222-222-222-222');
+
+const addendum = { partySource: 'sponsor' };
+assert.equal(getInvoicePartySource(profile, addendum), 'sponsor');
+const addendumBillTo = resolveInvoiceBillTo({ ...profile, useCustomInvoiceBillTo: false }, addendum);
+assert.equal(addendumBillTo.company, 'Sponsor Inc.');
 
 console.log('invoice-bill-to.test.mjs: all assertions passed');

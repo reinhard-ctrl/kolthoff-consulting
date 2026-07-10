@@ -1647,6 +1647,9 @@
       const [invoiceBillToRep, setInvoiceBillToRep] = useState(activeProfile.invoiceBillToRep || '');
       const [invoiceBillToAddress, setInvoiceBillToAddress] = useState(activeProfile.invoiceBillToAddress || '');
       const [invoiceBillToTin, setInvoiceBillToTin] = useState(activeProfile.invoiceBillToTin || '');
+      const [invoicePartySource, setInvoicePartySource] = useState(
+        activeProfile.invoicePartySource === 'sponsor' ? 'sponsor' : 'client',
+      );
       const [useCustomSponsor, setUseCustomSponsor] = useState(Boolean(activeProfile.useCustomSponsor ?? activeProfile.useCustomDocumentParty));
       const [sponsorCompany, setSponsorCompany] = useState(activeProfile.sponsorCompany || activeProfile.documentPartyCompany || '');
       const [sponsorRep, setSponsorRep] = useState(activeProfile.sponsorRep || activeProfile.documentPartyRep || '');
@@ -1659,18 +1662,6 @@
       const [addenda, setAddenda] = useState(activeProfile.addenda || []);
       const [activeAddendumId, setActiveAddendumId] = useState(activeProfile.activeAddendumId || null);
       const [invoiceAddendumId, setInvoiceAddendumId] = useState(activeProfile.invoiceAddendumId || null);
-
-      const resolvedInvoiceBillTo = useMemo(() => H.resolveInvoiceBillTo({
-        useCustomInvoiceBillTo,
-        invoiceBillToCompany,
-        invoiceBillToRep,
-        invoiceBillToAddress,
-        invoiceBillToTin,
-        clientCompany,
-        clientRep,
-        clientAddress,
-        clientTin,
-      }), [useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, clientCompany, clientRep, clientAddress, clientTin]);
 
       const resolvedClientParty = useMemo(() => H.resolveClientParty({
         clientCompany,
@@ -1800,6 +1791,39 @@
 
       const isAddendumInvoiceMode = view === 'invoice' && Boolean(invoiceTargetAddendum);
 
+      const resolvedInvoiceBillTo = useMemo(() => H.resolveInvoiceBillTo({
+        useCustomInvoiceBillTo,
+        invoiceBillToCompany,
+        invoiceBillToRep,
+        invoiceBillToAddress,
+        invoiceBillToTin,
+        invoicePartySource,
+        clientCompany,
+        clientRep,
+        clientAddress,
+        clientTin,
+        useCustomSponsor,
+        sponsorCompany,
+        sponsorRep,
+        sponsorAddress,
+        sponsorTin,
+        contractPartySource,
+      }, isAddendumInvoiceMode ? invoiceTargetAddendum : null), [
+        useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+        invoicePartySource, clientCompany, clientRep, clientAddress, clientTin,
+        useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
+        isAddendumInvoiceMode, invoiceTargetAddendum,
+      ]);
+
+      const invoicePartyLabel = useMemo(() => {
+        if (useCustomInvoiceBillTo) return 'Custom';
+        const source = H.getInvoicePartySource({
+          invoicePartySource,
+          contractPartySource,
+        }, isAddendumInvoiceMode ? invoiceTargetAddendum : null);
+        return source === 'sponsor' ? 'Sponsor' : 'Client';
+      }, [useCustomInvoiceBillTo, invoicePartySource, contractPartySource, isAddendumInvoiceMode, invoiceTargetAddendum]);
+
       const patchInvoiceTargetAddendum = useCallback((patch) => {
         if (!invoiceAddendumId) return;
         setAddenda((prev) => H.updateAddendumInList(prev, invoiceAddendumId, patch));
@@ -1902,6 +1926,7 @@
           useCustomInvoiceBillTo: Boolean(p.useCustomInvoiceBillTo),
           invoiceBillToCompany: p.invoiceBillToCompany || '', invoiceBillToRep: p.invoiceBillToRep || '',
           invoiceBillToAddress: p.invoiceBillToAddress || '', invoiceBillToTin: p.invoiceBillToTin || '',
+          invoicePartySource: p.invoicePartySource === 'sponsor' ? 'sponsor' : 'client',
           useCustomSponsor: Boolean(p.useCustomSponsor ?? p.useCustomDocumentParty),
           sponsorCompany: p.sponsorCompany || p.documentPartyCompany || '', sponsorRep: p.sponsorRep || p.documentPartyRep || '',
           sponsorAddress: p.sponsorAddress || p.documentPartyAddress || '', sponsorTin: p.sponsorTin || p.documentPartyTin || '',
@@ -1977,6 +2002,7 @@
         setInvoiceBillToRep(profileState.invoiceBillToRep);
         setInvoiceBillToAddress(profileState.invoiceBillToAddress);
         setInvoiceBillToTin(profileState.invoiceBillToTin);
+        setInvoicePartySource(profileState.invoicePartySource);
         setUseCustomSponsor(profileState.useCustomSponsor);
         setSponsorCompany(profileState.sponsorCompany);
         setSponsorRep(profileState.sponsorRep);
@@ -2029,12 +2055,12 @@
         clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover,
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
-        useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+        useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, invoicePartySource,
         useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId,
         moduleBundleNames,
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, invoicePartySource, useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -2154,6 +2180,7 @@
         setUseCustomInvoiceBillTo(Boolean(d.useCustomInvoiceBillTo));
         setInvoiceBillToCompany(d.invoiceBillToCompany || ''); setInvoiceBillToRep(d.invoiceBillToRep || '');
         setInvoiceBillToAddress(d.invoiceBillToAddress || ''); setInvoiceBillToTin(d.invoiceBillToTin || '');
+        setInvoicePartySource(d.invoicePartySource === 'sponsor' ? 'sponsor' : 'client');
         setUseCustomSponsor(Boolean(d.useCustomSponsor ?? d.useCustomDocumentParty));
         setSponsorCompany(d.sponsorCompany || d.documentPartyCompany || ''); setSponsorRep(d.sponsorRep || d.documentPartyRep || '');
         setSponsorAddress(d.sponsorAddress || d.documentPartyAddress || ''); setSponsorTin(d.sponsorTin || d.documentPartyTin || '');
@@ -2354,12 +2381,14 @@
         const validation = H.validatePrintReadiness(view, {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          invoicePartySource,
           useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
-          invoiceDueDate: view === 'addendum' ? (activeAddendum?.invoiceDueDate || '') : invoiceDueDate,
+          invoiceDueDate: view === 'addendum' ? (activeAddendum?.invoiceDueDate || '') : (view === 'invoice' && isAddendumInvoiceMode ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate),
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
           validateTIN: validatePhilippineTIN,
           activeAddendum,
+          invoiceTargetAddendum: view === 'invoice' && isAddendumInvoiceMode ? invoiceTargetAddendum : null,
         });
         if (!validation.ok || validation.warnings.length > 0) {
           setPrintValidationIssues(validation.issues);
@@ -2394,6 +2423,7 @@
         const validation = H.validatePrintReadiness('invoice', {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          invoicePartySource,
           useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
           invoiceDueDate: isAddendumInvoice ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
@@ -2475,7 +2505,13 @@
 
           const invoice = IH.buildInvoiceRecord({
             profileId: activeProfileId,
-            profile: { ...profilePayload, quoteId, clientCompany, includeTax },
+            profile: {
+              ...profilePayload,
+              quoteId,
+              clientCompany: resolvedInvoiceBillTo.company || clientCompany,
+              clientRep: resolvedInvoiceBillTo.rep || clientRep,
+              includeTax,
+            },
             invoiceMilestone: milestoneKey,
             invoiceNumberSuffix: suffix,
             invoiceDueDate: dueDate,
@@ -3239,7 +3275,7 @@
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-sm font-sans font-medium border-b border-slate-200 pb-6 print-divider text-slate-700">
           <div className="space-y-1.5 text-left font-sans">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-bold">
-              {isInvoice ? "SOLD TO (Customer Corporate Registry):" : partyRole === 'sponsor' ? "ENGAGEMENT SPONSOR:" : "CLIENT:"}
+              {isInvoice ? `SOLD TO (${invoicePartyLabel}):` : partyRole === 'sponsor' ? "ENGAGEMENT SPONSOR:" : "CLIENT:"}
             </span>
             <div className="font-bold text-slate-900 text-base">{party.rep || "________________________"}</div>
             <div className="text-slate-700 font-bold font-sans">{party.company || "________________________"}</div>
@@ -3954,6 +3990,49 @@
               {isInvoice && (
                 <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Invoice Bill-To (SOLD TO)</legend>
+                  {!useCustomInvoiceBillTo && (
+                    <>
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase block font-semibold">
+                          {isAddendumInvoiceMode ? 'Addendum invoice addressed to' : 'Invoice addressed to'}
+                        </span>
+                        <p className="text-[9px] text-slate-500 leading-relaxed">
+                          {isAddendumInvoiceMode
+                            ? 'Uses the addendum party. Change on the Addendum tab or below.'
+                            : 'Choose whether this invoice bills the client or sponsor from Documents.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {['client', 'sponsor'].map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => {
+                                if (isAddendumInvoiceMode && invoiceTargetAddendum) {
+                                  patchInvoiceTargetAddendum({ partySource: option });
+                                } else {
+                                  setInvoicePartySource(option);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                (isAddendumInvoiceMode
+                                  ? (H.getAddendumPartySource(invoiceTargetAddendum, { contractPartySource }) || 'client')
+                                  : invoicePartySource) === option
+                                  ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                                  : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600'
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-slate-500 leading-relaxed border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-900/50">
+                        Billing <strong className="text-slate-300">{invoicePartyLabel}</strong>:{' '}
+                        <strong className="text-slate-300">{resolvedInvoiceBillTo.company || '—'}</strong>
+                        {resolvedInvoiceBillTo.rep ? ` · ${resolvedInvoiceBillTo.rep}` : ''}
+                      </p>
+                    </>
+                  )}
                   <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-brandNavy-800 hover:border-brandNavy-700 cursor-pointer">
                     <input
                       type="checkbox"
@@ -3965,14 +4044,8 @@
                       }}
                       className="mt-0.5 accent-brandTeal-500 shrink-0"
                     />
-                    <span className="text-[11px] text-slate-300 leading-relaxed">Bill to a different company than the client (Documents tab)</span>
+                    <span className="text-[11px] text-slate-300 leading-relaxed">Bill to a custom company (overrides client/sponsor selection)</span>
                   </label>
-                  {!useCustomInvoiceBillTo && (
-                    <p className="text-[10px] text-slate-500 leading-relaxed border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-900/50">
-                      Invoice uses the client from Documents: <strong className="text-slate-300">{clientCompany || '—'}</strong>
-                      {clientRep ? ` · ${clientRep}` : ''}
-                    </p>
-                  )}
                   {useCustomInvoiceBillTo && (
                     <div className="space-y-3">
                       <button
