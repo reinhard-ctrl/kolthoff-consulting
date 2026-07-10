@@ -812,10 +812,10 @@
                         {rows.length > 0 ? (
                             <div className="border border-brandNavy-800 rounded-lg overflow-hidden">
                                 <table className="w-full text-[10px] text-left">
-                                    <thead className="bg-brandNavy-950 text-slate-400 uppercase tracking-wider"><tr><th className="p-2">Name</th><th className="p-2">Role</th><th className="p-2">Reports To</th></tr></thead>
+                                    <thead className="bg-brandNavy-950 text-slate-400 uppercase tracking-wider"><tr><th className="p-2">Name</th><th className="p-2">Role</th><th className="p-2">Dept</th><th className="p-2">Reports To</th></tr></thead>
                                     <tbody className="divide-y divide-brandNavy-800 text-slate-300">
                                         {rows.slice(0, 8).map((row, i) => (
-                                            <tr key={i}><td className="p-2 font-semibold">{row.name}</td><td className="p-2">{row.title || '—'}</td><td className="p-2">{row.reportsTo || '—'}</td></tr>
+                                            <tr key={i}><td className="p-2 font-semibold">{row.name}</td><td className="p-2">{row.title || '—'}</td><td className="p-2">{row.department || '—'}</td><td className="p-2">{row.reportsTo || '—'}</td></tr>
                                         ))}
                                     </tbody>
                                 </table>
@@ -1841,10 +1841,15 @@
                             )}
                             {orgChartMembers && orgChartMembers.length > 0 && (
                                 <table className="report-table">
-                                    <thead><tr><th>Name / Role</th><th>Reports To</th></tr></thead>
+                                    <thead><tr><th>Name</th><th>Role / Title</th><th>Department</th><th>Reports To</th></tr></thead>
                                     <tbody>
-                                        {orgChartMembers.map((m, i) => (
-                                            <tr key={i}><td className="font-semibold">{m.name || m.label || '—'}</td><td className="text-slate-600">{m.reportsTo || '—'}</td></tr>
+                                        {(DR.normalizeStaffDirectoryRows?.(orgChartMembers) || orgChartMembers).map((m, i) => (
+                                            <tr key={i}>
+                                                <td className="font-semibold">{m.name || m.label || '—'}</td>
+                                                <td className="text-slate-600">{m.title || m.role || '—'}</td>
+                                                <td className="text-slate-600">{m.department || '—'}</td>
+                                                <td className="text-slate-600">{m.reportsTo || '—'}</td>
+                                            </tr>
                                         ))}
                                     </tbody>
                                 </table>
