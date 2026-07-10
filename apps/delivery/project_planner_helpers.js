@@ -649,13 +649,22 @@
     };
   }
 
-  function resolveDocumentParty(state) {
-    if (state.useCustomDocumentParty) {
+  function resolveClientParty(state) {
+    return {
+      company: state.clientCompany || '',
+      rep: state.clientRep || '',
+      address: state.clientAddress || '',
+      tin: state.clientTin || '',
+    };
+  }
+
+  function resolveSponsorParty(state) {
+    if (state.useCustomSponsor) {
       return {
-        company: state.documentPartyCompany || '',
-        rep: state.documentPartyRep || '',
-        address: state.documentPartyAddress || '',
-        tin: state.documentPartyTin || '',
+        company: state.sponsorCompany || '',
+        rep: state.sponsorRep || '',
+        address: state.sponsorAddress || '',
+        tin: state.sponsorTin || '',
       };
     }
     return {
@@ -664,6 +673,13 @@
       address: state.clientAddress || '',
       tin: state.clientTin || '',
     };
+  }
+
+  function resolveContractParty(state) {
+    if (state.contractPartySource === 'sponsor') {
+      return resolveSponsorParty(state);
+    }
+    return resolveClientParty(state);
   }
 
   /** Slices owned by Policy Studio, Diagnosis, Workflow Builder, Org Chart — not planner form state. */
@@ -826,11 +842,12 @@
       invoiceBillToRep: state.invoiceBillToRep || '',
       invoiceBillToAddress: state.invoiceBillToAddress || '',
       invoiceBillToTin: state.invoiceBillToTin || '',
-      useCustomDocumentParty: Boolean(state.useCustomDocumentParty),
-      documentPartyCompany: state.documentPartyCompany || '',
-      documentPartyRep: state.documentPartyRep || '',
-      documentPartyAddress: state.documentPartyAddress || '',
-      documentPartyTin: state.documentPartyTin || '',
+      useCustomSponsor: Boolean(state.useCustomSponsor),
+      sponsorCompany: state.sponsorCompany || '',
+      sponsorRep: state.sponsorRep || '',
+      sponsorAddress: state.sponsorAddress || '',
+      sponsorTin: state.sponsorTin || '',
+      contractPartySource: state.contractPartySource === 'sponsor' ? 'sponsor' : 'client',
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
@@ -897,18 +914,22 @@
     }
 
     if (view === 'package') {
-      const docParty = resolveDocumentParty(ctx);
+      const clientParty = resolveClientParty(ctx);
+      const sponsorParty = resolveSponsorParty(ctx);
       const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || ctx.printSla;
       if (!hasSection) issues.push('No package print sections are selected.');
       if ((ctx.tasks || []).filter((t) => t.selected).length === 0) issues.push('No modules/tasks are selected for the SOW.');
-      if (ctx.useCustomDocumentParty) {
-        if (!docParty.company?.trim()) issues.push('Document company name is missing.');
-        if (!docParty.rep?.trim()) issues.push('Document representative name is missing.');
-        if (docParty.tin && ctx.validateTIN && !ctx.validateTIN(docParty.tin)) {
-          issues.push('Document company TIN format is invalid.');
+      if (!clientParty.company?.trim()) issues.push('Client company name is missing.');
+      if (!clientParty.rep?.trim()) issues.push('Client representative name is missing.');
+      if (ctx.useCustomSponsor) {
+        if (!sponsorParty.company?.trim()) issues.push('Sponsor company name is missing.');
+        if (!sponsorParty.rep?.trim()) issues.push('Sponsor representative name is missing.');
+        if (sponsorParty.tin && ctx.validateTIN && !ctx.validateTIN(sponsorParty.tin)) {
+          issues.push('Sponsor company TIN format is invalid.');
         }
       }
-      if (!docParty.address?.trim()) warnings.push('Document registered address is empty.');
+      if (!clientParty.address?.trim()) warnings.push('Client registered address is empty.');
+      if (ctx.printQuote && !sponsorParty.address?.trim()) warnings.push('Sponsor registered address is empty.');
     }
 
     if (view === 'nda') {
@@ -1151,7 +1172,9 @@
     payloadFingerprint,
     validatePrintReadiness,
     resolveInvoiceBillTo,
-    resolveDocumentParty,
+    resolveClientParty,
+    resolveSponsorParty,
+    resolveContractParty,
     saveLocalDraft,
     loadLocalDraft,
     clearLocalDraft,

@@ -11,12 +11,28 @@ import {
   type BillingMilestone,
 } from '../lib/financials';
 import { getChaosTaxValue, getClientDisplayName, resolveChaosTax } from '../lib/engagement-config';
+import {
+  getContractPartyDisplayName,
+  getContractPartySource,
+  resolveClientParty,
+  resolveContractParty,
+  resolveSponsorParty,
+  type ContractPartySource,
+} from '../lib/contract-party';
 
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
   clientRep?: string;
+  clientAddress?: string;
+  clientTin?: string;
+  useCustomSponsor?: boolean;
+  sponsorCompany?: string;
+  sponsorRep?: string;
+  sponsorAddress?: string;
+  sponsorTin?: string;
+  contractPartySource?: ContractPartySource | string;
   quoteId?: string;
   engagementType?: string;
   productId?: string;
@@ -44,15 +60,20 @@ interface ContractRecord {
   status: string;
   signedAt?: string;
   signedBy?: string;
+  signatureMethod?: 'esign' | 'manual' | string;
+  manualSignNotes?: string;
   agencyOpsAutoProvisioned?: boolean;
   agencyOpsAutoProvisionError?: string;
   agencyOpsTenantId?: string;
   auditTrail?: { action: string; timestamp: string }[];
+  generatedAt?: string;
 }
 
 interface LedgerRow {
   profileId: string;
   clientCompany: string;
+  contractPartyLabel: string;
+  contractPartySource: ContractPartySource;
   quoteId: string;
   contractStatus: string;
   contractId: string | null;
@@ -60,6 +81,62 @@ interface LedgerRow {
 }
 
 const CLIENT_SIGN_BASE = '/apps/public/contract_sign.html';
+
+function ContractPartySelector({
+  profile,
+  disabled,
+  onSave,
+}: {
+  profile: WorkbookProfile;
+  disabled: boolean;
+  onSave: (source: ContractPartySource) => Promise<void>;
+}) {
+  const source = getContractPartySource(profile);
+  const client = resolveClientParty(profile);
+  const sponsor = resolveSponsorParty(profile);
+  const active = resolveContractParty(profile);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {(['client', 'sponsor'] as ContractPartySource[]).map((option) => (
+          <button
+            key={option}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSave(option)}
+            className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide border transition-colors disabled:opacity-50 ${
+              source === option
+                ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600 hover:text-brandTeal-300'
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-slate-500 leading-relaxed">
+        Contract signatory: <strong className="text-slate-300">{active.company || '—'}</strong>
+        {active.rep ? ` · ${active.rep}` : ''}
+      </p>
+      {source === 'sponsor' && profile.useCustomSponsor && (
+        <p className="text-[9px] text-brandTeal-400/80 font-mono uppercase">
+          Sponsor profile from Documents tab
+        </p>
+      )}
+      {source === 'client' && (
+        <p className="text-[9px] text-slate-600">
+          Client: {client.company || '—'}{client.rep ? ` · ${client.rep}` : ''}
+        </p>
+      )}
+      {source === 'sponsor' && (
+        <p className="text-[9px] text-slate-600">
+          Sponsor: {sponsor.company || '—'}{sponsor.rep ? ` · ${sponsor.rep}` : ''}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function MilestoneSummary({ milestones, retainerMonthly, retainerMonths }: {
   milestones: BillingMilestone[];
@@ -170,6 +247,10 @@ export default function ContractLedger() {
   const [isPulling, setIsPulling] = useState(false);
   const [provisionTarget, setProvisionTarget] = useState<WorkbookProfile | null>(null);
   const [provisionResult, setProvisionResult] = useState<{ consoleUrl: string; passcode: string; message: string } | null>(null);
+  const [manualSignTarget, setManualSignTarget] = useState<LedgerRow | null>(null);
+  const [manualSignName, setManualSignName] = useState('');
+  const [manualSignDate, setManualSignDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [manualSignNotes, setManualSignNotes] = useState('');
 
   useEffect(() => {
     const unsubs = [
@@ -204,9 +285,12 @@ export default function ContractLedger() {
   const ledgerData = useMemo<LedgerRow[]>(() => {
     return profiles.map((profile) => {
       const contract = contracts.find((c) => c.profileId === profile.id);
+      const contractPartySource = getContractPartySource(profile);
       return {
         profileId: profile.id,
         clientCompany: getClientDisplayName(profile),
+        contractPartyLabel: getContractPartyDisplayName(profile),
+        contractPartySource,
         quoteId: profile.quoteId || 'N/A',
         contractStatus: contract?.status || 'draft',
         contractId: contract?.id || null,
@@ -217,6 +301,31 @@ export default function ContractLedger() {
       return (weight[a.contractStatus] || 9) - (weight[b.contractStatus] || 9);
     });
   }, [profiles, contracts]);
+
+  const saveContractPartySource = async (profileId: string, source: ContractPartySource) => {
+    setProcessing(true);
+    try {
+      await setDoc(adminDoc('workbook_profiles', profileId), { contractPartySource: source }, { merge: true });
+      showToast(`Contract signatory set to ${source}.`);
+    } catch {
+      showToast('Could not save contract party — check connection.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const validateContractParty = (profile?: WorkbookProfile) => {
+    if (!profile) return 'Profile not found.';
+    const party = resolveContractParty(profile);
+    if (!party.company?.trim()) return 'Contract signatory company name is missing.';
+    if (!party.rep?.trim()) return 'Contract signatory representative is missing.';
+    if (getContractPartySource(profile) === 'sponsor' && profile.useCustomSponsor) {
+      if (!profile.sponsorCompany?.trim() && !profile.sponsorRep?.trim()) {
+        return 'Sponsor details are empty — configure Sponsor in Project Planner Documents tab.';
+      }
+    }
+    return null;
+  };
 
   const clientSignUrl = (profileId: string, options?: { view?: string; staffPreview?: boolean }) => {
     const params = new URLSearchParams({ contract: profileId });
@@ -232,6 +341,12 @@ export default function ContractLedger() {
   };
 
   const generateSigningLink = async (profileId: string) => {
+    const profile = profiles.find((p) => p.id === profileId);
+    const partyError = validateContractParty(profile);
+    if (partyError) {
+      showToast(partyError);
+      return;
+    }
     setProcessing(true);
     try {
       const contractId = `contract-${profileId}`;
@@ -255,6 +370,77 @@ export default function ContractLedger() {
       showToast('Contract reset to draft.');
     } finally {
       setResetTarget(null);
+      setProcessing(false);
+    }
+  };
+
+  const openManualSignModal = (item: LedgerRow) => {
+    const profile = profiles.find((p) => p.id === item.profileId);
+    const party = resolveContractParty(profile);
+    setManualSignTarget(item);
+    setManualSignName(party.rep || '');
+    setManualSignDate(new Date().toISOString().slice(0, 10));
+    setManualSignNotes('');
+  };
+
+  const closeManualSignModal = () => {
+    setManualSignTarget(null);
+    setManualSignName('');
+    setManualSignNotes('');
+  };
+
+  const markManuallySigned = async () => {
+    if (!manualSignTarget) return;
+    const profile = profiles.find((p) => p.id === manualSignTarget.profileId);
+    const partyError = validateContractParty(profile);
+    if (partyError) {
+      showToast(partyError);
+      return;
+    }
+    if (!manualSignName.trim()) {
+      showToast('Signatory name is required.');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      await bootstrapAuth();
+      const contractId = manualSignTarget.contractId || `contract-${manualSignTarget.profileId}`;
+      const party = resolveContractParty(profile!);
+      const partyLabel = getContractPartySource(profile!) === 'sponsor' ? 'Sponsor' : 'Client';
+      const signedAt = manualSignDate
+        ? new Date(`${manualSignDate}T12:00:00`).toISOString()
+        : new Date().toISOString();
+      const recordedAt = new Date().toISOString();
+      const existingTrail = manualSignTarget.contractData?.auditTrail || [];
+      const noteSuffix = manualSignNotes.trim() ? ` Notes: ${manualSignNotes.trim()}` : '';
+      const manualAction =
+        `Manually recorded — wet-ink signature by ${manualSignName.trim()} ` +
+        `(${partyLabel}: ${party.company || manualSignTarget.contractPartyLabel}).${noteSuffix}`;
+
+      await setDoc(adminDoc('contracts_ledger', contractId), {
+        id: contractId,
+        profileId: manualSignTarget.profileId,
+        status: 'signed',
+        signedAt,
+        signedBy: manualSignName.trim(),
+        signatureMethod: 'manual',
+        manualSignNotes: manualSignNotes.trim() || '',
+        generatedAt: manualSignTarget.contractData?.generatedAt || signedAt,
+        auditTrail: [
+          ...existingTrail,
+          ...(existingTrail.length === 0
+            ? [{ action: 'Contract prepared for manual (wet-ink) execution', timestamp: recordedAt }]
+            : []),
+          { action: manualAction, timestamp: recordedAt },
+        ],
+      }, { merge: true });
+
+      showToast('Contract marked as manually signed.');
+      closeManualSignModal();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not record manual signature.');
+    } finally {
       setProcessing(false);
     }
   };
@@ -319,10 +505,19 @@ export default function ContractLedger() {
     }
   };
 
-  const statusBadge = (status: string) => {
+  const statusBadge = (status: string, contract?: ContractRecord | null) => {
     if (status === 'draft') return <span className="text-slate-400 text-xs uppercase">Draft</span>;
     if (status === 'sent') return <span className="text-amber-400 text-xs uppercase">Sent</span>;
-    if (status === 'signed') return <span className="text-emerald-400 text-xs uppercase">Executed</span>;
+    if (status === 'signed') {
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-emerald-400 text-xs uppercase">Executed</span>
+          {contract?.signatureMethod === 'manual' && (
+            <span className="text-[9px] uppercase font-mono text-slate-500">Manual</span>
+          )}
+        </div>
+      );
+    }
     return <span className="text-slate-500 text-xs">{status}</span>;
   };
 
@@ -339,13 +534,72 @@ export default function ContractLedger() {
           <div className="glass-panel p-6 rounded-xl max-w-md text-center">
             <h3 className="font-bold mb-2">Reset contract?</h3>
             <p className="text-xs text-slate-400 mb-4">
-              Revoke signing link for <strong>{resetTarget.clientCompany}</strong>
+              Revoke signing link for <strong>{resetTarget.contractPartyLabel}</strong>
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => resetContract(resetTarget.contractId!)} disabled={processing} className="px-4 py-2 bg-rose-600 rounded text-sm font-bold">
                 Reset to Draft
               </button>
               <button onClick={() => setResetTarget(null)} className="px-4 py-2 bg-brandNavy-800 rounded text-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {manualSignTarget && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-xl max-w-md w-full space-y-4">
+            <div>
+              <h3 className="font-bold mb-1">Record manual signature</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Use when the {manualSignTarget.contractPartySource} signed a printed copy (wet-ink) instead of e-sign.
+                This marks the contract as executed and triggers the same downstream steps as e-sign.
+              </p>
+            </div>
+            <div className="text-xs bg-brandNavy-950 border border-brandNavy-800 rounded-lg p-3 space-y-1">
+              <p><span className="text-slate-500 uppercase font-mono text-[10px]">Signatory entity</span></p>
+              <p className="font-bold text-slate-200">{manualSignTarget.contractPartyLabel}</p>
+              <p className="text-slate-500 capitalize">{manualSignTarget.contractPartySource}</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">Authorized signatory name</label>
+              <input
+                type="text"
+                value={manualSignName}
+                onChange={(e) => setManualSignName(e.target.value)}
+                placeholder="Full legal name"
+                className="w-full p-2.5 rounded bg-brandNavy-900 border border-brandNavy-700 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">Date signed</label>
+              <input
+                type="date"
+                value={manualSignDate}
+                onChange={(e) => setManualSignDate(e.target.value)}
+                className="w-full p-2.5 rounded bg-brandNavy-900 border border-brandNavy-700 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-mono uppercase text-slate-400 block mb-1">Notes (optional)</label>
+              <textarea
+                rows={2}
+                value={manualSignNotes}
+                onChange={(e) => setManualSignNotes(e.target.value)}
+                placeholder="e.g. Signed copy scanned and filed in Drive"
+                className="w-full p-2.5 rounded bg-brandNavy-900 border border-brandNavy-700 text-sm resize-none"
+              />
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button type="button" onClick={closeManualSignModal} className="px-4 py-2 bg-brandNavy-800 rounded text-sm">Cancel</button>
+              <button
+                type="button"
+                onClick={markManuallySigned}
+                disabled={processing || !manualSignName.trim()}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm font-bold disabled:opacity-50"
+              >
+                {processing ? 'Saving…' : 'Mark as executed'}
+              </button>
             </div>
           </div>
         </div>
@@ -397,6 +651,8 @@ export default function ContractLedger() {
         <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
         <p className="text-sm text-slate-400">
           E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
+          Choose whether each contract is signed by the client or sponsor before generating a link.
+          Use <strong className="text-slate-300">Record manual</strong> when a wet-ink signed copy was returned instead of e-sign.
           Client links open at {CLIENT_SIGN_BASE}.
         </p>
       </div>
@@ -424,6 +680,7 @@ export default function ContractLedger() {
             <tr>
               <th className="p-4 w-8" />
               <th className="p-4">Client</th>
+              <th className="p-4">Contract Signatory</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4 text-center">Total Value</th>
               <th className="p-4 text-center">Chaos Tax</th>
@@ -455,6 +712,17 @@ export default function ContractLedger() {
                       </button>
                     </td>
                     <td className="p-4 font-bold">{item.clientCompany}</td>
+                    <td className="p-4 min-w-[200px]">
+                      {profile ? (
+                        <ContractPartySelector
+                          profile={profile}
+                          disabled={processing || item.contractStatus === 'signed'}
+                          onSave={(source) => saveContractPartySource(item.profileId, source)}
+                        />
+                      ) : (
+                        <span className="text-slate-500 text-xs">{item.contractPartyLabel}</span>
+                      )}
+                    </td>
                     <td className="p-4 font-mono text-xs text-slate-400">{item.quoteId}</td>
                     <td className="p-4 text-center font-mono text-brandTeal-400">{formatCurrency(estValue)}</td>
                     <td className="p-4 text-center">
@@ -482,18 +750,27 @@ export default function ContractLedger() {
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      {statusBadge(item.contractStatus)}
+                      {statusBadge(item.contractStatus, item.contractData)}
                       {provisioningBadge(profile, item.contractData)}
                     </td>
                     <td className="p-4 text-right space-x-2">
                       {item.contractStatus === 'draft' && (
-                        <button
-                          onClick={() => generateSigningLink(item.profileId)}
-                          disabled={processing}
-                          className="px-3 py-1 bg-brandTeal-500 text-brandNavy-955 rounded text-xs font-bold"
-                        >
-                          Generate Link
-                        </button>
+                        <>
+                          <button
+                            onClick={() => generateSigningLink(item.profileId)}
+                            disabled={processing}
+                            className="px-3 py-1 bg-brandTeal-500 text-brandNavy-955 rounded text-xs font-bold"
+                          >
+                            Generate Link
+                          </button>
+                          <button
+                            onClick={() => openManualSignModal(item)}
+                            disabled={processing}
+                            className="px-3 py-1 bg-brandNavy-800 rounded text-xs"
+                          >
+                            Record manual
+                          </button>
+                        </>
                       )}
                       {item.contractStatus === 'sent' && (
                         <>
@@ -501,6 +778,13 @@ export default function ContractLedger() {
                             Preview
                           </a>
                           <button onClick={() => copyLink(item.profileId)} className="px-3 py-1 bg-brandNavy-800 rounded text-xs">Copy Link</button>
+                          <button
+                            onClick={() => openManualSignModal(item)}
+                            disabled={processing}
+                            className="px-3 py-1 bg-emerald-600/20 text-emerald-400 rounded text-xs font-bold"
+                          >
+                            Record manual
+                          </button>
                           <button onClick={() => setResetTarget(item)} className="px-2 py-1 text-red-400 text-xs">Reset</button>
                         </>
                       )}
@@ -538,7 +822,7 @@ export default function ContractLedger() {
                   </tr>
                   {isExpanded && profile && (
                     <tr>
-                      <td colSpan={8} className="p-0 border-t border-brandNavy-800/50">
+                      <td colSpan={9} className="p-0 border-t border-brandNavy-800/50">
                         <MilestoneDetail profile={profile} />
                       </td>
                     </tr>
