@@ -12,7 +12,7 @@
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
-                    <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Waste-to-Peso Report</h1>
+                    <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Leak Scan Report</h1>
                     <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">

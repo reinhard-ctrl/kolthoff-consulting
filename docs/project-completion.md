@@ -148,7 +148,7 @@ North star: P4 ✅ verified on production (6 Jul 2026). **Mod 1 delivery tooling
 | **4** | Content, templates, delivery automation (**your focus**) | 🔶 **Active** |
 | **5** | Idol figure — demo tenant, metrics, case studies | Ongoing |
 
-Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), Agency Ops Firestore provisioning (#165–#217), SSO cold-start (#175–176), P4 verified (#213–#216), direct workspace provision (#217), **Mod 1 Waste-to-Peso Report closed** (#242, deployed 7 Jul 2026).
+Recent stability fixes (Jul 2026): workspace deploy (#146), admin embed auth (#152), Agency Ops Firestore provisioning (#165–#217), SSO cold-start (#175–176), P4 verified (#213–#216), direct workspace provision (#217), **Mod 1 Leak Scan Report closed** (#242, deployed 7 Jul 2026).
 
 ---
 

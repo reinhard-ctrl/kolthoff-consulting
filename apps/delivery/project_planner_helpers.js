@@ -490,7 +490,7 @@
           amount: Math.round(m1Net * taxMultiplier),
           desc: ctx.starterLineItems
             ? 'Authorized at signing. Covers discovery and initial deliverables in this module.'
-            : 'Authorized immediately at initial signup. Deliverable yields a waste-to-peso report and prioritized fix list from your leak scan.'
+            : 'Authorized immediately at initial signup. Deliverable yields a Leak Scan Report and prioritized fix list from your leak scan.'
         });
       }
       if (m2Net > 0) {

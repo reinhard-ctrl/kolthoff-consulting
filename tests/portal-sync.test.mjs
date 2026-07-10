@@ -101,7 +101,15 @@ const assetsProfile = PS.upsertMod1DeliverableAssets({
   synthesis: { clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view' },
 });
 assert.equal(assetsProfile.length, 2);
-assert.equal(assetsProfile.find((a) => a.title === PS.WASTE_TO_PESO_ASSET_TITLE)?.link, 'https://drive.google.com/file/d/abc/view');
+assert.equal(assetsProfile.find((a) => a.title === PS.LEAK_SCAN_REPORT_ASSET_TITLE)?.link, 'https://drive.google.com/file/d/abc/view');
+
+const legacyMigrated = PS.upsertMod1DeliverableAssets({
+  customAssets: [{ title: PS.LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE, category: 'MOD 1', link: 'https://drive.google.com/file/d/old/view' }],
+  synthesis: { clientDeliverableUrl: 'https://drive.google.com/file/d/new/view' },
+});
+assert.equal(legacyMigrated.length, 1);
+assert.equal(legacyMigrated[0].title, PS.LEAK_SCAN_REPORT_ASSET_TITLE);
+assert.equal(legacyMigrated[0].link, 'https://drive.google.com/file/d/new/view');
 
 const mod1CompletePatch = PS.buildPortalPatchFromProfile(
   {
@@ -111,7 +119,7 @@ const mod1CompletePatch = PS.buildPortalPatchFromProfile(
   { assets: [] },
   { syncIntakeAssets: true },
 );
-assert.ok(mod1CompletePatch.assets.some((a) => a.title === PS.WASTE_TO_PESO_ASSET_TITLE));
+assert.ok(mod1CompletePatch.assets.some((a) => a.title === PS.LEAK_SCAN_REPORT_ASSET_TITLE));
 
 const multiAssets = PS.upsertMod1DeliverableAssets({
   customAssets: [],

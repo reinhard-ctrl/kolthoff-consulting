@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Module 1: Waste-to-Peso Report | Cloud Synced</title>
+    <title>Module 1: Leak Scan Report | Cloud Synced</title>
  
     <!-- Custom SVG Logo Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M50 12 C72 16 84 22 84 22 V54 C84 72 70 85 50 90 C30 85 16 72 16 54 V22 C16 22 28 16 50 12 Z' fill='%2314B8A6' fill-opacity='0.08' stroke='url(%23concept4-shield-grad)' stroke-width='4.5' stroke-linejoin='round' /><path d='M36 50 L46 60 L66 36' stroke='url(%23concept4-check-grad)' stroke-width='7.5' stroke-linecap='round' stroke-linejoin='round' /><defs><linearGradient id='concept4-shield-grad' x1='16' y1='12' x2='84' y2='90' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' fill-opacity='0.4' /><stop offset='1' stop-color='%232DD4BF' fill-opacity='0.1' /></linearGradient><linearGradient id='concept4-check-grad' x1='36' y1='36' x2='66' y2='60' gradientUnits='userSpaceOnUse'><stop stop-color='%2314B8A6' /><stop offset='1' stop-color='%232DD4BF' /></linearGradient></defs></svg>">
@@ -631,7 +631,7 @@
             },
             synthesis: {
                 title: '5. Strategy & Priorities',
-                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Waste-to-Peso Report. Auto-saves after edits.',
+                description: 'Score operational maturity, capture staff feedback themes, and build the 90-day fix order that feeds the Leak Scan Report. Auto-saves after edits.',
             },
         };
 
@@ -1383,7 +1383,7 @@
                         <div className="border-b border-brandNavy-700 pb-3 flex flex-wrap justify-between items-center gap-3">
                             <div>
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider font-serif">4. 90-Day Fix Order Planner</h3>
-                                <p className="text-xs text-slate-400 mt-1">Build the prioritized fix list for the Waste-to-Peso Report. Top 5 by impact ÷ effort appear on page 1.</p>
+                                <p className="text-xs text-slate-400 mt-1">Build the prioritized fix list for the Leak Scan Report. Top 5 by impact ÷ effort appear on page 1.</p>
                             </div>
                             <button type="button" onClick={generateFromDiagnosis} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
                                 Generate from Diagnosis
@@ -1678,7 +1678,7 @@
                 <div className="mb-8">
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
                     <div className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-400 mb-3">Kolthoff Consulting · Confidential Client Deliverable</div>
-                    <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Waste-to-Peso Report</h1>
+                    <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Leak Scan Report</h1>
                     <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">
@@ -2693,7 +2693,7 @@
 
                     <aside className="w-[300px] bg-brandNavy-900 border-r border-brandNavy-800 flex flex-col shrink-0 no-print z-20 shadow-2xl">
                         <div className="p-6 border-b border-brandNavy-800 flex justify-between items-center group">
-                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Module 1: Waste-to-Peso Report</span></div>
+                            <div><h1 className="text-sm font-extrabold tracking-widest text-white uppercase leading-none mb-1">Kolthoff <span className="text-brandTeal-500">CONSULTING</span></h1><span className="text-[10px] text-brandTeal-500 font-bold uppercase tracking-widest">Module 1: Leak Scan Report</span></div>
                             <div className="relative">
                                 <div className={`w-2 h-2 rounded-full cursor-help ${isAuthed ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : (authError ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-500 animate-pulse')}`}></div>
                                 {authError && <div className="absolute right-0 top-full mt-2 w-48 bg-rose-950/90 border border-rose-500/50 p-2 rounded text-[9px] text-rose-200 hidden group-hover:block z-50">Sync Disabled (Offline)</div>}
@@ -2717,7 +2717,7 @@
                             <button onClick={() => setActiveNav('saas')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'saas' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.CreditCard /> 4. SaaS Bill Audit</button>
                             <button onClick={() => setActiveNav('synthesis')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all ${activeNav === 'synthesis' ? 'bg-brandTeal-500 text-brandNavy-955' : 'text-slate-400 hover:bg-brandNavy-800 hover:text-slate-200'}`}><Icons.TrendingUp /> 5. Strategy & Priorities</button>
                             <div className="pt-6 mt-4 border-t border-brandNavy-800">
-                                <button onClick={() => setActiveNav('report')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all border ${activeNav === 'report' ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-slate-300 border-slate-600 hover:bg-slate-800'}`}><Icons.Print /> Preview Waste-to-Peso Report</button>
+                                <button onClick={() => setActiveNav('report')} className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-xs font-bold tracking-wide transition-all border ${activeNav === 'report' ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-slate-300 border-slate-600 hover:bg-slate-800'}`}><Icons.Print /> Preview Leak Scan Report</button>
                             </div>
                         </nav>
 
@@ -2798,7 +2798,7 @@
                                     <div className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 no-print shadow-sm w-full shrink-0">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
                                             <div className="min-w-0">
-                                                <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider truncate">Waste-to-Peso Report</h2>
+                                                <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider truncate">Leak Scan Report</h2>
                                                 <p className="text-[9px] text-slate-500 truncate">{clientCompany} · {reportDate}</p>
                                             </div>
                                             <div className="flex items-center gap-1.5 flex-wrap justify-end">
