@@ -93,6 +93,33 @@ assert.equal(objectRoster.length, 2);
 assert.equal(objectRoster.find((r) => r.name === 'Ada')?.title, 'CEO');
 assert.equal(objectRoster.find((r) => r.name === 'Bob')?.reportsTo, 'Ada');
 
+const htmlDivLabelXml =
+  '<mxfile><diagram><mxGraphModel><root>' +
+  '<mxCell id="0"/><mxCell id="1" parent="0"/>' +
+  '<mxCell id="2" value="&lt;div&gt;Ada Lovelace&lt;/div&gt;&lt;div&gt;CEO&lt;/div&gt;&lt;div&gt;Engineering&lt;/div&gt;" ' +
+  'style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">' +
+  '<mxGeometry x="40" y="40" width="180" height="70" as="geometry"/></mxCell>' +
+  '</root></mxGraphModel></diagram></mxfile>';
+const htmlDivRoster = DE.parseRosterFromDrawioXml(htmlDivLabelXml);
+assert.equal(htmlDivRoster.length, 1);
+assert.equal(htmlDivRoster[0].name, 'Ada Lovelace');
+assert.equal(htmlDivRoster[0].title, 'CEO');
+assert.equal(htmlDivRoster[0].department, 'Engineering');
+
+const objectHtmlLabelXml =
+  '<mxfile><diagram><mxGraphModel><root>' +
+  '<mxCell id="0"/><mxCell id="1" parent="0"/>' +
+  '<object label="&lt;p style=&quot;margin:0px;text-align:center;&quot;&gt;&lt;b&gt;Ada Lovelace&lt;/b&gt;&lt;/p&gt;' +
+  '&lt;p style=&quot;margin:0px;text-align:center;&quot;&gt;CEO&lt;/p&gt;' +
+  '&lt;p style=&quot;margin:0px;text-align:center;&quot;&gt;Engineering&lt;/p&gt;" id="2">' +
+  '<mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">' +
+  '<mxGeometry x="40" y="40" width="180" height="70" as="geometry"/></mxCell></object>' +
+  '</root></mxGraphModel></diagram></mxfile>';
+const objectHtmlRoster = DE.parseRosterFromDrawioXml(objectHtmlLabelXml);
+assert.equal(objectHtmlRoster[0].name, 'Ada Lovelace');
+assert.equal(objectHtmlRoster[0].title, 'CEO');
+assert.equal(objectHtmlRoster[0].department, 'Engineering');
+
 const fallback = [{ id: 'x', name: 'Kept', title: 'Lead', department: '', reportsTo: '' }];
 assert.deepEqual(DE.resolveOrgChartMembers('', fallback), fallback);
 assert.equal(DE.resolveOrgChartMembers(objectLabelXml, fallback).length, 2);

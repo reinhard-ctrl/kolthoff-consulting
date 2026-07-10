@@ -132,7 +132,10 @@
 
   function stripHtml(value) {
     return String(value || '')
-      .replace(/<br\s*\/?>/gi, '\n')
+      // draw.io rectangle labels often use <div>/<p> per line (Name / Role / Dept).
+      .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+      .replace(/<\s*\/\s*(div|p|li|h[1-6]|tr)\s*>/gi, '\n')
+      .replace(/<\s*(div|p|li|h[1-6]|tr)\b[^>]*>/gi, '\n')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
@@ -147,7 +150,11 @@
   function parseCellLabel(value) {
     const text = stripHtml(value);
     if (!text) return { name: '', title: '', department: '' };
-    const parts = text.split(/\n| — | - /).map((p) => p.trim()).filter(Boolean);
+    // Prefer line breaks; also accept common separators users type in one line.
+    const parts = text
+      .split(/\n+| \| | — | – | - | \/ /)
+      .map((p) => p.trim())
+      .filter(Boolean);
     return {
       name: parts[0] || text,
       title: parts[1] || '',
