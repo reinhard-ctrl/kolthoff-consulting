@@ -12,7 +12,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const code = readFileSync(join(root, 'apps/delivery/project_planner_helpers.js'), 'utf8');
 const win = { window: {} };
 vm.runInNewContext(code, win);
-const { resolveClientParty, resolveSponsorParty } = win.window.PlannerHelpers;
+const { resolveClientParty, resolveSponsorParty, resolveAddendumParty, getAddendumPartySource } = win.window.PlannerHelpers;
 
 const client = {
   clientCompany: 'Client Corp.',
@@ -60,5 +60,25 @@ const clientContract = win.window.PlannerHelpers.resolveContractParty({
   sponsorCompany: 'Sponsor Inc.',
 });
 assert.equal(clientContract.company, 'Client Corp.');
+
+const profileState = {
+  ...client,
+  useCustomSponsor: true,
+  sponsorCompany: 'Sponsor Inc.',
+  sponsorRep: 'John Sponsor',
+  sponsorAddress: '456 Sponsor Ave',
+  sponsorTin: '222-222-222-222',
+  contractPartySource: 'client',
+};
+
+assert.equal(getAddendumPartySource({ partySource: 'sponsor' }, profileState), 'sponsor');
+assert.equal(getAddendumPartySource({}, profileState), 'client');
+assert.equal(getAddendumPartySource({}, { ...profileState, contractPartySource: 'sponsor' }), 'sponsor');
+
+const sponsorAddendumParty = resolveAddendumParty({ partySource: 'sponsor' }, profileState);
+assert.equal(sponsorAddendumParty.company, 'Sponsor Inc.');
+
+const clientAddendumParty = resolveAddendumParty({ partySource: 'client' }, profileState);
+assert.equal(clientAddendumParty.company, 'Client Corp.');
 
 console.log('sponsor-party.test.mjs: all assertions passed');

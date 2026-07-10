@@ -1762,6 +1762,20 @@
         });
       }, [activeAddendum, includeTax, frictionBuffer, subscriptionMonths, principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential, staffCount, monthlySalary, wastedHours, hourlyRates]);
 
+      const resolvedAddendumParty = useMemo(() => {
+        if (!activeAddendum) return null;
+        return H.resolveAddendumParty(activeAddendum, {
+          clientCompany, clientRep, clientAddress, clientTin,
+          useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin,
+          contractPartySource,
+        });
+      }, [activeAddendum, clientCompany, clientRep, clientAddress, clientTin, useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource]);
+
+      const addendumPartyLabel = useMemo(() => {
+        if (!activeAddendum) return 'Client';
+        return H.getAddendumPartySource(activeAddendum, { contractPartySource }) === 'sponsor' ? 'Sponsor' : 'Client';
+      }, [activeAddendum, contractPartySource]);
+
       const invoiceTargetAddendum = useMemo(
         () => (invoiceAddendumId ? (addenda || []).find((a) => a.id === invoiceAddendumId) : null),
         [addenda, invoiceAddendumId],
@@ -1809,11 +1823,12 @@
           templateId,
           catalogTasks: catalogTasksRef.current,
           quoteDate,
+          defaultPartySource: contractPartySource,
         });
         setAddenda((prev) => [...(prev || []), record]);
         setActiveAddendumId(record.id);
         setView('addendum');
-      }, [quoteId, addenda, quoteDate]);
+      }, [quoteId, addenda, quoteDate, contractPartySource]);
 
       const toggleAddendumTask = useCallback((taskId) => {
         if (!activeAddendum) return;
@@ -4249,16 +4264,15 @@
                 rates: hourlyRates,
                 getRateForTier,
                 addendumEconomics,
+                contractPartySource,
               })}
               {renderSettingsSidebar({ embedded: true })}
             </div>
             {UI.renderAddendumPrintDocument({
               addendum: activeAddendum,
               parentQuoteId: quoteId,
-              clientCompany,
-              clientRep,
-              clientAddress,
-              clientTin,
+              addendumParty: resolvedAddendumParty,
+              addendumPartyLabel,
               quoteDate,
               preparedBy,
               preparerTitle,

@@ -72,6 +72,7 @@
       rates,
       getRateForTier,
       addendumEconomics,
+      contractPartySource,
     } = props;
 
     return React.createElement(
@@ -141,6 +142,30 @@
             }),
           ),
         ),
+        React.createElement(
+          'div',
+          { className: 'pt-2 border-t border-brandNavy-800 space-y-2' },
+          React.createElement('span', { className: 'text-[10px] font-mono text-slate-400 uppercase block font-semibold' }, 'Addendum addressed to'),
+          React.createElement('p', { className: 'text-[9px] text-slate-500 leading-relaxed' }, 'Choose whether this addendum is prepared for the client or sponsor.'),
+          React.createElement(
+            'div',
+            { className: 'flex flex-wrap gap-2' },
+            ['client', 'sponsor'].map((option) => React.createElement(
+              'button',
+              {
+                key: option,
+                type: 'button',
+                onClick: () => onPatchActive({ partySource: option }),
+                className: `px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                  (activeAddendum.partySource || contractPartySource || 'client') === option
+                    ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                    : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600'
+                }`,
+              },
+              option,
+            )),
+          ),
+        ),
         (activeAddendum.status === 'draft' || activeAddendum.status === 'issued') && onDeleteActive && React.createElement(
           'div',
           { className: 'flex justify-end' },
@@ -203,10 +228,8 @@
     const {
       addendum,
       parentQuoteId,
-      clientCompany,
-      clientRep,
-      clientAddress,
-      clientTin,
+      addendumParty,
+      addendumPartyLabel,
       quoteDate,
       preparedBy,
       preparerTitle,
@@ -220,7 +243,7 @@
       starterUi,
       BrandLogo,
     } = props;
-    if (!addendum || !addendumEconomics) return null;
+    if (!addendum || !addendumEconomics || !addendumParty) return null;
     const selectedTasks = (addendum.tasks || []).filter((t) => t.selected);
     const totalBase = addendumEconomics.finalProjectCostBase + addendumEconomics.retainerCostTotalBase;
     const vat = includeTax ? Math.round(totalBase * 0.12) : 0;
@@ -262,11 +285,11 @@
           React.createElement(
             'div',
             { className: 'border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-1' },
-            React.createElement('div', { className: 'text-[10px] font-mono uppercase text-slate-400 font-bold' }, 'Prepared for'),
-            React.createElement('div', { className: 'text-lg font-bold' }, clientCompany),
-            React.createElement('div', { className: 'text-sm text-slate-600' }, clientRep),
-            clientAddress && React.createElement('div', { className: 'text-xs text-slate-500' }, clientAddress),
-            clientTin && React.createElement('div', { className: 'text-xs font-mono' }, `TIN: ${clientTin}`),
+            React.createElement('div', { className: 'text-[10px] font-mono uppercase text-slate-400 font-bold' }, `Prepared for (${addendumPartyLabel || 'Client'})`),
+            React.createElement('div', { className: 'text-lg font-bold' }, addendumParty.company),
+            React.createElement('div', { className: 'text-sm text-slate-600' }, addendumParty.rep),
+            addendumParty.address && React.createElement('div', { className: 'text-xs text-slate-500' }, addendumParty.address),
+            addendumParty.tin && React.createElement('div', { className: 'text-xs font-mono' }, `TIN: ${addendumParty.tin}`),
           ),
           React.createElement('p', { className: 'text-xs text-slate-600 leading-relaxed' }, addendum.proposalObjectives),
         ),
@@ -327,8 +350,9 @@
           React.createElement('p', { className: 'text-[10px] text-slate-600 leading-relaxed border-t border-slate-200 pt-2' }, addendum.addendumTerms),
           React.createElement('p', { className: 'text-[10px] text-slate-500 italic' }, 'This addendum is billed separately from the original Statement of Work. Original engagement milestones are unchanged.'),
           renderSignaturesBlock && renderSignaturesBlock(
-            'Accepted on behalf of Client:',
+            `Accepted on behalf of ${addendumPartyLabel || 'Client'}:`,
             starterUi ? `Accepted on behalf of ${issuerName}:` : 'Accepted on behalf of Kolthoff Consulting:',
+            addendumParty,
           ),
         ),
       ),

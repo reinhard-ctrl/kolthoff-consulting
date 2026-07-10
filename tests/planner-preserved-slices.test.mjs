@@ -123,6 +123,7 @@ addendumRecord.id = 'addendum-test-a1';
 assert.equal(addendumRecord.suffix, 'A1');
 assert.equal(addendumRecord.ref, 'KC-2026-APARRI-A1');
 assert.equal(addendumRecord.templateId, 'training-day');
+assert.equal(addendumRecord.partySource, 'client');
 assert.ok(addendumRecord.tasks.find((t) => t.id === 'm3-05')?.selected);
 
 const secondAddendum = H.createAddendumRecord({
@@ -150,6 +151,15 @@ assert.equal(afterDelete[0].suffix, 'A2');
 assert.equal(H.canDeleteAddendum({ status: 'draft' }), true);
 assert.equal(H.canDeleteAddendum({ status: 'issued' }), true);
 assert.equal(H.canDeleteAddendum({ status: 'invoiced' }), false);
+
+const sponsorDefaultAddendum = H.createAddendumRecord({
+  parentQuoteId: 'KC-2026-APARRI',
+  addenda: [],
+  templateId: 'custom',
+  catalogTasks: [],
+  defaultPartySource: 'sponsor',
+});
+assert.equal(sponsorDefaultAddendum.partySource, 'sponsor');
 
 const addendumValidation = H.validatePrintReadiness('addendum', {
   clientCompany: 'Acme Corp',

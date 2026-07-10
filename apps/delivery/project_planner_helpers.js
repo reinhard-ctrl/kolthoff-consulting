@@ -682,6 +682,20 @@
     return resolveClientParty(state);
   }
 
+  function getAddendumPartySource(addendum, profileState) {
+    if (addendum?.partySource === 'sponsor' || addendum?.partySource === 'client') {
+      return addendum.partySource;
+    }
+    return profileState?.contractPartySource === 'sponsor' ? 'sponsor' : 'client';
+  }
+
+  function resolveAddendumParty(addendum, profileState) {
+    if (getAddendumPartySource(addendum, profileState) === 'sponsor') {
+      return resolveSponsorParty(profileState);
+    }
+    return resolveClientParty(profileState);
+  }
+
   /** Slices owned by Policy Studio, Diagnosis, Workflow Builder, Org Chart — not planner form state. */
   const PRESERVED_PROFILE_SLICE_KEYS = [
     'branding',
@@ -941,10 +955,20 @@
       if (!addendum) {
         issues.push('Select or create an addendum first.');
       } else {
+        const addendumParty = resolveAddendumParty(addendum, ctx);
+        const partyLabel = getAddendumPartySource(addendum, ctx) === 'sponsor' ? 'Sponsor' : 'Client';
         if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
         if (!(addendum.tasks || []).filter((t) => t.selected).length) {
           issues.push('No deliverables selected for this addendum.');
         }
+        if (!addendumParty.company?.trim()) issues.push(`${partyLabel} company name is missing.`);
+        if (!addendumParty.rep?.trim()) issues.push(`${partyLabel} representative name is missing.`);
+        if (getAddendumPartySource(addendum, ctx) === 'sponsor' && ctx.useCustomSponsor) {
+          if (addendumParty.tin && ctx.validateTIN && !ctx.validateTIN(addendumParty.tin)) {
+            issues.push('Sponsor company TIN format is invalid.');
+          }
+        }
+        if (!addendumParty.address?.trim()) warnings.push(`${partyLabel} registered address is empty.`);
         if (ctx.issueInvoice && !ctx.invoiceDueDate?.trim()) {
           issues.push('Addendum invoice due date is missing.');
         }
@@ -1056,6 +1080,7 @@
       templateId = 'custom',
       catalogTasks = [],
       quoteDate = '',
+      defaultPartySource = 'client',
     } = options;
     const AT = global.AddendumTemplates || {};
     const template = AT.getTemplate ? AT.getTemplate(templateId) : null;
@@ -1076,6 +1101,7 @@
       parentQuoteId: parentQuoteId || '',
       title: defaults.title || template?.name || 'Scope Addendum',
       templateId: template?.id || 'custom',
+      partySource: defaultPartySource === 'sponsor' ? 'sponsor' : 'client',
       status: 'draft',
       createdAt: Date.now(),
       issuedAt: null,
@@ -1175,6 +1201,8 @@
     resolveClientParty,
     resolveSponsorParty,
     resolveContractParty,
+    getAddendumPartySource,
+    resolveAddendumParty,
     saveLocalDraft,
     loadLocalDraft,
     clearLocalDraft,
