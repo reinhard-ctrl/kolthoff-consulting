@@ -1647,6 +1647,11 @@
       const [invoiceBillToRep, setInvoiceBillToRep] = useState(activeProfile.invoiceBillToRep || '');
       const [invoiceBillToAddress, setInvoiceBillToAddress] = useState(activeProfile.invoiceBillToAddress || '');
       const [invoiceBillToTin, setInvoiceBillToTin] = useState(activeProfile.invoiceBillToTin || '');
+      const [useCustomDocumentParty, setUseCustomDocumentParty] = useState(Boolean(activeProfile.useCustomDocumentParty));
+      const [documentPartyCompany, setDocumentPartyCompany] = useState(activeProfile.documentPartyCompany || '');
+      const [documentPartyRep, setDocumentPartyRep] = useState(activeProfile.documentPartyRep || '');
+      const [documentPartyAddress, setDocumentPartyAddress] = useState(activeProfile.documentPartyAddress || '');
+      const [documentPartyTin, setDocumentPartyTin] = useState(activeProfile.documentPartyTin || '');
 
       const [addenda, setAddenda] = useState(activeProfile.addenda || []);
       const [activeAddendumId, setActiveAddendumId] = useState(activeProfile.activeAddendumId || null);
@@ -1664,11 +1669,30 @@
         clientTin,
       }), [useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, clientCompany, clientRep, clientAddress, clientTin]);
 
+      const resolvedDocumentParty = useMemo(() => H.resolveDocumentParty({
+        useCustomDocumentParty,
+        documentPartyCompany,
+        documentPartyRep,
+        documentPartyAddress,
+        documentPartyTin,
+        clientCompany,
+        clientRep,
+        clientAddress,
+        clientTin,
+      }), [useCustomDocumentParty, documentPartyCompany, documentPartyRep, documentPartyAddress, documentPartyTin, clientCompany, clientRep, clientAddress, clientTin]);
+
       const copyContractClientToInvoiceBillTo = () => {
         setInvoiceBillToCompany(clientCompany || '');
         setInvoiceBillToRep(clientRep || '');
         setInvoiceBillToAddress(clientAddress || '');
         setInvoiceBillToTin(clientTin || '');
+      };
+
+      const copyContractClientToDocumentParty = () => {
+        setDocumentPartyCompany(clientCompany || '');
+        setDocumentPartyRep(clientRep || '');
+        setDocumentPartyAddress(clientAddress || '');
+        setDocumentPartyTin(clientTin || '');
       };
 
       const [activePresets, setActivePresets] = useState(['mod1']);
@@ -1853,6 +1877,9 @@
           useCustomInvoiceBillTo: Boolean(p.useCustomInvoiceBillTo),
           invoiceBillToCompany: p.invoiceBillToCompany || '', invoiceBillToRep: p.invoiceBillToRep || '',
           invoiceBillToAddress: p.invoiceBillToAddress || '', invoiceBillToTin: p.invoiceBillToTin || '',
+          useCustomDocumentParty: Boolean(p.useCustomDocumentParty),
+          documentPartyCompany: p.documentPartyCompany || '', documentPartyRep: p.documentPartyRep || '',
+          documentPartyAddress: p.documentPartyAddress || '', documentPartyTin: p.documentPartyTin || '',
           staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
@@ -1924,6 +1951,11 @@
         setInvoiceBillToRep(profileState.invoiceBillToRep);
         setInvoiceBillToAddress(profileState.invoiceBillToAddress);
         setInvoiceBillToTin(profileState.invoiceBillToTin);
+        setUseCustomDocumentParty(profileState.useCustomDocumentParty);
+        setDocumentPartyCompany(profileState.documentPartyCompany);
+        setDocumentPartyRep(profileState.documentPartyRep);
+        setDocumentPartyAddress(profileState.documentPartyAddress);
+        setDocumentPartyTin(profileState.documentPartyTin);
         setPrincipalRate(profileState.principalRate);
         setSeniorRate(profileState.seniorRate);
         setAssociateRate(profileState.associateRate);
@@ -1971,10 +2003,11 @@
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+        useCustomDocumentParty, documentPartyCompany, documentPartyRep, documentPartyAddress, documentPartyTin,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId,
         moduleBundleNames,
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, useCustomDocumentParty, documentPartyCompany, documentPartyRep, documentPartyAddress, documentPartyTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -2094,6 +2127,9 @@
         setUseCustomInvoiceBillTo(Boolean(d.useCustomInvoiceBillTo));
         setInvoiceBillToCompany(d.invoiceBillToCompany || ''); setInvoiceBillToRep(d.invoiceBillToRep || '');
         setInvoiceBillToAddress(d.invoiceBillToAddress || ''); setInvoiceBillToTin(d.invoiceBillToTin || '');
+        setUseCustomDocumentParty(Boolean(d.useCustomDocumentParty));
+        setDocumentPartyCompany(d.documentPartyCompany || ''); setDocumentPartyRep(d.documentPartyRep || '');
+        setDocumentPartyAddress(d.documentPartyAddress || ''); setDocumentPartyTin(d.documentPartyTin || '');
         setStaffCount(d.staffCount ?? 15); setMonthlySalary(d.monthlySalary ?? 25000); setWastedHours(d.wastedHours ?? 2.0);
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
@@ -2290,6 +2326,7 @@
         const validation = H.validatePrintReadiness(view, {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          useCustomDocumentParty, documentPartyCompany, documentPartyRep, documentPartyAddress, documentPartyTin,
           invoiceDueDate: view === 'addendum' ? (activeAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
@@ -2329,6 +2366,7 @@
         const validation = H.validatePrintReadiness('invoice', {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
+          useCustomDocumentParty, documentPartyCompany, documentPartyRep, documentPartyAddress, documentPartyTin,
           invoiceDueDate: isAddendumInvoice ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
@@ -2880,10 +2918,10 @@
       const resolvedSlaContent = useMemo(() => (
         H.resolveAgencySlaTemplate?.(slaContent, {
           agencyName: issuerCompanyName,
-          clientName: clientCompany,
-          clientRep: clientRep,
+          clientName: resolvedDocumentParty.company,
+          clientRep: resolvedDocumentParty.rep,
         }) || ''
-      ), [slaContent, issuerCompanyName, clientCompany, clientRep]);
+      ), [slaContent, issuerCompanyName, resolvedDocumentParty]);
 
       const applyClientPdfPreset = () => {
         setPrintCover(true);
@@ -2929,10 +2967,10 @@
             </div>
             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 print-pill space-y-2">
               <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">Prepared for</span>
-              <div className="text-lg font-bold text-slate-900">{clientCompany || 'Client Company'}</div>
-              <div className="text-sm text-slate-600">{clientRep || 'Representative'}</div>
-              {clientAddress && <div className="text-xs text-slate-500">{clientAddress}</div>}
-              {clientTin && <div className="text-xs font-mono text-slate-500">TIN: {clientTin}</div>}
+              <div className="text-lg font-bold text-slate-900">{resolvedDocumentParty.company || 'Client Company'}</div>
+              <div className="text-sm text-slate-600">{resolvedDocumentParty.rep || 'Representative'}</div>
+              {resolvedDocumentParty.address && <div className="text-xs text-slate-500">{resolvedDocumentParty.address}</div>}
+              {resolvedDocumentParty.tin && <div className="text-xs font-mono text-slate-500">TIN: {resolvedDocumentParty.tin}</div>}
             </div>
             <div>
               <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-2">Package contents</span>
@@ -2965,8 +3003,8 @@
             <div>
               <p className="font-bold text-slate-700 mb-8">Client acknowledgment</p>
               <div className="border-t border-slate-300 pt-2">
-                <div className="font-bold text-slate-900">{clientRep || '________________________'}</div>
-                <div className="text-slate-500">{clientCompany || '________________________'}</div>
+                <div className="font-bold text-slate-900">{resolvedDocumentParty.rep || '________________________'}</div>
+                <div className="text-slate-500">{resolvedDocumentParty.company || '________________________'}</div>
                 <div className="text-slate-400 mt-1">Date: ________________________</div>
               </div>
             </div>
@@ -3163,12 +3201,7 @@
       );
 
       const renderCustomerBlock = (isInvoice = false, isRoadmap = false) => {
-        const party = isInvoice ? resolvedInvoiceBillTo : {
-          company: clientCompany,
-          rep: clientRep,
-          address: clientAddress,
-          tin: clientTin,
-        };
+        const party = isInvoice ? resolvedInvoiceBillTo : resolvedDocumentParty;
         return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 text-sm font-sans font-medium border-b border-slate-200 pb-6 print-divider text-slate-700">
           <div className="space-y-1.5 text-left font-sans">
@@ -3198,7 +3231,7 @@
       };
 
       const renderSignaturesBlock = (titleLeft = "Approved and Accepted by:", titleRight = "Submitted by:", leftParty = null) => {
-        const party = leftParty || { rep: clientRep, company: clientCompany };
+        const party = leftParty || { rep: resolvedDocumentParty.rep, company: resolvedDocumentParty.company };
         return (
         <div className="print-quote-signatures pt-8 text-xs font-sans font-semibold border-t border-slate-200 print-divider">
           <div className="grid grid-cols-2 gap-12 sm:gap-24 font-sans">
@@ -3988,9 +4021,12 @@
                 </fieldset>
               )}
 
-              {/* Company Block — contract client (Documents / NDA); invoice bill-to is separate above */}
+              {/* Company Block — contract client; document party override below for package print */}
               {(isNda || isPackage) && (
                 <div className="space-y-3 text-left font-sans">
+                  {isPackage && (
+                    <span className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold block text-left font-sans">Contract Client</span>
+                  )}
                   {isNda && (
                     <>
                       <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Effective Date</label><input type="text" value={ndaEffectiveDate} onChange={(e) => setNdaEffectiveDate(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
@@ -4022,6 +4058,52 @@
                     </>
                   )}
                 </div>
+              )}
+
+              {isPackage && (
+                <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
+                  <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Document Party (Printed Documents)</legend>
+                  <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-brandNavy-800 hover:border-brandNavy-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useCustomDocumentParty}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        setUseCustomDocumentParty(enabled);
+                        if (enabled && !documentPartyCompany && !documentPartyRep) copyContractClientToDocumentParty();
+                      }}
+                      className="mt-0.5 accent-brandTeal-500 shrink-0"
+                    />
+                    <span className="text-[11px] text-slate-300 leading-relaxed">Show a different company on printed documents than the contract client</span>
+                  </label>
+                  {!useCustomDocumentParty && (
+                    <p className="text-[10px] text-slate-500 leading-relaxed border border-brandNavy-800 rounded-lg p-3 bg-brandNavy-900/50">
+                      Documents use the contract client: <strong className="text-slate-300">{clientCompany || '—'}</strong>
+                      {clientRep ? ` · ${clientRep}` : ''}
+                    </p>
+                  )}
+                  {useCustomDocumentParty && (
+                    <div className="space-y-3">
+                      <button
+                        type="button"
+                        onClick={copyContractClientToDocumentParty}
+                        className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
+                      >
+                        Copy from contract client
+                      </button>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Document Company Legal Name</label><input type="text" value={documentPartyCompany} onChange={(e) => setDocumentPartyCompany(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Document Representative Name</label><input type="text" value={documentPartyRep} onChange={(e) => setDocumentPartyRep(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans font-semibold" /></div>
+                      <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold font-sans font-semibold">Document Registered Address</label><input type="text" value={documentPartyAddress} onChange={(e) => setDocumentPartyAddress(e.target.value)} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500" /></div>
+                      <div>
+                        <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left">
+                          Document Company TIN (EOPT)
+                          {documentPartyTin && <span className={`ml-2 text-[9px] font-mono px-1.5 py-0.5 rounded ${validatePhilippineTIN(documentPartyTin) ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>{validatePhilippineTIN(documentPartyTin) ? '✓ Valid' : '✗ Invalid'}</span>}
+                        </label>
+                        <input type="text" value={documentPartyTin} onChange={(e) => setDocumentPartyTin(formatTINInput(e.target.value))} className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 font-mono focus:outline-none focus:border-brandTeal-500" />
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
               )}
 
               {(isProposal || isRoadmap || isPackage) && (
@@ -4389,7 +4471,7 @@
         const SlaBody = (
           <div className="space-y-6 text-slate-800 font-sans text-left">
             <p className="text-xs leading-relaxed font-medium text-left text-slate-700 font-sans">
-              This Service Level Agreement (SLA) outlines the performance, support, and maintenance standards provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{clientCompany || "the Client"}</strong> ("Client") for the continuous operation of the deployed software infrastructure and automated workflows.
+              This Service Level Agreement (SLA) outlines the performance, support, and maintenance standards provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{resolvedDocumentParty.company || "the Client"}</strong> ("Client") for the continuous operation of the deployed software infrastructure and automated workflows.
             </p>
 
             <div className="space-y-5 font-medium text-left text-slate-700 font-sans">
@@ -4517,7 +4599,7 @@
         const ProPlatformSlaBody = (
           <div className="space-y-6 text-slate-800 font-sans text-left">
             <p className="text-xs leading-relaxed font-medium text-left text-slate-700 font-sans">
-              This Platform Service Level Agreement (SLA) outlines availability, support, and subscription standards for <strong>{proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'}</strong> provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{clientCompany || "the Client"}</strong> ("Client").
+              This Platform Service Level Agreement (SLA) outlines availability, support, and subscription standards for <strong>{proProductMeta?.skuLabel || 'PRO 1 · Agency Ops'}</strong> provided by <strong>{issuerCompanyName}</strong> ("Service Provider") to <strong>{resolvedDocumentParty.company || "the Client"}</strong> ("Client").
             </p>
 
             <div className="space-y-5 font-medium text-left text-slate-700 font-sans">

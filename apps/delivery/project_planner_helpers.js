@@ -649,6 +649,23 @@
     };
   }
 
+  function resolveDocumentParty(state) {
+    if (state.useCustomDocumentParty) {
+      return {
+        company: state.documentPartyCompany || '',
+        rep: state.documentPartyRep || '',
+        address: state.documentPartyAddress || '',
+        tin: state.documentPartyTin || '',
+      };
+    }
+    return {
+      company: state.clientCompany || '',
+      rep: state.clientRep || '',
+      address: state.clientAddress || '',
+      tin: state.clientTin || '',
+    };
+  }
+
   /** Slices owned by Policy Studio, Diagnosis, Workflow Builder, Org Chart — not planner form state. */
   const PRESERVED_PROFILE_SLICE_KEYS = [
     'branding',
@@ -809,6 +826,11 @@
       invoiceBillToRep: state.invoiceBillToRep || '',
       invoiceBillToAddress: state.invoiceBillToAddress || '',
       invoiceBillToTin: state.invoiceBillToTin || '',
+      useCustomDocumentParty: Boolean(state.useCustomDocumentParty),
+      documentPartyCompany: state.documentPartyCompany || '',
+      documentPartyRep: state.documentPartyRep || '',
+      documentPartyAddress: state.documentPartyAddress || '',
+      documentPartyTin: state.documentPartyTin || '',
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
@@ -875,10 +897,18 @@
     }
 
     if (view === 'package') {
+      const docParty = resolveDocumentParty(ctx);
       const hasSection = ctx.printSow || ctx.printTimeline || ctx.printQuote || ctx.printCover || ctx.printSla;
       if (!hasSection) issues.push('No package print sections are selected.');
       if ((ctx.tasks || []).filter((t) => t.selected).length === 0) issues.push('No modules/tasks are selected for the SOW.');
-      if (!ctx.clientAddress?.trim()) warnings.push('Client registered address is empty.');
+      if (ctx.useCustomDocumentParty) {
+        if (!docParty.company?.trim()) issues.push('Document company name is missing.');
+        if (!docParty.rep?.trim()) issues.push('Document representative name is missing.');
+        if (docParty.tin && ctx.validateTIN && !ctx.validateTIN(docParty.tin)) {
+          issues.push('Document company TIN format is invalid.');
+        }
+      }
+      if (!docParty.address?.trim()) warnings.push('Document registered address is empty.');
     }
 
     if (view === 'nda') {
@@ -1121,6 +1151,7 @@
     payloadFingerprint,
     validatePrintReadiness,
     resolveInvoiceBillTo,
+    resolveDocumentParty,
     saveLocalDraft,
     loadLocalDraft,
     clearLocalDraft,
