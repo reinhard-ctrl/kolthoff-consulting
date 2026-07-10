@@ -30,6 +30,14 @@ console.log('Building Kolthoff OS...');
 rmrf(dist);
 fs.mkdirSync(dist, { recursive: true });
 
+// Precompile project planner (JSX → JS, drops Babel CDN at runtime)
+try {
+  execSync('node scripts/compile-planner-app.js --skip-html-patch', { cwd: root, stdio: 'inherit' });
+} catch (e) {
+  console.error('Planner precompile failed:', e.message);
+  process.exit(1);
+}
+
 // Shared assets
 copyDir(path.join(root, 'shared'), path.join(dist, 'shared'));
 

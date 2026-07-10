@@ -1175,6 +1175,36 @@
     return addendum.status === 'draft' || addendum.status === 'issued';
   }
 
+  function loadScriptOnce(src) {
+    const cache = loadScriptOnce._cache || (loadScriptOnce._cache = new Map());
+    if (cache.has(src)) return cache.get(src);
+    const promise = new Promise((resolve, reject) => {
+      if (document.querySelector(`script[data-planner-src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.dataset.plannerSrc = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(script);
+    });
+    cache.set(src, promise);
+    return promise;
+  }
+
+  function ensureAddendumModules() {
+    return Promise.all([
+      loadScriptOnce('../../shared/engagement-addendum-templates.js?v=20250710-precompile-v1'),
+      loadScriptOnce('project_planner_addendum.js?v=20250710-precompile-v1'),
+    ]);
+  }
+
+  function ensurePortalSync() {
+    return loadScriptOnce('../../shared/portal-sync.js?v=20250710-precompile-v1');
+  }
+
   global.PlannerHelpers = {
     DEFAULT_RATES,
     MOD_CATEGORIES,
@@ -1231,6 +1261,9 @@
     updateAddendumInList,
     removeAddendumFromList,
     canDeleteAddendum,
+    loadScriptOnce,
+    ensureAddendumModules,
+    ensurePortalSync,
     cloneTasksForAddendum,
   };
 })(window);
