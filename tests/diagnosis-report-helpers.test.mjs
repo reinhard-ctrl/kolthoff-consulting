@@ -341,4 +341,56 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(filtered.length, 1);
     assert.equal(filtered[0].id, 'a');
   });
+
+  it('buildCoiBreakdown exposes formula and assumption sentence', () => {
+    const coi = DRH.buildCoiBreakdown(120000, 24000, 2, (v) => `P${v}`);
+    assert.equal(coi.baseAnnual, 144000);
+    assert.ok(coi.projected > coi.threeYearBase);
+    assert.match(coi.formulaLabel, /process \+ P24000 subscriptions/);
+    assert.match(coi.assumptionSentence, /2 additional headcount/);
+  });
+
+  it('previewMatrixGeneration counts new items by source', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const saas = [{ tool: 'Slack', billing: 500, users: 10, reason: 'Cut idle seats' }];
+    const preview = DRH.previewMatrixGeneration(tabs, saas, [], mockDiagramEditor);
+    assert.ok(preview.counts.total >= 2);
+    assert.ok(preview.counts.workflow >= 1);
+    assert.ok(preview.counts.saas >= 1);
+  });
+
+  it('generateMatrixFromDiagnosis replace mode discards existing items', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const existing = [{ id: 'old', text: 'Keep me', effort: 2, impact: 4 }];
+    const items = DRH.generateMatrixFromDiagnosis(tabs, [], existing, mockDiagramEditor, { replace: true });
+    assert.ok(!items.some((i) => i.id === 'old'));
+    assert.ok(items.length >= 1);
+  });
+
+  it('buildOwnerSuggestions merges org chart and lane owners', () => {
+    const suggestions = DRH.buildOwnerSuggestions(
+      [{ name: 'Jane', role: 'CEO' }],
+      [{ id: 'a', name: 'Sales', present: {} }],
+      {},
+      mockDiagramEditor,
+    );
+    assert.ok(suggestions.includes('Jane'));
+    assert.ok(suggestions.includes('Maria'));
+  });
+
+  it('buildInsightMatrixItem creates plan row from finding text', () => {
+    const item = DRH.buildInsightMatrixItem('Staff feedback theme: Slow approvals', 0);
+    assert.match(item.text, /Address staff feedback/);
+    assert.equal(item.source, 'insight');
+  });
+
+  it('buildNextPhaseHint recommends Mod 2 when documentation fixes dominate', () => {
+    const matrix = [
+      { id: '1', text: 'Assign RACI for approvals', effort: 2, impact: 4, expectedSavings: 5000 },
+      { id: '2', text: 'Document handoff playbook', effort: 3, impact: 4, expectedSavings: 4000 },
+      { id: '3', text: 'Cut Zoom seats', effort: 2, impact: 3, expectedSavings: 3000 },
+    ];
+    const hint = DRH.buildNextPhaseHint(matrix, [{ key: 'MOD 2', title: 'How Your Business Runs' }]);
+    assert.match(hint, /Module 2|How Your Business Runs/);
+  });
 });

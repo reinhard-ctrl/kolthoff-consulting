@@ -79,6 +79,7 @@
             const majorProjects = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) >= 3);
             const fillIns = activeItems.filter(it => Number(it.effort) < 3 && Number(it.impact) < 3);
             const moneyPits = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) < 3);
+            const coiBreakdown = DR.buildCoiBreakdown?.(annualChaosTax, saasAnnualWaste, synthesis.expectedGrowth, formatCurrency) || { projected: projected3YearLoss, assumptionSentence: '' };
 
             const severityClass = { amber: 'border-amber-200 bg-amber-50', rose: 'border-rose-200 bg-rose-50/50', slate: 'border-slate-200 bg-slate-50' };
             const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
@@ -323,7 +324,7 @@
 
                     {printConfig.showSynthesis && (
                         <div className="report-page print-force-break">
-                            <ReportSectionHeader number="F" title="Operational Maturity & Cost of Inaction" subtitle="How ready your business is to scale — and what happens if nothing changes." />
+                            <ReportSectionHeader number="F" title="Operational Maturity & 3-Year Leakage Forecast" subtitle="How ready your business is to scale — and what happens if nothing changes." />
                             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xs font-bold uppercase tracking-wider">Maturity Scorecard</h3>
@@ -337,9 +338,11 @@
                                 </div>
                             </div>
                             <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Cost of Inaction</h3>
-                                <p className="text-xs text-slate-700 leading-relaxed mb-4">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong>, growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
-                                <div className="bg-white border border-rose-200 rounded-lg p-4 text-center"><div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Projected 3-Year Loss</div><div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(projected3YearLoss)}</div></div>
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Operational Leakage Forecast</h3>
+                                <p className="text-xs text-slate-700 leading-relaxed mb-2">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong> (process + subscriptions), growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
+                                {coiBreakdown.formulaLabel && <p className="text-[10px] text-slate-500 font-mono mb-2">{coiBreakdown.formulaLabel}</p>}
+                                {coiBreakdown.assumptionSentence && <p className="text-[10px] text-slate-600 mb-4 italic">{coiBreakdown.assumptionSentence}</p>}
+                                <div className="bg-white border border-rose-200 rounded-lg p-4 text-center"><div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Projected 3-Year Operational Loss</div><div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(coiBreakdown.projected ?? projected3YearLoss)}</div></div>
                             </div>
                             <div className="mt-6 border-l-4 border-brandTeal-600 bg-teal-50/50 p-5 rounded-r-xl page-break-inside-avoid">
                                 <h3 className="text-xs font-bold uppercase text-brandTeal-900 mb-2">Recommended Next Phase: {modByKey(synthesis.nextModuleId).title}</h3>
@@ -371,7 +374,7 @@
                                     { label: 'Quick Wins', items: quickWins, color: 'teal' },
                                     { label: 'Major Projects', items: majorProjects, color: 'blue' },
                                     { label: 'Fill-ins', items: fillIns, color: 'slate' },
-                                    { label: 'Deprioritize', items: moneyPits, color: 'rose' },
+                                    { label: 'Low ROI — defer', items: moneyPits, color: 'rose' },
                                 ].map(({ label, items, color }) => (
                                     <div key={label} className={`border rounded-lg p-3 page-break-inside-avoid border-${color}-200`}>
                                         <strong className={`text-${color}-800 text-[10px] uppercase block mb-2`}>{label}</strong>
