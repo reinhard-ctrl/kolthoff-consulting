@@ -127,6 +127,20 @@ assert.equal(addendumRecord.templateId, 'training-day');
 assert.equal(addendumRecord.partySource, 'client');
 assert.ok(addendumRecord.tasks.find((t) => t.id === 'm3-05')?.selected);
 
+const hrCoachingAddendum = H.createAddendumRecord({
+  parentQuoteId: 'KC-2026-APARRI',
+  addenda: [],
+  templateId: 'hr-coaching-package',
+  catalogTasks: [
+    { id: 'addon-hr-01', deliverable: 'HR Manager Coaching Sessions', category: 'ADD-ON - HR Coaching', selected: false, estHours: 8, tier: 'senior' },
+    { id: 'addon-hr-02', deliverable: 'Performance Conversation Toolkit', category: 'ADD-ON - HR Coaching', selected: false, estHours: 4, tier: 'associate' },
+    { id: 'addon-hr-03', deliverable: 'Quarterly HR Operating Rhythm', category: 'ADD-ON - HR Coaching', selected: false, estHours: 2, tier: 'associate' },
+  ],
+});
+assert.equal(hrCoachingAddendum.templateId, 'hr-coaching-package');
+assert.equal(hrCoachingAddendum.title, 'HR Coaching Package');
+assert.ok(hrCoachingAddendum.tasks.filter((t) => t.selected).length === 3);
+
 const secondAddendum = H.createAddendumRecord({
   parentQuoteId: 'KC-2026-APARRI',
   addenda: [addendumRecord],
