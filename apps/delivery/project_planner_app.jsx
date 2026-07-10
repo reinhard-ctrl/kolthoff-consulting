@@ -4,10 +4,10 @@
     const PC = window.ProductCatalog;
     const PRODUCT = window.ProductConfig?.getProductConfig?.() || { branding: { name: 'Studio', accent: 'North' }, plannerTabs: ['nda', 'packages', 'sandbox', 'package', 'addendum', 'invoice'], plannerSubtitle: 'Quotes' };
     const AGENCY_MOD_FALLBACK = {
-      mod1: { title: 'Discovery & Audit', shortTitle: 'Discovery', description: 'Map current workflows, tools, and bottlenecks before scoping the engagement.' },
-      mod2: { title: 'Process Design', shortTitle: 'Process', description: 'Design streamlined playbooks, roles, and approval paths for your team.' },
-      mod3: { title: 'Build & Implementation', shortTitle: 'Build', description: 'Configure deliverables, integrations, and workspace with hands-on setup.' },
-      mod4: { title: 'Ongoing Support', shortTitle: 'Support', description: 'Hosting, check-ins, and continuous improvements after launch.' },
+      mod1: { title: 'Business Leak Scan', shortTitle: 'Leak Scan', description: 'Map org chart, as-is workflows, and software spend — deliver a Leak Scan Report and 90-Day Recovery Plan.' },
+      mod2: { title: 'How Your Business Runs', shortTitle: 'Process Architecture', description: 'Turn Leak Scan findings into order playbooks, sign-off roles, and an employee handbook.' },
+      mod3: { title: 'Your Team Workspace', shortTitle: 'Workspace', description: 'Launch a branded workspace with digitized forms, training, and post go-live support.' },
+      mod4: { title: 'Care Plan', shortTitle: 'Care Plan', description: 'Hosting, bi-weekly check-ins, and semi-annual health checks after launch.' },
     };
     const isAgencyStarterContext = () => Boolean(
       PRODUCT.starterMode ||
@@ -180,7 +180,7 @@
     function getShortDeliverableName(name) {
       const label = name == null ? '' : String(name);
       const mappings = {
-        'Simple Privacy & Directory': 'Team List & Privacy Rules',
+        'Simple Privacy & Directory': 'Staff Directory & Privacy Rules',
         'Anonymous Suggestion Box': 'Staff Feedback Channel',
         'Work Shadowing Review': 'Daily Work Friction Study',
         'Software Bill Savings Audit': 'Duplicate Software Spend Review',
@@ -218,7 +218,7 @@
     const INITIAL_TASKS = [
       {
         id: 'm1-01', category: MOD_1,
-        deliverable: 'Team List & Privacy Ground Rules',
+        deliverable: 'Staff Directory & Privacy Rules',
         description: 'We build a template-based staff directory with roles and one-page privacy ground rules for customer and employee data — not legal advice.',
         estHours: 2, tier: 'associate', selected: true,
         scopeDetails: { activities: 'Populate a staff directory template and draft one-page privacy ground rules.', expectations: 'Share staff names, roles, and how you store customer info today.', output: 'A ready-to-use staff directory with clear privacy rules.' }

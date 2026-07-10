@@ -758,7 +758,7 @@
                     <div className="flex justify-between items-start gap-4 mb-6">
                         <div>
                             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-teal-700">Module 1 Deliverable · m1-01</p>
-                            <h1 className="text-2xl font-serif font-bold text-slate-900 mt-1">Team List & Privacy Ground Rules</h1>
+                            <h1 className="text-2xl font-serif font-bold text-slate-900 mt-1">Staff Directory & Privacy Rules</h1>
                             <p className="text-sm text-slate-600 mt-1">{clientCompany || 'Client workspace'}</p>
                         </div>
                         <div className="text-right text-[10px] text-slate-500 font-mono">
@@ -1816,6 +1816,34 @@
                         </div>
                     )}
 
+                    {printConfig.showExecutiveSummary && (() => {
+                        const scorecard = DRH().buildMaturityScorecardRows?.(synthesis) || [];
+                        if (!scorecard.length) return null;
+                        return (
+                            <div className="report-page page-break-inside-avoid">
+                                <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
+                                <table className="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Dimension</th>
+                                            <th className="w-[12%] text-center">Score</th>
+                                            <th>What we observed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {scorecard.map((row) => (
+                                            <tr key={row.key}>
+                                                <td className="font-semibold text-slate-900">{row.label}</td>
+                                                <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
+                                                <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })()}
+
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
                         <div className="report-page">
                             <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
@@ -1922,7 +1950,7 @@
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
                         <div className="report-page">
-                            <ReportSectionHeader number="C" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            <ReportSectionHeader number="C" title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
                             {topFixes[0] && (
                                 <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
                                     <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
@@ -2202,6 +2230,7 @@
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
                                 <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
                                 <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
+                                <p className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-700">{DRH().REPORT_METHODOLOGY_DISCLAIMER || 'Leakage figures are estimates. Validate with leadership before acting. Advisory only — not legal, HR, tax, or accounting advice.'}</p>
                             </div>
                         </div>
                     )}

@@ -6,7 +6,7 @@ Unified Firebase platform for client delivery, workspace, and internal operation
 
 ```
 apps/public/       Marketing site, client portal, intake forms
-apps/delivery/     SOW planner, diagnosis reports
+apps/delivery/     SOW planner, Leak Scan Report (diagnosis reports)
 apps/operations/   CRM, policy studio, workflow builder
 apps/analytics/    Firm analytics, capacity, time tracking
 admin/             Unified admin Vite SPA (all admin tools in React)

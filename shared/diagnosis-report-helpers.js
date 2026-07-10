@@ -77,6 +77,20 @@
     return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
   }
 
+  const REPORT_METHODOLOGY_DISCLAIMER =
+    'Leakage figures are estimates based on stated delay minutes, salary assumptions, and subscription seat counts you provided. Validate numbers with your leadership team before acting. This report is operational advisory only — not legal, HR, tax, or accounting advice.';
+
+  function buildMaturityScorecardRows(synthesis) {
+    const s = synthesis || {};
+    return Object.entries(MATURITY_RUBRIC).map(([key, rubric]) => {
+      const score = Number(s[key]) || 3;
+      let observed = rubric.low;
+      if (score >= 4) observed = rubric.high;
+      else if (score === 3) observed = `Between baseline and target — ${rubric.low}`;
+      return { key, label: rubric.label, score, observed };
+    });
+  }
+
   function buildProcessRankings(tabs, DiagramEditor) {
     const rows = (tabs || []).map((tab) => {
       const { vm, tasks } = getProcessNodes(tab, DiagramEditor);
@@ -532,9 +546,9 @@
     const mod4 = list.find((m) => m.key === 'MOD 4');
     const pitches = {
       'MOD 1': `Module 1 identified ${fmt(totalAnnualWaste)} in annual operational leakage. Use the 90-Day Recovery Plan below before investing in new tools or headcount.`,
-      'MOD 2': `To recover ${fmt(totalAnnualWaste)} lost annually to manual delays, we recommend ${mod2?.title || 'Module 2'} — clear order playbooks, roles charts, and an employee handbook your team can follow.`,
-      'MOD 3': `With core processes defined, the next step is ${mod3?.title || 'Module 3'}. We launch your workspace, digitize approval forms, and train your team for daily use.`,
-      'MOD 4': `To maintain operational integrity after go-live, we recommend ${mod4?.title || 'Module 4'} — hosting, bi-weekly check-ins, and semi-annual health checks.`,
+      'MOD 2': `Your Leak Scan Report and 90-Day Recovery Plan identified ${fmt(totalAnnualWaste)} in recoverable leakage. ${mod2?.title || 'Module 2'} turns those findings into order playbooks, sign-off roles, and a Philippines-ready employee handbook your team can follow daily.`,
+      'MOD 3': `With playbooks and policies in place, ${mod3?.title || 'Module 3'} launches your branded workspace — digitized approval forms, training, and two-week post go-live support so fixes stick.`,
+      'MOD 4': `After go-live, ${mod4?.title || 'Module 4'} keeps momentum with hosting, bi-weekly manager check-ins, and semi-annual health checks — so leakage does not creep back.`,
     };
     return pitches[modKey] || '';
   }
@@ -769,7 +783,7 @@
 
     push(
       'm1-01',
-      'Team List (m1-01)',
+      'Staff Directory (m1-01)',
       isMod1TaskInScope(tasks, 'm1-01'),
       rosterRows.length > 0 && !!String(orgChartSvg || '').trim(),
       rosterRows.length > 0 ? 'Export org chart diagram' : 'Add staff in Org Chart section',
@@ -851,7 +865,7 @@
     }
     if (recapture.annual > 0 && top5.length > 0) {
       parts.push(
-        ` Executing the Top ${top5.length} fixes in this report can recover approximately ${formatCurrency(recapture.annual)} in Year 1`,
+        ` Executing the 90-Day Recovery Plan (Top ${top5.length} fixes in this Leak Scan Report) can recover approximately ${formatCurrency(recapture.annual)} in Year 1`,
       );
       if (recapture.pctOfTotalLeakage > 0) {
         parts.push(` (~${recapture.pctOfTotalLeakage}% of total leakage) within 90 days without adding headcount.`);
@@ -892,7 +906,7 @@
       warnings.push('Staff Feedback (m1-02) is in SOW scope — add at least one anonymous feedback theme.');
     }
     if (m101InScope && !(ctx.orgChartMembers || []).some((m) => String(m.name || m.label || '').trim())) {
-      warnings.push('Team List (m1-01) is in SOW scope — add staff in the Org Chart section and print the directory.');
+      warnings.push('Staff Directory (m1-01) is in SOW scope — add staff in the Org Chart section and print the directory.');
     }
 
     const ready =
@@ -1592,11 +1606,13 @@
     QUADRANT,
     TARGET_WEEK_OPTIONS,
     MATURITY_INDEX_EXPLAINER,
+    REPORT_METHODOLOGY_DISCLAIMER,
     MATURITY_RUBRIC,
     getQuadrant,
     stepMonthlyLoss,
     computeCoiForecast,
     computeMaturityIndex,
+    buildMaturityScorecardRows,
     computeRecaptureSummary,
     buildProcessRankings,
     buildStepLeakageList,

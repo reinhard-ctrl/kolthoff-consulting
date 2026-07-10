@@ -57,7 +57,7 @@
         excludeFromModules: ['m1-06']
       },
       defaults: {
-        proposalObjectives: 'Diagnose where time and money leak, then document how orders, purchases, and approvals run — so your team follows one path.',
+        proposalObjectives: 'Run a Business Leak Scan, then document how orders, purchases, and approvals run — playbooks and handbook turn your 90-Day Recovery Plan into daily rhythm.',
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'
@@ -96,7 +96,7 @@
         excludeFromModules: ['m1-06']
       },
       defaults: {
-        proposalObjectives: 'End-to-end: diagnose leaks, document how your business runs, and launch a workspace your team is trained to use daily.',
+        proposalObjectives: 'End-to-end: Leak Scan Report and 90-Day Recovery Plan, then playbooks and a workspace your team is trained to use daily.',
         frictionBuffer: 10,
         discountPercent: 0,
         milestoneSplit: 'auto'

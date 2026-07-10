@@ -103,6 +103,28 @@
                         </div>
                     )}
 
+                    {printConfig.showExecutiveSummary && (() => {
+                        const scorecard = window.DiagnosisReportHelpers?.buildMaturityScorecardRows?.(synthesis) || [];
+                        if (!scorecard.length) return null;
+                        return (
+                            <div className="report-page print-force-break page-break-inside-avoid">
+                                <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
+                                <table className="report-table">
+                                    <thead><tr><th>Dimension</th><th className="w-[12%] text-center">Score</th><th>What we observed</th></tr></thead>
+                                    <tbody>
+                                        {scorecard.map((row) => (
+                                            <tr key={row.key}>
+                                                <td className="font-semibold text-slate-900">{row.label}</td>
+                                                <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
+                                                <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        );
+                    })()}
+
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
@@ -127,7 +149,7 @@
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
                         <div className="report-page print-force-break">
-                            <ReportSectionHeader number="A" title="Where the Money Goes" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            <ReportSectionHeader number="A" title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
                             <table className="report-table">
                                 <thead>
                                     <tr>
@@ -412,6 +434,7 @@
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
                                 <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
                                 <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
+                                <p className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-700">{window.DiagnosisReportHelpers?.REPORT_METHODOLOGY_DISCLAIMER || 'Leakage figures are estimates. Validate with leadership before acting. Advisory only — not legal, HR, tax, or accounting advice.'}</p>
                             </div>
                         </div>
                     )}

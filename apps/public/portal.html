@@ -390,17 +390,45 @@
             const safeMetrics = data.metrics || { annualLeakageIdentified: 0, chaosTaxEliminated: 0, saasSavingsIdentified: 0 };
             const workspaceUrl = data.workspaceUrl || '';
             const mod2Unlocked = Boolean(data.mod2UnlockedAt) || normalizeRoadmapStatus(data.roadmap?.[0]?.status) === 'completed';
+            const phase = String(data.currentPhase || '');
+            const mod1InProgress = !mod2Unlocked && phase.includes('MOD 1');
+            const mod3InProgress = phase.includes('MOD 3');
+            const mod2InProgress = mod2Unlocked && phase.includes('MOD 2') && !phase.includes('MOD 3');
 
             return (
                 <div className="space-y-8 fade-in">
                     {uploadError && <p className="text-sm text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-3">{uploadError}</p>}
                     {uploadSuccess && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">{uploadSuccess}</p>}
-                    {mod2Unlocked && data.currentPhase && String(data.currentPhase).includes('MOD 2') && (
+                    {mod2Unlocked && data.mod1HandoffNotice && (
+                        <div className="glass-panel rounded-2xl p-6 border border-emerald-500/30 bg-emerald-500/5">
+                            <p className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest font-bold mb-2">Leak Scan Report ready</p>
+                            <h3 className="text-lg font-serif font-bold text-white mb-2">Your 90-Day Recovery Plan is in the vault</h3>
+                            <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">{data.mod1HandoffNotice}</p>
+                        </div>
+                    )}
+                    {mod1InProgress && (
+                        <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/20 bg-brandTeal-500/5">
+                            <p className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest font-bold mb-2">Business Leak Scan in progress</p>
+                            <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">
+                                Your consultant is mapping your org chart, as-is workflows, and software spend. Your Leak Scan Report and 90-Day Recovery Plan will appear here when Mod 1 is complete.
+                            </p>
+                        </div>
+                    )}
+                    {mod2Unlocked && mod2InProgress && (
                         <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
                             <p className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest font-bold mb-2">Module 2 unlocked</p>
                             <h3 className="text-lg font-serif font-bold text-white mb-2">How Your Business Runs — now in progress</h3>
                             <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">
                                 {data.mod1CompleteNotice || 'Module 1 (Business Leak Scan) is complete. Your consultant is building playbooks, policies, and to-be workflows for the next phase.'}
+                            </p>
+                        </div>
+                    )}
+                    {mod3InProgress && (
+                        <div className="glass-panel rounded-2xl p-6 border border-brandTeal-500/30 bg-brandTeal-500/5">
+                            <p className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest font-bold mb-2">Workspace go-live in progress</p>
+                            <h3 className="text-lg font-serif font-bold text-white mb-2">Your Team Workspace — launching</h3>
+                            <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">
+                                {data.mod3InProgressNotice || 'Your consultant is configuring your branded workspace, digitized approval forms, and training schedule. Core Workspace access will appear here when ready.'}
                             </p>
                         </div>
                     )}
