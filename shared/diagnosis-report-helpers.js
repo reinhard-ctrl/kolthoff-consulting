@@ -66,9 +66,31 @@
   }
 
   function computeCoiForecast(annualChaosTax, saasAnnualWaste, expectedGrowth) {
-    const baseAnnual = (Number(annualChaosTax) || 0) + (Number(saasAnnualWaste) || 0);
-    const growthMultiplier = 1 + (Number(expectedGrowth) || 0) * 0.1;
-    return Math.round(baseAnnual * 3 * growthMultiplier);
+    return buildCoiBreakdown(annualChaosTax, saasAnnualWaste, expectedGrowth).projected;
+  }
+
+  function buildCoiBreakdown(annualChaosTax, saasAnnualWaste, expectedGrowth, formatCurrencyFn) {
+    const fmt = formatCurrencyFn || ((v) => String(v));
+    const processAnnual = Number(annualChaosTax) || 0;
+    const saasAnnual = Number(saasAnnualWaste) || 0;
+    const baseAnnual = processAnnual + saasAnnual;
+    const growth = Number(expectedGrowth) || 0;
+    const growthMultiplier = 1 + growth * 0.1;
+    const threeYearBase = baseAnnual * 3;
+    const projected = Math.round(threeYearBase * growthMultiplier);
+    return {
+      processAnnual,
+      saasAnnual,
+      baseAnnual,
+      growth,
+      growthMultiplier,
+      threeYearBase,
+      projected,
+      assumptionSentence: growth > 0
+        ? `Assumes ${growth} additional headcount without process fixes (+${Math.round((growthMultiplier - 1) * 100)}% compounding).`
+        : 'Assumes flat headcount — no team growth without process fixes.',
+      formulaLabel: `(${fmt(processAnnual)} process + ${fmt(saasAnnual)} subscriptions) × 3 years × ${growthMultiplier.toFixed(2)} growth factor`,
+    };
   }
 
   function computeMaturityIndex(synthesis) {
@@ -402,12 +424,88 @@
     return items;
   }
 
+  function previewMatrixGeneration(tabs, subSaaS, existingItems, DiagramEditor, options) {
+    const existing = Array.isArray(existingItems) ? existingItems : [];
+    const existingIds = new Set(existing.map((i) => i.id));
+    const mergedItems = generateMatrixFromDiagnosis(tabs, subSaaS, existing, DiagramEditor, options);
+    const newItems = mergedItems.filter((i) => !existingIds.has(i.id));
+    const counts = { workflow: 0, saas: 0, feedback: 0, raci: 0, manual: 0, total: newItems.length };
+    newItems.forEach((i) => {
+      const src = i.source || 'manual';
+      if (Object.prototype.hasOwnProperty.call(counts, src)) counts[src] += 1;
+      else counts.manual += 1;
+    });
+    const replaceItems = generateMatrixFromDiagnosis(tabs, subSaaS, [], DiagramEditor, { ...options, replace: true });
+    return { counts, newItems, mergedItems, replaceCount: replaceItems.length };
+  }
+
+  function buildOwnerSuggestions(orgChartMembers, tabs, raciAssignments, DiagramEditor) {
+    const suggestions = new Set();
+    (orgChartMembers || []).forEach((m) => {
+      const name = String(m.name || m.label || '').trim();
+      const role = String(m.role || m.title || '').trim();
+      if (name) suggestions.add(name);
+      if (role && role !== name) suggestions.add(role);
+    });
+    (tabs || []).forEach((tab) => {
+      const { vm } = getProcessNodes(tab, DiagramEditor);
+      (vm.lanes || []).forEach((lane) => {
+        const owner = String(lane.owner || '').trim();
+        if (owner) suggestions.add(owner);
+      });
+    });
+    return [...suggestions].sort((a, b) => a.localeCompare(b));
+  }
+
+  function buildInsightMatrixItem(insightText, index) {
+    const raw = String(insightText || '').trim();
+    let text = raw;
+    if (raw.startsWith('Staff feedback theme:')) {
+      text = `Address staff feedback: ${raw.replace(/^Staff feedback theme:\s*/i, '').trim()}`;
+    } else if (raw.length > 120) {
+      text = `${raw.slice(0, 117)}…`;
+    }
+    const effort = 3;
+    const impact = 3.5;
+    return {
+      id: `insight-${Date.now()}-${index}`,
+      text,
+      effort,
+      impact,
+      owner: '',
+      targetWeek: suggestTargetWeek(effort, impact, index),
+      expectedSavings: 0,
+      source: 'insight',
+      sourceDetail: 'Live finding',
+    };
+  }
+
+  function buildNextPhaseHint(matrixItems, modules) {
+    const top5 = getTop5Fixes(matrixItems || []);
+    if (!top5.length) return null;
+    const mod2 = (modules || []).find((m) => m.key === 'MOD 2');
+    const docKeywords = ['document', 'raci', 'handoff', 'playbook', 'accountable', 'sop'];
+    const docNeeded = top5.filter((i) => {
+      const lower = String(i.text || '').toLowerCase();
+      return docKeywords.some((kw) => lower.includes(kw));
+    }).length;
+    if (docNeeded >= 2) {
+      return `${docNeeded} of your Top ${top5.length} fixes need playbook documentation or RACI clarity — ${mod2?.title || 'Module 2'} is the natural next step.`;
+    }
+    if (top5.some((i) => i.source === 'saas')) {
+      return 'Subscription overlap appears in your Top 5 — Mod 2 playbooks help lock in seat reductions after quick wins.';
+    }
+    return null;
+  }
+
   function generateMatrixFromDiagnosis(tabs, subSaaS, existingItems, DiagramEditor, options) {
     const opts = options || {};
     const raciAssignments = opts.raciAssignments || {};
     const staffFeedbackThemes = opts.staffFeedbackThemes || [];
     const synthesis = opts.synthesis || {};
-    let items = [...(Array.isArray(existingItems) ? existingItems : [])];
+    let items = opts.replace
+      ? []
+      : [...(Array.isArray(existingItems) ? existingItems : [])];
     const existingTexts = new Set(items.map((i) => (i.text || '').toLowerCase().trim()));
     let workflowIdx = 0;
 
@@ -1464,7 +1562,7 @@
     const i = Number(impact) || 3;
     if (e < 3 && i >= 3) return { key: 'quickWin', label: 'Quick Wins', color: '#059669', bg: '#ecfdf5' };
     if (e >= 3 && i >= 3) return { key: 'majorProject', label: 'Major Projects', color: '#2563eb', bg: '#eff6ff' };
-    if (e >= 3) return { key: 'moneyPit', label: 'Deprioritize', color: '#dc2626', bg: '#fff1f2' };
+    if (e >= 3) return { key: 'moneyPit', label: 'Low ROI — defer', color: '#dc2626', bg: '#fff1f2' };
     return { key: 'fillIn', label: 'Fill-ins', color: '#64748b', bg: '#f8fafc' };
   }
 
@@ -1611,6 +1709,11 @@
     getQuadrant,
     stepMonthlyLoss,
     computeCoiForecast,
+    buildCoiBreakdown,
+    previewMatrixGeneration,
+    buildOwnerSuggestions,
+    buildInsightMatrixItem,
+    buildNextPhaseHint,
     computeMaturityIndex,
     buildMaturityScorecardRows,
     computeRecaptureSummary,
