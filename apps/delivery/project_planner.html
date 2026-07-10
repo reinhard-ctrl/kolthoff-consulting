@@ -1652,6 +1652,9 @@
       const [sponsorRep, setSponsorRep] = useState(activeProfile.sponsorRep || activeProfile.documentPartyRep || '');
       const [sponsorAddress, setSponsorAddress] = useState(activeProfile.sponsorAddress || activeProfile.documentPartyAddress || '');
       const [sponsorTin, setSponsorTin] = useState(activeProfile.sponsorTin || activeProfile.documentPartyTin || '');
+      const [contractPartySource, setContractPartySource] = useState(
+        activeProfile.contractPartySource === 'sponsor' ? 'sponsor' : 'client',
+      );
 
       const [addenda, setAddenda] = useState(activeProfile.addenda || []);
       const [activeAddendumId, setActiveAddendumId] = useState(activeProfile.activeAddendumId || null);
@@ -1887,6 +1890,7 @@
           useCustomSponsor: Boolean(p.useCustomSponsor ?? p.useCustomDocumentParty),
           sponsorCompany: p.sponsorCompany || p.documentPartyCompany || '', sponsorRep: p.sponsorRep || p.documentPartyRep || '',
           sponsorAddress: p.sponsorAddress || p.documentPartyAddress || '', sponsorTin: p.sponsorTin || p.documentPartyTin || '',
+          contractPartySource: p.contractPartySource === 'sponsor' ? 'sponsor' : 'client',
           staffCount: profileStaffCount, monthlySalary: profileMonthlySalary, wastedHours: profileWastedHours,
           principalRate: p.principalRate ?? H.DEFAULT_RATES.principalRate, seniorRate: p.seniorRate ?? H.DEFAULT_RATES.seniorRate,
           associateRate: p.associateRate ?? H.DEFAULT_RATES.associateRate, partnerRate: p.partnerRate ?? H.DEFAULT_RATES.partnerRate,
@@ -1963,6 +1967,7 @@
         setSponsorRep(profileState.sponsorRep);
         setSponsorAddress(profileState.sponsorAddress);
         setSponsorTin(profileState.sponsorTin);
+        setContractPartySource(profileState.contractPartySource);
         setPrincipalRate(profileState.principalRate);
         setSeniorRate(profileState.seniorRate);
         setAssociateRate(profileState.associateRate);
@@ -2010,11 +2015,11 @@
         milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm,
         ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate,
         useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
-        useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin,
+        useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
         staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate,
         selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId,
         moduleBundleNames,
-      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
+      }), [clientCompany, clientRep, clientAddress, clientTin, quoteId, quoteDate, quoteValidity, includeTax, preparerTitle, targetStartDate, proposalObjectives, proposalSponsor, preDiagnosticList, frictionBuffer, principalToSeniorDelegate, seniorToAssociateDelegate, overrideTimeline, weeklyHours, clientReviewWeeks, tasks, discountPercent, dpaRetentionDays, slaCureDays, slaRecurrenceMonths, subscriptionMonths, slaContent, printSow, printTimeline, printSla, printQuote, printCover, milestoneSplit, customSplit1, customSplit2, customSplit3, ndaEffectiveDate, ndaPurpose, ndaTerm, ndaJurisdiction, invoiceMilestone, retainerBillingPeriod, customInvoiceAmount, invoiceNumberSuffix, invoiceDueDate, useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin, useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource, staffCount, monthlySalary, wastedHours, principalRate, seniorRate, associateRate, partnerRate, selectedPackageId, packageCustomized, packageAppliedAt, engagementType, productId, addenda, activeAddendumId, invoiceAddendumId, moduleBundleNames]);
 
       const buildCurrentPayload = useCallback(() => {
         return H.buildProfilePayload(activeProfileId, activeProfile.workspaceName || '', buildCurrentProfileState(), annualOperationalLeakage, activeProfile);
@@ -2137,6 +2142,7 @@
         setUseCustomSponsor(Boolean(d.useCustomSponsor ?? d.useCustomDocumentParty));
         setSponsorCompany(d.sponsorCompany || d.documentPartyCompany || ''); setSponsorRep(d.sponsorRep || d.documentPartyRep || '');
         setSponsorAddress(d.sponsorAddress || d.documentPartyAddress || ''); setSponsorTin(d.sponsorTin || d.documentPartyTin || '');
+        setContractPartySource(d.contractPartySource === 'sponsor' ? 'sponsor' : 'client');
         setStaffCount(d.staffCount ?? 15); setMonthlySalary(d.monthlySalary ?? 25000); setWastedHours(d.wastedHours ?? 2.0);
         setPrincipalRate(d.principalRate ?? H.DEFAULT_RATES.principalRate); setSeniorRate(d.seniorRate ?? H.DEFAULT_RATES.seniorRate);
         setAssociateRate(d.associateRate ?? H.DEFAULT_RATES.associateRate); setPartnerRate(d.partnerRate ?? H.DEFAULT_RATES.partnerRate);
@@ -2333,7 +2339,7 @@
         const validation = H.validatePrintReadiness(view, {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
-          useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin,
+          useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
           invoiceDueDate: view === 'addendum' ? (activeAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
@@ -2373,7 +2379,7 @@
         const validation = H.validatePrintReadiness('invoice', {
           clientCompany, clientRep, clientAddress, clientTin,
           useCustomInvoiceBillTo, invoiceBillToCompany, invoiceBillToRep, invoiceBillToAddress, invoiceBillToTin,
-          useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin,
+          useCustomSponsor, sponsorCompany, sponsorRep, sponsorAddress, sponsorTin, contractPartySource,
           invoiceDueDate: isAddendumInvoice ? (invoiceTargetAddendum?.invoiceDueDate || '') : invoiceDueDate,
           ndaEffectiveDate, tasks,
           printSow, printTimeline, printSla, printQuote, activePMO, activeGov, printCover,
@@ -4115,6 +4121,26 @@
                     </div>
                   )}
                   <div><label className="text-[10px] font-mono text-slate-400 uppercase block mb-1 text-left font-semibold">Sponsor Title</label><input type="text" value={proposalSponsor} onChange={(e) => setProposalSponsor(e.target.value)} placeholder="e.g. General Manager (Operations)" className="w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-2.5 text-slate-200 focus:outline-none focus:border-brandTeal-500 font-sans" /></div>
+                  <div className="pt-2 border-t border-brandNavy-800 space-y-2">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block font-semibold">Contract signatory</span>
+                    <p className="text-[9px] text-slate-500 leading-relaxed">Who legally signs the e-contract in Contract Ledger.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['client', 'sponsor'].map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setContractPartySource(option)}
+                          className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                            contractPartySource === option
+                              ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                              : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600'
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </fieldset>
               )}
 

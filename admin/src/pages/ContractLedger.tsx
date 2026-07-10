@@ -11,12 +11,28 @@ import {
   type BillingMilestone,
 } from '../lib/financials';
 import { getChaosTaxValue, getClientDisplayName, resolveChaosTax } from '../lib/engagement-config';
+import {
+  getContractPartyDisplayName,
+  getContractPartySource,
+  resolveClientParty,
+  resolveContractParty,
+  resolveSponsorParty,
+  type ContractPartySource,
+} from '../lib/contract-party';
 
 interface WorkbookProfile {
   id: string;
   clientCompany?: string;
   clientName?: string;
   clientRep?: string;
+  clientAddress?: string;
+  clientTin?: string;
+  useCustomSponsor?: boolean;
+  sponsorCompany?: string;
+  sponsorRep?: string;
+  sponsorAddress?: string;
+  sponsorTin?: string;
+  contractPartySource?: ContractPartySource | string;
   quoteId?: string;
   engagementType?: string;
   productId?: string;
@@ -53,6 +69,8 @@ interface ContractRecord {
 interface LedgerRow {
   profileId: string;
   clientCompany: string;
+  contractPartyLabel: string;
+  contractPartySource: ContractPartySource;
   quoteId: string;
   contractStatus: string;
   contractId: string | null;
@@ -60,6 +78,62 @@ interface LedgerRow {
 }
 
 const CLIENT_SIGN_BASE = '/apps/public/contract_sign.html';
+
+function ContractPartySelector({
+  profile,
+  disabled,
+  onSave,
+}: {
+  profile: WorkbookProfile;
+  disabled: boolean;
+  onSave: (source: ContractPartySource) => Promise<void>;
+}) {
+  const source = getContractPartySource(profile);
+  const client = resolveClientParty(profile);
+  const sponsor = resolveSponsorParty(profile);
+  const active = resolveContractParty(profile);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {(['client', 'sponsor'] as ContractPartySource[]).map((option) => (
+          <button
+            key={option}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSave(option)}
+            className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide border transition-colors disabled:opacity-50 ${
+              source === option
+                ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600 hover:text-brandTeal-300'
+            }`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      <p className="text-[10px] text-slate-500 leading-relaxed">
+        Contract signatory: <strong className="text-slate-300">{active.company || '—'}</strong>
+        {active.rep ? ` · ${active.rep}` : ''}
+      </p>
+      {source === 'sponsor' && profile.useCustomSponsor && (
+        <p className="text-[9px] text-brandTeal-400/80 font-mono uppercase">
+          Sponsor profile from Documents tab
+        </p>
+      )}
+      {source === 'client' && (
+        <p className="text-[9px] text-slate-600">
+          Client: {client.company || '—'}{client.rep ? ` · ${client.rep}` : ''}
+        </p>
+      )}
+      {source === 'sponsor' && (
+        <p className="text-[9px] text-slate-600">
+          Sponsor: {sponsor.company || '—'}{sponsor.rep ? ` · ${sponsor.rep}` : ''}
+        </p>
+      )}
+    </div>
+  );
+}
 
 function MilestoneSummary({ milestones, retainerMonthly, retainerMonths }: {
   milestones: BillingMilestone[];
@@ -204,9 +278,12 @@ export default function ContractLedger() {
   const ledgerData = useMemo<LedgerRow[]>(() => {
     return profiles.map((profile) => {
       const contract = contracts.find((c) => c.profileId === profile.id);
+      const contractPartySource = getContractPartySource(profile);
       return {
         profileId: profile.id,
         clientCompany: getClientDisplayName(profile),
+        contractPartyLabel: getContractPartyDisplayName(profile),
+        contractPartySource,
         quoteId: profile.quoteId || 'N/A',
         contractStatus: contract?.status || 'draft',
         contractId: contract?.id || null,
@@ -217,6 +294,31 @@ export default function ContractLedger() {
       return (weight[a.contractStatus] || 9) - (weight[b.contractStatus] || 9);
     });
   }, [profiles, contracts]);
+
+  const saveContractPartySource = async (profileId: string, source: ContractPartySource) => {
+    setProcessing(true);
+    try {
+      await setDoc(adminDoc('workbook_profiles', profileId), { contractPartySource: source }, { merge: true });
+      showToast(`Contract signatory set to ${source}.`);
+    } catch {
+      showToast('Could not save contract party — check connection.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const validateContractParty = (profile?: WorkbookProfile) => {
+    if (!profile) return 'Profile not found.';
+    const party = resolveContractParty(profile);
+    if (!party.company?.trim()) return 'Contract signatory company name is missing.';
+    if (!party.rep?.trim()) return 'Contract signatory representative is missing.';
+    if (getContractPartySource(profile) === 'sponsor' && profile.useCustomSponsor) {
+      if (!profile.sponsorCompany?.trim() && !profile.sponsorRep?.trim()) {
+        return 'Sponsor details are empty — configure Sponsor in Project Planner Documents tab.';
+      }
+    }
+    return null;
+  };
 
   const clientSignUrl = (profileId: string, options?: { view?: string; staffPreview?: boolean }) => {
     const params = new URLSearchParams({ contract: profileId });
@@ -232,6 +334,12 @@ export default function ContractLedger() {
   };
 
   const generateSigningLink = async (profileId: string) => {
+    const profile = profiles.find((p) => p.id === profileId);
+    const partyError = validateContractParty(profile);
+    if (partyError) {
+      showToast(partyError);
+      return;
+    }
     setProcessing(true);
     try {
       const contractId = `contract-${profileId}`;
@@ -339,7 +447,7 @@ export default function ContractLedger() {
           <div className="glass-panel p-6 rounded-xl max-w-md text-center">
             <h3 className="font-bold mb-2">Reset contract?</h3>
             <p className="text-xs text-slate-400 mb-4">
-              Revoke signing link for <strong>{resetTarget.clientCompany}</strong>
+              Revoke signing link for <strong>{resetTarget.contractPartyLabel}</strong>
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => resetContract(resetTarget.contractId!)} disabled={processing} className="px-4 py-2 bg-rose-600 rounded text-sm font-bold">
@@ -397,6 +505,7 @@ export default function ContractLedger() {
         <h1 className="text-2xl font-bold mb-2">Contract Ledger</h1>
         <p className="text-sm text-slate-400">
           E-signature tracking for SOW agreements with billing milestone schedules from Project Planner.
+          Choose whether each contract is signed by the client or sponsor before generating a link.
           Client links open at {CLIENT_SIGN_BASE}.
         </p>
       </div>
@@ -424,6 +533,7 @@ export default function ContractLedger() {
             <tr>
               <th className="p-4 w-8" />
               <th className="p-4">Client</th>
+              <th className="p-4">Contract Signatory</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4 text-center">Total Value</th>
               <th className="p-4 text-center">Chaos Tax</th>
@@ -455,6 +565,17 @@ export default function ContractLedger() {
                       </button>
                     </td>
                     <td className="p-4 font-bold">{item.clientCompany}</td>
+                    <td className="p-4 min-w-[200px]">
+                      {profile ? (
+                        <ContractPartySelector
+                          profile={profile}
+                          disabled={processing || item.contractStatus === 'signed'}
+                          onSave={(source) => saveContractPartySource(item.profileId, source)}
+                        />
+                      ) : (
+                        <span className="text-slate-500 text-xs">{item.contractPartyLabel}</span>
+                      )}
+                    </td>
                     <td className="p-4 font-mono text-xs text-slate-400">{item.quoteId}</td>
                     <td className="p-4 text-center font-mono text-brandTeal-400">{formatCurrency(estValue)}</td>
                     <td className="p-4 text-center">
@@ -538,7 +659,7 @@ export default function ContractLedger() {
                   </tr>
                   {isExpanded && profile && (
                     <tr>
-                      <td colSpan={8} className="p-0 border-t border-brandNavy-800/50">
+                      <td colSpan={9} className="p-0 border-t border-brandNavy-800/50">
                         <MilestoneDetail profile={profile} />
                       </td>
                     </tr>

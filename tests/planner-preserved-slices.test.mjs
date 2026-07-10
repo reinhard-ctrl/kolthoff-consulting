@@ -85,7 +85,7 @@ const plannerState = {
   sponsorCompany: '',
   sponsorRep: '',
   sponsorAddress: '',
-  sponsorTin: '',
+  contractPartySource: 'client',
   staffCount: 15,
   monthlySalary: 25000,
   wastedHours: 2,

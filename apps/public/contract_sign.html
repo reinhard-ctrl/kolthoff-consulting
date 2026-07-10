@@ -249,12 +249,39 @@
             const profileDisplayName = (profile) =>
                 window.EngagementConfig?.getClientDisplayName?.(profile) || profile?.clientCompany || 'Unknown Client';
 
+            const contractPartyFor = (profile) => {
+                if (window.PlannerHelpers?.resolveContractParty) {
+                    return window.PlannerHelpers.resolveContractParty(profile);
+                }
+                return {
+                    company: profile?.clientCompany || '',
+                    rep: profile?.clientRep || '',
+                    address: profile?.clientAddress || '',
+                    tin: profile?.clientTin || '',
+                };
+            };
+
+            const contractPartyLabel = (profile) => {
+                const party = contractPartyFor(profile);
+                return party.company || profileDisplayName(profile);
+            };
+
+            const slaClientFor = (profile) => {
+                if (window.PlannerHelpers?.resolveClientParty) {
+                    return window.PlannerHelpers.resolveClientParty(profile);
+                }
+                return {
+                    company: profile?.clientCompany || '',
+                    rep: profile?.clientRep || '',
+                };
+            };
+
             const ledgerData = useMemo(() => {
                 return profiles.map(profile => {
                     const contract = contracts.find(c => c.profileId === profile.id);
                     return {
                         profileId: profile.id,
-                        clientCompany: profileDisplayName(profile),
+                        clientCompany: contractPartyLabel(profile),
                         quoteId: profile.quoteId || 'N/A',
                         contractStatus: contract ? contract.status : 'draft',
                         signedAt: contract?.signedAt || null,
@@ -474,15 +501,18 @@
                 const frictionBuffer = profileObj.frictionBuffer || 0;
                 const quoteBaseAmount = financials.finalProjectCostBase + financials.retainerCostTotalBase;
                 const quoteVatAmount = financials.includeTax ? Math.round(quoteBaseAmount * 0.12) : 0;
+                const contractParty = contractPartyFor(profileObj);
+                const partySource = profileObj.contractPartySource === 'sponsor' ? 'Sponsor' : 'Client';
+                const slaClient = slaClientFor(profileObj);
 
                 return (
                 <>
                     <div className="border-b-2 border-brandTeal-500 pb-6 mb-8 print:border-slate-300">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For</p>
-                        <h2 className="text-2xl font-bold text-slate-900">{profileObj.clientCompany}</h2>
-                        <p className="text-sm text-slate-600 mt-1">Attention: {profileObj.clientRep}</p>
-                        {profileObj.clientAddress && (
-                            <p className="text-xs text-slate-500 mt-1">{profileObj.clientAddress}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Prepared For ({partySource})</p>
+                        <h2 className="text-2xl font-bold text-slate-900">{contractParty.company}</h2>
+                        <p className="text-sm text-slate-600 mt-1">Attention: {contractParty.rep}</p>
+                        {contractParty.address && (
+                            <p className="text-xs text-slate-500 mt-1">{contractParty.address}</p>
                         )}
                         <div className="flex flex-wrap gap-4 mt-3 text-[10px] font-mono text-slate-500 uppercase">
                             {profileObj.quoteValidity && <span>Valid Until: {profileObj.quoteValidity}</span>}
@@ -679,8 +709,8 @@
                             <div className="bg-slate-50 p-5 rounded-lg border border-slate-200 whitespace-pre-wrap print:bg-white print:border-slate-300">
                                 {window.PlannerHelpers?.resolveAgencySlaTemplate?.(profileObj.slaContent, {
                                     agencyName: profileObj.branding?.companyName || PREPARED_BY,
-                                    clientName: profileObj.clientCompany,
-                                    clientRep: profileObj.clientRep,
+                                    clientName: slaClient.company,
+                                    clientRep: slaClient.rep,
                                 })}
                             </div>
                         </div>
@@ -702,6 +732,8 @@
             const renderWetSignatureBlock = (profileObj) => {
                 const preparerTitle = profileObj.preparerTitle || 'Chief Operations Strategist';
                 const quoteDate = profileObj.quoteDate || new Date().toLocaleDateString();
+                const contractParty = contractPartyFor(profileObj);
+                const partyLabel = profileObj.contractPartySource === 'sponsor' ? 'sponsor' : 'client';
 
                 return (
                     <div className="print-only mt-12 pt-8 border-t border-slate-300 print-force-break text-xs">
@@ -711,11 +743,11 @@
                         </p>
                         <div className="grid grid-cols-2 gap-12">
                             <div>
-                                <p className="font-bold text-slate-700 mb-6">Accepted &amp; authorized on behalf of client:</p>
+                                <p className="font-bold text-slate-700 mb-6">Accepted &amp; authorized on behalf of {partyLabel}:</p>
                                 <div className="h-16 border-b border-slate-400 mb-2"></div>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Authorized signatory</p>
-                                <p className="font-bold text-slate-900">{profileObj.clientRep || '________________________'}</p>
-                                <p className="text-slate-500">Representative, {profileObj.clientCompany || '________________________'}</p>
+                                <p className="font-bold text-slate-900">{contractParty.rep || '________________________'}</p>
+                                <p className="text-slate-500">Representative, {contractParty.company || '________________________'}</p>
                                 <p className="text-slate-400 mt-3">Date: ________________________</p>
                             </div>
                             <div>
@@ -843,7 +875,7 @@
                                         <label className="flex items-start gap-3 cursor-pointer">
                                             <input type="checkbox" checked={hasAcceptedTerms} onChange={e => setHasAcceptedTerms(e.target.checked)} className="mt-1 w-5 h-5 accent-brandTeal-600" />
                                             <span className="text-xs text-slate-700 leading-snug font-medium">
-                                                I, <strong>{signatureName || "[Signatory]"}</strong>, state that I have authority to legally bind <strong>{activeProfileObj.clientCompany}</strong> under the parameters specified above.
+                                                I, <strong>{signatureName || "[Signatory]"}</strong>, state that I have authority to legally bind <strong>{contractPartyFor(activeProfileObj).company}</strong> under the parameters specified above.
                                             </span>
                                         </label>
 

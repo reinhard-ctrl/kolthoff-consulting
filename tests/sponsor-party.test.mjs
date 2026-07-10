@@ -42,4 +42,23 @@ assert.equal(customSponsor.rep, 'John Sponsor');
 assert.equal(customSponsor.address, '456 Sponsor Ave');
 assert.equal(customSponsor.tin, '222-222-222-222');
 
+const sponsorContract = win.window.PlannerHelpers.resolveContractParty({
+  ...client,
+  contractPartySource: 'sponsor',
+  useCustomSponsor: true,
+  sponsorCompany: 'Sponsor Inc.',
+  sponsorRep: 'John Sponsor',
+  sponsorAddress: '456 Sponsor Ave',
+  sponsorTin: '222-222-222-222',
+});
+assert.equal(sponsorContract.company, 'Sponsor Inc.');
+
+const clientContract = win.window.PlannerHelpers.resolveContractParty({
+  ...client,
+  contractPartySource: 'client',
+  useCustomSponsor: true,
+  sponsorCompany: 'Sponsor Inc.',
+});
+assert.equal(clientContract.company, 'Client Corp.');
+
 console.log('sponsor-party.test.mjs: all assertions passed');

@@ -675,6 +675,13 @@
     };
   }
 
+  function resolveContractParty(state) {
+    if (state.contractPartySource === 'sponsor') {
+      return resolveSponsorParty(state);
+    }
+    return resolveClientParty(state);
+  }
+
   /** Slices owned by Policy Studio, Diagnosis, Workflow Builder, Org Chart — not planner form state. */
   const PRESERVED_PROFILE_SLICE_KEYS = [
     'branding',
@@ -840,6 +847,7 @@
       sponsorRep: state.sponsorRep || '',
       sponsorAddress: state.sponsorAddress || '',
       sponsorTin: state.sponsorTin || '',
+      contractPartySource: state.contractPartySource === 'sponsor' ? 'sponsor' : 'client',
       staffCount: state.staffCount,
       monthlySalary: state.monthlySalary,
       wastedHours: state.wastedHours,
@@ -1166,6 +1174,7 @@
     resolveInvoiceBillTo,
     resolveClientParty,
     resolveSponsorParty,
+    resolveContractParty,
     saveLocalDraft,
     loadLocalDraft,
     clearLocalDraft,
