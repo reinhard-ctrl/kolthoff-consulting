@@ -194,7 +194,39 @@
                 width: 100% !important;
             }
 
-            body.printing-staff-directory .staff-directory-print-root { display: block !important; }
+            /* Staff directory print — unclip the flex shell the same way as report print */
+            body.printing-staff-directory #root,
+            body.printing-staff-directory #root > div,
+            body.printing-staff-directory .flex {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+                flex: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            body.printing-staff-directory #root > div.flex,
+            body.printing-staff-directory .staff-directory-print-root {
+                display: block !important;
+                visibility: visible !important;
+                overflow: visible !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                position: static !important;
+                flex: none !important;
+                width: 100% !important;
+            }
+            body.printing-staff-directory,
+            body.printing-staff-directory.luxury-gradient,
+            body.printing-staff-directory #root > div {
+                background: white !important;
+                background-image: none !important;
+            }
+            body.printing-staff-directory .report-print-root {
+                display: none !important;
+            }
 
             /* Kill dark app shell + preview scroll padding so the PDF ends on white content */
             body.printing-report,
@@ -389,7 +421,7 @@
 
     <script src="../../shared/engagement-config.js?v=20250701-content-v2"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250710-org-roster-parse-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250707-mod1-deliverables-v4"></script>
     <script src="../../shared/diagnosis-report-helpers.js?v=20250709-report-diagram-size-v1"></script>
 
@@ -2286,9 +2318,17 @@
                     }
                     setSubSaaS(Array.isArray(profile.subSaaS) ? profile.subSaaS : []);
                     setRaciAssignments(profile.raciAssignments || {});
-                    setOrgChartXml(window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '');
+                    const resolvedOrgXml = window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '';
+                    setOrgChartXml(resolvedOrgXml);
                     setOrgChartSvg(printReadySvg(profile.orgChart?.svgCache || ''));
-                    setOrgChartMembers(profile.orgChart?.members || []);
+                    const storedMembers = Array.isArray(profile.orgChart?.members) ? profile.orgChart.members : [];
+                    const storedRoster = Array.isArray(profile.orgChart?.roster) ? profile.orgChart.roster : [];
+                    const hydratedMembers =
+                        window.DiagramEditor?.resolveOrgChartMembers?.(
+                            resolvedOrgXml,
+                            storedMembers.length ? storedMembers : storedRoster
+                        ) || storedMembers;
+                    setOrgChartMembers(hydratedMembers);
                     setWorkflowUpdatedAt(profile.diagnosisWorkflow?.updatedAt || 0);
                     setReportDataUpdatedAt(profile.diagnosisReportUpdatedAt || 0);
                     setMod1DeliveredAt(profile.mod1DeliveredAt || null);
@@ -2480,6 +2520,10 @@
                     const tabsPayload = skipWorkflowTabs ? {} : (WT?.buildWorkflowTabsPayload?.('diagnosis', tabs, activeTabId, existing) || {});
                     const savedOrgXml = orgOverride?.xml ?? orgChartXml;
                     const savedOrgSvg = orgOverride?.svg ?? orgChartSvg;
+                    // [] is truthy — never use `parsed || fallback` or empty parse wipes the directory.
+                    const savedOrgMembers =
+                        window.DiagramEditor?.resolveOrgChartMembers?.(savedOrgXml, orgChartMembers) ||
+                        orgChartMembers;
                     const chaosTax = EC.buildChaosTaxPayload
                         ? EC.buildChaosTaxPayload('diagnosis', totalAnnualChaosTax, {})
                         : { source: 'diagnosis', value: totalAnnualChaosTax, inputs: {} };
@@ -2498,7 +2542,7 @@
                         orgChart: {
                             drawioXml: savedOrgXml,
                             svgCache: savedOrgSvg,
-                            members: window.DiagramEditor?.parseRosterFromDrawioXml?.(savedOrgXml) || orgChartMembers,
+                            members: savedOrgMembers,
                             updatedAt: new Date().toISOString(),
                         },
                     };
@@ -2509,7 +2553,7 @@
                     await window.firestoreSetDoc(profileRef, savePayload, { merge: true });
                     if (orgOverride?.xml) setOrgChartXml(orgOverride.xml);
                     if (orgOverride?.svg) setOrgChartSvg(orgOverride.svg);
-                    setOrgChartMembers(window.DiagramEditor?.parseRosterFromDrawioXml?.(savedOrgXml) || orgChartMembers);
+                    setOrgChartMembers(savedOrgMembers);
                     setReportDataUpdatedAt(Date.now());
                     if (tabsPayload.diagnosisWorkflow?.updatedAt) setWorkflowUpdatedAt(tabsPayload.diagnosisWorkflow.updatedAt);
                     if (window.PortalSync?.syncProfileToPortalIfExists) {
@@ -2555,6 +2599,18 @@
                     return false;
                 }
             };
+
+            // Keep Staff Directory / Print Directory in sync while the org chart is edited.
+            useEffect(() => {
+                if (!orgChartXml) return;
+                const parsed = window.DiagramEditor?.parseRosterFromDrawioXml?.(orgChartXml) || [];
+                if (!parsed.length) return;
+                setOrgChartMembers((prev) => {
+                    const prevKey = JSON.stringify(prev || []);
+                    const nextKey = JSON.stringify(parsed);
+                    return prevKey === nextKey ? prev : parsed;
+                });
+            }, [orgChartXml]);
 
             useEffect(() => {
                 if (!autoSaveReadyRef.current || authError || !isAuthed || !activeProfileId || isSaving) return;

@@ -67,4 +67,34 @@ const bpmnPreset = DE.getPreset('bpmn');
 assert.equal(bpmnPreset.embedLibs, 'bpmn');
 assert.ok(bpmnPreset.configure.defaultLibraries.includes('bpmn'));
 
+const membersXml = DE.membersToDrawioXml([
+  { id: '1', name: 'Ada', role: 'CEO' },
+  { id: '2', name: 'Bob', role: 'Ops', managerId: '1' },
+]);
+const membersRoster = DE.parseRosterFromDrawioXml(membersXml);
+assert.equal(membersRoster.length, 2);
+assert.equal(membersRoster.find((r) => r.name === 'Ada')?.title, 'CEO');
+assert.equal(membersRoster.find((r) => r.name === 'Bob')?.reportsTo, 'Ada');
+
+const objectLabelXml =
+  '<mxfile><diagram><mxGraphModel><root>' +
+  '<mxCell id="0"/><mxCell id="1" parent="0"/>' +
+  '<object label="Ada&#xa;CEO" id="2">' +
+  '<mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">' +
+  '<mxGeometry x="40" y="40" width="180" height="70" as="geometry"/></mxCell></object>' +
+  '<object label="Bob&#xa;Ops" id="3">' +
+  '<mxCell style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">' +
+  '<mxGeometry x="40" y="180" width="180" height="70" as="geometry"/></mxCell></object>' +
+  '<mxCell id="4" edge="1" parent="1" source="2" target="3">' +
+  '<mxGeometry relative="1" as="geometry"/></mxCell>' +
+  '</root></mxGraphModel></diagram></mxfile>';
+const objectRoster = DE.parseRosterFromDrawioXml(objectLabelXml);
+assert.equal(objectRoster.length, 2);
+assert.equal(objectRoster.find((r) => r.name === 'Ada')?.title, 'CEO');
+assert.equal(objectRoster.find((r) => r.name === 'Bob')?.reportsTo, 'Ada');
+
+const fallback = [{ id: 'x', name: 'Kept', title: 'Lead', department: '', reportsTo: '' }];
+assert.deepEqual(DE.resolveOrgChartMembers('', fallback), fallback);
+assert.equal(DE.resolveOrgChartMembers(objectLabelXml, fallback).length, 2);
+
 console.log('diagram-editor.test.mjs: all assertions passed');
