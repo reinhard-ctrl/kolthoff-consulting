@@ -542,7 +542,7 @@ export default function PortalManager() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="portal-currentPhase" className="text-xs text-slate-400 block mb-1">Current Phase</label>
-                    <input id="portal-currentPhase" value={draft.currentPhase} onChange={(e) => updateDraft('currentPhase', e.target.value)} placeholder="MOD 1: Workflow Diagnosis" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
+                    <input id="portal-currentPhase" value={draft.currentPhase} onChange={(e) => updateDraft('currentPhase', e.target.value)} placeholder="MOD 1: Business Leak Scan" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
                   </div>
                   <div>
                     <label htmlFor="portal-progressPercentage" className="text-xs text-slate-400 block mb-1">Progress %</label>

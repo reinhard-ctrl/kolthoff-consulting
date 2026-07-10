@@ -16,6 +16,8 @@ Use this hierarchy in client-facing copy (SOW, PDF, portal, marketing):
 | Action plan | **90-Day Recovery Plan** | Top fixes inside the report; not a separate document name |
 | Metric | **Operational leakage** | Process delays + subscription overlap |
 | Branded hook (marketing only) | **Chaos Tax** | Calculator and homepage — always define as operational leakage |
+| Portal asset (walkthrough) | **Leak Scan Walkthrough** | Loom/video link synced from Mod 1 handoff |
+| Portal asset (directory) | **Staff Directory & Privacy Rules** | Staff directory PDF from org chart section |
 
 **Consultant-facing only:** admin nav route id `diagnosis-reports`, Firestore slice `diagnosisWorkflow`, internal comments may say "diagnosis report."
 

@@ -490,7 +490,7 @@
           amount: Math.round(m1Net * taxMultiplier),
           desc: ctx.starterLineItems
             ? 'Authorized at signing. Covers discovery and initial deliverables in this module.'
-            : 'Authorized immediately at initial signup. Deliverable yields a Leak Scan Report and 90-Day Recovery Plan from your leak scan.'
+            : 'Authorized immediately at initial signup. Yields a Leak Scan Report and 90-Day Recovery Plan — your proof before investing in playbooks or tools.'
         });
       }
       if (m2Net > 0) {
@@ -501,7 +501,7 @@
           amount: Math.round(m2Net * taxMultiplier),
           desc: ctx.starterLineItems
             ? 'Billed upon client approval to proceed after the prior gate is accepted.'
-            : 'Billed only upon completion of Phase 1 and client authorization to proceed. Unlocks order playbooks, roles charts, and employee handbook.'
+            : 'Billed only after Mod 1 sign-off. Unlocks playbooks, sign-off roles, and employee handbook — turning your 90-Day Recovery Plan into daily operating rhythm.'
         });
       }
       if (m3Net > 0) {
@@ -512,7 +512,7 @@
           amount: Math.round(m3Net * taxMultiplier),
           desc: ctx.starterLineItems
             ? 'Billed upon completion of build and handover for this module.'
-            : 'Billed only upon completion of Phase 2 and client authorization to proceed. Unlocks workspace go-live, digital forms, training, and launch help desk.'
+            : 'Billed only after Mod 2 sign-off. Unlocks workspace go-live, digitized forms, training, and launch-week support.'
         });
       }
       return arr;

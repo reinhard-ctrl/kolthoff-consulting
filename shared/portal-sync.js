@@ -79,8 +79,10 @@
 
   const LEAK_SCAN_REPORT_ASSET_TITLE = 'Leak Scan Report';
   const LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE = 'Waste-to-Peso Report';
-  const LOOM_WALKTHROUGH_ASSET_TITLE = 'Mod 1 Walkthrough Video';
-  const STAFF_DIRECTORY_ASSET_TITLE = 'Team List & Privacy Ground Rules';
+  const LOOM_WALKTHROUGH_ASSET_TITLE = 'Leak Scan Walkthrough';
+  const LEGACY_LOOM_WALKTHROUGH_ASSET_TITLE = 'Mod 1 Walkthrough Video';
+  const STAFF_DIRECTORY_ASSET_TITLE = 'Staff Directory & Privacy Rules';
+  const LEGACY_STAFF_DIRECTORY_ASSET_TITLE = 'Team List & Privacy Ground Rules';
   const FEEDBACK_FORM_ASSET_TITLE = 'Anonymous Staff Feedback Form';
 
   function upsertCustomAssetByTitle(existing, title, link, category) {
@@ -108,6 +110,8 @@
     const synthesis = profile?.synthesis || {};
     let existing = [...(profile?.customAssets || [])];
     existing = removeCustomAssetByTitle(existing, LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE);
+    existing = removeCustomAssetByTitle(existing, LEGACY_LOOM_WALKTHROUGH_ASSET_TITLE);
+    existing = removeCustomAssetByTitle(existing, LEGACY_STAFF_DIRECTORY_ASSET_TITLE);
     existing = upsertCustomAssetByTitle(existing, LEAK_SCAN_REPORT_ASSET_TITLE, synthesis.clientDeliverableUrl);
     existing = upsertCustomAssetByTitle(existing, LOOM_WALKTHROUGH_ASSET_TITLE, synthesis.loomWalkthroughUrl);
     existing = upsertCustomAssetByTitle(existing, STAFF_DIRECTORY_ASSET_TITLE, synthesis.staffDirectoryDeliverableUrl);
@@ -156,6 +160,8 @@
       roadmap,
       currentPhase: mod2?.portalPhase || 'MOD 2: How Your Business Runs',
       mod2UnlockedAt: new Date().toISOString(),
+      mod1HandoffNotice:
+        'Your Leak Scan Report and 90-Day Recovery Plan are ready in your portal vault. Start with the walkthrough video, then review the Top 5 fixes with your leadership team.',
       mod1CompleteNotice:
         'Module 1 (Business Leak Scan) is complete. Your consultant is now delivering Module 2 — How Your Business Runs (playbooks, policies, and to-be workflows).',
     };
@@ -314,7 +320,9 @@
     LEAK_SCAN_REPORT_ASSET_TITLE,
     LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE,
     LOOM_WALKTHROUGH_ASSET_TITLE,
+    LEGACY_LOOM_WALKTHROUGH_ASSET_TITLE,
     STAFF_DIRECTORY_ASSET_TITLE,
+    LEGACY_STAFF_DIRECTORY_ASSET_TITLE,
     FEEDBACK_FORM_ASSET_TITLE,
     upsertCustomAssetByTitle,
     upsertMod1DeliverableAssets,

@@ -111,6 +111,13 @@ assert.equal(legacyMigrated.length, 1);
 assert.equal(legacyMigrated[0].title, PS.LEAK_SCAN_REPORT_ASSET_TITLE);
 assert.equal(legacyMigrated[0].link, 'https://drive.google.com/file/d/new/view');
 
+const legacyLoom = PS.upsertMod1DeliverableAssets({
+  customAssets: [{ title: PS.LEGACY_LOOM_WALKTHROUGH_ASSET_TITLE, category: 'MOD 1', link: 'https://www.loom.com/share/old' }],
+  synthesis: { loomWalkthroughUrl: 'https://www.loom.com/share/new' },
+});
+assert.equal(legacyLoom.length, 1);
+assert.equal(legacyLoom[0].title, PS.LOOM_WALKTHROUGH_ASSET_TITLE);
+
 const mod1CompletePatch = PS.buildPortalPatchFromProfile(
   {
     ...profile,

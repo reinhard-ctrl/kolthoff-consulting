@@ -683,7 +683,7 @@ export default function ContractLedger() {
               <th className="p-4">Contract Signatory</th>
               <th className="p-4">SOW Ref</th>
               <th className="p-4 text-center">Total Value</th>
-              <th className="p-4 text-center">Chaos Tax</th>
+              <th className="p-4 text-center">Operational Leakage</th>
               <th className="p-4">Billing Milestones</th>
               <th className="p-4 text-center">Status</th>
               <th className="p-4 text-right">Actions</th>
