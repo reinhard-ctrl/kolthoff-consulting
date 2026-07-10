@@ -549,15 +549,15 @@ export default function PortalManager() {
                     <input id="portal-progressPercentage" type="number" min={0} max={100} value={draft.progressPercentage} onChange={(e) => updateDraft('progressPercentage', Number(e.target.value))} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
                   </div>
                   <div>
-                    <label htmlFor="portal-annualLeakageIdentified" className="text-xs text-slate-400 block mb-1">Annual Chaos Tax Risk</label>
+                    <label htmlFor="portal-annualLeakageIdentified" className="text-xs text-slate-400 block mb-1">Total Operational Leakage Identified</label>
                     <input id="portal-annualLeakageIdentified" type="number" value={draft.metrics.annualLeakageIdentified} onChange={(e) => updateMetric('annualLeakageIdentified', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
                   </div>
                   <div>
-                    <label htmlFor="portal-chaosTaxEliminated" className="text-xs text-slate-400 block mb-1">Operational Leakage Eliminated</label>
+                    <label htmlFor="portal-chaosTaxEliminated" className="text-xs text-slate-400 block mb-1">Leakage Recovered (Mod 2+)</label>
                     <input id="portal-chaosTaxEliminated" type="number" value={draft.metrics.chaosTaxEliminated} onChange={(e) => updateMetric('chaosTaxEliminated', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
                   </div>
                   <div className="md:col-span-2">
-                    <label htmlFor="portal-saasSavingsIdentified" className="text-xs text-slate-400 block mb-1">Identified SaaS Savings</label>
+                    <label htmlFor="portal-saasSavingsIdentified" className="text-xs text-slate-400 block mb-1">Subscription Savings Identified</label>
                     <input id="portal-saasSavingsIdentified" type="number" value={draft.metrics.saasSavingsIdentified} onChange={(e) => updateMetric('saasSavingsIdentified', e.target.value)} placeholder="0" className="w-full bg-brandNavy-800 border border-brandNavy-700 rounded p-2 text-sm" />
                   </div>
                 </div>

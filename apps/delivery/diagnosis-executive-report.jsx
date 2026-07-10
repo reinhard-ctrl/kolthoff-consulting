@@ -13,13 +13,13 @@
                 <div className="mb-8">
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
                     <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Leak Scan Report</h1>
-                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and the top fixes to recover it in the next 90 days.</p>
+                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and your 90-Day Recovery Plan to address it.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Prepared for</span><span className="font-bold text-slate-900 text-sm">{clientCompany}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Report date</span><span className="font-mono text-slate-700">{reportDate}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Lead strategist</span><span className="text-slate-700">{preparedBy}</span></div>
-                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span></div>
+                    <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span><p className="text-[9px] text-slate-400 mt-1 leading-relaxed max-w-xs">Operational readiness across communication, documentation, accountability, and software use.</p></div>
                 </div>
                 <div className="report-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     <div className="report-kpi p-5 text-center">
@@ -27,19 +27,19 @@
                         <div className="report-kpi-value text-2xl font-black text-rose-700">{formatCurrency(totalAnnualWaste)}</div>
                     </div>
                     <div className="report-kpi p-5 text-center">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Waste</div>
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Leakage</div>
                         <div className="report-kpi-value text-xl font-black text-rose-600">{formatCurrency(processAnnual)}</div>
                         <div className="text-[9px] text-slate-400 mt-1">Manual delays & rework</div>
                     </div>
                     <div className="report-kpi p-5 text-center">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">SaaS Waste</div>
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Subscription Overlap</div>
                         <div className="report-kpi-value text-xl font-black text-amber-700">{formatCurrency(saasAnnual)}</div>
                         <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
                     </div>
                 </div>
                 {topFixes.length > 0 && (
                     <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes — Next 90 Days</h3>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 5 Fixes</h3>
                         <div className="space-y-0">
                             {topFixes.map((item, idx) => (
                                 <div key={item.id} className="report-fix-row">
@@ -88,6 +88,19 @@
 
                     {printConfig.showExecutiveSummary && (
                         <ReportCover clientCompany={clientCompany} preparedBy={preparedBy} reportDate={reportDate} totalAnnualWaste={totalAnnualWaste} processAnnual={annualChaosTax} saasAnnual={saasAnnualWaste} maturityIndex={maturityIndex} topFixes={topFixes} />
+                    )}
+
+                    {printConfig.showExecutiveSummary && (
+                        <div className="report-page print-force-break page-break-inside-avoid">
+                            <ReportSectionHeader title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
+                            <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
+                                <li><strong>Start with the video walkthrough</strong> if your consultant shared a Loom link.</li>
+                                <li><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan on page 1.</li>
+                                <li><strong>Review process maps</strong> for the highest-leak workflow.</li>
+                                <li><strong>Assign owners and target weeks</strong> to each Top 5 fix.</li>
+                                <li><strong>Decide on Module 2</strong> using the recommended next-phase notes.</li>
+                            </ol>
+                        </div>
                     )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
@@ -240,16 +253,16 @@
 
                     {printConfig.showSaas && (
                         <div className="report-page print-force-break">
-                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process waste and subscription waste are tracked separately so you know what to fix first." />
+                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap are tracked separately so you know what to fix first." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
-                                    <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage (Chaos Tax)</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage</div>
                                     <div className="text-2xl font-black font-mono text-rose-700">{formatCurrency(annualChaosTax)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
                                     <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Fixable via SOPs, handoffs, and workflow redesign. {totalDailyWasteHours.toFixed(1)} hours lost daily across mapped processes.</p>
                                     <div className="text-[10px] font-mono text-rose-600 mt-2">{formatCurrency(Math.round(annualChaosTax / 12))}/month</div>
                                 </div>
                                 <div className="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30 page-break-inside-avoid">
-                                    <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">SaaS & License Waste</div>
+                                    <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">Subscription Overlap</div>
                                     <div className="text-2xl font-black font-mono text-amber-800">{formatCurrency(saasAnnualWaste)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
                                     <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Quick-recapture: cancel duplicates and right-size seats within 30 days.</p>
                                     <div className="text-[10px] font-mono text-amber-700 mt-2">{formatCurrency(saasMonthlyWaste)}/month</div>
@@ -281,7 +294,7 @@
                             )}
                             <div className="p-4 border border-emerald-300 rounded-xl bg-emerald-50/50 flex justify-between items-center page-break-inside-avoid">
                                 <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
-                                <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
+                                <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total leakage</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
                             </div>
                         </div>
                     )}
@@ -375,7 +388,7 @@
                                 </div>
                                 <div className="p-4 border-l-4 border-brandTeal-600 bg-teal-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-brandTeal-900 text-xs uppercase tracking-wider block mb-1">Week 7–12 — Structural changes</strong>
-                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-day fix list with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
+                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-Day Recovery Plan with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
                                 </div>
                             </div>
                             <div className="mt-8 p-5 border border-slate-200 rounded-xl bg-slate-50 page-break-inside-avoid">
@@ -397,7 +410,7 @@
                             <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
-                                <p><strong>SaaS waste:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
+                                <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
                                 <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
                             </div>
                         </div>

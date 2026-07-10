@@ -246,17 +246,17 @@
       },
       {
         id: 'm1-05', category: MOD_1,
-        deliverable: 'Leak Scan Report & Fix Order',
-        description: 'We turn delays and rework into peso amounts and deliver a written summary, short Loom walkthrough, and top-5 90-day fix list.',
+        deliverable: 'Leak Scan Report & 90-Day Recovery Plan',
+        description: 'We quantify delays and rework as annual leakage and deliver a written Leak Scan Report, short Loom walkthrough, and top-5 90-Day Recovery Plan.',
         estHours: 3, tier: 'senior', selected: true,
-        scopeDetails: { activities: 'Calculate wasted time in money terms; record a short Loom walkthrough.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and top-5 90-day improvement plan.' }
+        scopeDetails: { activities: 'Calculate operational leakage; record a short Loom walkthrough.', expectations: 'Review the numbers with your leadership team.', output: 'A Leak Scan Report and top-5 90-Day Recovery Plan.' }
       },
       {
         id: 'm1-06', category: MOD_1,
         deliverable: 'Optional — Owner Findings Briefing',
         description: 'Optional 60-minute presentation of diagnosis findings to the owner or general manager.',
         estHours: 2, tier: 'principal', selected: false,
-        scopeDetails: { activities: 'Present the printable diagnosis report and answer questions.', expectations: 'Owner or GM attends the briefing.', output: 'Shared understanding of findings and next steps.' }
+        scopeDetails: { activities: 'Present the Leak Scan Report and answer questions.', expectations: 'Owner or GM attends the briefing.', output: 'Shared understanding of findings and next steps.' }
       },
       {
         id: 'm2-01', category: MOD_2,
@@ -3101,7 +3101,7 @@
 
             <div className="space-y-1.5">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-300 font-semibold uppercase tracking-wider text-[10px]">Daily Wasted Hours Per Employee</span>
+                <span className="text-slate-300 font-semibold uppercase tracking-wider text-[10px]">Daily Lost Hours Per Employee</span>
                 <span className="font-bold text-brandTeal-300 font-mono">{wastedHours.toFixed(1)} Hours / Day</span>
               </div>
               <input 

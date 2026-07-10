@@ -417,7 +417,7 @@
             <div class="text-center lg:text-left mb-1">
                 <span class="text-[10px] font-mono font-bold tracking-[0.2em] text-brandTeal-400 uppercase block">Interactive Assessment</span>
                 <h2 class="text-2xl lg:text-xl font-serif font-bold text-white leading-tight mt-1.5">Operational Leakage (Chaos Tax)</h2>
-                <p class="text-slate-400 text-sm leading-relaxed mt-2">Adjust sliders to estimate annual leakage and first-year recovery at your team profile.</p>
+                <p class="text-slate-400 text-sm leading-relaxed mt-2">Adjust sliders to estimate annual operational leakage and first-year recovery at your team profile. <span class="text-slate-500">Chaos Tax is our branded term for operational leakage from manual delays and rework.</span></p>
             </div>
 
             <div class="relative w-full">
@@ -440,7 +440,7 @@
                         </div>
                         <div>
                             <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Daily Wasted Hours / Employee</span>
+                                <span class="text-[10px] font-mono uppercase text-slate-455 font-bold">Daily Lost Hours / Employee</span>
                                 <span id="hoursVal" class="text-sm font-mono font-bold text-brandTeal-400">2.0 Hours / Day</span>
                             </div>
                             <input type="range" id="hoursRange" min="0.5" max="4" step="0.5" value="2" class="w-full accent-brandTeal-500 bg-brandNavy-955 h-2 rounded cursor-pointer">
@@ -540,7 +540,7 @@
                             <span class="text-[8px] font-mono bg-brandTeal-500/10 text-brandTeal-400/80 px-1.5 py-px rounded font-bold uppercase shrink-0">M1</span>
                             <h3 class="font-bold text-sm text-slate-200 font-serif leading-tight">Business Leak Scan</h3>
                         </div>
-                        <p class="module-explainer text-xs text-slate-500 leading-relaxed">Staff feedback, workflow and software audits, and a Leak Scan Report with a 90-day fix list.</p>
+                        <p class="module-explainer text-xs text-slate-500 leading-relaxed">Org chart, as-is workflow maps, software spend audit, and a Leak Scan Report with your 90-Day Recovery Plan.</p>
                         <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Leak Scan Report</p>
                     </article>
                     <article class="module-block-card bg-brandNavy-900/60 border border-brandNavy-750 hover:border-brandTeal-500/25 rounded-lg p-3 lg:p-3 transition-colors">
@@ -549,7 +549,7 @@
                             <h3 class="font-bold text-sm text-slate-200 font-serif leading-tight">How Your Business Runs</h3>
                         </div>
                         <p class="module-explainer text-xs text-slate-500 leading-relaxed">Order playbooks, sign-off roles, how-to videos, and a Philippines-ready employee handbook.</p>
-                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Playbooks &amp; Roles Chart</p>
+                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Playbooks &amp; Employee Handbook</p>
                     </article>
                     <article class="module-block-card bg-brandNavy-900/60 border border-brandNavy-750 hover:border-brandTeal-500/25 rounded-lg p-3 lg:p-3 transition-colors">
                         <div class="flex items-center gap-2 mb-2">
@@ -557,7 +557,7 @@
                             <h3 class="font-bold text-sm text-slate-200 font-serif leading-tight">Your Team Workspace</h3>
                         </div>
                         <p class="module-explainer text-xs text-slate-500 leading-relaxed">Workspace launch, digitized approval forms, hands-on training, and two-week post go-live support.</p>
-                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Live Workspace</p>
+                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Live Branded Workspace</p>
                     </article>
                     <article class="module-block-card bg-brandNavy-900/60 border border-brandNavy-750 hover:border-brandTeal-500/25 rounded-lg p-3 lg:p-3 transition-colors">
                         <div class="flex items-center gap-2 mb-2">
@@ -565,7 +565,7 @@
                             <h3 class="font-bold text-sm text-slate-200 font-serif leading-tight">Care Plan</h3>
                         </div>
                         <p class="module-explainer text-xs text-slate-500 leading-relaxed">Hosting, bi-weekly manager check-ins, and semi-annual health checks after launch.</p>
-                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Hosting &amp; Check-Ins</p>
+                        <p class="text-[9px] font-mono text-brandTeal-400/70 mt-auto pt-2 border-t border-brandNavy-700/40 leading-snug">Outcome: Hosting &amp; Health Checks</p>
                     </article>
                 </div>
             </div>
@@ -830,9 +830,9 @@
                         <button onclick="copyToClipboard('formula-risk-text', this)" class="text-[9px] font-mono text-brandTeal-400 hover:text-white transition-colors bg-brandNavy-955 px-2 py-0.5 rounded border border-brandNavy-700">Copy Formula</button>
                     </div>
                     <div id="modal-math-container-risk" class="p-4 bg-brandNavy-955 rounded-lg border border-brandNavy-700/60 text-brandTeal-400 font-mono text-center text-xs">
-                        $$\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Waste Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}$$
+                        $$\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Leakage Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}$$
                     </div>
-                    <span id="formula-risk-text" class="hidden">\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Waste Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}</span>
+                    <span id="formula-risk-text" class="hidden">\text{Annual Operational Leakage} = (\text{Monthly Payroll} \times \text{Leakage Rate}) + \text{SOP Capacity Bleed} + \text{Regulatory Non-Compliance Liabilities}</span>
                 </div>
             </div>
 
@@ -844,7 +844,8 @@
                     <div class="flex gap-2.5 items-start">
                         <span class="text-brandTeal-500 font-mono font-bold mt-0.5 text-xs">01.</span>
                         <div>
-                            <strong class="text-slate-100 block text-xs">Monthly Payroll × Waste Rate (The Chaos Tax)</strong>
+                            <strong class="text-slate-100 block text-xs">Monthly Payroll × Leakage Rate (Operational Leakage)</strong>
+                            <span class="text-slate-400 text-[10px] leading-snug block mt-1">Also called Chaos Tax on our marketing site — time and money lost to manual delays and rework.</span>
                             <p class="text-slate-400 leading-relaxed text-[11px] mt-0.5">
                                 Represents the immediate cash lost to manual tracking loops, double-data entry across unlinked spreadsheets, and operational Viber group message chaos. On average, growing Philippine SMEs bleed between <span class="text-brandAmber-500 font-bold">15% to 30%</span> of their payroll value into these coordination leaks.
                             </p>
