@@ -479,6 +479,7 @@
                         status: 'signed',
                         signedAt: timestamp,
                         signedBy: signatureName,
+                        signatureMethod: 'esign',
                         ipAddress: cleanIp,
                         auditTrail: newAuditTrail
                     }, { merge: true });
@@ -965,7 +966,7 @@
 
                                         <div className="mt-12 border-t border-slate-200 pt-8 print-force-break">
                                             <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 mb-6 flex items-center gap-2">
-                                                <Icons.ShieldCheck /> Final Execution & E-Signature Audit
+                                                <Icons.ShieldCheck /> Final Execution {contract.signatureMethod === 'manual' ? '& Manual Signature Audit' : '& E-Signature Audit'}
                                             </h3>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -979,9 +980,15 @@
                                                         <p className="text-[10px] font-mono text-slate-500 uppercase">Authorized Signer</p>
                                                         <p className="font-bold text-slate-900 text-lg">{contract.signedBy}</p>
                                                     </div>
-                                                    <div className="h-20 bg-white border border-slate-300 rounded-lg flex items-center justify-center overflow-hidden">
-                                                        <span className="font-signature text-4xl text-slate-800">{contract.signedBy}</span>
+                                                    <div>
+                                                        <p className="text-[10px] font-mono text-slate-500 uppercase">Execution method</p>
+                                                        <p className="font-bold text-slate-900 text-sm uppercase">{contract.signatureMethod === 'manual' ? 'Manual (wet-ink)' : 'Electronic signature'}</p>
                                                     </div>
+                                                    {contract.signatureMethod !== 'manual' && (
+                                                        <div className="h-20 bg-white border border-slate-300 rounded-lg flex items-center justify-center overflow-hidden">
+                                                            <span className="font-signature text-4xl text-slate-800">{contract.signedBy}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4 print:bg-white print:border-slate-300">
