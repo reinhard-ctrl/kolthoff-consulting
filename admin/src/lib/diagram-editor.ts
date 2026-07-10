@@ -111,7 +111,9 @@ function stripHtml(value: string): string {
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
+    // Keep newlines so org-chart Name/Title/Dept lines stay separable.
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n+/g, '\n')
     .trim();
 }
 
@@ -128,6 +130,14 @@ function parseCellLabel(value: string): { name: string; title: string; departmen
 
 function decodeXmlEntities(str: string): string {
   return String(str || '')
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCharCode(code) : '';
+    })
+    .replace(/&#(\d+);/g, (_, dec) => {
+      const code = parseInt(dec, 10);
+      return Number.isFinite(code) ? String.fromCharCode(code) : '';
+    })
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, '<')
@@ -143,11 +153,49 @@ function encodeXmlAttr(str: string): string {
     .replace(/>/g, '&gt;');
 }
 
+function upsertRosterVertex(
+  rosterById: Record<string, OrgChartRosterRow & { parentId?: string | null }>,
+  id: string | undefined,
+  rawLabel: string,
+  parentId?: string | null,
+) {
+  if (!id) return;
+  const label = parseCellLabel(decodeXmlEntities(rawLabel || ''));
+  if (!label.name) return;
+  rosterById[id] = {
+    id,
+    name: label.name,
+    title: label.title,
+    department: label.department,
+    reportsTo: '',
+    parentId: parentId || null,
+  };
+}
+
 /** Parse draw.io org chart XML into roster rows (matches Policy Studio). */
 export function parseRosterFromDrawioXml(xml?: string | null): OrgChartRosterRow[] {
   if (!xml || typeof xml !== 'string') return [];
   const rosterById: Record<string, OrgChartRosterRow & { parentId?: string | null }> = {};
   const edges: Array<{ source: string; target: string }> = [];
+
+  // draw.io org-chart shapes often wrap labels in <object>/<UserObject> with id on the wrapper.
+  const objectRegex = /<(?:object|UserObject)\b([^>]*)>([\s\S]*?)<\/(?:object|UserObject)>/gi;
+  let objectMatch: RegExpExecArray | null;
+  while ((objectMatch = objectRegex.exec(xml)) !== null) {
+    const attrs = objectMatch[1] || '';
+    const inner = objectMatch[2] || '';
+    const id = attrs.match(/\bid="([^"]+)"/)?.[1];
+    const label =
+      attrs.match(/\blabel="([^"]*)"/)?.[1] ||
+      attrs.match(/\bvalue="([^"]*)"/)?.[1] ||
+      '';
+    const nestedCell = inner.match(/<mxCell\b([^>]*)\/?>/i);
+    const nestedAttrs = nestedCell?.[1] || '';
+    const isVertex = /\bvertex="1"/.test(nestedAttrs) || !nestedCell;
+    if (!isVertex) continue;
+    const parentId = nestedAttrs.match(/\bparent="([^"]+)"/)?.[1] || null;
+    upsertRosterVertex(rosterById, id, label, parentId);
+  }
 
   const cellRegex = /<mxCell\b([^>]*?)\/?>/g;
   let match: RegExpExecArray | null;
@@ -160,17 +208,10 @@ export function parseRosterFromDrawioXml(xml?: string | null): OrgChartRosterRow
     const isEdge = /\bedge="1"/.test(attrs);
     const source = attrs.match(/\bsource="([^"]+)"/)?.[1];
     const target = attrs.match(/\btarget="([^"]+)"/)?.[1];
+    const parentId = attrs.match(/\bparent="([^"]+)"/)?.[1] || null;
 
-    if (isVertex && valueMatch) {
-      const label = parseCellLabel(decodeXmlEntities(valueMatch[1]));
-      if (!label.name) continue;
-      rosterById[id] = {
-        id,
-        name: label.name,
-        title: label.title,
-        department: label.department,
-        reportsTo: '',
-      };
+    if (isVertex && valueMatch && !rosterById[id]) {
+      upsertRosterVertex(rosterById, id, valueMatch[1], parentId);
     } else if (isEdge && source && target) {
       edges.push({ source, target });
     }
@@ -185,6 +226,16 @@ export function parseRosterFromDrawioXml(xml?: string | null): OrgChartRosterRow
   return Object.values(rosterById)
     .map(({ id, name, title, department, reportsTo }) => ({ id, name, title, department, reportsTo }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Prefer freshly parsed roster rows; keep prior members when parse returns empty. */
+export function resolveOrgChartMembers(
+  xml?: string | null,
+  fallbackMembers?: OrgChartRosterRow[] | null,
+): OrgChartRosterRow[] {
+  const parsed = parseRosterFromDrawioXml(xml);
+  if (parsed.length) return parsed;
+  return Array.isArray(fallbackMembers) ? fallbackMembers : [];
 }
 
 /** Build draw.io XML from legacy member rows (managerId links). */

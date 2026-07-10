@@ -138,7 +138,9 @@
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
-      .replace(/\s+/g, ' ')
+      // Keep newlines so org-chart Name/Title/Dept lines stay separable.
+      .replace(/[^\S\n]+/g, ' ')
+      .replace(/\n+/g, '\n')
       .trim();
   }
 
@@ -153,11 +155,61 @@
     };
   }
 
+  function decodeXmlEntities(str) {
+    return String(str || '')
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+        const code = parseInt(hex, 16);
+        return Number.isFinite(code) ? String.fromCharCode(code) : '';
+      })
+      .replace(/&#(\d+);/g, (_, dec) => {
+        const code = parseInt(dec, 10);
+        return Number.isFinite(code) ? String.fromCharCode(code) : '';
+      })
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+  }
+
+  function upsertRosterVertex(rosterById, id, rawLabel, parentId) {
+    if (!id) return;
+    const label = parseCellLabel(decodeXmlEntities(rawLabel || ''));
+    if (!label.name) return;
+    rosterById[id] = {
+      id,
+      name: label.name,
+      title: label.title,
+      department: label.department,
+      reportsTo: '',
+      parentId: parentId || null,
+    };
+  }
+
   /** Parse draw.io mxGraph XML into a roster table (name, title, department, reportsTo). */
   function parseRosterFromDrawioXml(xml) {
     if (!xml || typeof xml !== 'string') return [];
     const rosterById = {};
     const edges = [];
+
+    // draw.io org-chart shapes often wrap labels in <object>/<UserObject> with id on the wrapper.
+    const objectRegex = /<(?:object|UserObject)\b([^>]*)>([\s\S]*?)<\/(?:object|UserObject)>/gi;
+    let objectMatch;
+    while ((objectMatch = objectRegex.exec(xml)) !== null) {
+      const attrs = objectMatch[1] || '';
+      const inner = objectMatch[2] || '';
+      const id = attrs.match(/\bid="([^"]+)"/)?.[1];
+      const label =
+        attrs.match(/\blabel="([^"]*)"/)?.[1] ||
+        attrs.match(/\bvalue="([^"]*)"/)?.[1] ||
+        '';
+      const nestedCell = inner.match(/<mxCell\b([^>]*)\/?>/i);
+      const nestedAttrs = nestedCell?.[1] || '';
+      const isVertex = /\bvertex="1"/.test(nestedAttrs) || !nestedCell;
+      if (!isVertex) continue;
+      const parentId = nestedAttrs.match(/\bparent="([^"]+)"/)?.[1] || null;
+      upsertRosterVertex(rosterById, id, label, parentId);
+    }
 
     const cellRegex = /<mxCell\b([^>]*?)\/?>/g;
     let match;
@@ -173,17 +225,8 @@
       const id = idMatch ? idMatch[1] : null;
       if (!id) continue;
 
-      if (isVertex && valueMatch) {
-        const label = parseCellLabel(decodeXmlEntities(valueMatch[1]));
-        if (!label.name) continue;
-        rosterById[id] = {
-          id,
-          name: label.name,
-          title: label.title,
-          department: label.department,
-          reportsTo: '',
-          parentId: parentMatch ? parentMatch[1] : null,
-        };
+      if (isVertex && valueMatch && !rosterById[id]) {
+        upsertRosterVertex(rosterById, id, valueMatch[1], parentMatch ? parentMatch[1] : null);
       } else if (isEdge && sourceMatch && targetMatch) {
         edges.push({ source: sourceMatch[1], target: targetMatch[1] });
       }
@@ -206,13 +249,11 @@
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  function decodeXmlEntities(str) {
-    return String(str || '')
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&');
+  /** Prefer freshly parsed roster rows; keep prior members when parse returns empty. */
+  function resolveOrgChartMembers(xml, fallbackMembers) {
+    const parsed = parseRosterFromDrawioXml(xml);
+    if (parsed.length) return parsed;
+    return Array.isArray(fallbackMembers) ? fallbackMembers : [];
   }
 
   function encodeXmlAttr(str) {
@@ -645,6 +686,7 @@
     getDrawioEmbedUrl,
     getPreset,
     parseRosterFromDrawioXml,
+    resolveOrgChartMembers,
     parseDrawioXmlCells,
     orderNodesByFlowSequence,
     parseBpmnFromDrawioXml,
