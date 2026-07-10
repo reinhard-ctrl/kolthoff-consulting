@@ -602,64 +602,76 @@
     title: 'Anonymous Staff Feedback Channel',
     documentTitle: 'Kolthoff Mod 1 — Anonymous Staff Feedback (m1-02)',
     description:
-      'This survey is anonymous — do not include your name or contact details. ' +
-      'Share honest themes about daily work friction, slow handoffs, and tool pain. ' +
-      'Leadership reviews summarized themes only (no raw submissions or identifiers).',
+      'Your answers are anonymous — please do not write your name, email, or phone number. ' +
+      'Tell us what makes daily work harder: slow approvals, waiting on other teams, or tools that do not work well. ' +
+      'Management only sees a summary of common themes, not individual answers.',
     settings: {
       collectEmail: false,
     },
     questions: [
       {
         type: 'section',
-        title: 'About your work',
-        description: 'Pick the area closest to your role. Do not type your name.',
+        title: 'About your job',
+        description: 'Choose the option that best fits what you do. Do not write your name.',
       },
       {
         type: 'choice',
-        title: 'Which area best matches your day-to-day work?',
+        title: 'What kind of work do you do most days?',
         required: true,
-        options: ['Operations / Delivery', 'Sales / Client-facing', 'Finance / Admin', 'People / HR', 'Leadership / Management', 'Other'],
+        options: [
+          'Operations or delivery (getting work done for clients)',
+          'Sales or working with clients',
+          'Finance or admin',
+          'HR or people support',
+          'Management or leadership',
+          'Other',
+        ],
       },
       {
         type: 'scale',
-        title: 'How often do approvals or handoffs slow you down?',
+        title: 'How often do you wait on someone else’s approval or for work to be passed to the next person?',
         required: true,
-        lowLabel: 'Rarely',
-        highLabel: 'Daily',
+        lowLabel: 'Almost never',
+        highLabel: 'Every day',
         low: 1,
         high: 5,
       },
       {
         type: 'paragraph',
-        title: 'What part of your daily work feels most frustrating or slow?',
-        description: 'Describe the workflow step, not people by name.',
+        title: 'What part of your job is most frustrating or takes too long?',
+        description: 'Describe the step or process — not people by name.',
         required: true,
       },
       {
         type: 'paragraph',
-        title: 'Where do requests or files get stuck between teams?',
-        description: 'Example: waiting on sign-off, missing info, duplicate data entry.',
+        title: 'Where do requests or files get held up when they move between teams?',
+        description: 'For example: waiting for sign-off, missing information, or entering the same data twice.',
         required: true,
       },
       {
         type: 'short',
-        title: 'Which tools, apps, or spreadsheets cause the most friction?',
+        title: 'Which apps, tools, or Excel files cause you the most trouble?',
         required: true,
       },
       {
         type: 'paragraph',
-        title: 'What should leadership fix first in the next 90 days?',
+        title: 'If management could fix one thing in the next 3 months, what should it be?',
         required: true,
       },
       {
         type: 'choice',
-        title: 'How urgent does this feel to you?',
+        title: 'How urgent is this for you?',
         required: true,
-        options: ['Nice to fix eventually', 'Slowing us down weekly', 'Blocking revenue or clients', 'Safety / compliance risk'],
+        options: [
+          'Not urgent — nice to fix when we can',
+          'It slows us down every week',
+          'It is hurting sales or client service',
+          'It is a safety or compliance concern',
+        ],
       },
       {
         type: 'paragraph',
-        title: 'Anything else we should know? (optional)',
+        title: 'Anything else you would like us to know? (optional)',
         required: false,
       },
     ],
