@@ -190,7 +190,7 @@
         const { useState, useMemo, useEffect, useRef } = React;
         const MG = () => window.ModGating || {};
         const IS_EMBED = Boolean(window.KOLTHOFF_EMBED);
-        const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until Mod 1 (Waste-to-Peso Report) is delivered.';
+        const MOD2_LOCK_TOAST = '🔒 Policy Studio is locked until Mod 1 (Leak Scan Report) is delivered.';
 
         const Mod2LockedPanel = ({ profile, onLockedAction, canAdminUnlock, onAdminUnlock }) => {
             const reportHref = IS_EMBED ? '/admin/app/diagnosis-reports' : '/apps/delivery/diagnoses_report.html';
@@ -200,7 +200,7 @@
                     <div className="w-14 h-14 rounded-full bg-brandAmber-500/10 border border-brandAmber-500/30 flex items-center justify-center text-brandAmber-400 text-2xl mb-4">🔒</div>
                     <h2 className="text-lg font-bold text-white mb-2">Policy Studio locked until Mod 1 delivery</h2>
                     <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                        Playbooks and policies (Module 2) unlock after the Waste-to-Peso Report is delivered for <span className="text-slate-200 font-semibold">{client}</span>.
+                        Playbooks and policies (Module 2) unlock after the Leak Scan Report is delivered for <span className="text-slate-200 font-semibold">{client}</span>.
                     </p>
                     <a
                         href={reportHref}
@@ -208,7 +208,7 @@
                         rel={IS_EMBED ? 'noopener noreferrer' : undefined}
                         className="px-5 py-2.5 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 text-xs font-bold uppercase tracking-wider rounded-lg"
                     >
-                        Open Waste-to-Peso Report
+                        Open Leak Scan Report
                     </a>
                     {canAdminUnlock && onAdminUnlock && (
                         <button
@@ -1946,7 +1946,7 @@
                     {!isStandalone && mod2Locked && (
                         <div className="shrink-0 bg-brandAmber-500/10 border-b border-brandAmber-500/30 px-6 py-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider text-brandAmber-400 no-print">
                             <span aria-hidden="true">🔒</span>
-                            Mod 1 delivery required — complete the Waste-to-Peso Report to unlock Policy Studio
+                            Mod 1 delivery required — complete the Leak Scan Report to unlock Policy Studio
                         </div>
                     )}
 

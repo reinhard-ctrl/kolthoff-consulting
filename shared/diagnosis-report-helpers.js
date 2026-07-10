@@ -1,5 +1,5 @@
 /**
- * Module 1 Waste-to-Peso Report — shared assembly helpers for diagnosis reports.
+ * Module 1 Leak Scan Report — shared assembly helpers for diagnosis reports.
  * Used by apps/delivery/diagnoses_report.html (classic) and test suite.
  */
 (function (global) {
@@ -798,7 +798,7 @@
     );
     push(
       'm1-05',
-      'Waste-to-Peso Report (m1-05)',
+      'Leak Scan Report (m1-05)',
       isMod1TaskInScope(tasks, 'm1-05'),
       top5Check.ready
         && !!String(synthesis.clientDeliverableUrl || '').trim()

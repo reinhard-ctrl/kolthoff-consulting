@@ -184,7 +184,7 @@
         'Anonymous Suggestion Box': 'Staff Feedback Channel',
         'Work Shadowing Review': 'Daily Work Friction Study',
         'Software Bill Savings Audit': 'Duplicate Software Spend Review',
-        'Chaos Tax Money-Leak Map': 'Waste-to-Peso Report',
+        'Chaos Tax Money-Leak Map': 'Leak Scan Report',
         'Sales & Buying Blueprints': 'Order & Purchase Playbooks',
         'Role Accountability Matrix': 'Roles & Sign-Off Chart',
         'SOP Video & Document Vault': 'How-To Video Library',
@@ -199,7 +199,7 @@
         'Staff Feedback Link: Safe Anonymous Suggestion Box': 'Staff Feedback Channel',
         'Targeted Process Mapping Audit': 'Daily Work Friction Study',
         'Subscription Audit: App Consolidation Strategy': 'Duplicate Software Spend Review',
-        'Visual Chaos Tax Map & ROI Solution Plan': 'Waste-to-Peso Report',
+        'Visual Chaos Tax Map & ROI Solution Plan': 'Leak Scan Report',
         'Standardized Customer Order & Buying Flowcharts': 'Order & Purchase Playbooks',
         'Clear Who-Does-What Matrix & System Org-Chart': 'Roles & Sign-Off Chart',
         'Pre-Loaded Employee Policies (DOLE-Shielded)': 'Employee Rules Handbook',
@@ -246,7 +246,7 @@
       },
       {
         id: 'm1-05', category: MOD_1,
-        deliverable: 'Waste-to-Peso Report & Fix Order',
+        deliverable: 'Leak Scan Report & Fix Order',
         description: 'We turn delays and rework into peso amounts and deliver a written summary, short Loom walkthrough, and top-5 90-day fix list.',
         estHours: 3, tier: 'senior', selected: true,
         scopeDetails: { activities: 'Calculate wasted time in money terms; record a short Loom walkthrough.', expectations: 'Review the numbers with your leadership team.', output: 'A money-leak summary and top-5 90-day improvement plan.' }
@@ -4860,7 +4860,7 @@
                         {activeProfile?.mod1DeliveredAt && (
                           <div className={`flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border text-left font-sans ${STARTER_UI ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'}`}>
                             <span className="text-[10px] font-bold uppercase tracking-wider">Mod 1 delivered {new Date(activeProfile.mod1DeliveredAt).toLocaleDateString()}</span>
-                            <span className={`text-[10px] ${STARTER_UI ? 'text-emerald-700' : 'text-emerald-400'}`}>— line items below show delivery dates from Waste-to-Peso Report</span>
+                            <span className={`text-[10px] ${STARTER_UI ? 'text-emerald-700' : 'text-emerald-400'}`}>— line items below show delivery dates from Leak Scan Report</span>
                           </div>
                         )}
                         <div className={`flex flex-wrap gap-2 text-left font-sans ${STARTER_UI ? 'starter-sow-presets' : ''}`}>

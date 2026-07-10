@@ -77,7 +77,8 @@
     return Array.from(byTitle.values());
   }
 
-  const WASTE_TO_PESO_ASSET_TITLE = 'Waste-to-Peso Report';
+  const LEAK_SCAN_REPORT_ASSET_TITLE = 'Leak Scan Report';
+  const LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE = 'Waste-to-Peso Report';
   const LOOM_WALKTHROUGH_ASSET_TITLE = 'Mod 1 Walkthrough Video';
   const STAFF_DIRECTORY_ASSET_TITLE = 'Team List & Privacy Ground Rules';
   const FEEDBACK_FORM_ASSET_TITLE = 'Anonymous Staff Feedback Form';
@@ -97,11 +98,17 @@
     return list;
   }
 
+  function removeCustomAssetByTitle(existing, title) {
+    const key = String(title || '').trim().toLowerCase();
+    return (existing || []).filter((a) => String(a.title || '').trim().toLowerCase() !== key);
+  }
+
   /** Upsert Mod 1 deliverable links into profile.customAssets for portal vault sync. */
   function upsertMod1DeliverableAssets(profile) {
     const synthesis = profile?.synthesis || {};
     let existing = [...(profile?.customAssets || [])];
-    existing = upsertCustomAssetByTitle(existing, WASTE_TO_PESO_ASSET_TITLE, synthesis.clientDeliverableUrl);
+    existing = removeCustomAssetByTitle(existing, LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE);
+    existing = upsertCustomAssetByTitle(existing, LEAK_SCAN_REPORT_ASSET_TITLE, synthesis.clientDeliverableUrl);
     existing = upsertCustomAssetByTitle(existing, LOOM_WALKTHROUGH_ASSET_TITLE, synthesis.loomWalkthroughUrl);
     existing = upsertCustomAssetByTitle(existing, STAFF_DIRECTORY_ASSET_TITLE, synthesis.staffDirectoryDeliverableUrl);
     existing = upsertCustomAssetByTitle(existing, FEEDBACK_FORM_ASSET_TITLE, synthesis.feedbackFormUrl);
@@ -131,7 +138,7 @@
     return Array.from(byTitle.values());
   }
 
-  /** After Mod 1 Waste-to-Peso delivery: mark MOD 1 complete and advance portal to MOD 2. */
+  /** After Mod 1 Leak Scan Report delivery: mark MOD 1 complete and advance portal to MOD 2. */
   function buildMod1CompletePortalPatch(existing) {
     const engagement = EC();
     const mods = engagement.MODULES || [];
@@ -304,7 +311,8 @@
     mapRolesToActionItems,
     mergePortalAssets,
     mergeActionItems,
-    WASTE_TO_PESO_ASSET_TITLE,
+    LEAK_SCAN_REPORT_ASSET_TITLE,
+    LEGACY_LEAK_SCAN_REPORT_ASSET_TITLE,
     LOOM_WALKTHROUGH_ASSET_TITLE,
     STAFF_DIRECTORY_ASSET_TITLE,
     FEEDBACK_FORM_ASSET_TITLE,

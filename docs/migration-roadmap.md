@@ -13,7 +13,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **Stable** | Staff and clients complete core flows without 404s, auth loops, silent deploy failures, or iframe breakage. CI deploys green; break-glass passcode always works. |
 | **Fast** | Admin + workspace load in &lt;3s on warm cache; Google SSO completes without popup/COOP hangs; Functions cold-start provisioning does not block login. |
 | **Optimized** | One admin shell, minimal duplicate chrome, immutable asset caching, no 800KB+ un-split bundles long-term. |
-| **Full function — Consulting** | CRM → Planner → Contract → Portal → Waste-to-Peso Report → Collections for MOD engagements; workspace modules usable when sold. |
+| **Full function — Consulting** | CRM → Planner → Contract → Portal → Leak Scan Report → Collections for MOD engagements; workspace modules usable when sold. |
 | **Full function — Products** | PRO 1 lead-to-cash: CRM product deal → Planner package → Sign → Auto-provision Agency Ops → Subscription billing in Collections. |
 
 **Definition of platform complete:** P4 verified on production + P5 App Check enforced + P6 React migration for daily apps + PRO auto-provision reliable + Kolthoff MOD onboarding wizard (P7).
@@ -22,7 +22,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 ## Current status (7 July 2026)
 
-**You are here:** **Mod 1 consulting delivery tooling closed** (7 Jul 2026). Waste-to-Peso Report shipped on `main` (#242 + follow-ups: print fix, Policy Studio admin unlock). Production deploy green. P4 verified. **Core Workspace + Agency Ops engineering closed** (#198–#217). Automated smoke: **27/27** on `kolthoff-consulting.com`. **You own Phase 4:** content, live Mod 1→Mod 2 engagements, first PRO 1 sale, optional App Check.
+**You are here:** **Mod 1 consulting delivery tooling closed** (7 Jul 2026). Leak Scan Report shipped on `main` (#242 + follow-ups: print fix, Policy Studio admin unlock). Production deploy green. P4 verified. **Core Workspace + Agency Ops engineering closed** (#198–#217). Automated smoke: **27/27** on `kolthoff-consulting.com`. **You own Phase 4:** content, live Mod 1→Mod 2 engagements, first PRO 1 sale, optional App Check.
 
 ### PRO 1 · Agency Ops — plan closed (engineering)
 
@@ -51,7 +51,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 
 **Not engineering:** PRO 2 product sale on hold; Phase 4 content; visual blueprint designer (P7).
 
-### MOD 1 · Waste-to-Peso Report — plan closed (engineering)
+### MOD 1 · Leak Scan Report — plan closed (engineering)
 
 | Deliverable | Status |
 |-------------|--------|
@@ -74,7 +74,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 | **Admin embeds** | ✅ **Fixed** | Core Workspace + analytics sidebars visible in iframe (#173, #166); stale asset rewrites (#145) |
 | **Agency Ops PRO** | ✅ **Production-ready (eng)** | Auto + manual provision, Manager (search, SOW links, active tenant, passcode reset, cancel/delete), client UX (#186–#189), staff UX (#196, #201); single sidebar entry **Agency Ops Manager** (#203–#204) |
 | **Core Workspace** | ✅ **Plan closed (eng)** | Direct Firestore Quick provision (#217), onboard tab, MOD auto-provision, P4 section D verified |
-| **Mod 1 delivery** | ✅ **Plan closed (eng)** | Waste-to-Peso Report (#242): PDF, handoff, portal sync, Mod 2 gates — deployed 7 Jul 2026 |
+| **Mod 1 delivery** | ✅ **Plan closed (eng)** | Leak Scan Report (#242): PDF, handoff, portal sync, Mod 2 gates — deployed 7 Jul 2026 |
 | **Staff SSO** | ✅ **Improved** | Firestore-only staff provisioning path; cold-start timeout handling (#175–176) |
 | **Admin UX** | ✅ **Updated** | Sidebar defaults: Command → Project Management → Deliverables → Product → Analytics → Client (#170); Customize → Done saves org default to Firestore |
 | **P4 Verification** | ✅ **Complete** | Sections A–D signed off — `docs/p4-verification.md` |
@@ -85,7 +85,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 ### Your checklist (priority order)
 
 1. **Phase 4 content** — SOW library (`workbook_profiles` templates), CRM playbooks, portal defaults, policy packs — **primary focus now**.
-2. **Live Mod 1 → Mod 2 delivery** — Run Waste-to-Peso Report end-to-end; use **Mark Mod 1 Complete** to unlock Mod 2 in portal; deliver Policy Studio + Workflow Builder (to-be).
+2. **Live Mod 1 → Mod 2 delivery** — Run Leak Scan Report end-to-end; use **Mark Mod 1 Complete** to unlock Mod 2 in portal; deliver Policy Studio + Workflow Builder (to-be).
 3. **First PRO 1 sale** — Use Agency Ops Manager handoff flow on a live client.
 4. **App Check (optional)** — reCAPTCHA v3 key → GitHub secret `RECAPTCHA_SITE_KEY` → redeploy → enforce in Console. See `docs/app-check-sso.md`.
 5. **Stop worrying about infra** unless something breaks — engineering owns P6 and performance backlog.
@@ -109,7 +109,7 @@ Holistic plan to reach a **stable, fast, and optimized** operating system that s
 |------|---------------|--------|
 | Sell | CRM Pipeline, Project Planner | ✅ Production |
 | Contract | Contract Ledger, `contract_sign.html` | ✅ Production |
-| Deliver | Waste-to-Peso Report (Mod 1 hub — org chart, diagnosis PDF, handoff); Policy Studio + Workflow Builder (Mod 2, gated until Mod 1 complete) | ✅ Production — Mod 1 eng closed (#242) |
+| Deliver | Leak Scan Report (Mod 1 hub — org chart, diagnosis PDF, handoff); Policy Studio + Workflow Builder (Mod 2, gated until Mod 1 complete) | ✅ Production — Mod 1 eng closed (#242) |
 | Client view | Portal, org chart sync | ✅ Production — P4 verified |
 | Bill | Collections (milestones + care plan) | ✅ Production |
 | Collaborate | Core Workspace (Messenger, Approvals, Vault, CRM) | ✅ P4 section D verified |
@@ -167,7 +167,7 @@ See `docs/product-pro-catalog.md` and `docs/agency-ops-starter.md`.
 |------|-----------|-----|
 | **Consulting sell→cash** | CRM, Planner, Contract, Collections | Planner buffer vs signed quote |
 | **Client experience** | Portal token auth, org chart, uploads | ✅ P4 verified |
-| **Delivery tools** | Waste-to-Peso Report (Mod 1 complete), Policy→Vault, Workflow tabs (Mod 2 gated) | ✅ Mod 1 closed — HTML embeds migrate in P6 |
+| **Delivery tools** | Leak Scan Report (Mod 1 complete), Policy→Vault, Workflow tabs (Mod 2 gated) | ✅ Mod 1 closed — HTML embeds migrate in P6 |
 | **Analytics** | Firm, Capacity, Time | Manual entry; planner baselines exist |
 | **Workspace** | SSO embed, module nav | Approvals/Messenger depth |
 | **PRO 1 Agency Ops** | Auto-provision on sign, client passcode, empty planner, billing rhythm | ✅ P4 verified |
@@ -201,7 +201,7 @@ Kolthoff OS is the **reference operating system** for how you deliver MOD 1–4 
 │  COMMAND      │           │  DELIVERY     │           │  CLIENT       │
 │  /admin/      │           │  Planner      │           │  Portal       │
 │  React SPA    │           │  Planner      │           │  Contract Sign│
-│  Dashboard    │           │  Waste-to-Peso│           │  Marketing /  │
+│  Dashboard    │           │  Leak Scan    │           │  Marketing /  │
 │  Tenants      │           │  Policy/WF    │           │               │
 │  Portals      │           │  CRM          │           │               │
 │  Portals      │           │               │           │               │
@@ -237,14 +237,14 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | Command | Master Admin | React | **Basic** — tickets OK; blueprints list-only |
 | Command | Agency Ops Manager | React | **Production** — PRO tenant provisioning, branding, demo clients |
 | Delivery | Project Planner | HTML/React CDN | **Production** — engagement hub writer; PRO 1 Agency Ops package |
-| Delivery | Waste-to-Peso Report | HTML/React CDN | **Production** — Mod 1 hub: org chart, as-is workflow, diagnosis PDF, handoff |
+| Delivery | Leak Scan Report | HTML/React CDN | **Production** — Mod 1 hub: org chart, as-is workflow, diagnosis PDF, handoff |
 | Operations | CRM Pipeline | HTML/React CDN | **Production** — canonical CRM + share links |
 | Operations | Policy Studio | HTML/React CDN | **Production** — portal auto-sync on save; Mod 2 gated until Mod 1 complete |
 | Operations | Workflow Builder | HTML/React CDN | **Production** — slice-based tab persistence; Mod 2 to-be mode gated until Mod 1 complete |
 | Analytics | Firm / Capacity / Time | HTML/React CDN | **Functional** — manual data entry |
 | Workspace | Core Workspace | React (Vite) | **Production shell** — embed in admin; Messenger/Approvals/Vault/CRM MVP |
 | Client | Portal | HTML/React CDN | **Production** — custom-token auth via `generatePortalToken` |
-| Client | ~~Intake form~~ | — | **Removed** — org chart + staff directory live in Waste-to-Peso Report; syncs to portal Organization tab |
+| Client | ~~Intake form~~ | — | **Removed** — org chart + staff directory live in Leak Scan Report; syncs to portal Organization tab |
 | Client | Contract sign | HTML/React CDN | **Production** — scoped Firestore rules |
 | Public | Marketing site | Static HTML | **Production** |
 
@@ -287,7 +287,7 @@ Content model: **`docs/content-model.md`** — `workbook_profiles` as single eng
 | **P5b** | Agency Ops PRO lead-to-cash (catalog, SLA, provisioning, Manager, client UX) | ✅ **Complete** (#159–#204) |
 | **P6** | Phase 3B: React migration waves (planner → ops → analytics → client) | ⏳ Planned |
 | **P7** | Phase 3C: Blueprint designer + client provisioning wizard | 🔶 **Wizard shipped** (#202) — visual blueprint designer deferred |
-| **Mod 1** | Waste-to-Peso Report: diagnosis PDF, handoff, portal sync, Mod 2 gates | ✅ **Complete** (#242, deployed 7 Jul 2026) |
+| **Mod 1** | Leak Scan Report: diagnosis PDF, handoff, portal sync, Mod 2 gates | ✅ **Complete** (#242, deployed 7 Jul 2026) |
 | **P8+** | Phase 4 content/automation + Phase 5 idol figure | ⏳ Ongoing |
 
 ---
@@ -322,7 +322,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **Contract e-sign** | Scoped Firestore rules; expanded `contract_sign.html` |
 | **Workflow tabs** | `diagnosisWorkflow` / `workflowBuilder` slices via `shared/workflow-tabs.js` |
 | **Portal sync** | `portal-sync.js` + admin lib — auto-sync on planner/diagnosis/policy save |
-| **Org chart (Mod 1)** | Embedded in Waste-to-Peso Report — draw.io org chart tab, staff directory print, portal Organization sync |
+| **Org chart (Mod 1)** | Embedded in Leak Scan Report — draw.io org chart tab, staff directory print, portal Organization sync |
 | **Planner polish** | Compact header, Gantt label fixes, engagement package callout |
 | **Google SSO (P5)** | `provisionGoogleStaff`, staff rules hardening, App Check bootstrap |
 | **CRM links** | `links.crmDealId`, share links, public CRM view |
@@ -339,7 +339,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | **Admin nav defaults** | Project Management / Deliverables / Product groups; org-wide layout on Customize → Done (#170) |
 | **Staff SSO resilience** | Firestore-only provision path; cold-start timeout handling (#175–176) |
 | **Tests** | Rules, portal-sync, workflow-tabs, intake-merge, engagement-config, tenant-branding |
-| **Mod 1 Waste-to-Peso (#242)** | Full diagnosis PDF, strategy editor, Mark Mod 1 Complete → portal sync, client handoff (Drive/Loom), m1-01/m1-02 launchers, Mod 2 gating, admin Policy Studio unlock, print fix, CI tests |
+| **Mod 1 Leak Scan Report (#242)** | Full diagnosis PDF, strategy editor, Mark Mod 1 Complete → portal sync, client handoff (Drive/Loom), m1-01/m1-02 launchers, Mod 2 gating, admin Policy Studio unlock, print fix, CI tests |
 
 ---
 
@@ -352,7 +352,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | # | Deliverable | Status | Outcome |
 |---|-------------|--------|---------|
 | 2.5.1 | **Portal custom-token auth** | ✅ Done | `generatePortalToken` wired; scoped `portal_client` Firestore + Storage rules |
-| 2.5.2 | ~~**Intake submit on production**~~ | ✅ Superseded | Client intake form removed; org chart in Waste-to-Peso Report + portal sync replaces intake flow |
+| 2.5.2 | ~~**Intake submit on production**~~ | ✅ Superseded | Client intake form removed; org chart in Leak Scan Report + portal sync replaces intake flow |
 | 2.5.3 | **Client error UX** | ✅ Done | Inline errors on portal login/upload and intake submit |
 
 ### 2.5B — Still open (data & workspace)
@@ -463,7 +463,7 @@ These were Phase 2.5 goals that have **landed**; verify on production, then trea
 | Flow | Automation target |
 |------|-------------------|
 | Signed SOW | → Create portal + workspace tenant + org chart seed |
-| MOD 1 complete | → Update portal phase + unlock MOD 2 deliverables | ✅ Shipped — **Mark Mod 1 Complete** in Waste-to-Peso Report |
+| MOD 1 complete | → Update portal phase + unlock MOD 2 deliverables | ✅ Shipped — **Mark Mod 1 Complete** in Leak Scan Report |
 | Policy published | → Notify client in portal action items |
 | Contract signed | → Audit log + CRM stage → Won |
 
@@ -537,7 +537,7 @@ flowchart TB
 |-----------|--------|-------|
 | **Content** (SOWs, policies, portal copy, intake questions) | Now — always | Phase 4 primary |
 | **Client delivery** (live engagements, Mod 1→Mod 2 handoff, portal updates) | Now | Always |
-| **Testing client journeys** | Now | Waste-to-Peso handoff, sign, portal, org chart on production |
+| **Testing client journeys** | Now | Leak Scan Report handoff, sign, portal, org chart on production |
 | **Feature ideas for tools** | Phase 4 backlog | Prioritize by MOD delivery impact |
 | **Infrastructure / SSO / migration** | Phase 2.5–3 | Delegate to eng; then ignore |
 
@@ -562,7 +562,7 @@ flowchart TB
 10. ~~Google Workspace SSO~~ ✅ — redirect-first login merged (#141)
 11. App Check enforcement — **you:** set `RECAPTCHA_SITE_KEY` secret, then enable in Firebase Console
 12. ~~Agency Ops auto-provision on contract sign + CRM Won~~ ✅ (#159, #165, #184–#204)
-13. ~~Mod 1 Waste-to-Peso Report (PDF, handoff, portal sync, Mod 2 gates)~~ ✅ (#242, deployed 7 Jul 2026)
+13. ~~Mod 1 Leak Scan Report (PDF, handoff, portal sync, Mod 2 gates)~~ ✅ (#242, deployed 7 Jul 2026)
 14. React migration (delivery → ops → analytics → client)
 15. Master Admin blueprint CRUD (visual designer — wizard shipped at `/admin/onboard`)
 16. ~~Kolthoff client workspace provisioning wizard~~ ✅ (#202)
@@ -584,7 +584,7 @@ flowchart TB
 |--------|-------------------------------|
 | Client contract sign completion rate | >95% without staff intervention |
 | Mod 1 → Mod 2 handoff | One-click **Mark Mod 1 Complete** updates portal roadmap, vault assets, and unlocks Mod 2 |
-| Org chart → portal sync | Automatic on save from Waste-to-Peso Report org chart tab |
+| Org chart → portal sync | Automatic on save from Leak Scan Report org chart tab |
 | Portal progress accuracy | Matches planner module state without manual edit |
 | Staff apps in React / admin shell | 100% of delivery + ops |
 | Time to provision new client tenant | <15 minutes via admin |
