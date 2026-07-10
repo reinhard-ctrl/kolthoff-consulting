@@ -148,10 +148,15 @@
                             {orgChartSvg && <img src={orgChartSvg} alt="Organization chart" className="w-full max-h-80 object-contain border border-slate-200 rounded-lg bg-white mb-4 page-break-inside-avoid" />}
                             {orgChartMembers && orgChartMembers.length > 0 && (
                                 <table className="report-table">
-                                    <thead><tr><th>Name / Role</th><th>Reports To</th></tr></thead>
+                                    <thead><tr><th>Name</th><th>Role / Title</th><th>Department</th><th>Reports To</th></tr></thead>
                                     <tbody>
-                                        {orgChartMembers.map((m, i) => (
-                                            <tr key={i}><td className="font-semibold">{m.name || m.label || '—'}</td><td className="text-slate-600">{m.reportsTo || '—'}</td></tr>
+                                        {(window.DiagnosisReportHelpers?.normalizeStaffDirectoryRows?.(orgChartMembers) || orgChartMembers).map((m, i) => (
+                                            <tr key={i}>
+                                                <td className="font-semibold">{m.name || m.label || '—'}</td>
+                                                <td className="text-slate-600">{m.title || m.role || '—'}</td>
+                                                <td className="text-slate-600">{m.department || '—'}</td>
+                                                <td className="text-slate-600">{m.reportsTo || '—'}</td>
+                                            </tr>
                                         ))}
                                     </tbody>
                                 </table>
