@@ -7,7 +7,48 @@
             </div>
         );
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes }) => (
+        const ReportRecoveryGanttChart = ({ gantt, variant = 'full', title }) => {
+            if (!gantt?.rows?.length) return null;
+            const { rows, maxWeek } = gantt;
+            const truncate = (text, max) => window.DiagnosisReportHelpers?.truncateReportLabel?.(text, max) || text;
+            return (
+                <div className={`report-recovery-gantt page-break-inside-avoid${variant === 'compact' ? ' report-recovery-gantt--compact' : ''}`}>
+                    {title && <h4 className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest mb-3">{title}</h4>}
+                    <div className="report-recovery-gantt-grid">
+                        <div className="report-recovery-gantt-header">
+                            <div className="report-recovery-gantt-label-col text-[9px] font-bold uppercase text-slate-500 tracking-wider">Initiative</div>
+                            <div className="report-recovery-gantt-weeks" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                                {Array.from({ length: maxWeek }, (_, i) => (
+                                    <div key={i} className="report-recovery-gantt-week">Wk {i + 1}</div>
+                                ))}
+                            </div>
+                        </div>
+                        {rows.map((row) => (
+                            <div key={row.id} className="report-recovery-gantt-row">
+                                <div className="report-recovery-gantt-label-col">
+                                    <div className="font-bold text-slate-900 text-[10px] leading-snug" title={row.label}>
+                                        {row.rank}. {truncate(row.label, variant === 'compact' ? 42 : 56)}
+                                    </div>
+                                    {row.owner && <div className="text-[8px] text-slate-500 font-mono mt-0.5">{row.owner}</div>}
+                                </div>
+                                <div className="report-recovery-gantt-weeks report-recovery-gantt-row-grid" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                                    <div
+                                        className={`report-recovery-gantt-bar${row.isTop5 ? ' report-recovery-gantt-bar--top5' : ''}`}
+                                        style={{ gridColumnStart: row.startWeek, gridColumnEnd: row.endWeek + 1 }}
+                                        title={`${row.targetWeek || `Week ${row.startWeek}–${row.endWeek}`}${row.owner ? ` · ${row.owner}` : ''}`}
+                                    >
+                                        <div className="report-recovery-gantt-bar-fill" aria-hidden="true" />
+                                        <span className="report-recovery-gantt-bar-label">{row.targetWeek || `Wk ${row.startWeek}–${row.endWeek}`}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, recoveryGanttTop5, showRecoveryGantt }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -54,6 +95,11 @@
                                 </div>
                             ))}
                         </div>
+                        {showRecoveryGantt && recoveryGanttTop5?.rows?.length > 0 && (
+                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20">
+                                <ReportRecoveryGanttChart gantt={recoveryGanttTop5} variant="compact" title="90-Day timeline (Top 5)" />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -67,6 +113,8 @@
             const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
             const topFixes = DR.getTop5Fixes?.(activeItems) || [];
+            const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
+            const recoveryGanttTop5 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop5: true }) || { rows: [] };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
@@ -88,7 +136,18 @@
                 <div className="report-doc w-full max-w-[850px] bg-white text-slate-900 shadow-2xl relative print:shadow-none print:w-full print:max-w-full print:p-0 flex flex-col gap-12 print:block print:gap-0">
 
                     {printConfig.showExecutiveSummary && (
-                        <ReportCover clientCompany={clientCompany} preparedBy={preparedBy} reportDate={reportDate} totalAnnualWaste={totalAnnualWaste} processAnnual={annualChaosTax} saasAnnual={saasAnnualWaste} maturityIndex={maturityIndex} topFixes={topFixes} />
+                        <ReportCover
+                            clientCompany={clientCompany}
+                            preparedBy={preparedBy}
+                            reportDate={reportDate}
+                            totalAnnualWaste={totalAnnualWaste}
+                            processAnnual={annualChaosTax}
+                            saasAnnual={saasAnnualWaste}
+                            maturityIndex={maturityIndex}
+                            topFixes={topFixes}
+                            recoveryGanttTop5={recoveryGanttTop5}
+                            showRecoveryGantt={printConfig.showFixOrder}
+                        />
                     )}
 
                     {printConfig.showExecutiveSummary && (
@@ -97,10 +156,23 @@
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li><strong>Start with the video walkthrough</strong> if your consultant shared a Loom link.</li>
                                 <li><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan on page 1.</li>
+                                <li><strong>Review the recovery timeline Gantt</strong> — target weeks for Top 5 fixes on page 1 and the full 90-day map in the timeline section.</li>
                                 <li><strong>Review process maps</strong> for the highest-leak workflow.</li>
                                 <li><strong>Assign owners and target weeks</strong> to each Top 5 fix.</li>
                                 <li><strong>Decide on Module 2</strong> using the recommended next-phase notes.</li>
                             </ol>
+                        </div>
+                    )}
+
+                    {printConfig.showFixOrder && recoveryGanttFull.rows.length > 0 && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader title="90-Day Recovery Plan Timeline" subtitle="Implementation map by target week — same Gantt-style view as your project planner roadmap documentation." />
+                            <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
+                            {recoveryGanttFull.unscheduledCount > 0 && (
+                                <p className="text-[10px] text-slate-500 mt-4 italic page-break-inside-avoid">
+                                    {recoveryGanttFull.unscheduledCount} initiative{recoveryGanttFull.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks in Strategy &amp; Priorities to include them on this chart.
+                                </p>
+                            )}
                         </div>
                     )}
 

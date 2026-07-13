@@ -129,6 +129,89 @@
             border-radius: 8px;
             padding: 0.75rem;
         }
+        .report-recovery-gantt {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            background: #f8fafc;
+        }
+        .report-recovery-gantt--compact {
+            padding: 0.75rem 1rem;
+        }
+        .report-recovery-gantt-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+        .report-recovery-gantt-header,
+        .report-recovery-gantt-row {
+            display: grid;
+            grid-template-columns: minmax(140px, 34%) 1fr;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .report-recovery-gantt-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.15rem;
+        }
+        .report-recovery-gantt-label-col {
+            min-width: 0;
+        }
+        .report-recovery-gantt-weeks {
+            display: grid;
+            gap: 0;
+            min-width: 0;
+        }
+        .report-recovery-gantt-week {
+            font-size: 8px;
+            font-family: ui-monospace, monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+            text-align: center;
+            border-left: 1px solid #e2e8f0;
+            padding-left: 2px;
+        }
+        .report-recovery-gantt-row-grid {
+            display: grid;
+            align-items: center;
+            min-height: 1.75rem;
+        }
+        .report-recovery-gantt-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 1.5rem;
+            min-width: 0;
+        }
+        .report-recovery-gantt-bar-fill {
+            position: absolute;
+            inset: 0;
+            border-radius: 0.25rem;
+            border: 1px solid #99f6e4;
+            background: #f0fdfa;
+            z-index: 1;
+        }
+        .report-recovery-gantt-bar--top5 .report-recovery-gantt-bar-fill {
+            border-color: #14b8a6;
+            background: #ccfbf1;
+        }
+        .report-recovery-gantt-bar-label {
+            position: relative;
+            z-index: 2;
+            padding: 0 0.35rem;
+            font-size: 8px;
+            font-family: ui-monospace, monospace;
+            font-weight: 700;
+            color: #0f766e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .report-recovery-gantt--compact .report-recovery-gantt-bar-label {
+            font-size: 7px;
+        }
         .report-print-footer {
             display: none;
         }
@@ -1771,6 +1854,52 @@
             );
         };
 
+        const ReportRecoveryGanttChart = ({ gantt, variant = 'full', title }) => {
+            if (!gantt?.rows?.length) return null;
+            const { rows, maxWeek } = gantt;
+            const truncate = (text, max) => DRH().truncateReportLabel?.(text, max) || text;
+            return (
+                <div className={`report-recovery-gantt page-break-inside-avoid${variant === 'compact' ? ' report-recovery-gantt--compact' : ''}`}>
+                    {title && (
+                        <h4 className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-widest mb-3">{title}</h4>
+                    )}
+                    <div className="report-recovery-gantt-grid">
+                        <div className="report-recovery-gantt-header">
+                            <div className="report-recovery-gantt-label-col text-[9px] font-bold uppercase text-slate-500 tracking-wider">Initiative</div>
+                            <div className="report-recovery-gantt-weeks" style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}>
+                                {Array.from({ length: maxWeek }, (_, i) => (
+                                    <div key={i} className="report-recovery-gantt-week">Wk {i + 1}</div>
+                                ))}
+                            </div>
+                        </div>
+                        {rows.map((row) => (
+                            <div key={row.id} className="report-recovery-gantt-row">
+                                <div className="report-recovery-gantt-label-col">
+                                    <div className="font-bold text-slate-900 text-[10px] leading-snug" title={row.label}>
+                                        {row.rank}. {truncate(row.label, variant === 'compact' ? 42 : 56)}
+                                    </div>
+                                    {row.owner && <div className="text-[8px] text-slate-500 font-mono mt-0.5">{row.owner}</div>}
+                                </div>
+                                <div
+                                    className="report-recovery-gantt-weeks report-recovery-gantt-row-grid"
+                                    style={{ gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` }}
+                                >
+                                    <div
+                                        className={`report-recovery-gantt-bar${row.isTop5 ? ' report-recovery-gantt-bar--top5' : ''}`}
+                                        style={{ gridColumnStart: row.startWeek, gridColumnEnd: row.endWeek + 1 }}
+                                        title={`${row.targetWeek || `Week ${row.startWeek}–${row.endWeek}`}${row.owner ? ` · ${row.owner}` : ''}`}
+                                    >
+                                        <div className="report-recovery-gantt-bar-fill" aria-hidden="true" />
+                                        <span className="report-recovery-gantt-bar-label">{row.targetWeek || `Wk ${row.startWeek}–${row.endWeek}`}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         const ReportDocumentFooter = ({ clientCompany, reportDate, preparedBy }) => (
             <div className="report-print-footer">
                 Kolthoff Consulting · Confidential Client Deliverable · {clientCompany} · {reportDate}
@@ -1787,7 +1916,7 @@
             </div>
         );
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, executiveLetter, loomWalkthroughUrl, showExecutiveLetter }) => (
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, executiveLetter, loomWalkthroughUrl, showExecutiveLetter, recoveryGanttTop5, showRecoveryGantt }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -1854,6 +1983,11 @@
                                 ))}
                             </tbody>
                         </table>
+                        {showRecoveryGantt && recoveryGanttTop5?.rows?.length > 0 && (
+                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20">
+                                <ReportRecoveryGanttChart gantt={recoveryGanttTop5} variant="compact" title="90-Day timeline (Top 5)" />
+                            </div>
+                        )}
                     </div>
                 )}
                 {loomWalkthroughUrl && loomWalkthroughUrl.trim() && (
@@ -1896,6 +2030,8 @@
             const fillIns = activeItems.filter(it => Number(it.effort) < 3 && Number(it.impact) < 3);
             const moneyPits = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) < 3);
             const coiBreakdown = DR.buildCoiBreakdown?.(annualChaosTax, saasAnnualWaste, synthesis.expectedGrowth, formatCurrency) || { projected: projected3YearLoss, assumptionSentence: '' };
+            const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
+            const recoveryGanttTop5 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop5: true }) || { rows: [] };
 
             const severityClass = { amber: 'border-amber-200 bg-amber-50', rose: 'border-rose-200 bg-rose-50/50', slate: 'border-slate-200 bg-slate-50' };
             const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
@@ -1916,6 +2052,8 @@
                             executiveLetter={synthesis.executiveLetter}
                             loomWalkthroughUrl={synthesis.loomWalkthroughUrl}
                             showExecutiveLetter={printConfig.showExecutiveLetter !== false}
+                            recoveryGanttTop5={recoveryGanttTop5}
+                            showRecoveryGantt={printConfig.showFixOrder}
                         />
                     )}
 
@@ -1925,6 +2063,7 @@
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li className="page-break-inside-avoid"><strong>Start with the video walkthrough</strong> — scan the QR code on the cover or open the Loom link your consultant shared.</li>
                                 <li className="page-break-inside-avoid"><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan table on page 1 — these are your action priorities.</li>
+                                <li className="page-break-inside-avoid"><strong>Review the recovery timeline Gantt</strong> — target weeks for each Top 5 fix on page 1 and the full 90-day map in the timeline section.</li>
                                 <li className="page-break-inside-avoid"><strong>Review process maps</strong> (Section B) for the highest-leak workflow — delay minutes drive the leakage numbers.</li>
                                 <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 5 fix before your next leadership meeting.</li>
                                 <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the recommended next-phase notes — playbooks and policies turn findings into daily rhythm.</li>
@@ -1959,6 +2098,18 @@
                             </div>
                         );
                     })()}
+
+                    {printConfig.showFixOrder && recoveryGanttFull.rows.length > 0 && (
+                        <div className="report-page">
+                            <ReportSectionHeader title="90-Day Recovery Plan Timeline" subtitle="Implementation map by target week — same Gantt-style view as your project planner roadmap documentation." />
+                            <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
+                            {recoveryGanttFull.unscheduledCount > 0 && (
+                                <p className="text-[10px] text-slate-500 mt-4 italic page-break-inside-avoid">
+                                    {recoveryGanttFull.unscheduledCount} initiative{recoveryGanttFull.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks in Strategy &amp; Priorities to include them on this chart.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
                         <div className="report-page">
@@ -3028,6 +3179,7 @@
                                                     {[
                                                         ['showExecutiveSummary', 'Summary'],
                                                         ['showExecutiveLetter', 'Letter'],
+                                                        ['showFixOrder', 'Gantt'],
                                                         ['showLeakageRanking', 'Rankings'],
                                                         ['showOrgChart', 'Org Chart'],
                                                         ['showFlowcharts', 'Workflows'],
