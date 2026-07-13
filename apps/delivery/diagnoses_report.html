@@ -1445,13 +1445,9 @@
             };
 
             const sortByImpactEffort = () => {
-                setSynthesis(prev => {
-                    const sorted = [...(prev.matrix?.items || [])].sort((a, b) => {
-                        const scoreA = (Number(a.impact) || 3) / (Number(a.effort) || 3);
-                        const scoreB = (Number(b.impact) || 3) / (Number(b.effort) || 3);
-                        return scoreB - scoreA;
-                    });
-                    return { ...prev, matrix: { ...prev.matrix, items: sorted } };
+                setSynthesis((prev) => {
+                    const sorted = DRH().sortMatrixByImpactEffort?.(prev.matrix?.items) || [];
+                    return { ...prev, matrix: { ...(prev.matrix || {}), items: sorted } };
                 });
             };
 
@@ -2566,6 +2562,7 @@
             const workflowIframeRef = useRef(null);
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
+            const profileHydratedIdRef = useRef(null);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -2607,14 +2604,17 @@
 
             useEffect(() => {
                 autoSaveReadyRef.current = false;
+                profileHydratedIdRef.current = null;
             }, [activeProfileId]);
 
             useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
                 const EC = window.EngagementConfig || {};
                 const WT = window.WorkflowTabs;
-                if (profile) {
-                    setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
+                if (!profile) return;
+                if (profileHydratedIdRef.current === activeProfileId) return;
+                profileHydratedIdRef.current = activeProfileId;
+                setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
                     const diagnosisData = WT?.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
                     const reportTabs = diagnosisData.tabs || [];
@@ -2693,7 +2693,6 @@
                     }
                     autoSaveReadyRef.current = false;
                     setTimeout(() => { autoSaveReadyRef.current = true; }, 1200);
-                }
             }, [activeProfileId, workbookProfiles]);
 
             const triggerToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };

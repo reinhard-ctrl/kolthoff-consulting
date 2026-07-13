@@ -573,6 +573,22 @@
     return items;
   }
 
+  function compareMatrixImpactEffort(a, b) {
+    const effortA = Number(a.effort) || 3;
+    const effortB = Number(b.effort) || 3;
+    const impactA = Number(a.impact) || 3;
+    const impactB = Number(b.impact) || 3;
+    const scoreA = impactA / effortA;
+    const scoreB = impactB / effortB;
+    return scoreB - scoreA
+      || impactB - impactA
+      || (Number(b.expectedSavings) || 0) - (Number(a.expectedSavings) || 0);
+  }
+
+  function sortMatrixByImpactEffort(matrixItems) {
+    return [...(matrixItems || [])].sort(compareMatrixImpactEffort);
+  }
+
   function getTop5Fixes(matrixItems) {
     const items = (matrixItems || []).map((item) => {
       const effort = Number(item.effort) || 3;
@@ -585,11 +601,7 @@
         rootCauseKey: getRootCauseKey(item),
       };
     });
-    const sorted = items.sort(
-      (a, b) => b.score - a.score
-        || b.impact - a.impact
-        || (Number(b.expectedSavings) || 0) - (Number(a.expectedSavings) || 0),
-    );
+    const sorted = items.sort(compareMatrixImpactEffort);
     const seen = new Set();
     const deduped = [];
     for (const item of sorted) {
@@ -1780,6 +1792,8 @@
     generateRaciGapMatrixItems,
     generateMatrixFromDiagnosis,
     getTop5Fixes,
+    compareMatrixImpactEffort,
+    sortMatrixByImpactEffort,
     validateTop5Readiness,
     buildModulePitch,
     validateReportReadiness,
