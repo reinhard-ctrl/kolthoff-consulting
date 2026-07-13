@@ -418,4 +418,15 @@ describe('diagnosis-report-helpers', () => {
     const top5 = DRH.buildRecoveryPlanGantt(items, { onlyTop5: true });
     assert.ok(top5.rows.every((r) => r.isTop5));
   });
+
+  it('sortMatrixByImpactEffort orders items by impact ÷ effort', () => {
+    const items = [
+      { id: 'low', text: 'Low score', effort: 4, impact: 2, expectedSavings: 1000 },
+      { id: 'high', text: 'High score', effort: 2, impact: 5, expectedSavings: 2000 },
+      { id: 'mid', text: 'Mid score', effort: 2, impact: 3, expectedSavings: 1500 },
+    ];
+    const sorted = DRH.sortMatrixByImpactEffort(items);
+    assert.deepEqual(sorted.map((i) => i.id), ['high', 'mid', 'low']);
+    assert.notEqual(sorted, items);
+  });
 });
