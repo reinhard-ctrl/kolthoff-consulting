@@ -957,7 +957,8 @@
     const processAnnual = rankings.reduce((acc, row) => acc + (row.annual || 0), 0);
     const totalAnnual = processAnnual + saasMonthly * 12;
     const recapture = computeRecaptureSummary(top5, totalAnnual);
-    const processCount = (tabs || []).filter((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0).length;
+    const mappedProcesses = rankings.filter((row) => row.taskCount > 0);
+    const processCount = mappedProcesses.length;
     const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
     const toolCount = (subSaaS || []).length;
 
@@ -965,6 +966,9 @@
     parts.push(
       `We mapped ${processCount || 'no'} core process${processCount === 1 ? '' : 'es'}, ${staffCount || 'no'} team member${staffCount === 1 ? '' : 's'}, and ${toolCount} software subscription${toolCount === 1 ? '' : 's'} during your Module 1 Business Leak Scan.`,
     );
+    if (mappedProcesses.length > 1) {
+      parts.push(` Processes mapped: ${mappedProcesses.map((row) => row.tabName).join(', ')}.`);
+    }
     if (top && top.annual > 0) {
       parts.push(
         ` The highest-leak process is "${top.tabName}" at approximately ${formatCurrency(top.monthly)}/month — bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process maps'}.`,

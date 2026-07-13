@@ -332,6 +332,23 @@ describe('diagnosis-report-helpers', () => {
     assert.match(letter, /team member/);
   });
 
+  it('buildDefaultExecutiveLetter lists all mapped process names', () => {
+    const letter = DRH.buildDefaultExecutiveLetter({
+      tabs: [
+        { id: 'a', name: 'Sales', present: {} },
+        { id: 'b', name: 'Fulfillment', present: {} },
+        { id: 'c', name: 'Billing', present: {} },
+      ],
+      subSaaS: [],
+      synthesis: { matrix: { items: [] } },
+      orgChartMembers: [],
+      formatCurrency: (v) => `P${v}`,
+      DiagramEditor: mockDiagramEditor,
+    });
+    assert.match(letter, /3 core processes/);
+    assert.match(letter, /Sales, Fulfillment, Billing/);
+  });
+
   it('getBriefingWorkflowTabs returns only top-leak tab', () => {
     const tabs = [
       { id: 'a', name: 'Sales', present: {} },
