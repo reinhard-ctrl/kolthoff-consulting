@@ -393,4 +393,29 @@ describe('diagnosis-report-helpers', () => {
     const hint = DRH.buildNextPhaseHint(matrix, [{ key: 'MOD 2', title: 'How Your Business Runs' }]);
     assert.match(hint, /Module 2|How Your Business Runs/);
   });
+
+  it('parseTargetWeekRange parses week ranges and singles', () => {
+    assert.deepEqual(DRH.parseTargetWeekRange('Week 1–2'), { startWeek: 1, endWeek: 2 });
+    assert.deepEqual(DRH.parseTargetWeekRange('Week 3-4'), { startWeek: 3, endWeek: 4 });
+    assert.deepEqual(DRH.parseTargetWeekRange('wk 5'), { startWeek: 5, endWeek: 5 });
+    assert.equal(DRH.parseTargetWeekRange(''), null);
+    assert.equal(DRH.parseTargetWeekRange('TBD'), null);
+  });
+
+  it('buildRecoveryPlanGantt builds rows from matrix target weeks', () => {
+    const items = [
+      { id: '1', text: 'Fix approvals', effort: 2, impact: 5, expectedSavings: 8000, owner: 'Maria', targetWeek: 'Week 1–2' },
+      { id: '2', text: 'Cut Zoom seats', effort: 2, impact: 4, expectedSavings: 5000, owner: 'Ops', targetWeek: 'Week 3–4' },
+      { id: '3', text: 'No schedule yet', effort: 3, impact: 3, expectedSavings: 2000, owner: 'Ops' },
+    ];
+    const full = DRH.buildRecoveryPlanGantt(items);
+    assert.equal(full.rows.length, 2);
+    assert.equal(full.unscheduledCount, 1);
+    assert.equal(full.rows[0].startWeek, 1);
+    assert.equal(full.rows[1].startWeek, 3);
+    assert.ok(full.maxWeek >= 12);
+
+    const top5 = DRH.buildRecoveryPlanGantt(items, { onlyTop5: true });
+    assert.ok(top5.rows.every((r) => r.isTop5));
+  });
 });

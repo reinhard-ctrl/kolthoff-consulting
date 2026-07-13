@@ -1663,6 +1663,53 @@
     }
   }
 
+  function parseTargetWeekRange(targetWeek) {
+    const s = String(targetWeek || '').trim();
+    if (!s) return null;
+    const range = s.match(/(\d+)\s*[-–—]\s*(\d+)/);
+    if (range) {
+      const startWeek = Number(range[1]);
+      const endWeek = Number(range[2]);
+      if (startWeek > 0 && endWeek >= startWeek) return { startWeek, endWeek };
+    }
+    const single = s.match(/(?:week|wk)\s*(\d+)/i) || s.match(/^(\d+)$/);
+    if (single) {
+      const w = Number(single[1]);
+      if (w > 0) return { startWeek: w, endWeek: w };
+    }
+    return null;
+  }
+
+  function buildRecoveryPlanGantt(matrixItems, options) {
+    const opts = options || {};
+    const items = Array.isArray(matrixItems) ? matrixItems : [];
+    const top5List = getTop5Fixes(items);
+    const top5Ids = new Set(top5List.map((i) => i.id));
+    const source = opts.onlyTop5 ? top5List : items;
+    const rows = [];
+
+    source.forEach((item, idx) => {
+      const range = parseTargetWeekRange(item.targetWeek);
+      if (!range) return;
+      rows.push({
+        id: item.id,
+        label: item.text || '',
+        owner: String(item.owner || '').trim(),
+        targetWeek: item.targetWeek,
+        startWeek: range.startWeek,
+        endWeek: range.endWeek,
+        rank: opts.onlyTop5 ? idx + 1 : items.findIndex((i) => i.id === item.id) + 1,
+        isTop5: top5Ids.has(item.id),
+      });
+    });
+
+    rows.sort((a, b) => a.startWeek - b.startWeek || a.endWeek - b.endWeek || a.rank - b.rank);
+    const maxWeek = Math.max(12, ...rows.map((r) => r.endWeek), 4);
+    const unscheduledCount = items.filter((i) => !parseTargetWeekRange(i.targetWeek)).length;
+
+    return { rows, maxWeek, top5Ids: [...top5Ids], unscheduledCount };
+  }
+
   const PRINT_PRESETS = {
     full: {
       showExecutiveSummary: true,
@@ -1750,6 +1797,8 @@
     estimateReportDiagramContentBounds,
     tightReportDiagramViewBox,
     truncateReportLabel,
+    parseTargetWeekRange,
+    buildRecoveryPlanGantt,
     getMatrixQuadrantMeta,
     enhanceReportDiagramConnectorVisibility,
     enhanceReportDiagramProfessionalPresentation,
