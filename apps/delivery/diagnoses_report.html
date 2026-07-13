@@ -548,6 +548,30 @@
         const EMPTY_CANVAS = { nodes: [], edges: [], lanes: [], phases: [] };
 
         const DRH = () => window.DiagnosisReportHelpers || {};
+
+        /** Latest diagnosis workflows from Firestore profile (iframe saves), with local tabs fallback. */
+        const resolveDiagnosisTabsFromProfile = (profile, fallbackTabs = []) => {
+            const WT = window.WorkflowTabs;
+            if (profile && WT?.getDiagnosisTabs) {
+                const dx = WT.getDiagnosisTabs(profile);
+                if (dx?.tabs?.length) {
+                    return {
+                        tabs: WT.hydrateTabs(dx.tabs),
+                        activeTabId: dx.activeTabId || dx.tabs[0]?.id || null,
+                    };
+                }
+            }
+            return { tabs: fallbackTabs, activeTabId: null };
+        };
+
+        const hydrateDiagnosisTabsForPrint = (storedTabs) => (
+            (window.WorkflowTabs?.hydrateTabs?.(storedTabs) || storedTabs || []).map((tab) => ({
+                ...tab,
+                present: tab.present
+                    ? { ...tab.present, svgCache: printReadySvg(tab.present.svgCache || '') }
+                    : tab.present,
+            }))
+        );
         const printReadySvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
         const EC_MODULES = () => (window.EngagementConfig?.MODULES) || [];
 
@@ -1311,6 +1335,11 @@
             const [generateModalOpen, setGenerateModalOpen] = useState(false);
             const [generateMode, setGenerateMode] = useState('append');
 
+            const resolvedDiagnosisTabs = useMemo(() => {
+                const resolved = resolveDiagnosisTabsFromProfile(activeProfile, tabs);
+                return resolved.tabs.length ? resolved.tabs : tabs;
+            }, [activeProfile, tabs, workflowUpdatedAt]);
+
             const genOptions = useMemo(() => ({
                 raciAssignments,
                 staffFeedbackThemes: synthesis.staffFeedbackThemes,
@@ -1318,13 +1347,13 @@
             }), [raciAssignments, synthesis]);
 
             const generatePreview = useMemo(() => DRH().previewMatrixGeneration?.(
-                tabs, subSaaS, synthesis.matrix?.items || [], window.DiagramEditor, genOptions,
-            ) || { counts: { total: 0 }, replaceCount: 0 }, [tabs, subSaaS, synthesis.matrix, genOptions]);
+                resolvedDiagnosisTabs, subSaaS, synthesis.matrix?.items || [], window.DiagramEditor, genOptions,
+            ) || { counts: { total: 0 }, replaceCount: 0 }, [resolvedDiagnosisTabs, subSaaS, synthesis.matrix, genOptions]);
 
             const workflowStale = workflowUpdatedAt && reportDataUpdatedAt && workflowUpdatedAt > reportDataUpdatedAt;
             const ownerSuggestions = useMemo(() => DRH().buildOwnerSuggestions?.(
-                orgChartMembers, tabs, raciAssignments, window.DiagramEditor,
-            ) || [], [orgChartMembers, tabs, raciAssignments]);
+                orgChartMembers, resolvedDiagnosisTabs, raciAssignments, window.DiagramEditor,
+            ) || [], [orgChartMembers, resolvedDiagnosisTabs, raciAssignments]);
 
             const generatePitch = (modId) => {
                 const pitch = DRH().buildModulePitch?.(modId, totalAnnualWaste, formatCurrency, EC_MODULES()) || '';
@@ -1333,7 +1362,7 @@
 
             const applyGeneratedMatrix = (mode) => {
                 const items = DRH().generateMatrixFromDiagnosis?.(
-                    tabs, subSaaS,
+                    resolvedDiagnosisTabs, subSaaS,
                     mode === 'replace' ? [] : (synthesis.matrix?.items || []),
                     window.DiagramEditor,
                     { ...genOptions, replace: mode === 'replace' },
@@ -1361,10 +1390,10 @@
             };
 
             const insightCtx = useMemo(() => ({
-                synthesis, subSaaS, tabs, raciAssignments, orgChartMembers,
+                synthesis, subSaaS, tabs: resolvedDiagnosisTabs, raciAssignments, orgChartMembers,
                 staffFeedbackThemes: synthesis.staffFeedbackThemes,
                 formatCurrency, DiagramEditor: window.DiagramEditor,
-            }), [synthesis, subSaaS, tabs, raciAssignments, orgChartMembers]);
+            }), [synthesis, subSaaS, resolvedDiagnosisTabs, raciAssignments, orgChartMembers]);
 
             const aiInsights = useMemo(() => DRH().buildOperationalInsights?.(insightCtx) || [], [insightCtx]);
             const matrixItems = synthesis.matrix?.items || [];
@@ -1713,7 +1742,14 @@
                                     <p className="text-[10px] text-slate-500">3–5 sentences for the owner — appears on page 1 of the PDF.</p>
                                 </div>
                                 <button type="button" onClick={() => {
-                                    const letter = DRH().buildDefaultExecutiveLetter?.({ tabs, subSaaS, synthesis, orgChartMembers, formatCurrency, DiagramEditor: window.DiagramEditor }) || '';
+                                    const letter = DRH().buildDefaultExecutiveLetter?.({
+                                        tabs: resolvedDiagnosisTabs,
+                                        subSaaS,
+                                        synthesis,
+                                        orgChartMembers,
+                                        formatCurrency,
+                                        DiagramEditor: window.DiagramEditor,
+                                    }) || '';
                                     setSynthesis((prev) => ({ ...prev, executiveLetter: letter }));
                                 }} className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider">Generate from Diagnosis</button>
                             </div>
@@ -2563,6 +2599,7 @@
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
             const profileHydratedIdRef = useRef(null);
+            const lastSyncedWorkflowAtRef = useRef(0);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -2605,7 +2642,22 @@
             useEffect(() => {
                 autoSaveReadyRef.current = false;
                 profileHydratedIdRef.current = null;
+                lastSyncedWorkflowAtRef.current = 0;
             }, [activeProfileId]);
+
+            // Refresh workflow tabs when the iframe builder saves — without re-hydrating synthesis.
+            useEffect(() => {
+                const profile = workbookProfiles.find((p) => p.id === activeProfileId);
+                if (!profile) return;
+                const wfUpdatedAt = profile.diagnosisWorkflow?.updatedAt || 0;
+                if (!wfUpdatedAt || wfUpdatedAt === lastSyncedWorkflowAtRef.current) return;
+                lastSyncedWorkflowAtRef.current = wfUpdatedAt;
+                const resolved = resolveDiagnosisTabsFromProfile(profile, tabs);
+                if (!resolved.tabs.length) return;
+                setTabs(hydrateDiagnosisTabsForPrint(resolved.tabs));
+                if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
+                setWorkflowUpdatedAt(wfUpdatedAt);
+            }, [activeProfileId, workbookProfiles]);
 
             useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
@@ -2646,6 +2698,7 @@
                         ) || storedMembers;
                     setOrgChartMembers(hydratedMembers);
                     setWorkflowUpdatedAt(profile.diagnosisWorkflow?.updatedAt || 0);
+                    lastSyncedWorkflowAtRef.current = profile.diagnosisWorkflow?.updatedAt || 0;
                     setReportDataUpdatedAt(profile.diagnosisReportUpdatedAt || 0);
                     setMod1DeliveredAt(profile.mod1DeliveredAt || null);
 
