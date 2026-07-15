@@ -359,6 +359,19 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(filtered[0].id, 'a');
   });
 
+  it('getReportWorkflowTabs returns all mapped workflows ranked by leakage', () => {
+    const tabs = [
+      { id: 'a', name: 'Sales', present: {} },
+      { id: 'b', name: 'Ops', present: {} },
+    ];
+    const all = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor);
+    assert.equal(all.length, 2);
+    assert.equal(all[0].id, 'a');
+    const topOnly = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor, { topOnly: true });
+    assert.equal(topOnly.length, 1);
+    assert.equal(topOnly[0].id, 'a');
+  });
+
   it('buildCoiBreakdown exposes formula and assumption sentence', () => {
     const coi = DRH.buildCoiBreakdown(120000, 24000, 2, (v) => `P${v}`);
     assert.equal(coi.baseAnnual, 144000);

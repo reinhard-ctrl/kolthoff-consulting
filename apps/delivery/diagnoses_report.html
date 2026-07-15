@@ -2045,9 +2045,9 @@
             const topFixes = DR.getTop5Fixes?.(activeItems) || [];
             const recapture = DR.computeRecaptureSummary?.(topFixes, totalAnnualWaste) || { monthly: 0, annual: 0, pctOfTotalLeakage: 0 };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
-            const workflowTabs = printConfig.flowchartsTopOnly
-                ? (DR.getBriefingWorkflowTabs?.(tabs, window.DiagramEditor) || [])
-                : tabs;
+            const workflowTabs = DR.getReportWorkflowTabs?.(tabs, window.DiagramEditor, {
+                topOnly: !!printConfig.flowchartsTopOnly,
+            }) || tabs;
             const m102InScope = DR.isMod1TaskInScope?.(profileTasks, 'm1-02');
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
@@ -2204,25 +2204,36 @@
                     )}
 
                     {printConfig.showFlowcharts && workflowTabs.length > 0 && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="B" title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
-                            <div className="space-y-6">
-                                {workflowTabs.map((tab, tabIdx) => {
-                                    const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
-                                    const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
-                                    const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
-                                    return (
-                                        <div key={tab.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 report-workflow-tab">
+                        <>
+                            {workflowTabs.map((tab, tabIdx) => {
+                                const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
+                                const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
+                                const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
+                                return (
+                                    <div key={tab.id} className="report-page">
+                                        {tabIdx === 0 ? (
+                                            <ReportSectionHeader number="B" title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
+                                        ) : (
+                                            <div className="mb-6 page-break-inside-avoid">
+                                                <div className="report-accent-bar mb-3" />
+                                                <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em]">Section B — Process Maps (continued)</div>
+                                            </div>
+                                        )}
+                                        <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 report-workflow-tab">
                                             <div className="flex justify-between items-baseline border-b border-slate-200 pb-2 mb-3">
                                                 <span className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">{tab.name}</span>
                                                 <span className="font-mono text-rose-600 font-bold text-xs">{formatCurrency(Math.round(tabTax.annual / 12))}/mo</span>
                                             </div>
-                                            {vm.svgCache && (
+                                            {vm.svgCache ? (
                                                 <ReportDiagramFigure
                                                     src={vm.svgCache}
                                                     alt={tab.name}
                                                     caption={`Figure B.${tabIdx + 1} — ${tab.name} (as-is process map)`}
                                                 />
+                                            ) : (
+                                                <p className="text-xs text-slate-500 italic mb-4 p-4 border border-dashed border-slate-300 rounded-lg bg-white page-break-inside-avoid">
+                                                    Process map diagram not exported for this workflow — open the Workflow section, save to cloud, and refresh before printing.
+                                                </p>
                                             )}
                                             <div className="space-y-2">
                                                 {processNodes.map((step, sIdx) => {
@@ -2241,10 +2252,10 @@
                                                 })}
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                    </div>
+                                );
+                            })}
+                        </>
                     )}
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
@@ -2772,12 +2783,18 @@
                 [workbookProfiles, activeProfileId],
             );
 
+            const diagnosisTabsForReport = useMemo(() => {
+                const resolved = resolveDiagnosisTabsFromProfile(activeProfile, tabs);
+                const raw = resolved.tabs.length ? resolved.tabs : tabs;
+                return hydrateDiagnosisTabsForPrint(raw);
+            }, [activeProfile, tabs, workflowUpdatedAt]);
+
             const mod1Handoff = useMemo(() => DRH().validateMod1Handoff?.({
-                tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
+                tabs: diagnosisTabsForReport, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
                 workflowUpdatedAt, reportDataUpdatedAt,
                 tasks: activeProfile?.tasks || [],
                 orgChartMembers,
-            }) || reportValidation, [tabs, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation, orgChartMembers]);
+            }) || reportValidation, [diagnosisTabsForReport, subSaaS, synthesis, orgChartSvg, raciAssignments, workflowUpdatedAt, reportDataUpdatedAt, activeProfile, reportValidation, orgChartMembers]);
 
             const mod1Deliverables = useMemo(() => DRH().buildMod1DeliverableStatus?.({
                 tasks: activeProfile?.tasks || [],
@@ -2819,7 +2836,7 @@
             const executiveReportProps = useMemo(() => ({
                 clientCompany,
                 preparedBy,
-                tabs,
+                tabs: diagnosisTabsForReport,
                 raciAssignments,
                 subSaaS,
                 annualChaosTax: totalAnnualChaosTax,
@@ -2831,7 +2848,7 @@
                 orgChartMembers,
                 reportDate,
                 profileTasks: activeProfile?.tasks || [],
-            }), [clientCompany, preparedBy, tabs, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks]);
+            }), [clientCompany, preparedBy, diagnosisTabsForReport, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks]);
 
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
