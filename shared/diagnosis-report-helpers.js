@@ -997,6 +997,19 @@
     return (tabs || []).filter((tab) => tab.id === topId);
   }
 
+  /** Workflows to render in the Leak Scan Report PDF — all mapped processes, ranked by leakage. */
+  function getReportWorkflowTabs(tabs, DiagramEditor, options) {
+    const opts = options || {};
+    let source = tabs || [];
+    if (opts.topOnly) {
+      source = getBriefingWorkflowTabs(tabs, DiagramEditor);
+    }
+    const withSteps = source.filter((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0);
+    const rankings = buildProcessRankings(source, DiagramEditor);
+    const order = new Map(rankings.map((row, idx) => [row.tabId, idx]));
+    return withSteps.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+  }
+
   function validateMod1Handoff(ctx) {
     const base = validateReportReadiness(ctx);
     const { synthesis = {}, tasks = [] } = ctx;
@@ -1751,7 +1764,7 @@
       showLeakageRanking: true,
       showOrgChart: false,
       showFlowcharts: true,
-      flowchartsTopOnly: true,
+      flowchartsTopOnly: false,
       showRaci: false,
       showSaas: true,
       showSynthesis: true,
@@ -1826,6 +1839,7 @@
     buildMod1DeliverableStatus,
     buildDefaultExecutiveLetter,
     getBriefingWorkflowTabs,
+    getReportWorkflowTabs,
     PRINT_PRESETS,
   };
 
