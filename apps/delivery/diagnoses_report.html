@@ -549,16 +549,15 @@
 
         const DRH = () => window.DiagnosisReportHelpers || {};
 
-        /** Latest diagnosis workflows from Firestore profile (iframe saves), with local tabs fallback. */
+        /** Mod 1 as-is workflows from Firestore (never Mod 2 to-be tabs). */
         const resolveDiagnosisTabsFromProfile = (profile, fallbackTabs = []) => {
             const WT = window.WorkflowTabs;
             if (profile && WT) {
                 const dx = WT.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
-                const reportTabs = WT.getReportTabs?.(profile) || dx.tabs || [];
-                if (reportTabs.length) {
+                if (dx.tabs?.length) {
                     return {
-                        tabs: WT.hydrateTabs(reportTabs),
-                        activeTabId: dx.activeTabId || reportTabs[0]?.id || null,
+                        tabs: WT.hydrateTabs(dx.tabs),
+                        activeTabId: dx.activeTabId || dx.tabs[0]?.id || null,
                     };
                 }
             }
@@ -850,7 +849,7 @@
             );
         };
 
-        const requestWorkflowEmbedSave = (iframe, { applyDiagram = true } = {}) => new Promise((resolve, reject) => {
+        const requestWorkflowEmbedSave = (iframe, { applyDiagram = true, exportAllTabs = false } = {}) => new Promise((resolve, reject) => {
             if (!iframe?.contentWindow) {
                 reject(new Error('Workflow builder not ready'));
                 return;
@@ -875,6 +874,7 @@
                 type: 'kolthoff-workflow-save-request',
                 requestId,
                 applyDiagram,
+                exportAllTabs,
             }), '*');
         });
 
@@ -3059,7 +3059,7 @@
                             };
                         }
                     } else if (activeNav === 'flowcharts') {
-                        await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true });
+                        await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true, exportAllTabs: false });
                         return await handleSaveToCloud({ silent, skipWorkflowTabs: true });
                     }
                     return await handleSaveToCloud({ silent, orgOverride });
@@ -3084,10 +3084,10 @@
 
             useEffect(() => {
                 if (!autoSaveReadyRef.current || authError || !isAuthed || !activeProfileId || isSaving) return;
-                if (activeNav === 'report') return;
+                if (activeNav === 'report' || activeNav === 'flowcharts') return;
 
                 clearTimeout(autoSaveTimerRef.current);
-                const delayMs = ['orgchart', 'flowcharts'].includes(activeNav) ? 5000 : 3000;
+                const delayMs = activeNav === 'orgchart' ? 5000 : 3000;
                 autoSaveTimerRef.current = setTimeout(() => {
                     handleSectionSave({ silent: true }).catch(() => {});
                 }, delayMs);

@@ -504,6 +504,9 @@
             const applyDiagramAndSaveRef = useRef(null);
             const tabsRef = useRef(tabs);
             const activeTabIdRef = useRef(activeTabId);
+            const profileHydratedIdRef = useRef(null);
+            const lastOwnSaveAtRef = useRef(0);
+            const WORKFLOW_IDLE_SAVE_MS = 15000;
 
             useEffect(() => { tabsRef.current = tabs; }, [tabs]);
             useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
@@ -551,12 +554,16 @@
 
             useEffect(() => {
                 autoSaveReadyRef.current = false;
+                profileHydratedIdRef.current = null;
+                lastOwnSaveAtRef.current = 0;
             }, [activeProfileId]);
 
             useEffect(() => {
                 const profile = workbookProfiles.find(p => p.id === activeProfileId);
                 const WT = window.WorkflowTabs;
                 if (!profile) return;
+                if (profileHydratedIdRef.current === activeProfileId) return;
+                profileHydratedIdRef.current = activeProfileId;
                 const resolved = WT?.resolveEditorTabs?.(profile, WORKFLOW_APP) || WT?.resolveWorkflowTabs(profile, WORKFLOW_APP);
                 if (resolved?.tabs?.length) {
                     setTabs(WT.hydrateTabs(resolved.tabs));
@@ -591,6 +598,7 @@
                     const profileSnap = await window.getDoc(profileRef);
                     const existing = profileSnap.exists() ? profileSnap.data() : {};
                     const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload(WORKFLOW_APP, saveTabs, saveActiveId, existing);
+                    lastOwnSaveAtRef.current = tabsPayload[window.WorkflowTabs.SLICE_KEYS[WORKFLOW_APP]]?.updatedAt || Date.now();
                     await window.setDoc(profileRef, { ...tabsPayload, raciAssignments }, { merge: true });
 
                     if (IS_DIAGNOSIS_MODE) {
@@ -650,6 +658,38 @@
                 }
             };
 
+            const exportActiveTabDiagram = async () => {
+                const snapshot = tabsRef.current || [];
+                const activeId = activeTabIdRef.current;
+                const idx = snapshot.findIndex((t) => t.id === activeId);
+                if (idx < 0) return snapshot;
+
+                const tab = snapshot[idx];
+                const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
+                if (norm.format === 'legacy') return snapshot;
+
+                try {
+                    const exported = await diagramExportRef.current?.applyDiagram?.();
+                    if (!exported?.svg && !exported?.xml) return snapshot;
+                    const updated = [...snapshot];
+                    updated[idx] = {
+                        ...tab,
+                        present: {
+                            ...norm,
+                            drawioXml: exported.xml || norm.drawioXml,
+                            svgCache: exported.svg || norm.svgCache,
+                            format: 'bpmn',
+                        },
+                    };
+                    setTabs(updated);
+                    tabsRef.current = updated;
+                    return updated;
+                } catch (exportErr) {
+                    console.warn('Workflow active tab SVG export failed:', tab.name, exportErr);
+                    return snapshot;
+                }
+            };
+
             const exportAllTabDiagrams = async () => {
                 const snapshot = tabsRef.current || [];
                 const originalActiveId = activeTabIdRef.current;
@@ -693,10 +733,12 @@
                 return updated;
             };
 
-            const applyDiagramAndSave = async ({ silent = false, applyDiagram = true } = {}) => {
+            const applyDiagramAndSave = async ({ silent = false, applyDiagram = true, exportAllTabs = false } = {}) => {
                 let tabsToSave = tabsRef.current || tabs;
                 if (applyDiagram) {
-                    tabsToSave = await exportAllTabDiagrams();
+                    tabsToSave = exportAllTabs
+                        ? await exportAllTabDiagrams()
+                        : await exportActiveTabDiagram();
                 }
                 return handleSaveToCloud({ silent, tabsOverride: tabsToSave });
             };
@@ -719,7 +761,11 @@
                         }), '*');
                     };
                     try {
-                        await applyDiagramAndSaveRef.current?.({ silent: true, applyDiagram: msg.applyDiagram !== false });
+                        await applyDiagramAndSaveRef.current?.({
+                            silent: true,
+                            applyDiagram: msg.applyDiagram !== false,
+                            exportAllTabs: !!msg.exportAllTabs,
+                        });
                         respond(true);
                     } catch (e) {
                         respond(false, e?.message || 'Workflow save failed');
@@ -735,8 +781,8 @@
 
                 clearTimeout(autoSaveTimerRef.current);
                 autoSaveTimerRef.current = setTimeout(() => {
-                    applyDiagramAndSave({ silent: true }).catch(() => {});
-                }, 5000);
+                    handleSaveToCloud({ silent: true }).catch(() => {});
+                }, WORKFLOW_IDLE_SAVE_MS);
 
                 return () => clearTimeout(autoSaveTimerRef.current);
             }, [tabs, activeTabId, raciAssignments, authError, isAuthed, activeProfileId, isSaving]);

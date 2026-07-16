@@ -67,4 +67,9 @@ const wfOnlySplit = {
 };
 assert.equal(WT.getWorkflowTabs(wfOnlySplit).tabs[0].id, 'b');
 
+const reportMerged = WT.getReportTabs(profile);
+assert.equal(reportMerged.length, 2);
+assert.equal(WT.getDiagnosisTabs(profile).tabs[0].id, 'a');
+assert.equal(WT.getDiagnosisTabs(profile).tabs.length, 1);
+
 console.log('workflow-tabs.test.mjs: all assertions passed');
