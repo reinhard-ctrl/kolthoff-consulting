@@ -1008,6 +1008,14 @@
     return false;
   }
 
+  /** True when a workflow has draw.io XML but no cached SVG export for report/print. */
+  function tabNeedsWorkflowSvgExport(tab) {
+    const present = tab?.present || {};
+    if (String(present.svgCache || '').trim()) return false;
+    const drawioXml = String(present.drawioXml || '').trim();
+    return drawioXml.length > 120 && /vertex="1"/.test(drawioXml);
+  }
+
   /** Workflows to render in the Leak Scan Report PDF — all mapped processes, ranked by leakage. */
   function getReportWorkflowTabs(tabs, DiagramEditor, options) {
     const opts = options || {};
@@ -1852,6 +1860,7 @@
     buildDefaultExecutiveLetter,
     getBriefingWorkflowTabs,
     tabHasReportableWorkflow,
+    tabNeedsWorkflowSvgExport,
     getReportWorkflowTabs,
     PRINT_PRESETS,
   };
