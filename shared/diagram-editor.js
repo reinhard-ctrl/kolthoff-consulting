@@ -511,7 +511,7 @@
     const compareNodes = (aId, bId) => {
       const a = getFlowNodeSortKey(list.find((n) => n.id === aId) || { id: aId }, cellById);
       const b = getFlowNodeSortKey(list.find((n) => n.id === bId) || { id: bId }, cellById);
-      return a.x - b.x || a.y - b.y || a.label.localeCompare(b.label);
+      return a.y - b.y || a.x - b.x || a.label.localeCompare(b.label);
     };
 
     const adjacency = new Map();
@@ -613,7 +613,7 @@
       }));
     const tasks = (present.nodes || [])
       .filter((n) => n.type === 'process' || n.type === 'approval')
-      .sort((a, b) => a.x - b.x)
+      .sort((a, b) => a.y - b.y || a.x - b.x)
       .map((n) => {
         const lane = lanes.find((l) => l.id === n.roleId);
         return {
