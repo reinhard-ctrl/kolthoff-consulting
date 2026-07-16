@@ -2333,7 +2333,7 @@
                                     {raciOrgInsights.map((line, i) => <li key={i}>{line}</li>)}
                                 </ul>
                             )}
-                            {tabs.map(tab => {
+                            {workflowTabs.map(tab => {
                                 const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], lanes: [] };
                                 const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                 const roles = vm.lanes;

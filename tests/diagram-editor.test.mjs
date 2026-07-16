@@ -60,6 +60,22 @@ const flowOrder = DE.getWorkflowViewModel({ drawioXml: reversedFlowXml });
 assert.equal(flowOrder.tasks[0].label, 'Qualify Lead');
 assert.equal(flowOrder.tasks[1].label, 'Send Proposal');
 
+const verticalLayoutXml =
+  '<mxfile><diagram><mxGraphModel><root>' +
+  '<mxCell id="0"/><mxCell id="1" parent="0"/>' +
+  '<mxCell id="lane1" value="Ops" style="swimlane;html=1;" vertex="1" parent="1">' +
+  '<mxGeometry x="40" y="40" width="200" height="420" as="geometry"/></mxCell>' +
+  '<mxCell id="task3" value="Close Project" style="shape=mxgraph.bpmn.task2;" vertex="1" parent="lane1">' +
+  '<mxGeometry x="80" y="300" width="120" height="60" as="geometry"/></mxCell>' +
+  '<mxCell id="task1" value="Submit Request" style="shape=mxgraph.bpmn.task2;" vertex="1" parent="lane1">' +
+  '<mxGeometry x="80" y="60" width="120" height="60" as="geometry"/></mxCell>' +
+  '<mxCell id="task2" value="Process Payment" style="rounded=1;" vertex="1" parent="lane1">' +
+  '<mxGeometry x="80" y="180" width="120" height="60" as="geometry"/></mxCell>' +
+  '</root></mxGraphModel></diagram></mxfile>';
+
+const verticalOrder = DE.getWorkflowViewModel({ drawioXml: verticalLayoutXml });
+assert.equal(verticalOrder.tasks.filter((t) => t.type === 'task').map((t) => t.label).join('|'), 'Submit Request|Process Payment|Close Project');
+
 const bpmnUrl = DE.getDrawioEmbedUrl({ libs: 'bpmn' });
 assert.ok(bpmnUrl.includes('libs=bpmn'));
 assert.ok(bpmnUrl.includes('libraries=1'));
