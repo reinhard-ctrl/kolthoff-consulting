@@ -1016,17 +1016,14 @@
     return drawioXml.length > 120 && /vertex="1"/.test(drawioXml);
   }
 
-  /** Workflows to render in the Leak Scan Report PDF — all mapped processes, ranked by leakage. */
+  /** Workflows to render in the Leak Scan Report PDF — follows editor tab order. */
   function getReportWorkflowTabs(tabs, DiagramEditor, options) {
     const opts = options || {};
     let source = tabs || [];
     if (opts.topOnly) {
       source = getBriefingWorkflowTabs(tabs, DiagramEditor);
     }
-    const reportable = source.filter((tab) => tabHasReportableWorkflow(tab, DiagramEditor));
-    const rankings = buildProcessRankings(source, DiagramEditor);
-    const order = new Map(rankings.map((row, idx) => [row.tabId, idx]));
-    return reportable.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+    return source.filter((tab) => tabHasReportableWorkflow(tab, DiagramEditor));
   }
 
   function validateMod1Handoff(ctx) {
