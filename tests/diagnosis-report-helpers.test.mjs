@@ -390,6 +390,15 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(topOnly[0].id, 'a');
   });
 
+  it('tabNeedsWorkflowSvgExport detects missing svg cache with drawio XML', () => {
+    const drawioXml = `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/><mxCell id="2" value="Submit Request" style="rounded=1;" vertex="1" parent="1"><mxGeometry width="120" height="60" as="geometry"/></mxCell></root></mxGraphModel>`;
+    const withSvg = { id: 'a', present: { drawioXml, svgCache: 'data:image/svg+xml,ok' } };
+    const needsExport = { id: 'b', present: { drawioXml, svgCache: '' } };
+    assert.equal(DRH.tabNeedsWorkflowSvgExport(withSvg), false);
+    assert.equal(DRH.tabNeedsWorkflowSvgExport(needsExport), true);
+    assert.equal(DRH.tabNeedsWorkflowSvgExport({ id: 'c', present: {} }), false);
+  });
+
   it('getReportWorkflowTabs includes tabs with exported svg even without parsed steps', () => {
     const tabs = [
       { id: 'a', name: 'Sales', present: { format: 'bpmn', drawioXml: '', svgCache: 'data:image/svg+xml,test', cellMeta: {} } },

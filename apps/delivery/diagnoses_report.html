@@ -645,8 +645,32 @@
                 }, 20000);
             });
 
+            const exportXml = (diagramXml) => new Promise((resolve, reject) => {
+                const blank = preset === 'orgChart'
+                    ? window.DiagramEditor?.BLANK_ORG_CHART_XML
+                    : window.DiagramEditor?.BLANK_BPMN_XML;
+                exportWaitRef.current = {
+                    resolve,
+                    reject,
+                    gotXml: false,
+                    gotSvg: false,
+                    xml: '',
+                    svg: '',
+                };
+                sendLoad(diagramXml || blank || '');
+                setTimeout(() => {
+                    postAction({ action: 'export', format: 'xml', xml: true });
+                    postAction({ action: 'export', format: 'xmlsvg' });
+                }, 900);
+                setTimeout(() => {
+                    if (!exportWaitRef.current) return;
+                    exportWaitRef.current.reject(new Error('Diagram export timed out'));
+                    exportWaitRef.current = null;
+                }, 25000);
+            });
+
             useEffect(() => {
-                if (exportControllerRef) exportControllerRef.current = { applyDiagram };
+                if (exportControllerRef) exportControllerRef.current = { applyDiagram, exportXml };
             });
 
             useEffect(() => {
@@ -2041,7 +2065,7 @@
             </div>
         );
 
-        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, profileTasks }) => {
+        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, profileTasks, workflowSvgOverrides = {} }) => {
             const DR = DRH();
             const saasMonthlyWaste = subSaaS.reduce((acc, curr) => acc + ((Number(curr.billing) || 0) * (Number(curr.users) || 0)), 0);
             const saasAnnualWaste = saasMonthlyWaste * 12;
@@ -2216,7 +2240,7 @@
                                 const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
                                 const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                 const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
-                                const diagramSrc = vm.svgCache || tab.present?.svgCache || '';
+                                const diagramSrc = workflowSvgOverrides[tab.id] || vm.svgCache || tab.present?.svgCache || '';
                                 return (
                                     <div key={tab.id} className="report-page">
                                         {tabIdx === 0 ? (
@@ -2615,6 +2639,9 @@
             const [orgChartSvg, setOrgChartSvg] = useState('');
             const orgChartExportRef = useRef(null);
             const workflowIframeRef = useRef(null);
+            const workflowSvgExportRef = useRef(null);
+            const [isPreparingPrint, setIsPreparingPrint] = useState(false);
+            const [workflowSvgOverrides, setWorkflowSvgOverrides] = useState({});
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
             const profileHydratedIdRef = useRef(null);
@@ -2856,7 +2883,8 @@
                 orgChartMembers,
                 reportDate,
                 profileTasks: activeProfile?.tasks || [],
-            }), [clientCompany, preparedBy, diagnosisTabsForReport, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks]);
+                workflowSvgOverrides,
+            }), [clientCompany, preparedBy, diagnosisTabsForReport, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks, workflowSvgOverrides]);
 
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
@@ -2893,13 +2921,16 @@
                     const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
                     if (!proceed) return;
                 }
+                setIsPreparingPrint(true);
                 try {
+                    let tabsForExport = diagnosisTabsForReport;
                     if (isAuthed && activeProfileId && window.getDoc && window.firestoreDoc) {
                         const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
                         const profileSnap = await window.getDoc(profileRef);
                         if (profileSnap.exists()) {
                             const freshProfile = { id: activeProfileId, ...profileSnap.data() };
                             const resolved = resolveDiagnosisTabsFromProfile(freshProfile, tabs);
+                            tabsForExport = hydrateDiagnosisTabsForPrint(resolved.tabs.length ? resolved.tabs : tabs);
                             ReactDOM.flushSync(() => {
                                 if (resolved.tabs.length) setTabs(hydrateDiagnosisTabsForPrint(resolved.tabs));
                                 if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
@@ -2910,11 +2941,37 @@
                             });
                         }
                     }
+                    const missingSvgTabs = tabsForExport.filter((tab) => DRH().tabNeedsWorkflowSvgExport?.(tab));
+                    if (missingSvgTabs.length && workflowSvgExportRef.current?.exportXml) {
+                        const overrides = {};
+                        for (const tab of missingSvgTabs) {
+                            try {
+                                const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
+                                const exported = await workflowSvgExportRef.current.exportXml(norm.drawioXml);
+                                const svg = printReadyWorkflowSvg(exported?.svg || '');
+                                if (svg) overrides[tab.id] = svg;
+                            } catch (exportErr) {
+                                console.warn('Report print: workflow SVG export failed for', tab.name, exportErr);
+                            }
+                        }
+                        if (Object.keys(overrides).length) {
+                            ReactDOM.flushSync(() => {
+                                setWorkflowSvgOverrides((prev) => ({ ...prev, ...overrides }));
+                                setTabs((prev) => prev.map((t) => (overrides[t.id]
+                                    ? { ...t, present: { ...t.present, svgCache: overrides[t.id] } }
+                                    : t)));
+                            });
+                        }
+                    }
+                    document.body.classList.add('printing-report');
+                    window.print();
                 } catch (printSyncErr) {
-                    console.warn('Report print: could not refresh workflows from cloud', printSyncErr);
+                    console.warn('Report print: could not prepare workflows', printSyncErr);
+                    document.body.classList.add('printing-report');
+                    window.print();
+                } finally {
+                    setIsPreparingPrint(false);
                 }
-                document.body.classList.add('printing-report');
-                window.print();
             };
 
             const handleSaveToCloud = async ({ silent = false, skipWorkflowTabs = false, orgOverride = null } = {}) => {
@@ -3236,7 +3293,7 @@
                                                 {!mod1DeliveredAt && (
                                                     <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError || !mod1Handoff.ready} title={!mod1Handoff.ready ? 'Complete report sections and deliverable links first' : ''} className="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-slate-700 disabled:opacity-50">Mark Mod 1</button>
                                                 )}
-                                                <button type="button" onClick={handlePrintReport} className="bg-brandTeal-600 hover:bg-brandTeal-700 text-white px-3 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1.5 shadow-sm"><Icons.Print /> Print PDF</button>
+                                                <button type="button" onClick={handlePrintReport} disabled={isPreparingPrint} className="bg-brandTeal-600 hover:bg-brandTeal-700 disabled:opacity-60 disabled:cursor-wait text-white px-3 py-1 rounded text-[9px] font-bold uppercase flex items-center gap-1.5 shadow-sm"><Icons.Print /> {isPreparingPrint ? 'Preparing…' : 'Print PDF'}</button>
                                             </div>
                                         </div>
                                         <details className="mt-1.5 group">
@@ -3323,6 +3380,15 @@
                     />
                     <div className="report-print-root bg-white text-slate-900">
                         <ExecutiveReport {...executiveReportProps} />
+                    </div>
+                    <div aria-hidden="true" className="no-print" style={{ position: 'fixed', left: -10000, top: 0, width: 800, height: 600, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+                        <DrawIoEmbed
+                            preset="bpmn"
+                            xml={window.DiagramEditor?.BLANK_BPMN_XML || ''}
+                            hideApplyButton
+                            exportControllerRef={workflowSvgExportRef}
+                            height={480}
+                        />
                     </div>
                 </div>
             );

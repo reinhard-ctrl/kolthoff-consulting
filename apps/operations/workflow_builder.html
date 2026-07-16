@@ -502,6 +502,11 @@
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
             const applyDiagramAndSaveRef = useRef(null);
+            const tabsRef = useRef(tabs);
+            const activeTabIdRef = useRef(activeTabId);
+
+            useEffect(() => { tabsRef.current = tabs; }, [tabs]);
+            useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -568,7 +573,7 @@
 
             const triggerToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
 
-            const handleSaveToCloud = async ({ silent = false } = {}) => {
+            const handleSaveToCloud = async ({ silent = false, tabsOverride = null, activeTabIdOverride = null } = {}) => {
                 if (authError) {
                     if (!silent) triggerToast("❌ Sync Disabled (GCP Key Issue)");
                     return false;
@@ -578,17 +583,19 @@
                     if (!silent) triggerToast('❌ Complete Mod 1 before saving Mod 2 workflows');
                     return false;
                 }
+                const saveTabs = tabsOverride || tabs;
+                const saveActiveId = activeTabIdOverride ?? activeTabId;
                 setIsSaving(true);
                 try {
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
                     const profileSnap = await window.getDoc(profileRef);
                     const existing = profileSnap.exists() ? profileSnap.data() : {};
-                    const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload(WORKFLOW_APP, tabs, activeTabId, existing);
+                    const tabsPayload = window.WorkflowTabs.buildWorkflowTabsPayload(WORKFLOW_APP, saveTabs, saveActiveId, existing);
                     await window.setDoc(profileRef, { ...tabsPayload, raciAssignments }, { merge: true });
 
                     if (IS_DIAGNOSIS_MODE) {
                         let totalAnnual = 0;
-                        tabs.forEach((tab) => {
+                        saveTabs.forEach((tab) => {
                             const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [] };
                             const tax = window.DiagramEditor?.computeTabChaosTax?.(vm.tasks) || { annual: 0 };
                             totalAnnual += tax.annual || 0;
@@ -624,7 +631,7 @@
                         const policyRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'policy_documents', activeProfileId);
                         const policySnap = await window.getDoc(policyRef);
                         const policyData = policySnap.exists() ? policySnap.data() : {};
-                        const sops = window.SopSync.buildSopsFromWorkflowTabs(tabs, profileForSop);
+                        const sops = window.SopSync.buildSopsFromWorkflowTabs(saveTabs, profileForSop);
                         if (sops.length) {
                             await window.setDoc(policyRef, window.SopSync.mergeSopsIntoPolicyData(policyData, sops), { merge: true });
                             if (!silent) triggerToast(`💾 Saved + auto-synced ${sops.length} SOP(s) to Policy Studio!`);
@@ -643,9 +650,55 @@
                 }
             };
 
+            const exportAllTabDiagrams = async () => {
+                const snapshot = tabsRef.current || [];
+                const originalActiveId = activeTabIdRef.current;
+                const updated = [...snapshot];
+                let currentActiveId = originalActiveId;
+
+                for (let i = 0; i < updated.length; i++) {
+                    const tab = updated[i];
+                    const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
+                    if (norm.format === 'legacy') continue;
+                    const xml = String(norm.drawioXml || '').trim();
+                    if (xml.length < 120 && !String(norm.svgCache || '').trim()) continue;
+
+                    if (tab.id !== currentActiveId) {
+                        currentActiveId = tab.id;
+                        setActiveTabId(tab.id);
+                        await new Promise((resolve) => setTimeout(resolve, 750));
+                    }
+
+                    try {
+                        const exported = await diagramExportRef.current?.applyDiagram?.();
+                        if (exported?.svg || exported?.xml) {
+                            updated[i] = {
+                                ...tab,
+                                present: {
+                                    ...norm,
+                                    drawioXml: exported.xml || norm.drawioXml,
+                                    svgCache: exported.svg || norm.svgCache,
+                                    format: 'bpmn',
+                                },
+                            };
+                        }
+                    } catch (exportErr) {
+                        console.warn('Workflow tab SVG export failed:', tab.name, exportErr);
+                    }
+                }
+
+                if (originalActiveId !== currentActiveId) setActiveTabId(originalActiveId);
+                setTabs(updated);
+                tabsRef.current = updated;
+                return updated;
+            };
+
             const applyDiagramAndSave = async ({ silent = false, applyDiagram = true } = {}) => {
-                if (applyDiagram) await diagramExportRef.current?.applyDiagram?.();
-                return handleSaveToCloud({ silent });
+                let tabsToSave = tabsRef.current || tabs;
+                if (applyDiagram) {
+                    tabsToSave = await exportAllTabDiagrams();
+                }
+                return handleSaveToCloud({ silent, tabsOverride: tabsToSave });
             };
 
             applyDiagramAndSaveRef.current = applyDiagramAndSave;
