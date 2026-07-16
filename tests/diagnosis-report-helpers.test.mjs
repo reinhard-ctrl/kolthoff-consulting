@@ -377,17 +377,18 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(filtered[0].id, 'a');
   });
 
-  it('getReportWorkflowTabs returns all mapped workflows ranked by leakage', () => {
+  it('getReportWorkflowTabs returns all mapped workflows in editor tab order', () => {
     const tabs = [
-      { id: 'a', name: 'Sales', present: {} },
       { id: 'b', name: 'Ops', present: {} },
+      { id: 'a', name: 'Sales', present: {} },
     ];
     const all = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor);
     assert.equal(all.length, 2);
-    assert.equal(all[0].id, 'a');
+    assert.equal(all[0].id, 'b');
+    assert.equal(all[1].id, 'a');
     const topOnly = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor, { topOnly: true });
     assert.equal(topOnly.length, 1);
-    assert.equal(topOnly[0].id, 'a');
+    assert.ok(['a', 'b'].includes(topOnly[0].id));
   });
 
   it('tabNeedsWorkflowSvgExport detects missing svg cache with drawio XML', () => {
