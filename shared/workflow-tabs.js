@@ -146,7 +146,8 @@
   }
 
   /**
-   * Merged tabs for read-only consumers (Diagnosis report, exports).
+   * Merged tabs for read-only consumers that need both Mod 1 and Mod 2 slices.
+   * Mod 1 editor and Leak Scan Report should use getDiagnosisTabs() — as-is only.
    */
   function getReportTabs(profile) {
     if (!profile) return [];
