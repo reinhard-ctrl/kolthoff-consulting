@@ -255,6 +255,24 @@ describe('diagnosis-report-helpers', () => {
     assert.doesNotMatch(svgText, /stroke-width="2\.25"/);
   });
 
+  it('normalizeReportDiagramSvg preserveConnectors keeps original org chart arrows', () => {
+    const raw =
+      'data:image/svg+xml,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400">' +
+          '<defs><marker id="arrow" markerWidth="6" markerHeight="6" orient="auto">' +
+          '<path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/></marker></defs>' +
+          '<path d="M 170 180 L 300 180" fill="none" stroke="#cccccc" stroke-width="2" marker-end="url(#arrow)"/>' +
+          '</svg>'
+      );
+    const normalized = DRH.normalizeReportDiagramSvg(raw, { preserveConnectors: true });
+    const svgText = decodeURIComponent(normalized.slice(normalized.indexOf(',') + 1));
+    assert.match(svgText, /stroke-width="2"/);
+    assert.match(svgText, /stroke="#cccccc"/);
+    assert.match(svgText, /markerWidth="6"/);
+    assert.doesNotMatch(svgText, /markerUnits="strokeWidth"/);
+  });
+
   it('normalizeReportDiagramSvg applies professional presentation polish', () => {
     const raw =
       'data:image/svg+xml,' +
@@ -370,6 +388,19 @@ describe('diagnosis-report-helpers', () => {
     const topOnly = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor, { topOnly: true });
     assert.equal(topOnly.length, 1);
     assert.equal(topOnly[0].id, 'a');
+  });
+
+  it('getReportWorkflowTabs includes tabs with exported svg even without parsed steps', () => {
+    const tabs = [
+      { id: 'a', name: 'Sales', present: { format: 'bpmn', drawioXml: '', svgCache: 'data:image/svg+xml,test', cellMeta: {} } },
+    ];
+    const emptyEditor = {
+      getWorkflowViewModel: () => ({ tasks: [], lanes: [], svgCache: 'data:image/svg+xml,test' }),
+      computeTabChaosTax: () => ({ annual: 0 }),
+    };
+    const all = DRH.getReportWorkflowTabs(tabs, emptyEditor);
+    assert.equal(all.length, 1);
+    assert.equal(all[0].id, 'a');
   });
 
   it('buildCoiBreakdown exposes formula and assumption sentence', () => {

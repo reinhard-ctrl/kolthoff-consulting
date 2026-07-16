@@ -997,6 +997,17 @@
     return (tabs || []).filter((tab) => tab.id === topId);
   }
 
+  function tabHasReportableWorkflow(tab, DiagramEditor) {
+    const { tasks } = getProcessNodes(tab, DiagramEditor);
+    if (tasks.length > 0) return true;
+    const present = tab?.present || {};
+    if (String(present.svgCache || '').trim()) return true;
+    const drawioXml = String(present.drawioXml || '').trim();
+    if (drawioXml.length > 120 && /vertex="1"/.test(drawioXml)) return true;
+    if (Array.isArray(present.nodes) && present.nodes.length > 0) return true;
+    return false;
+  }
+
   /** Workflows to render in the Leak Scan Report PDF — all mapped processes, ranked by leakage. */
   function getReportWorkflowTabs(tabs, DiagramEditor, options) {
     const opts = options || {};
@@ -1004,10 +1015,10 @@
     if (opts.topOnly) {
       source = getBriefingWorkflowTabs(tabs, DiagramEditor);
     }
-    const withSteps = source.filter((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0);
+    const reportable = source.filter((tab) => tabHasReportableWorkflow(tab, DiagramEditor));
     const rankings = buildProcessRankings(source, DiagramEditor);
     const order = new Map(rankings.map((row, idx) => [row.tabId, idx]));
-    return withSteps.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+    return reportable.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
   }
 
   function validateMod1Handoff(ctx) {
@@ -1532,8 +1543,9 @@
     return svgText.replace(/<svg([^>]*)>/i, (match) => `${match}${styleBlock}`);
   }
 
-  function enhanceReportDiagramProfessionalPresentation(svgText) {
-    let next = enhanceReportDiagramConnectorVisibility(svgText);
+  function enhanceReportDiagramProfessionalPresentation(svgText, options) {
+    const opts = options || {};
+    let next = opts.preserveConnectors ? svgText : enhanceReportDiagramConnectorVisibility(svgText);
     next = next.replace(/<(rect|ellipse|circle|polygon|path)\b([^>]*?)(\/>|>)/gi, (match, tag, attrs, close) => {
       if (!isReportDiagramFilledShape(tag.toLowerCase(), attrs)) return match;
       return `<${tag}${boostReportDiagramShapeAttrs(attrs)}${close}`;
@@ -1661,7 +1673,7 @@
     }
   }
 
-  function normalizeReportDiagramSvg(svgDataUri) {
+  function normalizeReportDiagramSvg(svgDataUri, options) {
     const prepared = ensureReportDiagramDataUri(svgDataUri);
     if (!prepared || !prepared.startsWith('data:image/svg+xml')) return prepared || svgDataUri || '';
 
@@ -1682,7 +1694,7 @@
       };
 
       let svgText = decodePayload();
-      svgText = enhanceReportDiagramProfessionalPresentation(svgText);
+      svgText = enhanceReportDiagramProfessionalPresentation(svgText, options);
       svgText = finalizeReportDiagramSvgRoot(svgText);
 
       const encodedPrefix = isBase64 ? ';base64,' : ',';
@@ -1839,6 +1851,7 @@
     buildMod1DeliverableStatus,
     buildDefaultExecutiveLetter,
     getBriefingWorkflowTabs,
+    tabHasReportableWorkflow,
     getReportWorkflowTabs,
     PRINT_PRESETS,
   };

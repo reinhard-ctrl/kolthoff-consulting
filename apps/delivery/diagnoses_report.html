@@ -552,12 +552,13 @@
         /** Latest diagnosis workflows from Firestore profile (iframe saves), with local tabs fallback. */
         const resolveDiagnosisTabsFromProfile = (profile, fallbackTabs = []) => {
             const WT = window.WorkflowTabs;
-            if (profile && WT?.getDiagnosisTabs) {
-                const dx = WT.getDiagnosisTabs(profile);
-                if (dx?.tabs?.length) {
+            if (profile && WT) {
+                const dx = WT.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
+                const reportTabs = WT.getReportTabs?.(profile) || dx.tabs || [];
+                if (reportTabs.length) {
                     return {
-                        tabs: WT.hydrateTabs(dx.tabs),
-                        activeTabId: dx.activeTabId || dx.tabs[0]?.id || null,
+                        tabs: WT.hydrateTabs(reportTabs),
+                        activeTabId: dx.activeTabId || reportTabs[0]?.id || null,
                     };
                 }
             }
@@ -568,11 +569,13 @@
             (window.WorkflowTabs?.hydrateTabs?.(storedTabs) || storedTabs || []).map((tab) => ({
                 ...tab,
                 present: tab.present
-                    ? { ...tab.present, svgCache: printReadySvg(tab.present.svgCache || '') }
+                    ? { ...tab.present, svgCache: printReadyWorkflowSvg(tab.present.svgCache || '') }
                     : tab.present,
             }))
         );
-        const printReadySvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
+        const printReadyWorkflowSvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
+        const printReadyOrgChartSvg = (src) => DRH().normalizeReportDiagramSvg?.(src, { preserveConnectors: true }) || src || '';
+        const printReadySvg = printReadyWorkflowSvg;
         const EC_MODULES = () => (window.EngagementConfig?.MODULES) || [];
 
         const createDefaultSynthesis = () => ({
@@ -853,7 +856,7 @@
 
         const OrgChartBuilderPanel = ({ orgChartXml, setOrgChartXml, setOrgChartSvg, exportControllerRef }) => (
             <div className="w-full h-full min-h-0 flex flex-col">
-                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={(svg) => setOrgChartSvg(printReadySvg(svg))} height="100%" hideApplyButton exportControllerRef={exportControllerRef} />
+                <DrawIoEmbed preset="orgChart" xml={orgChartXml} onXmlChange={setOrgChartXml} onSvgExport={(svg) => setOrgChartSvg(printReadyOrgChartSvg(svg))} height="100%" hideApplyButton exportControllerRef={exportControllerRef} />
             </div>
         );
 
@@ -1802,8 +1805,11 @@
             </div>
         );
 
-        const ReportDiagramFigure = ({ src, alt, caption, featured = true }) => {
-            const diagramSrc = useMemo(() => printReadySvg(src), [src]);
+        const ReportDiagramFigure = ({ src, alt, caption, featured = true, preserveConnectors = false }) => {
+            const diagramSrc = useMemo(
+                () => (preserveConnectors ? printReadyOrgChartSvg(src) : printReadyWorkflowSvg(src)),
+                [src, preserveConnectors],
+            );
             if (!diagramSrc) return null;
             return (
                 <figure className={`report-diagram-figure${featured ? ' report-diagram-figure--featured' : ''}`}>
@@ -2173,6 +2179,7 @@
                                     src={orgChartSvg}
                                     alt="Organization chart"
                                     caption="Figure A.1 — Organization chart (as-is)"
+                                    preserveConnectors
                                 />
                             ) : (
                                 <p className="text-xs text-slate-500 italic mb-4 p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50 page-break-inside-avoid">
@@ -2209,6 +2216,7 @@
                                 const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
                                 const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
                                 const tabTax = window.DiagramEditor?.computeTabChaosTax?.(processNodes) || { annual: 0 };
+                                const diagramSrc = vm.svgCache || tab.present?.svgCache || '';
                                 return (
                                     <div key={tab.id} className="report-page">
                                         {tabIdx === 0 ? (
@@ -2224,9 +2232,9 @@
                                                 <span className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">{tab.name}</span>
                                                 <span className="font-mono text-rose-600 font-bold text-xs">{formatCurrency(Math.round(tabTax.annual / 12))}/mo</span>
                                             </div>
-                                            {vm.svgCache ? (
+                                            {diagramSrc ? (
                                                 <ReportDiagramFigure
-                                                    src={vm.svgCache}
+                                                    src={diagramSrc}
                                                     alt={tab.name}
                                                     caption={`Figure B.${tabIdx + 1} — ${tab.name} (as-is process map)`}
                                                 />
@@ -2685,7 +2693,7 @@
                         const hydrated = WT.hydrateTabs(reportTabs).map((tab) => ({
                             ...tab,
                             present: tab.present
-                                ? { ...tab.present, svgCache: printReadySvg(tab.present.svgCache || '') }
+                                ? { ...tab.present, svgCache: printReadyWorkflowSvg(tab.present.svgCache || '') }
                                 : tab.present,
                         }));
                         setTabs(hydrated);
@@ -2699,7 +2707,7 @@
                     setRaciAssignments(profile.raciAssignments || {});
                     const resolvedOrgXml = window.DiagramEditor?.resolveWorkspaceOrgChartXml?.(profile) || '';
                     setOrgChartXml(resolvedOrgXml);
-                    setOrgChartSvg(printReadySvg(profile.orgChart?.svgCache || ''));
+                    setOrgChartSvg(printReadyOrgChartSvg(profile.orgChart?.svgCache || ''));
                     const storedMembers = Array.isArray(profile.orgChart?.members) ? profile.orgChart.members : [];
                     const storedRoster = Array.isArray(profile.orgChart?.roster) ? profile.orgChart.roster : [];
                     const hydratedMembers =
@@ -2872,7 +2880,7 @@
                 }
             }, [activeProfileId, totalAnnualChaosTax, saasAnnualForCoi, synthesis.customPitch, synthesis.nextModuleId]);
 
-            const handlePrintReport = () => {
+            const handlePrintReport = async () => {
                 const errors = reportValidation.errors || [];
                 const warnings = reportValidation.warnings || [];
                 if (errors.length > 0) {
@@ -2884,6 +2892,26 @@
                     const msg = warnings.map((l) => `• ${l}`).join('\n');
                     const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
                     if (!proceed) return;
+                }
+                try {
+                    if (isAuthed && activeProfileId && window.getDoc && window.firestoreDoc) {
+                        const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                        const profileSnap = await window.getDoc(profileRef);
+                        if (profileSnap.exists()) {
+                            const freshProfile = { id: activeProfileId, ...profileSnap.data() };
+                            const resolved = resolveDiagnosisTabsFromProfile(freshProfile, tabs);
+                            ReactDOM.flushSync(() => {
+                                if (resolved.tabs.length) setTabs(hydrateDiagnosisTabsForPrint(resolved.tabs));
+                                if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
+                                if (freshProfile.diagnosisWorkflow?.updatedAt) {
+                                    setWorkflowUpdatedAt(freshProfile.diagnosisWorkflow.updatedAt);
+                                    lastSyncedWorkflowAtRef.current = freshProfile.diagnosisWorkflow.updatedAt;
+                                }
+                            });
+                        }
+                    }
+                } catch (printSyncErr) {
+                    console.warn('Report print: could not refresh workflows from cloud', printSyncErr);
                 }
                 document.body.classList.add('printing-report');
                 window.print();
@@ -2970,7 +2998,7 @@
                         if (exported?.xml) {
                             orgOverride = {
                                 xml: exported.xml,
-                                svg: printReadySvg(exported.svg || ''),
+                                svg: printReadyOrgChartSvg(exported.svg || ''),
                             };
                         }
                     } else if (activeNav === 'flowcharts') {
