@@ -248,11 +248,24 @@
       bullets.push(`${raciGaps.noAccountable} process steps have no single accountable owner despite ${orgChartMembers.length} staff mapped on the org chart.`);
     }
 
-    (staffFeedbackThemes || []).slice(0, 3).forEach((theme) => {
-      if (theme && String(theme).trim()) {
-        bullets.push(`Staff feedback theme: ${String(theme).trim()}`);
-      }
-    });
+    const feedbackClusters = normalizeStaffFeedbackClusters(
+      synthesis.staffFeedbackClusters,
+      staffFeedbackThemes,
+    );
+    if (feedbackClusters.length > 0) {
+      feedbackClusters.slice(0, 3).forEach((cluster) => {
+        const sample = (cluster.themes || [])[0];
+        if (!sample) return;
+        const shortQuestion = String(cluster.question || '').replace(/\?+$/, '').trim();
+        bullets.push(`Staff feedback — ${shortQuestion}: ${sample}`);
+      });
+    } else {
+      (staffFeedbackThemes || []).slice(0, 3).forEach((theme) => {
+        if (theme && String(theme).trim()) {
+          bullets.push(`Staff feedback theme: ${String(theme).trim()}`);
+        }
+      });
+    }
 
     return bullets.slice(0, 8);
   }
@@ -911,51 +924,211 @@
   }
 
   /**
+   * Pull anonymous answers from a Google Forms responses CSV export, grouped by survey question.
+   * Matches CSV column headers to the m1-02 template where possible.
+   */
+  function normalizeFeedbackQuestionHeader(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[^\w\s?]/g, '')
+      .trim();
+  }
+
+  function slugifyFeedbackQuestion(title) {
+    return String(title || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'question';
+  }
+
+  function getM102FeedbackImportQuestions() {
+    return (M102_FEEDBACK_FORM_TEMPLATE.questions || []).filter((q) => q.type !== 'section');
+  }
+
+  function matchCsvHeaderToFeedbackQuestion(header, templateQuestions) {
+    const normalizedHeader = normalizeFeedbackQuestionHeader(header);
+    if (!normalizedHeader) return null;
+    const questions = templateQuestions || getM102FeedbackImportQuestions();
+    let best = null;
+    let bestScore = 0;
+    questions.forEach((question) => {
+      const normalizedTitle = normalizeFeedbackQuestionHeader(question.title);
+      if (!normalizedTitle) return;
+      if (normalizedHeader === normalizedTitle) {
+        best = question;
+        bestScore = 100;
+        return;
+      }
+      const headerStart = normalizedHeader.slice(0, 48);
+      const titleStart = normalizedTitle.slice(0, 48);
+      if (normalizedHeader.includes(titleStart) || normalizedTitle.includes(headerStart)) {
+        const score = Math.min(headerStart.length, titleStart.length);
+        if (score > bestScore) {
+          best = question;
+          bestScore = score;
+        }
+      }
+    });
+    return best;
+  }
+
+  function minFeedbackAnswerLength(questionType) {
+    if (questionType === 'choice' || questionType === 'scale') return 1;
+    return 12;
+  }
+
+  function buildScaleFeedbackThemes(values) {
+    const counts = {};
+    values.forEach((raw) => {
+      const val = String(raw || '').trim();
+      if (!val) return;
+      counts[val] = (counts[val] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => Number(b[1]) - Number(a[1]) || String(a[0]).localeCompare(String(b[0])))
+      .map(([val, count]) => `${val}/5 (${count} response${count === 1 ? '' : 's'})`);
+  }
+
+  function flattenStaffFeedbackClusters(clusters) {
+    const out = [];
+    const seen = new Set();
+    (clusters || []).forEach((cluster) => {
+      (cluster.themes || []).forEach((theme) => {
+        const value = String(theme || '').trim();
+        if (!value) return;
+        const key = value.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(value);
+      });
+    });
+    return out;
+  }
+
+  function normalizeStaffFeedbackClusters(clusters, legacyThemes) {
+    const normalized = [];
+    const seenKeys = new Set();
+    (Array.isArray(clusters) ? clusters : []).forEach((cluster) => {
+      const question = String(cluster?.question || '').trim();
+      if (!question) return;
+      const questionKey = String(cluster?.questionKey || slugifyFeedbackQuestion(question)).trim();
+      if (seenKeys.has(questionKey)) return;
+      seenKeys.add(questionKey);
+      const themes = (cluster.themes || [])
+        .map((theme) => String(theme || '').trim())
+        .filter(Boolean);
+      if (!themes.length) return;
+      normalized.push({
+        questionKey,
+        question,
+        type: cluster?.type || 'paragraph',
+        themes,
+      });
+    });
+    if (normalized.length) return normalized;
+    const legacy = (Array.isArray(legacyThemes) ? legacyThemes : [])
+      .map((theme) => String(theme || '').trim())
+      .filter(Boolean);
+    if (!legacy.length) return [];
+    return [{
+      questionKey: 'legacy',
+      question: 'Staff feedback themes',
+      type: 'paragraph',
+      themes: legacy,
+    }];
+  }
+
+  function extractStaffFeedbackClustersFromResponsesCsv(csvText, options) {
+    const opts = options || {};
+    const maxThemesPerQuestion = Number(opts.maxThemesPerQuestion) || 12;
+    const templateQuestions = opts.templateQuestions || getM102FeedbackImportQuestions();
+    const rows = parseCsvText(csvText);
+    if (rows.length < 2) {
+      return { clusters: [], themes: [], meta: { rowCount: 0, columnCount: 0, imported: 0 } };
+    }
+
+    const headers = rows[0].map((h) => String(h || '').trim());
+    const dataRows = rows.slice(1);
+    const skipHeaderRe = /^(timestamp|email|e-?mail|date submitted|score)/i;
+    const clusters = [];
+    const seenQuestionKeys = new Set();
+
+    headers.forEach((header, colIdx) => {
+      if (!header || skipHeaderRe.test(header)) return;
+      const matched = matchCsvHeaderToFeedbackQuestion(header, templateQuestions);
+      const questionType = matched?.type || 'paragraph';
+      const minLen = minFeedbackAnswerLength(questionType);
+      const values = dataRows
+        .map((row) => String((row[colIdx] != null ? row[colIdx] : '') || '').trim())
+        .filter(Boolean);
+
+      if (!values.length) return;
+
+      let themes = [];
+      if (questionType === 'scale') {
+        themes = buildScaleFeedbackThemes(values);
+      } else {
+        const seen = new Set();
+        values.forEach((val) => {
+          if (val.length < minLen) return;
+          if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) return;
+          const key = val.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          themes.push(val);
+        });
+        if (questionType === 'choice') {
+          const counts = {};
+          values.forEach((val) => {
+            counts[val] = (counts[val] || 0) + 1;
+          });
+          themes = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([val, count]) => (count > 1 ? `${val} (${count} responses)` : val));
+        }
+      }
+
+      themes = themes.slice(0, maxThemesPerQuestion);
+      if (!themes.length) return;
+
+      const question = matched?.title || header;
+      const questionKey = matched ? slugifyFeedbackQuestion(matched.title) : slugifyFeedbackQuestion(header);
+      if (seenQuestionKeys.has(questionKey)) return;
+      seenQuestionKeys.add(questionKey);
+
+      clusters.push({
+        questionKey,
+        question,
+        type: questionType,
+        themes,
+      });
+    });
+
+    const flatThemes = flattenStaffFeedbackClusters(clusters);
+    return {
+      clusters,
+      themes: flatThemes,
+      meta: {
+        rowCount: dataRows.length,
+        columnCount: headers.length,
+        imported: flatThemes.length,
+        questionCount: clusters.length,
+      },
+    };
+  }
+
+  /**
    * Pull anonymous open-ended answers from a Google Forms responses CSV export.
    * Skips timestamps, emails, and short multiple-choice columns.
    */
   function extractStaffFeedbackThemesFromResponsesCsv(csvText, options) {
-    const opts = options || {};
-    const minLen = Number(opts.minLength) || 12;
-    const maxThemes = Number(opts.maxThemes) || 25;
-    const rows = parseCsvText(csvText);
-    if (rows.length < 2) {
-      return { themes: [], meta: { rowCount: 0, columnCount: 0, imported: 0 } };
-    }
-    const headers = rows[0].map((h) => String(h || '').trim());
-    const dataRows = rows.slice(1);
-    const skipHeaderRe = /^(timestamp|email|e-?mail|date submitted|score)/i;
-    const themes = [];
-    const seen = new Set();
-
-    headers.forEach((header, colIdx) => {
-      if (!header || skipHeaderRe.test(header)) return;
-      const samples = dataRows
-        .slice(0, 12)
-        .map((r) => String((r[colIdx] != null ? r[colIdx] : '') || '').trim())
-        .filter(Boolean);
-      if (!samples.length) return;
-      const avgLen = samples.reduce((acc, s) => acc + s.length, 0) / samples.length;
-      if (avgLen < minLen && samples.length >= 3) return;
-
-      dataRows.forEach((row) => {
-        const val = String((row[colIdx] != null ? row[colIdx] : '') || '').trim();
-        if (val.length < minLen) return;
-        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) return;
-        const key = val.toLowerCase();
-        if (seen.has(key)) return;
-        seen.add(key);
-        themes.push(val);
-      });
-    });
-
+    const result = extractStaffFeedbackClustersFromResponsesCsv(csvText, options);
     return {
-      themes: themes.slice(0, maxThemes),
-      meta: {
-        rowCount: dataRows.length,
-        columnCount: headers.length,
-        imported: Math.min(themes.length, maxThemes),
-      },
+      themes: result.themes,
+      clusters: result.clusters,
+      meta: result.meta,
     };
   }
 
@@ -2125,6 +2298,13 @@
     buildFeedbackFormResponsesUrl,
     isFeedbackResponsesHtmlPage,
     parseCsvText,
+    normalizeFeedbackQuestionHeader,
+    slugifyFeedbackQuestion,
+    getM102FeedbackImportQuestions,
+    matchCsvHeaderToFeedbackQuestion,
+    flattenStaffFeedbackClusters,
+    normalizeStaffFeedbackClusters,
+    extractStaffFeedbackClustersFromResponsesCsv,
     extractStaffFeedbackThemesFromResponsesCsv,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
