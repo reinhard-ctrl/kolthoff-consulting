@@ -11,6 +11,13 @@
         }
       },
       {
+        "source": "/api/fetchFeedbackResponsesCsv",
+        "function": {
+          "functionId": "fetchFeedbackResponsesCsvHttp",
+          "region": "asia-southeast1"
+        }
+      },
+      {
         "source": "/api/prepareClientWorkspace",
         "function": {
           "functionId": "prepareClientWorkspaceHttp",

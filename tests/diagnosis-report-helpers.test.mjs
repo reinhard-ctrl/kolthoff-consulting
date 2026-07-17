@@ -571,6 +571,17 @@ describe('diagnosis-report-helpers', () => {
     assert.match(url, /gid=456/);
   });
 
+  it('buildFeedbackResponsesCsvUrl supports published-to-web sheet links', () => {
+    const url = DRH.buildFeedbackResponsesCsvUrl('https://docs.google.com/spreadsheets/d/e/2PACX-abc/pubhtml#gid=0');
+    assert.match(url, /\/d\/e\/2PACX-abc\/pub/);
+    assert.match(url, /output=csv/);
+  });
+
+  it('isFeedbackResponsesHtmlPage detects login HTML responses', () => {
+    assert.equal(DRH.isFeedbackResponsesHtmlPage('<!DOCTYPE html><html>'), true);
+    assert.equal(DRH.isFeedbackResponsesHtmlPage('Timestamp,Answer\n2026-01-01,Hello'), false);
+  });
+
   it('extractStaffFeedbackThemesFromResponsesCsv pulls open-ended answers', () => {
     const csv = [
       'Timestamp,Role,Frustration,Fix one thing',

@@ -1237,6 +1237,96 @@
             const m102InScope = DRH().isMod1TaskInScope?.(tasks, 'm1-02');
             const [importStatus, setImportStatus] = useState('');
             const [importing, setImporting] = useState(false);
+            const [csvPaste, setCsvPaste] = useState('');
+            const csvFileInputRef = useRef(null);
+
+            const applyImportedCsv = (csvText) => {
+                const result = DRH().extractStaffFeedbackThemesFromResponsesCsv?.(csvText) || { themes: [], meta: {} };
+                if (!result.themes.length) {
+                    throw new Error('No open-ended responses found. Confirm the CSV is from your linked responses sheet.');
+                }
+                setSynthesis((prev) => ({ ...prev, staffFeedbackThemes: result.themes }));
+                setImportStatus(`Imported ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
+            };
+
+            const fetchFeedbackCsvText = async (spreadsheetUrl) => {
+                if (typeof fetch === 'function') {
+                    try {
+                        const res = await fetch('/api/fetchFeedbackResponsesCsv', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ spreadsheetUrl }),
+                        });
+                        const payload = await res.json().catch(() => ({}));
+                        if (res.ok && payload?.csvText) return payload.csvText;
+                        if (payload?.error) throw new Error(payload.error);
+                    } catch (apiErr) {
+                        if (apiErr?.message && !/failed to fetch|network/i.test(apiErr.message)) throw apiErr;
+                    }
+                }
+                if (window.httpsCallable && window.firebaseFunctions) {
+                    const fn = window.httpsCallable(window.firebaseFunctions, 'fetchFeedbackResponsesCsv');
+                    const result = await fn({ spreadsheetUrl });
+                    if (result.data?.csvText) return result.data.csvText;
+                }
+                throw new Error('Could not reach the import service. Upload a CSV export from Google Sheets instead.');
+            };
+
+            const importThemesFromSurvey = async () => {
+                const sheetRef = String(synthesis.feedbackResponsesUrl || '').trim();
+                if (!sheetRef) {
+                    setImportStatus('Add your linked Google Sheets responses URL first (Forms → Responses → Link to Sheets).');
+                    return;
+                }
+                setImporting(true);
+                setImportStatus('Fetching responses…');
+                try {
+                    const csvText = await fetchFeedbackCsvText(sheetRef);
+                    if (DRH().isFeedbackResponsesHtmlPage?.(csvText)) {
+                        throw new Error('Sheet returned a login page. Share as Anyone with the link can view, or upload a CSV export.');
+                    }
+                    applyImportedCsv(csvText);
+                } catch (err) {
+                    setImportStatus(err.message || 'Import failed — try uploading a CSV export (File → Download → CSV in Google Sheets).');
+                } finally {
+                    setImporting(false);
+                }
+            };
+
+            const importThemesFromCsvFile = (file) => {
+                if (!file) return;
+                setImporting(true);
+                setImportStatus('Reading CSV file…');
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        applyImportedCsv(String(reader.result || ''));
+                    } catch (err) {
+                        setImportStatus(err.message || 'Could not parse CSV file.');
+                    } finally {
+                        setImporting(false);
+                    }
+                };
+                reader.onerror = () => {
+                    setImportStatus('Could not read CSV file.');
+                    setImporting(false);
+                };
+                reader.readAsText(file);
+            };
+
+            const importThemesFromCsvPaste = () => {
+                const text = String(csvPaste || '').trim();
+                if (!text) {
+                    setImportStatus('Paste CSV content or upload a file exported from Google Sheets.');
+                    return;
+                }
+                try {
+                    applyImportedCsv(text);
+                    setCsvPaste('');
+                } catch (err) {
+                    setImportStatus(err.message || 'Could not parse pasted CSV.');
+                }
+            };
 
             const updateFeedbackTheme = (idx, val) => {
                 setSynthesis(prev => {
@@ -1254,38 +1344,6 @@
             const responsesEditorUrl = synthesis.feedbackFormUrl?.trim()
                 ? DRH().buildFeedbackFormResponsesUrl?.(synthesis.feedbackFormUrl)
                 : '';
-
-            const importThemesFromSurvey = async () => {
-                const sheetRef = String(synthesis.feedbackResponsesUrl || '').trim();
-                if (!sheetRef) {
-                    setImportStatus('Add your linked Google Sheets responses URL first (Forms → Responses → Link to Sheets).');
-                    return;
-                }
-                const csvUrl = DRH().buildFeedbackResponsesCsvUrl?.(sheetRef);
-                if (!csvUrl) {
-                    setImportStatus('Could not parse the spreadsheet URL — paste the full Google Sheets link.');
-                    return;
-                }
-                setImporting(true);
-                setImportStatus('Fetching responses…');
-                try {
-                    const res = await fetch(csvUrl);
-                    if (!res.ok) {
-                        throw new Error('Could not fetch responses. Share the sheet as Anyone with the link can view, then retry.');
-                    }
-                    const csvText = await res.text();
-                    const result = DRH().extractStaffFeedbackThemesFromResponsesCsv?.(csvText) || { themes: [], meta: {} };
-                    if (!result.themes.length) {
-                        throw new Error('No open-ended responses found. Confirm the sheet is linked to your form and has answers.');
-                    }
-                    setSynthesis((prev) => ({ ...prev, staffFeedbackThemes: result.themes }));
-                    setImportStatus(`Imported ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
-                } catch (err) {
-                    setImportStatus(err.message || 'Import failed — check the spreadsheet link and sharing settings.');
-                } finally {
-                    setImporting(false);
-                }
-            };
 
             return (
                 <details open className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 no-print group">
@@ -1335,7 +1393,7 @@
                                     placeholder="https://docs.google.com/spreadsheets/d/…/edit"
                                     className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500"
                                 />
-                                <p className="text-[9px] text-slate-500 leading-relaxed">Google Forms → Responses → Link to Sheets. Share the sheet as <strong className="text-slate-400">Anyone with the link can view</strong> before importing.</p>
+                                <p className="text-[9px] text-slate-500 leading-relaxed">Google Forms → Responses → Link to Sheets. Share the sheet as <strong className="text-slate-400">Anyone with the link can view</strong>, then import. If the link import fails, use the CSV upload below.</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <button
@@ -1344,7 +1402,25 @@
                                     disabled={importing || !synthesis.feedbackResponsesUrl?.trim()}
                                     className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
-                                    {importing ? 'Importing…' : 'Import themes from survey'}
+                                    {importing ? 'Importing…' : 'Import from sheet link'}
+                                </button>
+                                <input
+                                    ref={csvFileInputRef}
+                                    type="file"
+                                    accept=".csv,text/csv"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        importThemesFromCsvFile(e.target.files?.[0]);
+                                        e.target.value = '';
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => csvFileInputRef.current?.click()}
+                                    disabled={importing}
+                                    className="px-3 py-1.5 bg-brandNavy-950 hover:bg-brandNavy-900 border border-brandNavy-700 text-slate-300 rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
+                                >
+                                    Upload CSV export
                                 </button>
                                 {responsesEditorUrl && (
                                     <a href={responsesEditorUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-slate-400 hover:text-white">Open form responses ↗</a>
@@ -1353,6 +1429,14 @@
                                     <a href={synthesis.feedbackResponsesUrl.trim()} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-slate-400 hover:text-white">Open responses sheet ↗</a>
                                 )}
                             </div>
+                            <details className="rounded-lg border border-brandNavy-800 bg-brandNavy-950/40 p-3">
+                                <summary className="cursor-pointer list-none text-[10px] font-bold uppercase text-slate-400 tracking-wider">Paste CSV fallback</summary>
+                                <div className="pt-2 space-y-2">
+                                    <p className="text-[9px] text-slate-500">In Google Sheets: File → Download → Comma-separated values (.csv), then upload above — or paste raw CSV here.</p>
+                                    <textarea rows="4" value={csvPaste} onChange={(e) => setCsvPaste(e.target.value)} placeholder="Timestamp,Role,Frustration,…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500 resize-none font-mono" />
+                                    <button type="button" onClick={importThemesFromCsvPaste} disabled={importing} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300 disabled:opacity-40">Import pasted CSV</button>
+                                </div>
+                            </details>
                             {importStatus && (
                                 <p className={`text-[9px] leading-relaxed ${importStatus.startsWith('Imported') ? 'text-emerald-400' : 'text-amber-300'}`}>{importStatus}</p>
                             )}
