@@ -21,6 +21,7 @@ import {
 import { getClientDisplayName } from '../lib/engagement-config';
 import { derivePortalCodeFromName, slugifyClientName } from '../lib/provision-profile-defaults';
 import ProductProvisionWizard, { type WorkbookProfileRow } from '../components/ProductProvisionWizard';
+import BlueprintEditor, { type BlueprintDraft } from '../components/BlueprintEditor';
 import {
   INTERNAL_WORKSPACE_TENANT,
   isWorkspaceTenantCancelled,
@@ -66,7 +67,10 @@ interface MasterTemplate {
   id: string;
   name?: string;
   type?: string;
+  description?: string;
+  enabled?: boolean;
   fields?: unknown[];
+  flowSteps?: unknown[];
 }
 
 interface ItTicket {
@@ -75,8 +79,14 @@ interface ItTicket {
   subject?: string;
   description?: string;
   status?: string;
+  category?: string;
+  priority?: string;
   timestamp?: number;
+  updatedAt?: number;
   requesterName?: string;
+  requesterId?: string;
+  assigneeName?: string;
+  staffNotes?: string;
 }
 
 function snapshotErrorHandler(label: string) {
@@ -95,7 +105,7 @@ const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: 'instances', label: 'Instances' },
   { id: 'onboard', label: 'Onboard' },
   { id: 'access', label: 'Users & Flags' },
-  { id: 'support', label: 'IT Support' },
+  { id: 'support', label: 'Service Desk' },
   { id: 'blueprints', label: 'Blueprints' },
 ];
 
@@ -152,6 +162,11 @@ export default function Tenants() {
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [publishingPortal, setPublishingPortal] = useState(false);
   const [blueprintBusy, setBlueprintBusy] = useState<string | null>(null);
+  const [editingBlueprint, setEditingBlueprint] = useState<Partial<BlueprintDraft> | null>(null);
+  const [creatingBlueprint, setCreatingBlueprint] = useState(false);
+  const [deskFilter, setDeskFilter] = useState<'all' | 'inquiry' | 'ticket' | 'customization'>('all');
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [ticketDraft, setTicketDraft] = useState({ status: 'open', staffNotes: '', assigneeName: '', priority: 'normal' });
   const [nukeBusy, setNukeBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<WorkspaceInstance | null>(null);
@@ -562,11 +577,43 @@ export default function Tenants() {
   const updateTicketStatus = async (ticketId: string, status: string) => {
     await setDoc(
       doc(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests', ticketId),
-      { status },
+      { status, updatedAt: Date.now() },
       { merge: true },
     );
     setInviteStatus('Ticket updated.');
   };
+
+  const openTicketEditor = (ticket: ItTicket) => {
+    setSelectedTicketId(ticket.id);
+    setTicketDraft({
+      status: ticket.status || 'open',
+      staffNotes: ticket.staffNotes || '',
+      assigneeName: ticket.assigneeName || '',
+      priority: ticket.priority || 'normal',
+    });
+  };
+
+  const saveTicketDetails = async () => {
+    if (!selectedTicketId || !tenantId) return;
+    await setDoc(
+      doc(db, 'artifacts', tenantId, 'public', 'data', 'core_it_requests', selectedTicketId),
+      {
+        status: ticketDraft.status,
+        staffNotes: ticketDraft.staffNotes,
+        assigneeName: ticketDraft.assigneeName,
+        priority: ticketDraft.priority,
+        updatedAt: Date.now(),
+      },
+      { merge: true },
+    );
+    setInviteStatus('Service desk item updated.');
+    setSelectedTicketId(null);
+  };
+
+  const filteredTickets = useMemo(() => {
+    if (deskFilter === 'all') return tickets;
+    return tickets.filter((t) => (t.category || 'ticket') === deskFilter);
+  }, [tickets, deskFilter]);
 
   const deleteTemplate = async (id: string) => {
     if (!window.confirm('Delete this master blueprint?')) return;
@@ -1029,27 +1076,62 @@ export default function Tenants() {
 
       {activeTab === 'support' && activeWorkspace && (
         <>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {([
+              ['all', 'All'],
+              ['inquiry', 'Inquiries'],
+              ['ticket', 'IT / Access'],
+              ['customization', 'Customizations'],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setDeskFilter(id)}
+                className={`px-3 py-1.5 text-xs rounded border ${
+                  deskFilter === id
+                    ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-500 font-bold'
+                    : 'border-brandNavy-700 text-slate-400'
+                }`}
+              >
+                {label}
+                <span className="ml-1 opacity-70">
+                  {id === 'all'
+                    ? tickets.length
+                    : tickets.filter((t) => (t.category || 'ticket') === id).length}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="glass-panel overflow-hidden mb-6">
             <table className="w-full text-left text-sm">
               <thead className="bg-brandNavy-950 text-slate-400 uppercase text-xs">
                 <tr>
                   <th className="p-4">Subject</th>
+                  <th className="p-4">Type</th>
                   <th className="p-4">Requester</th>
+                  <th className="p-4">Priority</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brandNavy-800">
-                {tickets.map((t) => (
+                {filteredTickets.map((t) => (
                   <tr key={t.id}>
                     <td className="p-4">
                       <div className="font-bold">{t.subject || 'Support Request'}</div>
                       <div className="text-xs text-slate-500 truncate max-w-md">{t.description}</div>
+                      {t.assigneeName && (
+                        <div className="text-[10px] text-brandTeal-400 mt-1">Owner: {t.assigneeName}</div>
+                      )}
                     </td>
+                    <td className="p-4 text-xs capitalize">{t.category || 'ticket'}</td>
                     <td className="p-4 text-xs">{t.requesterName || '—'}</td>
-                    <td className="p-4 text-xs uppercase">{t.status || 'open'}</td>
+                    <td className="p-4 text-xs uppercase">{t.priority || 'normal'}</td>
+                    <td className="p-4 text-xs uppercase">{(t.status || 'open').replace(/_/g, ' ')}</td>
                     <td className="p-4 text-right space-x-2">
-                      {t.status !== 'closed' && (
+                      <button type="button" onClick={() => openTicketEditor(t)} className="text-xs text-slate-300">Edit</button>
+                      {t.status !== 'closed' && t.status !== 'done' && (
                         <>
                           <button type="button" onClick={() => updateTicketStatus(t.id, 'in_progress')} className="text-xs text-brandTeal-400">In Progress</button>
                           <button type="button" onClick={() => updateTicketStatus(t.id, 'closed')} className="text-xs text-emerald-400">Close</button>
@@ -1060,10 +1142,57 @@ export default function Tenants() {
                 ))}
               </tbody>
             </table>
-            {tickets.length === 0 && (
-              <p className="p-6 text-slate-500 italic">No IT tickets for {tenantId}.</p>
+            {filteredTickets.length === 0 && (
+              <p className="p-6 text-slate-500 italic">No service desk items for {tenantId}.</p>
             )}
           </div>
+
+          {selectedTicketId && (
+            <div className="fixed inset-0 z-[160] bg-black/70 flex items-center justify-center p-4">
+              <div className="glass-panel p-6 w-full max-w-lg">
+                <h3 className="font-bold text-lg mb-3">Update service desk item</h3>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Status</label>
+                <select
+                  value={ticketDraft.status}
+                  onChange={(e) => setTicketDraft({ ...ticketDraft, status: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-3"
+                >
+                  <option value="open">Open / New</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="waiting_on_client">Waiting on client</option>
+                  <option value="closed">Closed</option>
+                  <option value="done">Done</option>
+                </select>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Priority</label>
+                <select
+                  value={ticketDraft.priority}
+                  onChange={(e) => setTicketDraft({ ...ticketDraft, priority: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-3"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                </select>
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Assignee (Kolthoff staff)</label>
+                <input
+                  value={ticketDraft.assigneeName}
+                  onChange={(e) => setTicketDraft({ ...ticketDraft, assigneeName: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-3"
+                  placeholder="Your name"
+                />
+                <label className="text-[10px] uppercase text-slate-500 block mb-1">Staff notes (visible to client)</label>
+                <textarea
+                  value={ticketDraft.staffNotes}
+                  onChange={(e) => setTicketDraft({ ...ticketDraft, staffNotes: e.target.value })}
+                  className="w-full p-2 rounded bg-brandNavy-800 border border-brandNavy-700 text-sm mb-4"
+                  rows={4}
+                />
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setSelectedTicketId(null)} className="px-3 py-2 text-sm text-slate-400">Cancel</button>
+                  <button type="button" onClick={saveTicketDetails} className="px-4 py-2 bg-brandTeal-500 text-brandNavy-955 rounded font-bold text-sm">Save</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="glass-panel p-4 border border-rose-900/30">
               <h2 className="font-bold text-rose-400 mb-2">Danger zone</h2>
@@ -1087,6 +1216,13 @@ export default function Tenants() {
           <div className="flex flex-wrap gap-2 mb-3">
             <button
               type="button"
+              onClick={() => { setCreatingBlueprint(true); setEditingBlueprint(null); }}
+              className="px-3 py-1.5 text-xs rounded bg-brandTeal-500 text-brandNavy-955 font-bold"
+            >
+              + Design blueprint
+            </button>
+            <button
+              type="button"
               onClick={handleSeedMasterTemplates}
               disabled={blueprintBusy === 'seed'}
               className="px-3 py-1.5 text-xs rounded border border-brandNavy-700 text-slate-300 disabled:opacity-50"
@@ -1097,21 +1233,36 @@ export default function Tenants() {
               type="button"
               onClick={handleDeployStarterPack}
               disabled={blueprintBusy === 'pack' || !tenantId}
-              className="px-3 py-1.5 text-xs rounded bg-brandTeal-500 text-brandNavy-955 font-bold disabled:opacity-50"
+              className="px-3 py-1.5 text-xs rounded border border-brandTeal-500/40 text-brandTeal-400 font-bold disabled:opacity-50"
             >
-              {blueprintBusy === 'pack' ? 'Deploying…' : `Deploy starter pack → ${tenantId}`}
+              {blueprintBusy === 'pack' ? 'Deploying…' : `Deploy starter pack → ${tenantId || '…'}`}
             </button>
           </div>
           <p className="text-xs text-slate-500 mb-2">
-            Global master blueprints on the admin tenant. Deploy copies to the selected client tenant&apos;s <code className="text-brandTeal-400">core_templates</code>.
+            You design master approval workflows here. Deploy copies to the selected client tenant&apos;s <code className="text-brandTeal-400">core_templates</code>.
+            Clients submit/approve; they do not design complex flows unless you grant that later.
           </p>
           {templates.map((tmpl) => (
             <div key={tmpl.id} className="glass-panel p-4 flex justify-between items-center gap-3">
               <div>
                 <div className="font-bold">{tmpl.name || tmpl.id}</div>
-                <div className="text-xs text-slate-500">{tmpl.type || 'template'} · {tmpl.fields?.length || 0} fields</div>
+                <div className="text-xs text-slate-500">
+                  {tmpl.type || 'template'} · {tmpl.fields?.length || 0} fields · {(tmpl.flowSteps as unknown[] | undefined)?.length || 0} steps
+                  {tmpl.enabled === false ? ' · disabled' : ''}
+                </div>
+                {tmpl.description && <div className="text-xs text-slate-400 mt-1">{tmpl.description}</div>}
               </div>
               <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreatingBlueprint(false);
+                    setEditingBlueprint(tmpl as Partial<BlueprintDraft>);
+                  }}
+                  className="text-slate-300 text-xs"
+                >
+                  Edit
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDeployTemplate(tmpl.id)}
@@ -1125,9 +1276,24 @@ export default function Tenants() {
             </div>
           ))}
           {templates.length === 0 && (
-            <p className="text-slate-500 italic">No master blueprints yet — click &quot;Seed starter master templates&quot;.</p>
+            <p className="text-slate-500 italic">No master blueprints yet — design one or seed starters.</p>
           )}
         </div>
+      )}
+
+      {(creatingBlueprint || editingBlueprint) && (
+        <BlueprintEditor
+          initial={creatingBlueprint ? null : editingBlueprint}
+          onClose={() => {
+            setCreatingBlueprint(false);
+            setEditingBlueprint(null);
+          }}
+          onSaved={(draft) => {
+            setCreatingBlueprint(false);
+            setEditingBlueprint(null);
+            showToast(`Saved blueprint “${draft.name}”. Deploy it to a tenant when ready.`);
+          }}
+        />
       )}
 
       {inviteStatus && <p className="text-xs mt-4 text-slate-400">{inviteStatus}</p>}

@@ -2,7 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ws-navy-950: #020613;
+  --ws-navy-900: #09111f;
+  --ws-navy-800: #0f1a2c;
+  --ws-navy-700: #1b2c46;
+  --ws-teal-400: #2dd4bf;
+  --ws-teal-500: #14b8a6;
+  --ws-surface: #f3f5f8;
+  --ws-panel: #ffffff;
+  --ws-ink: #0f172a;
+  --ws-muted: #64748b;
+}
+
 body {
-  font-family: 'Inter', sans-serif;
-  @apply bg-slate-50 text-slate-800 antialiased;
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+  color: var(--ws-ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(20, 184, 166, 0.12), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(15, 26, 44, 0.08), transparent 50%),
+    var(--ws-surface);
+  @apply antialiased;
+}
+
+@layer components {
+  .ws-page {
+    @apply p-5 md:p-6 max-w-6xl mx-auto;
+  }
+
+  .ws-title {
+    @apply text-xl md:text-2xl font-bold tracking-tight text-slate-900;
+  }
+
+  .ws-subtitle {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  .ws-panel {
+    @apply bg-white/90 border border-slate-200/80 rounded-xl shadow-sm backdrop-blur;
+  }
+
+  .ws-input {
+    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800
+      focus:outline-none focus:ring-2 focus:ring-brandTeal-500/40 focus:border-brandTeal-500;
+  }
+
+  .ws-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-brandTeal-500 px-4 py-2 text-sm font-semibold
+      text-slate-950 hover:bg-brandTeal-400 transition-colors;
+  }
+
+  .ws-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm
+      font-medium text-slate-700 hover:bg-slate-50 transition-colors;
+  }
+
+  .ws-tab {
+    @apply px-3 py-1.5 text-sm rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors;
+  }
+
+  .ws-tab-active {
+    @apply bg-slate-900 text-white hover:bg-slate-900 hover:text-white;
+  }
+
+  .ws-chip {
+    @apply inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+  }
 }

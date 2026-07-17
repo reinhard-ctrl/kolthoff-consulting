@@ -70,5 +70,12 @@ service firebase.storage {
         request.resource.size < 10 * 1024 * 1024;
       allow delete: if isKolthoffAdmin();
     }
+
+    match /artifacts/{tenantId}/files/approvals/{requestId}/{filename} {
+      allow read: if isTenantMember(tenantId) || isStaffMember();
+      allow write: if (isTenantMember(tenantId) || isStaffMember()) &&
+        request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isKolthoffAdmin();
+    }
   }
 }

@@ -256,16 +256,23 @@ service cloud.firestore {
       allow read, write: if isStaffMember();
     }
 
-    // Approval requests — assignee-scoped updates
+    // Approval requests — assignee-scoped updates; requester may withdraw/comment
     match /artifacts/{tenantId}/public/data/core_requests/{requestId} {
       allow read: if isTenantMember(tenantId);
       allow create: if isTenantMember(tenantId) &&
-        request.resource.data.status == 'pending' &&
+        request.resource.data.status in ['pending', 'approved'] &&
         request.resource.data.requesterId is string;
       allow update: if isTenantMember(tenantId) && (
         isKolthoffFirmAdmin() ||
         isTenantAdmin(tenantId) ||
-        request.auth.uid in resource.data.get('currentAssigneeFirebaseUids', [])
+        request.auth.uid in resource.data.get('currentAssigneeFirebaseUids', []) ||
+        (
+          resource.data.get('requesterFirebaseUid', '') == request.auth.uid &&
+          (
+            request.resource.data.status == 'withdrawn' ||
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stepHistory', 'updatedAt', 'attachments', 'watcherIds'])
+          )
+        )
       );
       allow delete: if isTenantAdmin(tenantId) || isKolthoffFirmAdmin();
     }
