@@ -22,6 +22,7 @@ import { getClientDisplayName } from '../lib/engagement-config';
 import { derivePortalCodeFromName, slugifyClientName } from '../lib/provision-profile-defaults';
 import ProductProvisionWizard, { type WorkbookProfileRow } from '../components/ProductProvisionWizard';
 import BlueprintEditor, { type BlueprintDraft } from '../components/BlueprintEditor';
+import WorkspaceBrandingPanel from '../components/WorkspaceBrandingPanel';
 import {
   INTERNAL_WORKSPACE_TENANT,
   isWorkspaceTenantCancelled,
@@ -99,12 +100,13 @@ function snapshotErrorHandler(label: string) {
   };
 }
 
-type WorkspaceTab = 'instances' | 'onboard' | 'access' | 'support' | 'blueprints';
+type WorkspaceTab = 'instances' | 'onboard' | 'access' | 'branding' | 'support' | 'blueprints';
 
 const TABS: { id: WorkspaceTab; label: string }[] = [
   { id: 'instances', label: 'Instances' },
   { id: 'onboard', label: 'Onboard' },
   { id: 'access', label: 'Users & Flags' },
+  { id: 'branding', label: 'Branding' },
   { id: 'support', label: 'Service Desk' },
   { id: 'blueprints', label: 'Blueprints' },
 ];
@@ -122,7 +124,12 @@ interface ActionProfile extends WorkbookProfileRow, CoreWorkspaceProfileFields {
 }
 
 function parseTab(value: string | null): WorkspaceTab {
-  if (value === 'onboard' || value === 'access' || value === 'support' || value === 'blueprints') return value;
+  if (
+    value === 'onboard' || value === 'access' || value === 'branding'
+    || value === 'support' || value === 'blueprints'
+  ) {
+    return value;
+  }
   return 'instances';
 }
 
@@ -746,7 +753,7 @@ export default function Tenants() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Workspace Admin</h1>
           <p className="text-sm text-slate-400 max-w-2xl">
-            Provision client Core Workspaces, manage portal delivery, and handle users, feature flags, IT tickets, and blueprints.
+            Provision client workspaces, branding, portal delivery, users, feature flags, service desk, and approval blueprints.
           </p>
         </div>
         {activeTab === 'instances' && (
@@ -1072,6 +1079,14 @@ export default function Tenants() {
             </div>
           )}
         </>
+      )}
+
+      {activeTab === 'branding' && (
+        <WorkspaceBrandingPanel
+          tenantId={tenantId}
+          clientName={activeWorkspace?.clientName || ''}
+          onSaved={(msg) => showToast(msg)}
+        />
       )}
 
       {activeTab === 'support' && activeWorkspace && (

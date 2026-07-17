@@ -97,11 +97,27 @@ async function ensureClientWorkspace(
   }
 
   const now = Date.now();
+  const branding = {
+    companyName: clientName,
+    tagline: 'Team workspace',
+    primaryColor: '#14B8A6',
+    logoUrl: '',
+  };
   const batch = db.batch();
   batch.set(configRef, {
     id: 'config',
     clientName,
     features: DEFAULT_CLIENT_FEATURES,
+    branding,
+    brandingPresets: {
+      default: {
+        id: 'default',
+        name: branding.companyName,
+        ...branding,
+        updatedAt: now,
+      },
+    },
+    activeBrandingPresetId: 'default',
     createdAt: now,
     createdBy,
   });

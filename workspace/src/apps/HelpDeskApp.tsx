@@ -83,7 +83,7 @@ export default function HelpDeskApp({
       setDescription('');
       setCategory('inquiry');
       setPriority('normal');
-      setOk('Request submitted. Kolthoff will follow up in Workspace Admin.');
+      setOk('Request submitted. Your administrator will follow up shortly.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submit failed');
     } finally {
@@ -96,7 +96,7 @@ export default function HelpDeskApp({
       <div className="ws-page">
         <header className="mb-6">
           <h1 className="ws-title">Help &amp; requests</h1>
-          <p className="ws-subtitle">Submit inquiries, IT tickets, or customization requests to Kolthoff.</p>
+          <p className="ws-subtitle">Submit inquiries, IT tickets, or customization requests to your administrator.</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
