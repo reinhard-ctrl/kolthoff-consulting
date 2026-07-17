@@ -594,6 +594,39 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(result.meta.rowCount, 2);
   });
 
+  it('extractStaffFeedbackClustersFromResponsesCsv groups answers by survey question', () => {
+    const csv = [
+      'Timestamp,What part of your job is most frustrating or takes too long?,Where do requests or files get held up when they move between teams?,How often do you wait on someone else’s approval or for work to be passed to the next person?',
+      '2026-01-01,Approvals take too long,Finance holds invoices,4',
+      '2026-01-02,Chasing email updates,Missing PO numbers,5',
+    ].join('\n');
+    const result = DRH.extractStaffFeedbackClustersFromResponsesCsv(csv);
+    assert.ok(result.clusters.length >= 2);
+    const frustration = result.clusters.find((c) => /frustrating/i.test(c.question));
+    assert.ok(frustration);
+    assert.ok(frustration.themes.some((t) => /Approvals take too long/i.test(t)));
+    const waitScale = result.clusters.find((c) => /wait on someone else/i.test(c.question));
+    assert.ok(waitScale);
+    assert.equal(waitScale.type, 'scale');
+    assert.ok(waitScale.themes.some((t) => /4\/5/.test(t)));
+  });
+
+  it('normalizeStaffFeedbackClusters migrates legacy flat themes', () => {
+    const clusters = DRH.normalizeStaffFeedbackClusters([], ['Slow approvals', 'Tool overlap']);
+    assert.equal(clusters.length, 1);
+    assert.equal(clusters[0].themes.length, 2);
+    assert.deepEqual(DRH.flattenStaffFeedbackClusters(clusters), ['Slow approvals', 'Tool overlap']);
+  });
+
+  it('matchCsvHeaderToFeedbackQuestion matches truncated Google Forms headers', () => {
+    const matched = DRH.matchCsvHeaderToFeedbackQuestion(
+      'What part of your job is most frustrating or takes too long',
+      DRH.getM102FeedbackImportQuestions(),
+    );
+    assert.ok(matched);
+    assert.match(matched.title, /frustrating/i);
+  });
+
   it('parseCsvText handles quoted commas', () => {
     const rows = DRH.parseCsvText('"Hello, team",Done\nPlain,Value');
     assert.equal(rows.length, 2);

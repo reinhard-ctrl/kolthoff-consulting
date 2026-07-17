@@ -586,6 +586,7 @@
             nextModuleId: 'MOD 2',
             customPitch: '',
             staffFeedbackThemes: [''],
+            staffFeedbackClusters: [],
             loomWalkthroughUrl: '',
             clientDeliverableUrl: '',
             feedbackFormUrl: '',
@@ -1241,12 +1242,58 @@
             const csvFileInputRef = useRef(null);
 
             const applyImportedCsv = (csvText) => {
-                const result = DRH().extractStaffFeedbackThemesFromResponsesCsv?.(csvText) || { themes: [], meta: {} };
-                if (!result.themes.length) {
-                    throw new Error('No open-ended responses found. Confirm the CSV is from your linked responses sheet.');
+                const result = DRH().extractStaffFeedbackClustersFromResponsesCsv?.(csvText) || { clusters: [], themes: [], meta: {} };
+                if (!result.clusters?.length && !result.themes?.length) {
+                    throw new Error('No survey responses found. Confirm the CSV is from your linked responses sheet.');
                 }
-                setSynthesis((prev) => ({ ...prev, staffFeedbackThemes: result.themes }));
-                setImportStatus(`Imported ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
+                setSynthesis((prev) => ({
+                    ...prev,
+                    staffFeedbackClusters: result.clusters,
+                    staffFeedbackThemes: result.themes.length ? result.themes : [''],
+                }));
+                setImportStatus(`Imported ${result.meta.questionCount || result.clusters.length} question group${(result.meta.questionCount || result.clusters.length) === 1 ? '' : 's'} · ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
+            };
+
+            const feedbackClusters = useMemo(
+                () => DRH().normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || [],
+                [synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes],
+            );
+
+            const setFeedbackClusters = (clusters) => {
+                const normalized = DRH().normalizeStaffFeedbackClusters?.(clusters, []) || [];
+                const themes = DRH().flattenStaffFeedbackClusters?.(normalized) || [];
+                setSynthesis((prev) => ({
+                    ...prev,
+                    staffFeedbackClusters: normalized,
+                    staffFeedbackThemes: themes.length ? themes : [''],
+                }));
+            };
+
+            const updateClusterTheme = (questionKey, themeIdx, value) => {
+                setFeedbackClusters(feedbackClusters.map((cluster) => (
+                    cluster.questionKey === questionKey
+                        ? {
+                            ...cluster,
+                            themes: cluster.themes.map((theme, idx) => (idx === themeIdx ? value : theme)),
+                        }
+                        : cluster
+                )));
+            };
+
+            const addClusterTheme = (questionKey) => {
+                setFeedbackClusters(feedbackClusters.map((cluster) => (
+                    cluster.questionKey === questionKey
+                        ? { ...cluster, themes: [...cluster.themes, ''] }
+                        : cluster
+                )));
+            };
+
+            const removeClusterTheme = (questionKey, themeIdx) => {
+                setFeedbackClusters(feedbackClusters.map((cluster) => (
+                    cluster.questionKey === questionKey
+                        ? { ...cluster, themes: cluster.themes.filter((_, idx) => idx !== themeIdx) }
+                        : cluster
+                )).filter((cluster) => cluster.themes.length > 0));
             };
 
             const fetchFeedbackCsvText = async (spreadsheetUrl) => {
@@ -1329,17 +1376,32 @@
             };
 
             const updateFeedbackTheme = (idx, val) => {
-                setSynthesis(prev => {
-                    const themes = [...(prev.staffFeedbackThemes || [''])];
+                const clusters = feedbackClusters.length
+                    ? feedbackClusters.map((cluster, clusterIdx) => (
+                        clusterIdx === 0
+                            ? { ...cluster, themes: cluster.themes.map((theme, themeIdx) => (themeIdx === idx ? val : theme)) }
+                            : cluster
+                    ))
+                    : [{ questionKey: 'manual', question: 'Staff feedback themes', type: 'paragraph', themes: [''] }];
+                if (!feedbackClusters.length) {
+                    const themes = [...(synthesis.staffFeedbackThemes || [''])];
                     themes[idx] = val;
-                    return { ...prev, staffFeedbackThemes: themes };
-                });
+                    setFeedbackClusters([{ questionKey: 'manual', question: 'Staff feedback themes', type: 'paragraph', themes }]);
+                    return;
+                }
+                setFeedbackClusters(clusters);
             };
-            const addFeedbackTheme = () => setSynthesis(prev => ({ ...prev, staffFeedbackThemes: [...(prev.staffFeedbackThemes || []), ''] }));
-            const removeFeedbackTheme = (idx) => setSynthesis(prev => ({
-                ...prev,
-                staffFeedbackThemes: (prev.staffFeedbackThemes || []).filter((_, i) => i !== idx),
-            }));
+            const addFeedbackTheme = () => {
+                if (!feedbackClusters.length) {
+                    setFeedbackClusters([{ questionKey: 'manual', question: 'Staff feedback themes', type: 'paragraph', themes: ['', ''] }]);
+                    return;
+                }
+                addClusterTheme(feedbackClusters[0].questionKey);
+            };
+            const removeFeedbackTheme = (idx) => {
+                if (!feedbackClusters.length) return;
+                removeClusterTheme(feedbackClusters[0].questionKey, idx);
+            };
 
             const responsesEditorUrl = synthesis.feedbackFormUrl?.trim()
                 ? DRH().buildFeedbackFormResponsesUrl?.(synthesis.feedbackFormUrl)
@@ -1440,15 +1502,32 @@
                             {importStatus && (
                                 <p className={`text-[9px] leading-relaxed ${importStatus.startsWith('Imported') ? 'text-emerald-400' : 'text-amber-300'}`}>{importStatus}</p>
                             )}
-                            {(synthesis.staffFeedbackThemes || ['']).map((theme, idx) => (
-                                <div key={idx} className="flex gap-2">
-                                    <input type="text" value={theme} onChange={(e) => updateFeedbackTheme(idx, e.target.value)} placeholder="e.g. Approvals take too long on busy days" className="flex-1 bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
-                                    {(synthesis.staffFeedbackThemes || []).length > 1 && (
-                                        <button type="button" onClick={() => removeFeedbackTheme(idx)} className="text-slate-500 hover:text-rose-400 px-2"><Icons.Close /></button>
-                                    )}
+                            {feedbackClusters.length > 0 ? feedbackClusters.map((cluster) => (
+                                <div key={cluster.questionKey} className="rounded-lg border border-brandNavy-800 bg-brandNavy-950/60 p-3 space-y-2">
+                                    <div className="text-[10px] font-semibold text-slate-200 leading-relaxed">{cluster.question}</div>
+                                    {cluster.themes.map((theme, idx) => (
+                                        <div key={`${cluster.questionKey}-${idx}`} className="flex gap-2">
+                                            <input type="text" value={theme} onChange={(e) => updateClusterTheme(cluster.questionKey, idx, e.target.value)} placeholder="Anonymous response theme…" className="flex-1 bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                            {cluster.themes.length > 1 && (
+                                                <button type="button" onClick={() => removeClusterTheme(cluster.questionKey, idx)} className="text-slate-500 hover:text-rose-400 px-2"><Icons.Close /></button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <button type="button" onClick={() => addClusterTheme(cluster.questionKey)} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme for this question</button>
                                 </div>
-                            ))}
-                            <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme manually</button>
+                            )) : (
+                                (synthesis.staffFeedbackThemes || ['']).map((theme, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input type="text" value={theme} onChange={(e) => updateFeedbackTheme(idx, e.target.value)} placeholder="e.g. Approvals take too long on busy days" className="flex-1 bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                        {(synthesis.staffFeedbackThemes || []).length > 1 && (
+                                            <button type="button" onClick={() => removeFeedbackTheme(idx)} className="text-slate-500 hover:text-rose-400 px-2"><Icons.Close /></button>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                            {!feedbackClusters.length && (
+                                <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme manually</button>
+                            )}
                         </div>
 
                         <div className="glass-panel rounded-xl p-4 space-y-3 bg-brandNavy-950/40 border border-brandNavy-800">
@@ -2209,6 +2288,7 @@
             }) || tabs;
             const m102InScope = DR.isMod1TaskInScope?.(profileTasks, 'm1-02');
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
+            const feedbackClustersForReport = DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || [];
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
             const raciGaps = DR.buildRaciGaps?.(tabs, raciAssignments, window.DiagramEditor) || { gaps: [], unassignedSteps: 0, totalSteps: 0 };
@@ -2308,12 +2388,17 @@
                                     </div>
                                 </div>
                             )}
-                            {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Staff Feedback Themes (Anonymous)</h4>
-                                    <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
-                                        {synthesis.staffFeedbackThemes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
-                                    </ul>
+                            {feedbackClustersForReport.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid space-y-4">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Staff Feedback Themes (Anonymous)</h4>
+                                    {feedbackClustersForReport.map((cluster) => (
+                                        <div key={cluster.questionKey} className="space-y-1.5">
+                                            <div className="text-[10px] font-semibold text-slate-700 leading-relaxed">{cluster.question}</div>
+                                            <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                                {cluster.themes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
+                                            </ul>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -2920,6 +3005,12 @@
                         if (!Array.isArray(loadedSynthesis.staffFeedbackThemes) || loadedSynthesis.staffFeedbackThemes.length === 0) {
                             loadedSynthesis.staffFeedbackThemes = [''];
                         }
+                        loadedSynthesis.staffFeedbackClusters = DRH().normalizeStaffFeedbackClusters?.(
+                            loadedSynthesis.staffFeedbackClusters,
+                            loadedSynthesis.staffFeedbackThemes,
+                        ) || [];
+                        loadedSynthesis.staffFeedbackThemes = DRH().flattenStaffFeedbackClusters?.(loadedSynthesis.staffFeedbackClusters)
+                            || loadedSynthesis.staffFeedbackThemes;
                         if (!loadedSynthesis.privacyGroundRules) {
                             loadedSynthesis.privacyGroundRules = createDefaultSynthesis().privacyGroundRules;
                         }
