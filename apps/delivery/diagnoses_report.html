@@ -335,7 +335,7 @@
             .print-only { display: block !important; }
             main { padding: 0 !important; margin: 0 !important; }
             .report-print-surface { background: white !important; padding: 0 !important; margin: 0 !important; }
-            .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important; }
+            .report-doc { width: 100% !important; max-width: 100% !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important; display: flex !important; flex-direction: column !important; }
             .report-page { width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; padding: 12px 0 !important; page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; background: white !important; }
             .report-doc .page-break-inside-avoid { page-break-inside: auto !important; break-inside: auto !important; }
             .report-table {
@@ -2097,11 +2097,27 @@
 
             const severityClass = { amber: 'border-amber-200 bg-amber-50', rose: 'border-rose-200 bg-rose-50/50', slate: 'border-slate-200 bg-slate-50' };
             const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
+            const scorecard = DR.buildMaturityScorecardRows?.(synthesis) || [];
+            const sectionOrder = DR.normalizeReportSectionOrder?.(printConfig.sectionOrder) || [];
+            const sectionLetters = DR.buildReportSectionLetterMap?.(sectionOrder, printConfig) || {};
+            const sectionCtx = {
+                scorecard,
+                recoveryGanttRows: recoveryGanttFull.rows.length,
+                findingsCount: findings.length,
+                hasOrgChart: !!(orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)),
+                workflowTabCount: workflowTabs.length,
+                processRankingCount: processRankings.length,
+                matrixItemCount: activeItems.length,
+                riskProfileCount: riskProfiles.length,
+                showFeedbackAppendix: m102InScope && !!String(synthesis.feedbackFormUrl || '').trim(),
+            };
+            const sectionStyle = (id) => DR.buildReportSectionStyle?.(id, sectionOrder, printConfig, sectionCtx) || {};
 
             return (
-                <div className="report-doc w-full max-w-[850px] text-slate-900 relative flex flex-col gap-5 print:gap-0 print:bg-white print:p-0 print:shadow-none p-0 bg-transparent shadow-none print:block">
+                <div className="report-doc w-full max-w-[850px] text-slate-900 relative flex flex-col gap-5 print:gap-0 print:flex print:flex-col print:bg-white print:p-0 print:shadow-none p-0 bg-transparent shadow-none">
 
                     {printConfig.showExecutiveSummary && (
+                        <div style={{ order: 0 }}>
                         <ReportCover
                             clientCompany={clientCompany}
                             preparedBy={preparedBy}
@@ -2117,10 +2133,11 @@
                             recoveryGanttTop5={recoveryGanttTop5}
                             showRecoveryGantt={printConfig.showFixOrder}
                         />
+                        </div>
                     )}
 
                     {printConfig.showExecutiveSummary && (
-                        <div className="report-page page-break-inside-avoid">
+                        <div className="report-page page-break-inside-avoid" style={sectionStyle('howToRead')}>
                             <ReportSectionHeader title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li className="page-break-inside-avoid"><strong>Start with the video walkthrough</strong> — scan the QR code on the cover or open the Loom link your consultant shared.</li>
@@ -2133,36 +2150,32 @@
                         </div>
                     )}
 
-                    {printConfig.showExecutiveSummary && (() => {
-                        const scorecard = DRH().buildMaturityScorecardRows?.(synthesis) || [];
-                        if (!scorecard.length) return null;
-                        return (
-                            <div className="report-page page-break-inside-avoid">
-                                <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
-                                <table className="report-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Dimension</th>
-                                            <th className="w-[12%] text-center">Score</th>
-                                            <th>What we observed</th>
+                    {printConfig.showExecutiveSummary && scorecard.length > 0 && (
+                        <div className="report-page page-break-inside-avoid" style={sectionStyle('readinessScorecard')}>
+                            <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Dimension</th>
+                                        <th className="w-[12%] text-center">Score</th>
+                                        <th>What we observed</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {scorecard.map((row) => (
+                                        <tr key={row.key}>
+                                            <td className="font-semibold text-slate-900">{row.label}</td>
+                                            <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
+                                            <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {scorecard.map((row) => (
-                                            <tr key={row.key}>
-                                                <td className="font-semibold text-slate-900">{row.label}</td>
-                                                <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
-                                                <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        );
-                    })()}
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {printConfig.showFixOrder && recoveryGanttFull.rows.length > 0 && (
-                        <div className="report-page">
+                        <div className="report-page" style={sectionStyle('recoveryGantt')}>
                             <ReportSectionHeader title="90-Day Recovery Plan Timeline" subtitle="Implementation map by target week — same Gantt-style view as your project planner roadmap documentation." />
                             <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
                             {recoveryGanttFull.unscheduledCount > 0 && (
@@ -2174,7 +2187,7 @@
                     )}
 
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
-                        <div className="report-page">
+                        <div className="report-page" style={sectionStyle('keyFindings')}>
                             <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
                             <ul className="space-y-3">
                                 {findings.map((pt, i) => (
@@ -2196,8 +2209,8 @@
                     )}
 
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="A" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
+                        <div className="report-page" style={sectionStyle('orgChart')}>
+                            <ReportSectionHeader number={sectionLetters.orgChart} title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
                             {orgChartSvg ? (
                                 <ReportDiagramFigure
                                     src={orgChartSvg}
@@ -2235,7 +2248,7 @@
                     )}
 
                     {printConfig.showFlowcharts && workflowTabs.length > 0 && (
-                        <>
+                        <div style={sectionStyle('flowcharts')}>
                             {workflowTabs.map((tab, tabIdx) => {
                                 const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [], svgCache: '' };
                                 const processNodes = vm.tasks.filter(t => t.type !== 'gateway' && t.type !== 'event');
@@ -2244,11 +2257,11 @@
                                 return (
                                     <div key={tab.id} className="report-page">
                                         {tabIdx === 0 ? (
-                                            <ReportSectionHeader number="B" title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
+                                            <ReportSectionHeader number={sectionLetters.flowcharts} title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
                                         ) : (
                                             <div className="mb-6 page-break-inside-avoid">
                                                 <div className="report-accent-bar mb-3" />
-                                                <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em]">Section B — Process Maps (continued)</div>
+                                                <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em]">Section {sectionLetters.flowcharts || 'B'} — Process Maps (continued)</div>
                                             </div>
                                         )}
                                         <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 report-workflow-tab">
@@ -2287,12 +2300,12 @@
                                     </div>
                                 );
                             })}
-                        </>
+                        </div>
                     )}
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="C" title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                        <div className="report-page" style={sectionStyle('leakageRanking')}>
+                            <ReportSectionHeader number={sectionLetters.leakageRanking} title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
                             {topFixes[0] && (
                                 <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
                                     <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
@@ -2326,8 +2339,8 @@
                     )}
 
                     {printConfig.showRaci && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="D" title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
+                        <div className="report-page" style={sectionStyle('raci')}>
+                            <ReportSectionHeader number={sectionLetters.raci} title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
                             {raciOrgInsights.length > 0 && (
                                 <ul className="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside page-break-inside-avoid">
                                     {raciOrgInsights.map((line, i) => <li key={i}>{line}</li>)}
@@ -2367,8 +2380,8 @@
                     )}
 
                     {printConfig.showSaas && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="E" title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap are tracked separately so you know what to fix first." />
+                        <div className="report-page" style={sectionStyle('saas')}>
+                            <ReportSectionHeader number={sectionLetters.saas} title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap are tracked separately so you know what to fix first." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
                                     <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage</div>
@@ -2423,8 +2436,8 @@
                     )}
 
                     {printConfig.showSynthesis && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="F" title="Operational Maturity & 3-Year Leakage Forecast" subtitle="How ready your business is to scale — and what happens if nothing changes." />
+                        <div className="report-page" style={sectionStyle('synthesis')}>
+                            <ReportSectionHeader number={sectionLetters.synthesis} title="Operational Maturity & 3-Year Leakage Forecast" subtitle="How ready your business is to scale — and what happens if nothing changes." />
                             <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-xs font-bold uppercase tracking-wider">Maturity Scorecard</h3>
@@ -2452,8 +2465,8 @@
                     )}
 
                     {printConfig.showMatrix && activeItems.length > 0 && (
-                        <div className="report-page font-sans text-xs">
-                            <ReportSectionHeader number="G" title="Full Prioritization Matrix" subtitle="Every 90-Day Recovery Plan initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
+                        <div className="report-page font-sans text-xs" style={sectionStyle('matrix')}>
+                            <ReportSectionHeader number={sectionLetters.matrix} title="Full Prioritization Matrix" subtitle="Every 90-Day Recovery Plan initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
                             <div className="flex justify-center my-4">
                                 <ReportPriorityMatrixChart items={activeItems} />
                             </div>
@@ -2520,8 +2533,8 @@
                     )}
 
                     {printConfig.showFindings && riskProfiles.length > 0 && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="H" title="Operational Risk Profiles" subtitle="Issues that need attention before scaling headcount or adding new tools." />
+                        <div className="report-page" style={sectionStyle('riskFindings')}>
+                            <ReportSectionHeader number={sectionLetters.riskFindings} title="Operational Risk Profiles" subtitle="Issues that need attention before scaling headcount or adding new tools." />
                             <div className="space-y-3">
                                 {riskProfiles.map((rp, i) => (
                                     <div key={i} className={`text-xs p-4 border rounded-lg page-break-inside-avoid ${severityClass[rp.severity] || severityClass.slate}`}>
@@ -2534,8 +2547,8 @@
                     )}
 
                     {printConfig.showNextSteps && (
-                        <div className="report-page">
-                            <ReportSectionHeader number="I" title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
+                        <div className="report-page" style={sectionStyle('nextSteps')}>
+                            <ReportSectionHeader number={sectionLetters.nextSteps} title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
                             <div className="space-y-4 text-sm">
                                 <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-emerald-900 text-xs uppercase tracking-wider block mb-1">Week 1–2 — Quick wins</strong>
@@ -2568,7 +2581,7 @@
                     )}
 
                     {printConfig.showAppendix && (
-                        <div className="report-page">
+                        <div className="report-page" style={sectionStyle('methodology')}>
                             <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
@@ -2580,7 +2593,7 @@
                     )}
 
                     {printConfig.showFeedbackAppendix && m102InScope && String(synthesis.feedbackFormUrl || '').trim() && (
-                        <div className="report-page">
+                        <div className="report-page" style={sectionStyle('feedbackAppendix')}>
                             <ReportSectionHeader title="Appendix — Staff Feedback Channel (m1-02)" subtitle="Anonymous staff survey — circulate internally. No names or emails are collected." />
                             <div className="flex flex-wrap items-start gap-6 page-break-inside-avoid">
                                 <img src={DR.buildLinkQrUrl?.(synthesis.feedbackFormUrl, 160)} alt="Feedback form QR code" className="w-[140px] h-[140px] border border-slate-200 rounded-lg bg-white p-2 shrink-0" />
@@ -2598,7 +2611,9 @@
                         </div>
                     )}
 
+                    <div style={{ order: 9999 }}>
                     <ReportDocumentFooter clientCompany={clientCompany} reportDate={reportDate} preparedBy={preparedBy} />
+                    </div>
                 </div>
             );
         };
@@ -2615,7 +2630,7 @@
 
             // View State
             const [activeNav, setActiveNav] = useState('orgchart');
-            const [printConfig, setPrintConfig] = useState(() => ({ ...(DRH().PRINT_PRESETS?.full || {}) }));
+            const [printConfig, setPrintConfig] = useState(() => DRH().mergePrintConfigWithSectionOrder?.(DRH().PRINT_PRESETS?.full || {}) || { ...(DRH().PRINT_PRESETS?.full || {}) });
             const [printPreset, setPrintPreset] = useState('full');
 
             const [clientCompany, setClientCompany] = useState('');
@@ -2787,6 +2802,9 @@
                             loadedSynthesis.nextModuleId = 'MOD 2';
                         }
                         setSynthesis(loadedSynthesis);
+                        if (Array.isArray(loadedSynthesis.reportSectionOrder)) {
+                            setPrintConfig((prev) => DRH().mergePrintConfigWithSectionOrder?.(prev, loadedSynthesis.reportSectionOrder) || prev);
+                        }
                     } else {
                         setSynthesis(createDefaultSynthesis());
                     }
@@ -2888,7 +2906,19 @@
 
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
-                if (cfg) { setPrintPreset(preset); setPrintConfig({ ...cfg }); }
+                if (cfg) {
+                    setPrintPreset(preset);
+                    setPrintConfig((prev) => DRH().mergePrintConfigWithSectionOrder?.(cfg, prev.sectionOrder) || { ...cfg });
+                }
+            };
+
+            const moveReportSection = (sectionId, direction) => {
+                setPrintPreset('custom');
+                setPrintConfig((prev) => {
+                    const sectionOrder = DRH().moveReportSectionOrder?.(prev.sectionOrder, sectionId, direction) || prev.sectionOrder;
+                    setSynthesis((syn) => ({ ...syn, reportSectionOrder: sectionOrder }));
+                    return { ...prev, sectionOrder };
+                });
             };
 
             const autoPitchedRef = useRef(null);
@@ -3007,7 +3037,10 @@
                         raciAssignments,
                         preparedBy,
                         customAssets,
-                        synthesis,
+                        synthesis: {
+                            ...synthesis,
+                            reportSectionOrder: DRH().normalizeReportSectionOrder?.(printConfig.sectionOrder) || [],
+                        },
                         diagnosisReportUpdatedAt: Date.now(),
                         orgChart: {
                             drawioXml: savedOrgXml,
@@ -3351,6 +3384,28 @@
                                                             {label}
                                                         </label>
                                                     ))}
+                                                </div>
+                                                <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+                                                    <div className="text-[9px] font-bold uppercase tracking-wider text-slate-600">PDF section order</div>
+                                                    <p className="text-[9px] text-slate-500 normal-case tracking-normal">Cover page stays first. Use arrows to reorder body sections — preview updates live.</p>
+                                                    <ol className="space-y-1">
+                                                        {(DRH().normalizeReportSectionOrder?.(printConfig.sectionOrder) || []).map((sectionId, idx, list) => {
+                                                            const meta = DRH().REPORT_SECTION_CATALOG?.[sectionId];
+                                                            if (!meta) return null;
+                                                            const enabled = !!printConfig[meta.configKey];
+                                                            return (
+                                                                <li key={sectionId} className={`flex items-center gap-2 text-[10px] normal-case tracking-normal rounded px-2 py-1.5 ${enabled ? 'bg-slate-50 text-slate-800' : 'bg-slate-100/60 text-slate-400'}`}>
+                                                                    <span className="font-mono text-slate-400 w-4 shrink-0">{idx + 1}</span>
+                                                                    <div className="flex flex-col shrink-0">
+                                                                        <button type="button" aria-label={`Move ${meta.label} up`} disabled={idx === 0} onClick={() => moveReportSection(sectionId, -1)} className="p-0.5 text-slate-500 hover:text-brandTeal-600 disabled:opacity-25 disabled:cursor-not-allowed">▲</button>
+                                                                        <button type="button" aria-label={`Move ${meta.label} down`} disabled={idx === list.length - 1} onClick={() => moveReportSection(sectionId, 1)} className="p-0.5 text-slate-500 hover:text-brandTeal-600 disabled:opacity-25 disabled:cursor-not-allowed">▼</button>
+                                                                    </div>
+                                                                    <span className="flex-1 font-semibold">{meta.label}</span>
+                                                                    {!enabled && <span className="text-[9px] uppercase text-slate-400 shrink-0">Hidden</span>}
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ol>
                                                 </div>
                                                 {(mod1Handoff.errors?.length > 0 || mod1Handoff.warnings.length > 0) && (
                                                     <div className={`p-2.5 rounded-lg border ${mod1Handoff.errors?.length ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>

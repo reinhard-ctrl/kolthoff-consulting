@@ -490,6 +490,33 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(top5.rows.every((r) => r.isTop5));
   });
 
+  it('normalizeReportSectionOrder preserves custom order and appends missing sections', () => {
+    const order = DRH.normalizeReportSectionOrder(['raci', 'orgChart', 'flowcharts']);
+    assert.equal(order[0], 'raci');
+    assert.equal(order[1], 'orgChart');
+    assert.equal(order[2], 'flowcharts');
+    assert.ok(order.includes('methodology'));
+  });
+
+  it('moveReportSectionOrder swaps adjacent sections', () => {
+    const start = ['keyFindings', 'orgChart', 'flowcharts', 'leakageRanking'];
+    const moved = DRH.moveReportSectionOrder(start, 'flowcharts', -1);
+    assert.equal(moved[1], 'flowcharts');
+    assert.equal(moved[2], 'orgChart');
+  });
+
+  it('buildReportSectionLetterMap follows enabled section order', () => {
+    const order = ['flowcharts', 'orgChart', 'raci'];
+    const letters = DRH.buildReportSectionLetterMap(order, {
+      showFlowcharts: true,
+      showOrgChart: true,
+      showRaci: true,
+    });
+    assert.equal(letters.flowcharts, 'A');
+    assert.equal(letters.orgChart, 'B');
+    assert.equal(letters.raci, 'C');
+  });
+
   it('sortMatrixByImpactEffort orders items by impact ÷ effort', () => {
     const items = [
       { id: 'low', text: 'Low score', effort: 4, impact: 2, expectedSavings: 1000 },
