@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail as firebaseSendPasswordResetEmail, auth, tenantCol, logAudit, getDocs, query, where, functions, httpsCallable, getWorkspaceTenantId } from '../lib/firebase';
 import { FirebaseError } from 'firebase/app';
 import EmbedAuthPrompt from './EmbedAuthPrompt';
+import { companyInitials, type WorkspaceBranding } from '../lib/tenant-branding';
 
 interface CoreUser {
   id: string;
@@ -16,10 +17,12 @@ export default function LoginPage({
   onLogin,
   googleSsoError = '',
   embedded = false,
+  branding,
 }: {
   onLogin: (user: CoreUser) => void;
   googleSsoError?: string;
   embedded?: boolean;
+  branding: WorkspaceBranding;
 }) {
   const [view, setView] = useState<ViewMode>('login');
   const [email, setEmail] = useState('');
@@ -36,7 +39,7 @@ export default function LoginPage({
     setError('');
     setInfo('');
     if (!password) {
-      setError('Password is required. Ask your admin to provision you in Workspace Admin.');
+      setError('Password is required. Ask your administrator to invite you.');
       setLoading(false);
       return;
     }
@@ -45,7 +48,7 @@ export default function LoginPage({
       const snap = await getDocs(query(tenantCol('core_users'), where('email', '==', normalized)));
       if (snap.empty) {
         await signOut(auth);
-        setError('Email not found in organization. Contact your Kolthoff admin.');
+        setError('Email not found in this organization. Contact your administrator.');
         return;
       }
       const match = snap.docs[0].data() as CoreUser;
@@ -79,7 +82,7 @@ export default function LoginPage({
     setError('');
     setInfo('');
     if (!normalized) {
-      setError('Enter your organizational email.');
+      setError('Enter your work email.');
       setLoading(false);
       return;
     }
@@ -106,7 +109,7 @@ export default function LoginPage({
         } catch (fallbackErr: unknown) {
           const fbCode = fallbackErr instanceof FirebaseError ? fallbackErr.code : '';
           if (fbCode === 'auth/user-not-found') {
-            setError('This email is not provisioned yet. Ask your Kolthoff admin to invite you in Workspace Admin.');
+            setError('This email is not provisioned yet. Ask your administrator to invite you.');
             return;
           }
           if (fbCode === 'auth/too-many-requests') {
@@ -119,7 +122,7 @@ export default function LoginPage({
       if (code === 'functions/resource-exhausted' || msg.includes('Too many attempts')) {
         setError('Too many attempts. Wait a few minutes and try again.');
       } else if (code === 'functions/internal' || msg.includes('internal')) {
-        setError('Could not send reset email. Confirm you were invited in Workspace Admin, or contact your Kolthoff admin.');
+        setError('Could not send reset email. Confirm you were invited, or contact your administrator.');
       } else {
         setError(msg);
       }
@@ -135,6 +138,17 @@ export default function LoginPage({
     setPassword('');
   };
 
+  const brandMark = branding.logoUrl ? (
+    <img src={branding.logoUrl} alt="" className="h-12 mx-auto mb-4 object-contain" />
+  ) : (
+    <div
+      className="h-12 w-12 mx-auto mb-4 rounded-xl flex items-center justify-center text-sm font-extrabold text-slate-950"
+      style={{ backgroundColor: branding.primaryColor }}
+    >
+      {companyInitials(branding.companyName)}
+    </div>
+  );
+
   if (embedded) {
     return <EmbedAuthPrompt />;
   }
@@ -143,24 +157,26 @@ export default function LoginPage({
     return (
       <div className="flex h-screen items-center justify-center bg-slate-900">
         <form onSubmit={handlePasswordRequest} className="bg-slate-800 p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
+          {brandMark}
           <h1 className="text-2xl font-bold text-white text-center mb-2">Set or reset password</h1>
           <p className="text-sm text-slate-400 text-center mb-6">
-            New team member or forgot your password? We&apos;ll email you a secure link to set one.
+            We&apos;ll email you a secure link to set a password for {branding.companyName}.
           </p>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Organizational email"
+            placeholder="Work email"
             className="w-full p-3 rounded-lg bg-slate-900 border border-slate-600 text-white mb-4"
             required
           />
           {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
-          {info && <p className="text-teal-400 text-sm mb-3">{info}</p>}
+          {info && <p className="text-sm mb-3 ws-brand-text">{info}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-3 rounded-lg font-semibold text-slate-950 disabled:opacity-50"
+            style={{ backgroundColor: branding.primaryColor }}
           >
             {loading ? 'Sending...' : 'Send password link'}
           </button>
@@ -179,8 +195,11 @@ export default function LoginPage({
   return (
     <div className="flex h-screen items-center justify-center bg-slate-900">
       <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
-        <h1 className="text-2xl font-bold text-white text-center mb-2">Team Portal</h1>
-        <p className="text-sm text-slate-400 text-center mb-6">Sign in with your organizational email</p>
+        {brandMark}
+        <h1 className="text-2xl font-bold text-white text-center mb-1">{branding.companyName}</h1>
+        <p className="text-sm text-slate-400 text-center mb-6">
+          {branding.tagline || 'Sign in with your work email'}
+        </p>
         <input
           type="email"
           value={email}
@@ -201,7 +220,7 @@ export default function LoginPage({
           <button
             type="button"
             onClick={() => switchView('reset')}
-            className="text-xs text-teal-400 hover:text-teal-300 underline"
+            className="text-xs underline ws-brand-text"
           >
             Forgot password or first-time setup
           </button>
@@ -210,13 +229,11 @@ export default function LoginPage({
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 rounded-lg font-semibold text-slate-950 disabled:opacity-50"
+          style={{ backgroundColor: branding.primaryColor }}
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
-        <p className="text-xs text-slate-500 text-center mt-4">
-          Kolthoff staff with a passcode? <a href="/admin/" className="text-teal-400 underline">Sign in at Admin Console</a> first.
-        </p>
       </form>
     </div>
   );

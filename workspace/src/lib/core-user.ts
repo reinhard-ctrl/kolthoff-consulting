@@ -35,7 +35,7 @@ export async function resolveCoreUserFromAuthUser(firebaseUser: User): Promise<C
   return {
     id: firebaseUser.uid,
     email: email || 'admin@kolthoff-consulting.com',
-    name: firebaseUser.displayName || 'Kolthoff Admin',
+    name: firebaseUser.displayName || 'Administrator',
     role: 'kolthoff_admin',
   };
 }

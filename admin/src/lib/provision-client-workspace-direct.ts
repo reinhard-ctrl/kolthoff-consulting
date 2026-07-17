@@ -2,6 +2,7 @@ import { deleteField, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore
 import { auth, db, adminAppId } from './firebase';
 import type { ClientProvisionInput, ClientProvisionResult } from './client-provision-firestore';
 import { deployStarterPackToTenant } from './approval-starter-templates';
+import { defaultWorkspaceBranding } from './workspace-branding';
 import { derivePortalCodeFromName, slugifyClientName } from './provision-profile-defaults';
 import { INTERNAL_WORKSPACE_TENANT } from './workspace-tenant-status';
 
@@ -127,10 +128,21 @@ export async function provisionClientWorkspaceDirect(
 
   if (!configSnap.exists() && !registrySnap.exists()) {
     const batch = writeBatch(db);
+    const branding = defaultWorkspaceBranding(clientName);
     batch.set(configRef, {
       id: 'config',
       clientName,
       features: DEFAULT_FEATURES,
+      branding,
+      brandingPresets: {
+        default: {
+          id: 'default',
+          name: branding.companyName,
+          ...branding,
+          updatedAt: now,
+        },
+      },
+      activeBrandingPresetId: 'default',
       createdAt: now,
       createdBy: uid,
     });

@@ -7,8 +7,11 @@
   --ws-navy-900: #09111f;
   --ws-navy-800: #0f1a2c;
   --ws-navy-700: #1b2c46;
-  --ws-teal-400: #2dd4bf;
-  --ws-teal-500: #14b8a6;
+  --brand-primary: #14b8a6;
+  --brand-primary-soft: rgba(20, 184, 166, 0.1);
+  --brand-primary-ring: rgba(20, 184, 166, 0.28);
+  --brand-primary-hover: #14b8a6;
+  --ws-teal-500: var(--brand-primary);
   --ws-surface: #f3f5f8;
   --ws-panel: #ffffff;
   --ws-ink: #0f172a;
@@ -19,7 +22,7 @@ body {
   font-family: 'Montserrat', 'Segoe UI', sans-serif;
   color: var(--ws-ink);
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(20, 184, 166, 0.12), transparent 55%),
+    radial-gradient(1200px 600px at 10% -10%, var(--brand-primary-soft), transparent 55%),
     radial-gradient(900px 500px at 100% 0%, rgba(15, 26, 44, 0.08), transparent 50%),
     var(--ws-surface);
   @apply antialiased;
@@ -44,12 +47,23 @@ body {
 
   .ws-input {
     @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800
-      focus:outline-none focus:ring-2 focus:ring-brandTeal-500/40 focus:border-brandTeal-500;
+      focus:outline-none focus:ring-2 focus:border-transparent;
+    focus-ring-color: var(--brand-primary-ring);
+  }
+
+  .ws-input:focus {
+    box-shadow: 0 0 0 2px var(--brand-primary-ring);
+    border-color: var(--brand-primary);
   }
 
   .ws-btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-brandTeal-500 px-4 py-2 text-sm font-semibold
-      text-slate-950 hover:bg-brandTeal-400 transition-colors;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold
+      text-slate-950 transition-colors;
+    background-color: var(--brand-primary);
+  }
+
+  .ws-btn-primary:hover {
+    filter: brightness(1.05);
   }
 
   .ws-btn-secondary {
@@ -62,10 +76,28 @@ body {
   }
 
   .ws-tab-active {
-    @apply bg-slate-900 text-white hover:bg-slate-900 hover:text-white;
+    @apply text-white hover:text-white;
+    background-color: #0f172a;
   }
 
   .ws-chip {
     @apply inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .ws-brand-text {
+    color: var(--brand-primary);
+  }
+
+  .ws-brand-bg {
+    background-color: var(--brand-primary);
+  }
+
+  .ws-brand-soft {
+    background-color: var(--brand-primary-soft);
+  }
+
+  .ws-nav-active {
+    background-color: var(--brand-primary);
+    @apply text-slate-950 font-semibold;
   }
 }
