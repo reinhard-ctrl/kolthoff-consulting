@@ -559,6 +559,36 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(cfg.showMatrixTable, true);
   });
 
+  it('buildFeedbackFormResponsesUrl links to form responses tab', () => {
+    const url = DRH.buildFeedbackFormResponsesUrl('https://docs.google.com/forms/d/abc123/viewform');
+    assert.equal(url, 'https://docs.google.com/forms/d/abc123/edit#responses');
+  });
+
+  it('buildFeedbackResponsesCsvUrl builds spreadsheet CSV export link', () => {
+    const url = DRH.buildFeedbackResponsesCsvUrl('https://docs.google.com/spreadsheets/d/sheet123/edit#gid=456');
+    assert.match(url, /sheet123/);
+    assert.match(url, /format=csv/);
+    assert.match(url, /gid=456/);
+  });
+
+  it('extractStaffFeedbackThemesFromResponsesCsv pulls open-ended answers', () => {
+    const csv = [
+      'Timestamp,Role,Frustration,Fix one thing',
+      '2026-01-01,Ops,Approvals take too long on busy days,Automate invoice routing',
+      '2026-01-02,Sales,Waiting for finance sign-off,Simplify expense approvals',
+    ].join('\n');
+    const result = DRH.extractStaffFeedbackThemesFromResponsesCsv(csv);
+    assert.ok(result.themes.length >= 2);
+    assert.ok(result.themes.some((t) => /Approvals take too long/i.test(t)));
+    assert.equal(result.meta.rowCount, 2);
+  });
+
+  it('parseCsvText handles quoted commas', () => {
+    const rows = DRH.parseCsvText('"Hello, team",Done\nPlain,Value');
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0][0], 'Hello, team');
+  });
+
   it('sortMatrixByImpactEffort orders items by impact ÷ effort', () => {
     const items = [
       { id: 'low', text: 'Low score', effort: 4, impact: 2, expectedSavings: 1000 },

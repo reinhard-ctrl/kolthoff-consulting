@@ -828,8 +828,124 @@
     '1. Open the Kolthoff m1-02 form template and make a copy in Google Forms for this client.\n' +
     '2. In your copy: Form → Settings → confirm “Collect email addresses” is OFF, then publish.\n' +
     '3. Paste the live viewform link above and share it with staff (QR poster, Viber, or email) for 5–7 business days.\n' +
-    '4. Export themes only — paste summarized themes below (no raw submissions or names).\n' +
+    '4. In Google Forms → Responses → Link to Sheets. Paste that spreadsheet URL below and click Import themes from survey.\n' +
     '5. Sync to cloud pushes the form link to the client portal vault.';
+
+  function extractGoogleSpreadsheetId(urlOrId) {
+    const raw = String(urlOrId || '').trim();
+    if (!raw) return '';
+    const match = raw.match(/\/spreadsheets\/d\/(?:e\/)?([^/?#]+)/i);
+    if (match) return match[1];
+    return raw.includes('/') ? '' : raw;
+  }
+
+  function extractSpreadsheetGid(urlOrId) {
+    const match = String(urlOrId || '').match(/[#&?]gid=(\d+)/i);
+    return match ? match[1] : '0';
+  }
+
+  /** CSV export URL for a Google Sheets responses tab (sheet must be link-viewable). */
+  function buildFeedbackResponsesCsvUrl(spreadsheetUrlOrId, gid) {
+    const id = extractGoogleSpreadsheetId(spreadsheetUrlOrId);
+    if (!id) return '';
+    const sheetGid = gid != null ? String(gid) : extractSpreadsheetGid(spreadsheetUrlOrId);
+    return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${sheetGid || '0'}`;
+  }
+
+  function buildFeedbackFormResponsesUrl(formUrl) {
+    const formId = extractGoogleFormId(formUrl);
+    if (!formId) return '';
+    return `https://docs.google.com/forms/d/${formId}/edit#responses`;
+  }
+
+  function parseCsvText(csvText) {
+    const text = String(csvText || '').replace(/^\uFEFF/, '');
+    const rows = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text[i];
+      const next = text[i + 1];
+      if (inQuotes) {
+        if (ch === '"' && next === '"') {
+          field += '"';
+          i += 1;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          field += ch;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        row.push(field);
+        field = '';
+      } else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && next === '\n') i += 1;
+        row.push(field);
+        if (row.some((cell) => String(cell || '').trim())) rows.push(row);
+        row = [];
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+    row.push(field);
+    if (row.some((cell) => String(cell || '').trim())) rows.push(row);
+    return rows;
+  }
+
+  /**
+   * Pull anonymous open-ended answers from a Google Forms responses CSV export.
+   * Skips timestamps, emails, and short multiple-choice columns.
+   */
+  function extractStaffFeedbackThemesFromResponsesCsv(csvText, options) {
+    const opts = options || {};
+    const minLen = Number(opts.minLength) || 12;
+    const maxThemes = Number(opts.maxThemes) || 25;
+    const rows = parseCsvText(csvText);
+    if (rows.length < 2) {
+      return { themes: [], meta: { rowCount: 0, columnCount: 0, imported: 0 } };
+    }
+    const headers = rows[0].map((h) => String(h || '').trim());
+    const dataRows = rows.slice(1);
+    const skipHeaderRe = /^(timestamp|email|e-?mail|date submitted|score)/i;
+    const themes = [];
+    const seen = new Set();
+
+    headers.forEach((header, colIdx) => {
+      if (!header || skipHeaderRe.test(header)) return;
+      const samples = dataRows
+        .slice(0, 12)
+        .map((r) => String((r[colIdx] != null ? r[colIdx] : '') || '').trim())
+        .filter(Boolean);
+      if (!samples.length) return;
+      const avgLen = samples.reduce((acc, s) => acc + s.length, 0) / samples.length;
+      if (avgLen < minLen && samples.length >= 3) return;
+
+      dataRows.forEach((row) => {
+        const val = String((row[colIdx] != null ? row[colIdx] : '') || '').trim();
+        if (val.length < minLen) return;
+        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) return;
+        const key = val.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        themes.push(val);
+      });
+    });
+
+    return {
+      themes: themes.slice(0, maxThemes),
+      meta: {
+        rowCount: dataRows.length,
+        columnCount: headers.length,
+        imported: Math.min(themes.length, maxThemes),
+      },
+    };
+  }
 
   function normalizeStaffDirectoryRows(members) {
     return (members || [])
@@ -1991,6 +2107,12 @@
     getM102FeedbackFormTemplate,
     extractGoogleFormId,
     buildFeedbackFormViewUrl,
+    extractGoogleSpreadsheetId,
+    extractSpreadsheetGid,
+    buildFeedbackResponsesCsvUrl,
+    buildFeedbackFormResponsesUrl,
+    parseCsvText,
+    extractStaffFeedbackThemesFromResponsesCsv,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
     ensureReportDiagramDataUri,
