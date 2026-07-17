@@ -8,15 +8,34 @@ export interface ApprovalField {
 
 export type ApprovalMode = 'any' | 'all';
 
+/** Who receives an approval/notify step — org-aware like Lark */
+export type AssigneeType =
+  | 'manager'
+  | 'department_head'
+  | 'org_role'
+  | 'user'
+  | 'role'
+  | 'any_admin';
+
 export interface FlowStep {
   id: string;
   type: 'approval' | 'notify';
   label: string;
-  assigneeType?: 'user' | 'role' | 'any_admin';
+  assigneeType?: AssigneeType;
   assigneeId?: string;
+  /** Auth ACL role when assigneeType === 'role' */
   role?: string;
+  /** Org job role when assigneeType === 'org_role' */
+  orgRole?: string;
   /** Parallel approvers: any one (default) or all assigned must approve */
   approvalMode?: ApprovalMode;
+}
+
+export interface OrgDepartmentRef {
+  id: string;
+  name?: string;
+  parentId?: string | null;
+  headUserId?: string | null;
 }
 
 export interface ApprovalAttachment {
@@ -72,23 +91,81 @@ export interface TenantUserRow {
   email?: string;
   name?: string;
   role?: string;
-  departmentId?: string;
+  jobTitle?: string;
+  orgRole?: string;
+  departmentId?: string | null;
+  managerId?: string | null;
   firebaseUid?: string;
+}
+
+function resolveDepartmentHeadUser(
+  departments: OrgDepartmentRef[],
+  users: TenantUserRow[],
+  requester: TenantUserRow | undefined,
+): TenantUserRow | undefined {
+  if (!requester?.departmentId) return undefined;
+  const byId = new Map(departments.map((d) => [d.id, d]));
+  let current: string | null | undefined = requester.departmentId;
+  const seen = new Set<string>();
+  while (current && byId.has(current) && !seen.has(current)) {
+    seen.add(current);
+    const dept = byId.get(current)!;
+    if (dept.headUserId) {
+      const head = users.find((u) => u.id === dept.headUserId);
+      if (head) return head;
+    }
+    current = dept.parentId;
+  }
+  return undefined;
+}
+
+export function assigneeTypeLabel(type?: AssigneeType): string {
+  switch (type) {
+    case 'manager': return 'Direct manager';
+    case 'department_head': return 'Department head';
+    case 'org_role': return 'Org role';
+    case 'user': return 'Specific person';
+    case 'role': return 'ACL role';
+    case 'any_admin': return 'Any admin';
+    default: return 'Any admin';
+  }
 }
 
 export function resolveStepAssignees(
   step: FlowStep | undefined,
   users: TenantUserRow[],
   requesterId: string,
+  departments: OrgDepartmentRef[] = [],
 ): { ids: string[]; firebaseUids: string[]; stepLabel: string } {
   if (!step) {
     return { ids: [], firebaseUids: [], stepLabel: 'Complete' };
   }
 
   const admins = users.filter((u) => u.role === 'admin' || u.role === 'kolthoff_admin');
+  const requester = users.find((u) => u.id === requesterId);
   let matched: TenantUserRow[] = [];
 
   switch (step.assigneeType) {
+    case 'manager': {
+      if (requester?.managerId) {
+        matched = users.filter((u) => u.id === requester.managerId);
+      }
+      break;
+    }
+    case 'department_head': {
+      const head = resolveDepartmentHeadUser(departments, users, requester);
+      matched = head ? [head] : [];
+      break;
+    }
+    case 'org_role': {
+      const wanted = (step.orgRole || step.role || '').trim().toLowerCase();
+      matched = users.filter((u) => {
+        const orgRole = (u.orgRole || '').trim().toLowerCase();
+        const jobTitle = (u.jobTitle || '').trim().toLowerCase();
+        return wanted.length > 0 && (orgRole === wanted || jobTitle === wanted);
+      });
+      break;
+    }
     case 'user':
       matched = users.filter((u) => u.id === step.assigneeId);
       break;
@@ -101,6 +178,11 @@ export function resolveStepAssignees(
       break;
   }
 
+  // Fall back to manager → dept head → admins so forms still route
+  if (matched.length === 0 && step.assigneeType === 'manager') {
+    const head = resolveDepartmentHeadUser(departments, users, requester);
+    if (head) matched = [head];
+  }
   if (matched.length === 0 && admins.length > 0) {
     matched = admins;
   }
@@ -122,6 +204,7 @@ export function advancePastNotifySteps(
   fromIndex: number,
   history: StepHistoryEntry[],
   actorId: string,
+  departments: OrgDepartmentRef[] = [],
 ): {
   nextIndex: number;
   assignees: { ids: string[]; firebaseUids: string[]; stepLabel: string };
@@ -137,7 +220,7 @@ export function advancePastNotifySteps(
   while (index < template.flowSteps.length) {
     const step = template.flowSteps[index];
     if (step.type !== 'notify') {
-      const assignees = resolveStepAssignees(step, users, requesterId);
+      const assignees = resolveStepAssignees(step, users, requesterId, departments);
       return {
         nextIndex: index,
         assignees,
@@ -151,6 +234,7 @@ export function advancePastNotifySteps(
       { ...step, type: 'approval', assigneeType: step.assigneeType || 'any_admin' },
       users,
       requesterId,
+      departments,
     );
     notifyTargets.push({ step, ids: targets.ids });
     stepHistory.push({
@@ -184,9 +268,11 @@ export function buildInitialRequest(
     watcherIds?: string[];
     dueAt?: number | null;
     requesterFirebaseUid?: string;
+    departments?: OrgDepartmentRef[];
   },
 ): Omit<ApprovalRequest, 'id'> & { id: string } {
   const now = Date.now();
+  const departments = extras?.departments || [];
   const requester = users.find((u) => u.id === requesterId);
   const requesterFirebaseUid = extras?.requesterFirebaseUid || requester?.firebaseUid;
   const submitHistory: StepHistoryEntry[] = [
@@ -199,7 +285,15 @@ export function buildInitialRequest(
     },
   ];
 
-  const advanced = advancePastNotifySteps(template, users, requesterId, 0, submitHistory, requesterId);
+  const advanced = advancePastNotifySteps(
+    template,
+    users,
+    requesterId,
+    0,
+    submitHistory,
+    requesterId,
+    departments,
+  );
 
   if (advanced.completed) {
     return {
@@ -254,6 +348,7 @@ export function buildDecisionUpdate(
   actorId: string,
   decision: 'approve' | 'reject',
   comment?: string,
+  departments: OrgDepartmentRef[] = [],
 ): Partial<ApprovalRequest> & { _notifyTargets?: { step: FlowStep; ids: string[] }[] } {
   const now = Date.now();
   const step = template.flowSteps[request.currentStepIndex];
@@ -306,6 +401,7 @@ export function buildDecisionUpdate(
     nextIndex,
     stepHistory,
     actorId,
+    departments,
   );
 
   if (advanced.completed) {

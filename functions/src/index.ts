@@ -693,7 +693,7 @@ const STARTER_APPROVAL_TEMPLATES = [
       { id: 'leaveType', label: 'Leave type', type: 'select', required: true, options: ['Vacation', 'Sick', 'Personal', 'Other'] },
       { id: 'reason', label: 'Reason', type: 'textarea', required: true },
     ],
-    flowSteps: [{ id: 'mgr', type: 'approval', label: 'Manager approval', assigneeType: 'any_admin', approvalMode: 'any' }],
+    flowSteps: [{ id: 'mgr', type: 'approval', label: 'Manager approval', assigneeType: 'manager', approvalMode: 'any' }],
   },
   {
     id: 'tpl-expense',
@@ -707,7 +707,10 @@ const STARTER_APPROVAL_TEMPLATES = [
       { id: 'description', label: 'Description', type: 'textarea', required: true },
       { id: 'receiptDate', label: 'Receipt date', type: 'date', required: true },
     ],
-    flowSteps: [{ id: 'finance', type: 'approval', label: 'Finance approval', assigneeType: 'any_admin', approvalMode: 'any' }],
+    flowSteps: [
+      { id: 'mgr', type: 'approval', label: 'Manager approval', assigneeType: 'manager', approvalMode: 'any' },
+      { id: 'finance', type: 'approval', label: 'Finance approval', assigneeType: 'org_role', orgRole: 'Finance Approver', approvalMode: 'any' },
+    ],
   },
   {
     id: 'tpl-access',
@@ -720,7 +723,10 @@ const STARTER_APPROVAL_TEMPLATES = [
       { id: 'accessLevel', label: 'Access level', type: 'select', required: true, options: ['Read', 'Edit', 'Admin'] },
       { id: 'justification', label: 'Business justification', type: 'textarea', required: true },
     ],
-    flowSteps: [{ id: 'it', type: 'approval', label: 'IT / Admin approval', assigneeType: 'any_admin', approvalMode: 'any' }],
+    flowSteps: [
+      { id: 'dept', type: 'approval', label: 'Department head', assigneeType: 'department_head', approvalMode: 'any' },
+      { id: 'it', type: 'approval', label: 'IT / Admin approval', assigneeType: 'org_role', orgRole: 'IT Approver', approvalMode: 'any' },
+    ],
   },
   {
     id: 'tpl-document',
@@ -734,8 +740,8 @@ const STARTER_APPROVAL_TEMPLATES = [
       { id: 'summary', label: 'Summary', type: 'textarea', required: true },
     ],
     flowSteps: [
-      { id: 'review', type: 'approval', label: 'Reviewer approval', assigneeType: 'any_admin', approvalMode: 'any' },
-      { id: 'notify', type: 'notify', label: 'Notify stakeholders', assigneeType: 'any_admin' },
+      { id: 'review', type: 'approval', label: 'Manager review', assigneeType: 'manager', approvalMode: 'any' },
+      { id: 'notify', type: 'notify', label: 'Notify department head', assigneeType: 'department_head' },
       { id: 'final', type: 'approval', label: 'Final sign-off', assigneeType: 'role', role: 'admin', approvalMode: 'any' },
     ],
   },

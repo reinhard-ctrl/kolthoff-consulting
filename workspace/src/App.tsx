@@ -9,23 +9,29 @@ import { resolveCoreUserFromAuthUser, resolveCoreUserFromCurrentAuth, type CoreU
 import LoginPage from './components/LoginPage';
 import EmbedAuthPrompt from './components/EmbedAuthPrompt';
 import WorkspaceTenantLanding from './components/WorkspaceTenantLanding';
-import { IconApprovals, IconCrm, IconHelp, IconMessenger, IconVault } from './components/NavIcons';
+import { IconApprovals, IconCrm, IconHelp, IconMessenger, IconOrg, IconVault, IconWorkflow } from './components/NavIcons';
 import MessengerApp from './apps/MessengerApp';
 import ApprovalsApp from './apps/ApprovalsApp';
 import VaultApp from './apps/VaultApp';
 import CRMApp from './apps/CRMApp';
 import HelpDeskApp from './apps/HelpDeskApp';
+import OrgChartApp from './apps/OrgChartApp';
+import WorkflowBuilderApp from './apps/WorkflowBuilderApp';
 
-type ModuleKey = 'messenger' | 'approvals' | 'vault' | 'crm' | 'help';
+type ModuleKey = 'messenger' | 'approvals' | 'workflows' | 'org' | 'vault' | 'crm' | 'help';
 
 const NAV: {
   key: ModuleKey;
   label: string;
   feature?: 'messenger' | 'approvals' | 'vault' | 'crm';
+  /** Show when approvals feature is on (workflow builder / org for routing) */
+  requireApprovals?: boolean;
   Icon: ComponentType<{ className?: string }>;
 }[] = [
   { key: 'messenger', label: 'Messenger', feature: 'messenger', Icon: IconMessenger },
   { key: 'approvals', label: 'Approvals', feature: 'approvals', Icon: IconApprovals },
+  { key: 'workflows', label: 'Workflows', requireApprovals: true, Icon: IconWorkflow },
+  { key: 'org', label: 'Organization', requireApprovals: true, Icon: IconOrg },
   { key: 'vault', label: 'Policies', feature: 'vault', Icon: IconVault },
   { key: 'crm', label: 'CRM', feature: 'crm', Icon: IconCrm },
   { key: 'help', label: 'Help', Icon: IconHelp },
@@ -33,7 +39,10 @@ const NAV: {
 
 function readModuleFromUrl(fallback: ModuleKey): ModuleKey {
   const raw = new URLSearchParams(window.location.search).get('module')?.trim().toLowerCase();
-  if (raw === 'messenger' || raw === 'approvals' || raw === 'vault' || raw === 'crm' || raw === 'help') {
+  if (
+    raw === 'messenger' || raw === 'approvals' || raw === 'workflows' || raw === 'org'
+    || raw === 'vault' || raw === 'crm' || raw === 'help'
+  ) {
     return raw;
   }
   return fallback;
@@ -49,9 +58,14 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
   const features = useTenantFeatures();
   const { pendingApprovals, unreadMessages } = useWorkspaceBadges(user.id);
   const enabledNav = useMemo(
-    () => NAV.filter((n) => !n.feature || features[n.feature]),
+    () => NAV.filter((n) => {
+      if (n.requireApprovals && !features.approvals) return false;
+      if (n.feature && !features[n.feature]) return false;
+      return true;
+    }),
     [features],
   );
+  const canEditOrg = user.role === 'admin' || user.role === 'kolthoff_admin';
   const defaultModule = (enabledNav[0]?.key || 'help') as ModuleKey;
   const [active, setActive] = useState<ModuleKey>(() => readModuleFromUrl(defaultModule));
 
@@ -83,6 +97,8 @@ function Shell({ user, onLogout }: { user: CoreUser; onLogout: () => void }) {
     switch (active) {
       case 'messenger': return <MessengerApp currentUserId={user.id} />;
       case 'approvals': return <ApprovalsApp currentUserId={user.id} />;
+      case 'workflows': return <WorkflowBuilderApp canEdit={canEditOrg} />;
+      case 'org': return <OrgChartApp currentUserId={user.id} canEdit={canEditOrg} />;
       case 'vault': return <VaultApp />;
       case 'crm': return <CRMApp currentUserId={user.id} />;
       case 'help': return <HelpDeskApp currentUserId={user.id} currentUserName={user.name || user.email || user.id} />;

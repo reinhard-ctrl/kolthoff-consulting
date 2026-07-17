@@ -7,6 +7,7 @@ import {
   type ApprovalAttachment,
   type ApprovalRequest,
   type ApprovalTemplate,
+  type OrgDepartmentRef,
   type TenantUserRow,
   buildCommentUpdate,
   buildDecisionUpdate,
@@ -70,6 +71,7 @@ export default function ApprovalsApp({ currentUserId }: { currentUserId: string 
     read?: boolean;
   }>(tenantCol('core_notifications'));
   const { data: usersRaw } = useFirestoreCollection<TenantUserRow>(tenantCol('core_users'));
+  const { data: departments } = useFirestoreCollection<OrgDepartmentRef>(tenantCol('core_departments'));
   const users = useMemo(() => usersRaw as TenantUserRow[], [usersRaw]);
   const templates = useMemo(() => enabledTemplates(templatesRaw), [templatesRaw]);
 
@@ -167,6 +169,7 @@ export default function ApprovalsApp({ currentUserId }: { currentUserId: string 
         attachments,
         dueAt: dueAt ? new Date(dueAt).getTime() : null,
         requesterFirebaseUid: firebaseUid,
+        departments,
       });
       await setDoc(tenantDoc('core_requests', id), payload);
       await logAudit('approval_submit', { requestId: id, template: selectedTemplate.name });
@@ -199,6 +202,7 @@ export default function ApprovalsApp({ currentUserId }: { currentUserId: string 
         currentUserId,
         decision,
         decisionComment,
+        departments,
       );
       const { _notifyTargets, ...docPatch } = patch;
       await setDoc(tenantDoc('core_requests', detailRequest.id), docPatch, { merge: true });
