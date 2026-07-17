@@ -453,6 +453,95 @@ async function createPortalTokenForAccessCode(accessCodeRaw: string) {
   return { token, client: clientSnap.data() };
 }
 
+async function fetchGoogleSheetCsvText(spreadsheetUrl: string): Promise<string> {
+  const raw = String(spreadsheetUrl || '').trim();
+  if (!raw) {
+    throw new HttpsError('invalid-argument', 'spreadsheetUrl required');
+  }
+
+  const publishedMatch = raw.match(/\/spreadsheets\/d\/e\/([^/?#]+)/i);
+  const gidMatch = raw.match(/[#&?]gid=(\d+)/i);
+  const gid = gidMatch ? gidMatch[1] : '0';
+  let csvUrl: string;
+
+  if (publishedMatch) {
+    csvUrl = `https://docs.google.com/spreadsheets/d/e/${publishedMatch[1]}/pub?gid=${gid}&single=true&output=csv`;
+  } else {
+    const idMatch = raw.match(/\/spreadsheets\/d\/([^/?#]+)/i);
+    if (!idMatch) {
+      throw new HttpsError('invalid-argument', 'Paste a valid Google Sheets responses URL.');
+    }
+    csvUrl = `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv&gid=${gid}`;
+  }
+
+  if (!csvUrl.startsWith('https://docs.google.com/spreadsheets/')) {
+    throw new HttpsError('invalid-argument', 'Only Google Sheets URLs are allowed.');
+  }
+
+  const res = await fetch(csvUrl, { redirect: 'follow' });
+  if (!res.ok) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Could not fetch sheet. Share as Anyone with the link can view, or download CSV and upload it instead.',
+    );
+  }
+
+  const text = await res.text();
+  const sample = text.trim().slice(0, 256).toLowerCase();
+  if (sample.startsWith('<!doctype html') || sample.startsWith('<html')) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Sheet not accessible from the server. Share as Anyone with the link can view, or use File → Download → CSV.',
+    );
+  }
+  return text;
+}
+
+/** Server-side fetch for Google Forms responses sheet (avoids browser CORS). */
+export const fetchFeedbackResponsesCsv = onCall({ invoker: 'public' }, async (request) => {
+  const spreadsheetUrl = String(request.data?.spreadsheetUrl || '').trim();
+  const csvText = await fetchGoogleSheetCsvText(spreadsheetUrl);
+  return { csvText };
+});
+
+export const fetchFeedbackResponsesCsvHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const body = req.body as { spreadsheetUrl?: string } | string | undefined;
+  let spreadsheetUrl = '';
+  if (body && typeof body === 'object' && 'spreadsheetUrl' in body) {
+    spreadsheetUrl = String(body.spreadsheetUrl || '');
+  } else if (typeof body === 'string') {
+    try {
+      spreadsheetUrl = String(JSON.parse(body).spreadsheetUrl || '');
+    } catch {
+      /* ignore */
+    }
+  }
+
+  try {
+    const csvText = await fetchGoogleSheetCsvText(spreadsheetUrl);
+    res.json({ csvText });
+  } catch (err) {
+    if (err instanceof HttpsError) {
+      const status = err.code === 'invalid-argument' ? 400
+        : err.code === 'failed-precondition' ? 412
+          : 500;
+      res.status(status).json({ error: err.message, code: err.code });
+      return;
+    }
+    console.error('fetchFeedbackResponsesCsvHttp failed', err);
+    res.status(500).json({ error: 'Internal error', code: 'internal' });
+  }
+});
+
 /** Generate portal access token from client access code */
 export const generatePortalToken = onCall({ invoker: 'public' }, async (request) => {
   const accessCode = (request.data?.accessCode as string) || '';

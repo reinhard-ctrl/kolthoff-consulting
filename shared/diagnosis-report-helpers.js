@@ -829,7 +829,8 @@
     '2. In your copy: Form → Settings → confirm “Collect email addresses” is OFF, then publish.\n' +
     '3. Paste the live viewform link above and share it with staff (QR poster, Viber, or email) for 5–7 business days.\n' +
     '4. In Google Forms → Responses → Link to Sheets. Paste that spreadsheet URL below and click Import themes from survey.\n' +
-    '5. Sync to cloud pushes the form link to the client portal vault.';
+    '5. If import fails, use File → Download → CSV in Google Sheets and upload the file here.\n' +
+    '6. Sync to cloud pushes the form link to the client portal vault.';
 
   function extractGoogleSpreadsheetId(urlOrId) {
     const raw = String(urlOrId || '').trim();
@@ -846,10 +847,21 @@
 
   /** CSV export URL for a Google Sheets responses tab (sheet must be link-viewable). */
   function buildFeedbackResponsesCsvUrl(spreadsheetUrlOrId, gid) {
+    const raw = String(spreadsheetUrlOrId || '').trim();
+    if (!raw) return '';
+    const publishedMatch = raw.match(/\/spreadsheets\/d\/e\/([^/?#]+)/i);
+    const sheetGid = gid != null ? String(gid) : extractSpreadsheetGid(raw);
+    if (publishedMatch) {
+      return `https://docs.google.com/spreadsheets/d/e/${publishedMatch[1]}/pub?gid=${sheetGid || '0'}&single=true&output=csv`;
+    }
     const id = extractGoogleSpreadsheetId(spreadsheetUrlOrId);
     if (!id) return '';
-    const sheetGid = gid != null ? String(gid) : extractSpreadsheetGid(spreadsheetUrlOrId);
     return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${sheetGid || '0'}`;
+  }
+
+  function isFeedbackResponsesHtmlPage(text) {
+    const sample = String(text || '').trim().slice(0, 256).toLowerCase();
+    return sample.startsWith('<!doctype html') || sample.startsWith('<html');
   }
 
   function buildFeedbackFormResponsesUrl(formUrl) {
@@ -2111,6 +2123,7 @@
     extractSpreadsheetGid,
     buildFeedbackResponsesCsvUrl,
     buildFeedbackFormResponsesUrl,
+    isFeedbackResponsesHtmlPage,
     parseCsvText,
     extractStaffFeedbackThemesFromResponsesCsv,
     normalizeStaffDirectoryRows,
