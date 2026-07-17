@@ -1440,7 +1440,12 @@
                 push('≥3 recovery plan items', matrixItems.length >= 3, matrixItems.length >= 3 ? '' : 'warn:Add more initiatives or generate from diagnosis');
                 push('Maturity calibrated', !DRH().isDefaultMaturity?.(synthesis), 'warn:Scores still default 3/5 — adjust from field observations');
                 push('Workflow synced to report', !workflowStale, workflowStale ? 'warn:Workflow saved after last sync — Sync to Cloud in sidebar' : '');
-                push('Handoff links (Drive + Loom)', !!(synthesis.clientDeliverableUrl?.trim() && synthesis.loomWalkthroughUrl?.trim()), 'block:Add Drive PDF and Loom URLs in Report Narrative below');
+                push('Handoff link (Drive PDF)', !!synthesis.clientDeliverableUrl?.trim(), 'block:Add Drive PDF URL in Report Narrative below');
+                if (!synthesis.loomWalkthroughUrl?.trim()) {
+                    push('Video walkthrough (optional)', true, 'warn:Optional — Loom, NotebookLM, or Google Drive video URL');
+                } else {
+                    push('Video walkthrough (optional)', true, '');
+                }
                 return items;
             }, [top5Validation, matrixItems.length, synthesis, workflowStale]);
 
@@ -1791,13 +1796,14 @@
                                     <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Loom walkthrough (m1-05)</label>
-                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                    <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Video walkthrough (optional)</label>
+                                    <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="Loom, NotebookLM, or Google Drive video URL…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
+                                    <p className="text-[9px] text-slate-500 mt-1">Optional — appears as QR on cover when set. Syncs to client portal.</p>
                                 </div>
                             </div>
                             {top5Preview.length > 0 && (
                                 <div className="rounded-lg border border-brandNavy-700 bg-brandNavy-950/50 p-3">
-                                    <div className="text-[9px] font-bold uppercase text-slate-500 mb-2">Client sees on page 1</div>
+                                    <div className="text-[9px] font-bold uppercase text-slate-500 mb-2">Recovery Plan preview (Part III)</div>
                                     <ol className="list-decimal list-inside text-[10px] text-slate-300 space-y-1">
                                         {top5Preview.slice(0, 3).map((item) => <li key={item.id}>{item.text}</li>)}
                                         {top5Preview.length > 3 && <li className="text-slate-500 italic">+{top5Preview.length - 3} more in full report</li>}
@@ -1969,16 +1975,16 @@
             </div>
         );
 
-        const ReportSectionHeader = ({ number, title, subtitle }) => (
+        const ReportSectionHeader = ({ part, title, subtitle }) => (
             <div className="mb-6 page-break-inside-avoid">
                 <div className="report-accent-bar mb-4" />
-                {number && <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">Section {number}</div>}
+                {part && <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">{part}</div>}
                 <h2 className="text-xl font-black text-slate-900 uppercase font-serif tracking-tight">{title}</h2>
                 {subtitle && <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{subtitle}</p>}
             </div>
         );
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, executiveLetter, loomWalkthroughUrl, showExecutiveLetter, recoveryGanttTop5, showRecoveryGantt }) => (
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, executiveLetter, loomWalkthroughUrl, showExecutiveLetter }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -2015,49 +2021,12 @@
                         <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
                     </div>
                 </div>
-                {topFixes.length > 0 && (
-                    <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 5 Fixes</h3>
-                        <table className="report-table">
-                            <thead>
-                                <tr>
-                                    <th className="w-8">#</th>
-                                    <th>Fix</th>
-                                    <th className="w-[18%]">Owner</th>
-                                    <th className="w-[14%]">Target</th>
-                                    <th className="w-[14%] text-right">Savings/mo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {topFixes.map((item, idx) => (
-                                    <tr key={item.id}>
-                                        <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
-                                        <td>
-                                            <div className="font-semibold text-slate-900">{item.text}</div>
-                                            {DRH().formatMatrixEvidence?.(item, formatCurrency) && (
-                                                <div className="text-[9px] text-slate-500 mt-0.5 font-normal">{DRH().formatMatrixEvidence(item, formatCurrency)}</div>
-                                            )}
-                                        </td>
-                                        <td className="text-slate-600">{item.owner || '—'}</td>
-                                        <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
-                                        <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {showRecoveryGantt && recoveryGanttTop5?.rows?.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20">
-                                <ReportRecoveryGanttChart gantt={recoveryGanttTop5} variant="compact" title="90-Day timeline (Top 5)" />
-                            </div>
-                        )}
-                    </div>
-                )}
                 {loomWalkthroughUrl && loomWalkthroughUrl.trim() && (
                     <div className="mt-6 p-4 border border-brandTeal-200 rounded-xl bg-teal-50/40 flex flex-wrap items-center gap-4 page-break-inside-avoid">
-                        <img src={DRH().buildLinkQrUrl?.(loomWalkthroughUrl, 120)} alt="Loom walkthrough QR code" className="w-[100px] h-[100px] border border-white rounded-lg bg-white p-1 shrink-0" />
+                        <img src={DRH().buildLinkQrUrl?.(loomWalkthroughUrl, 120)} alt="Video walkthrough QR code" className="w-[100px] h-[100px] border border-white rounded-lg bg-white p-1 shrink-0" />
                         <div className="min-w-0">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1">Video Walkthrough</div>
-                            <p className="text-xs text-slate-700 leading-relaxed">Start here — your consultant explains the findings before you read the detail sections.</p>
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1">Video Walkthrough (optional)</div>
+                            <p className="text-xs text-slate-700 leading-relaxed">Your consultant may share a Loom, NotebookLM, or Google Drive video — scan to watch before reading the detail sections.</p>
                             <p className="text-[10px] font-mono text-brandTeal-700 mt-1 break-all">{loomWalkthroughUrl.trim()}</p>
                         </div>
                     </div>
@@ -2093,16 +2062,16 @@
             const moneyPits = activeItems.filter(it => Number(it.effort) >= 3 && Number(it.impact) < 3);
             const coiBreakdown = DR.buildCoiBreakdown?.(annualChaosTax, saasAnnualWaste, synthesis.expectedGrowth, formatCurrency) || { projected: projected3YearLoss, assumptionSentence: '' };
             const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
-            const recoveryGanttTop5 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop5: true }) || { rows: [] };
 
             const severityClass = { amber: 'border-amber-200 bg-amber-50', rose: 'border-rose-200 bg-rose-50/50', slate: 'border-slate-200 bg-slate-50' };
             const severityTitle = { amber: 'text-amber-800', rose: 'text-rose-800', slate: 'text-slate-800' };
             const scorecard = DR.buildMaturityScorecardRows?.(synthesis) || [];
             const sectionOrder = DR.normalizeReportSectionOrder?.(printConfig.sectionOrder) || [];
-            const sectionLetters = DR.buildReportSectionLetterMap?.(sectionOrder, printConfig) || {};
+            const sectionParts = DR.buildReportSectionPartMap?.(sectionOrder, printConfig) || {};
             const sectionCtx = {
                 scorecard,
                 recoveryGanttRows: recoveryGanttFull.rows.length,
+                top5Count: topFixes.length,
                 findingsCount: findings.length,
                 hasOrgChart: !!(orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)),
                 workflowTabCount: workflowTabs.length,
@@ -2126,77 +2095,65 @@
                             processAnnual={annualChaosTax}
                             saasAnnual={saasAnnualWaste}
                             maturityIndex={maturityIndex}
-                            topFixes={topFixes}
                             executiveLetter={synthesis.executiveLetter}
                             loomWalkthroughUrl={synthesis.loomWalkthroughUrl}
                             showExecutiveLetter={printConfig.showExecutiveLetter !== false}
-                            recoveryGanttTop5={recoveryGanttTop5}
-                            showRecoveryGantt={printConfig.showFixOrder}
                         />
                         </div>
                     )}
 
-                    {printConfig.showExecutiveSummary && (
-                        <div className="report-page page-break-inside-avoid" style={sectionStyle('howToRead')}>
-                            <ReportSectionHeader title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
-                            <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
-                                <li className="page-break-inside-avoid"><strong>Start with the video walkthrough</strong> — scan the QR code on the cover or open the Loom link your consultant shared.</li>
-                                <li className="page-break-inside-avoid"><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan table on page 1 — these are your action priorities.</li>
-                                <li className="page-break-inside-avoid"><strong>Review the recovery timeline Gantt</strong> — target weeks for each Top 5 fix on page 1 and the full 90-day map in the timeline section.</li>
-                                <li className="page-break-inside-avoid"><strong>Review process maps</strong> (Section B) for the highest-leak workflow — delay minutes drive the leakage numbers.</li>
-                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 5 fix before your next leadership meeting.</li>
-                                <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the recommended next-phase notes — playbooks and policies turn findings into daily rhythm.</li>
-                            </ol>
-                        </div>
-                    )}
-
-                    {printConfig.showExecutiveSummary && scorecard.length > 0 && (
-                        <div className="report-page page-break-inside-avoid" style={sectionStyle('readinessScorecard')}>
-                            <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
-                            <table className="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Dimension</th>
-                                        <th className="w-[12%] text-center">Score</th>
-                                        <th>What we observed</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {scorecard.map((row) => (
-                                        <tr key={row.key}>
-                                            <td className="font-semibold text-slate-900">{row.label}</td>
-                                            <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
-                                            <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {printConfig.showFixOrder && recoveryGanttFull.rows.length > 0 && (
-                        <div className="report-page" style={sectionStyle('recoveryGantt')}>
-                            <ReportSectionHeader title="90-Day Recovery Plan Timeline" subtitle="Implementation map by target week — same Gantt-style view as your project planner roadmap documentation." />
-                            <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
-                            {recoveryGanttFull.unscheduledCount > 0 && (
-                                <p className="text-[10px] text-slate-500 mt-4 italic page-break-inside-avoid">
-                                    {recoveryGanttFull.unscheduledCount} initiative{recoveryGanttFull.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks in Strategy &amp; Priorities to include them on this chart.
-                                </p>
+                    {printConfig.showExecutiveSnapshot && (findings.length > 0 || riskProfiles.length > 0 || scorecard.length > 0) && (
+                        <div className="report-page page-break-inside-avoid" style={sectionStyle('executiveSnapshot')}>
+                            <ReportSectionHeader part={sectionParts.executiveSnapshot} title="Executive Snapshot" subtitle="Key findings, top risks, and operational readiness at a glance." />
+                            {findings.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Key Findings</h3>
+                                    <ul className="space-y-3">
+                                        {findings.map((pt, i) => (
+                                            <li key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed page-break-inside-avoid">
+                                                <span className="text-brandTeal-600 font-black shrink-0">{i + 1}.</span>
+                                                <span>{pt}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             )}
-                        </div>
-                    )}
-
-                    {printConfig.showExecutiveSummary && findings.length > 0 && (
-                        <div className="report-page" style={sectionStyle('keyFindings')}>
-                            <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
-                            <ul className="space-y-3">
-                                {findings.map((pt, i) => (
-                                    <li key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed page-break-inside-avoid">
-                                        <span className="text-brandTeal-600 font-black shrink-0">{i + 1}.</span>
-                                        <span>{pt}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                            {riskProfiles.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Top Operational Risks</h3>
+                                    <div className="space-y-3">
+                                        {riskProfiles.slice(0, 4).map((rp, i) => (
+                                            <div key={i} className={`text-xs p-4 border rounded-lg page-break-inside-avoid ${severityClass[rp.severity] || severityClass.slate}`}>
+                                                <strong className={`block mb-1 ${severityTitle[rp.severity]}`}>{rp.title}</strong>
+                                                <p className="text-slate-700 leading-relaxed">{rp.text}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {scorecard.length > 0 && (
+                                <div>
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Operational Readiness ({maturityIndex}/5 overall)</h3>
+                                    <table className="report-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Dimension</th>
+                                                <th className="w-[12%] text-center">Score</th>
+                                                <th>What we observed</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {scorecard.map((row) => (
+                                                <tr key={row.key}>
+                                                    <td className="font-semibold text-slate-900">{row.label}</td>
+                                                    <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
+                                                    <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                             {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
                                 <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Staff Feedback Themes (Anonymous)</h4>
@@ -2208,9 +2165,23 @@
                         </div>
                     )}
 
+                    {printConfig.showHowToRead && (
+                        <div className="report-page page-break-inside-avoid" style={sectionStyle('howToRead')}>
+                            <ReportSectionHeader part={sectionParts.howToRead} title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
+                            <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
+                                <li className="page-break-inside-avoid"><strong>Start with the cover</strong> — executive summary, KPIs, and optional video walkthrough QR if your consultant shared one.</li>
+                                <li className="page-break-inside-avoid"><strong>Review the Executive Snapshot</strong> — key findings, risks, and readiness scores.</li>
+                                <li className="page-break-inside-avoid"><strong>Study the evidence</strong> (Part II) — org chart, process maps, leakage ranking, and financial breakdown.</li>
+                                <li className="page-break-inside-avoid"><strong>Execute the Recovery Plan</strong> (Part III) — Top 5 fixes, timeline Gantt, and prioritization chart.</li>
+                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 5 fix before your next leadership meeting.</li>
+                                <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the operational outlook and recommended next steps.</li>
+                            </ol>
+                        </div>
+                    )}
+
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page" style={sectionStyle('orgChart')}>
-                            <ReportSectionHeader number={sectionLetters.orgChart} title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
+                            <ReportSectionHeader part={sectionParts.orgChart} title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
                             {orgChartSvg ? (
                                 <ReportDiagramFigure
                                     src={orgChartSvg}
@@ -2257,11 +2228,11 @@
                                 return (
                                     <div key={tab.id} className="report-page">
                                         {tabIdx === 0 ? (
-                                            <ReportSectionHeader number={sectionLetters.flowcharts} title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
+                                            <ReportSectionHeader part={sectionParts.flowcharts} title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
                                         ) : (
                                             <div className="mb-6 page-break-inside-avoid">
                                                 <div className="report-accent-bar mb-3" />
-                                                <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em]">Section {sectionLetters.flowcharts || 'B'} — Process Maps (continued)</div>
+                                                <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em]">{sectionParts.flowcharts || 'Part II'} — Process Maps (continued)</div>
                                             </div>
                                         )}
                                         <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/40 report-workflow-tab">
@@ -2305,7 +2276,7 @@
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
                         <div className="report-page" style={sectionStyle('leakageRanking')}>
-                            <ReportSectionHeader number={sectionLetters.leakageRanking} title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            <ReportSectionHeader part={sectionParts.leakageRanking} title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
                             {topFixes[0] && (
                                 <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
                                     <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
@@ -2340,7 +2311,7 @@
 
                     {printConfig.showRaci && (
                         <div className="report-page" style={sectionStyle('raci')}>
-                            <ReportSectionHeader number={sectionLetters.raci} title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
+                            <ReportSectionHeader part={sectionParts.raci} title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
                             {raciOrgInsights.length > 0 && (
                                 <ul className="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside page-break-inside-avoid">
                                     {raciOrgInsights.map((line, i) => <li key={i}>{line}</li>)}
@@ -2381,7 +2352,7 @@
 
                     {printConfig.showSaas && (
                         <div className="report-page" style={sectionStyle('saas')}>
-                            <ReportSectionHeader number={sectionLetters.saas} title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap are tracked separately so you know what to fix first." />
+                            <ReportSectionHeader part={sectionParts.saas} title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap — ranked processes above, subscription detail below." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
                                     <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage</div>
@@ -2435,71 +2406,112 @@
                         </div>
                     )}
 
-                    {printConfig.showSynthesis && (
-                        <div className="report-page" style={sectionStyle('synthesis')}>
-                            <ReportSectionHeader number={sectionLetters.synthesis} title="Operational Maturity & 3-Year Leakage Forecast" subtitle="How ready your business is to scale — and what happens if nothing changes." />
-                            <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider">Maturity Scorecard</h3>
-                                    <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
+                    {printConfig.showRecoveryPlan && (topFixes.length > 0 || recoveryGanttFull.rows.length > 0 || activeItems.length > 0) && (
+                        <div className="report-page" style={sectionStyle('recoveryPlan')}>
+                            <ReportSectionHeader part={sectionParts.recoveryPlan} title="90-Day Recovery Plan" subtitle="Your prioritized fixes, implementation timeline, and effort-vs-impact map." />
+                            {topFixes.length > 0 && (
+                                <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid mb-6">
+                                    <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes</h3>
+                                    <table className="report-table">
+                                        <thead>
+                                            <tr>
+                                                <th className="w-8">#</th>
+                                                <th>Fix</th>
+                                                <th className="w-[18%]">Owner</th>
+                                                <th className="w-[14%]">Target</th>
+                                                <th className="w-[14%] text-right">Savings/mo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {topFixes.map((item, idx) => (
+                                                <tr key={item.id}>
+                                                    <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
+                                                    <td>
+                                                        <div className="font-semibold text-slate-900">{item.text}</div>
+                                                        {DR.formatMatrixEvidence?.(item, formatCurrency) && (
+                                                            <div className="text-[9px] text-slate-500 mt-0.5 font-normal">{DR.formatMatrixEvidence(item, formatCurrency)}</div>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-slate-600">{item.owner || '—'}</td>
+                                                    <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
+                                                    <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div className="space-y-4">
-                                    <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered" desc5="Unified" />
-                                    <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal" desc5="Standardized" />
-                                    <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous" desc5="Clear RACI" />
-                                    <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented" desc5="Consolidated" />
+                            )}
+                            {recoveryGanttFull.rows.length > 0 && (
+                                <div className="mb-6">
+                                    <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
+                                    {recoveryGanttFull.unscheduledCount > 0 && (
+                                        <p className="text-[10px] text-slate-500 mt-4 italic page-break-inside-avoid">
+                                            {recoveryGanttFull.unscheduledCount} initiative{recoveryGanttFull.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks in Strategy &amp; Priorities to include them on this chart.
+                                        </p>
+                                    )}
                                 </div>
-                            </div>
-                            <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid">
+                            )}
+                            {activeItems.length > 0 && (
+                                <div className="font-sans text-xs">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Prioritization Matrix</h3>
+                                    <div className="flex justify-center my-4">
+                                        <ReportPriorityMatrixChart items={activeItems} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="border border-teal-200 rounded-lg p-3 page-break-inside-avoid bg-teal-50/20">
+                                            <strong className="text-teal-800 text-[10px] uppercase block mb-2">Quick Wins</strong>
+                                            <ul className="space-y-1">{quickWins.length ? quickWins.map((item) => {
+                                                const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                                return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                            }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                        </div>
+                                        <div className="border border-blue-200 rounded-lg p-3 page-break-inside-avoid bg-blue-50/20">
+                                            <strong className="text-blue-800 text-[10px] uppercase block mb-2">Major Projects</strong>
+                                            <ul className="space-y-1">{majorProjects.length ? majorProjects.map((item) => {
+                                                const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                                return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                            }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                        </div>
+                                        <div className="border border-slate-300 rounded-lg p-3 page-break-inside-avoid bg-slate-50/40">
+                                            <strong className="text-slate-700 text-[10px] uppercase block mb-2">Fill-ins</strong>
+                                            <ul className="space-y-1">{fillIns.length ? fillIns.map((item) => {
+                                                const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                                return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                            }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                        </div>
+                                        <div className="border border-rose-200 rounded-lg p-3 page-break-inside-avoid bg-rose-50/20">
+                                            <strong className="text-rose-800 text-[10px] uppercase block mb-2">Low ROI — defer</strong>
+                                            <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item) => {
+                                                const n = activeItems.findIndex((i) => i.id === item.id) + 1;
+                                                return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
+                                            }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {printConfig.showOperationalOutlook && (
+                        <div className="report-page" style={sectionStyle('operationalOutlook')}>
+                            <ReportSectionHeader part={sectionParts.operationalOutlook} title="Operational Outlook" subtitle="What happens if nothing changes — and the recommended next engagement phase." />
+                            <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid mb-6">
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Operational Leakage Forecast</h3>
                                 <p className="text-xs text-slate-700 leading-relaxed mb-2">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong> (process + subscriptions), growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
                                 {coiBreakdown.formulaLabel && <p className="text-[10px] text-slate-500 font-mono mb-2">{coiBreakdown.formulaLabel}</p>}
                                 {coiBreakdown.assumptionSentence && <p className="text-[10px] text-slate-600 mb-4 italic">{coiBreakdown.assumptionSentence}</p>}
                                 <div className="bg-white border border-rose-200 rounded-lg p-4 text-center"><div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Projected 3-Year Operational Loss</div><div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(coiBreakdown.projected ?? projected3YearLoss)}</div></div>
                             </div>
-                            <div className="mt-6 border-l-4 border-brandTeal-600 bg-teal-50/50 p-5 rounded-r-xl page-break-inside-avoid">
+                            <div className="border-l-4 border-brandTeal-600 bg-teal-50/50 p-5 rounded-r-xl page-break-inside-avoid">
                                 <h3 className="text-xs font-bold uppercase text-brandTeal-900 mb-2">Recommended Next Phase: {modByKey(synthesis.nextModuleId).title}</h3>
                                 <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>
                             </div>
                         </div>
                     )}
 
-                    {printConfig.showMatrix && activeItems.length > 0 && (
-                        <div className="report-page font-sans text-xs" style={sectionStyle('matrix')}>
-                            <ReportSectionHeader number={sectionLetters.matrix} title="Full Prioritization Matrix" subtitle="Every 90-Day Recovery Plan initiative plotted by execution effort vs. bottom-line impact. Numbers on the chart match the detail table below." />
-                            <div className="flex justify-center my-4">
-                                <ReportPriorityMatrixChart items={activeItems} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <div className="border border-teal-200 rounded-lg p-3 page-break-inside-avoid bg-teal-50/20">
-                                    <strong className="text-teal-800 text-[10px] uppercase block mb-2">Quick Wins</strong>
-                                    <ul className="space-y-1">{quickWins.length ? quickWins.map((item) => {
-                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
-                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
-                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
-                                </div>
-                                <div className="border border-blue-200 rounded-lg p-3 page-break-inside-avoid bg-blue-50/20">
-                                    <strong className="text-blue-800 text-[10px] uppercase block mb-2">Major Projects</strong>
-                                    <ul className="space-y-1">{majorProjects.length ? majorProjects.map((item) => {
-                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
-                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
-                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
-                                </div>
-                                <div className="border border-slate-300 rounded-lg p-3 page-break-inside-avoid bg-slate-50/40">
-                                    <strong className="text-slate-700 text-[10px] uppercase block mb-2">Fill-ins</strong>
-                                    <ul className="space-y-1">{fillIns.length ? fillIns.map((item) => {
-                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
-                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
-                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
-                                </div>
-                                <div className="border border-rose-200 rounded-lg p-3 page-break-inside-avoid bg-rose-50/20">
-                                    <strong className="text-rose-800 text-[10px] uppercase block mb-2">Low ROI — defer</strong>
-                                    <ul className="space-y-1">{moneyPits.length ? moneyPits.map((item) => {
-                                        const n = activeItems.findIndex((i) => i.id === item.id) + 1;
-                                        return <li key={item.id} className="text-[10px] text-slate-700 font-medium">{n}. {item.text}</li>;
-                                    }) : <li className="text-slate-400 italic text-[10px]">None</li>}</ul>
-                                </div>
-                            </div>
+                    {printConfig.showMatrixTable && activeItems.length > 0 && (
+                        <div className="report-page font-sans text-xs" style={sectionStyle('matrixTable')}>
+                            <ReportSectionHeader part={sectionParts.matrixTable} title="Full Initiative List" subtitle="Complete 90-Day Recovery Plan register — reference for leadership tracking." />
                             <table className="report-table">
                                 <thead>
                                     <tr>
@@ -2532,23 +2544,9 @@
                         </div>
                     )}
 
-                    {printConfig.showFindings && riskProfiles.length > 0 && (
-                        <div className="report-page" style={sectionStyle('riskFindings')}>
-                            <ReportSectionHeader number={sectionLetters.riskFindings} title="Operational Risk Profiles" subtitle="Issues that need attention before scaling headcount or adding new tools." />
-                            <div className="space-y-3">
-                                {riskProfiles.map((rp, i) => (
-                                    <div key={i} className={`text-xs p-4 border rounded-lg page-break-inside-avoid ${severityClass[rp.severity] || severityClass.slate}`}>
-                                        <strong className={`block mb-1 ${severityTitle[rp.severity]}`}>{rp.title}</strong>
-                                        <p className="text-slate-700 leading-relaxed">{rp.text}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     {printConfig.showNextSteps && (
                         <div className="report-page" style={sectionStyle('nextSteps')}>
-                            <ReportSectionHeader number={sectionLetters.nextSteps} title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
+                            <ReportSectionHeader part={sectionParts.nextSteps} title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
                             <div className="space-y-4 text-sm">
                                 <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-emerald-900 text-xs uppercase tracking-wider block mb-1">Week 1–2 — Quick wins</strong>
@@ -2582,7 +2580,7 @@
 
                     {printConfig.showAppendix && (
                         <div className="report-page" style={sectionStyle('methodology')}>
-                            <ReportSectionHeader title="Appendix — Methodology" subtitle="How leakage figures were calculated." />
+                            <ReportSectionHeader part={sectionParts.methodology} title="Methodology" subtitle="How leakage figures were calculated." />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
                                 <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
@@ -2594,7 +2592,7 @@
 
                     {printConfig.showFeedbackAppendix && m102InScope && String(synthesis.feedbackFormUrl || '').trim() && (
                         <div className="report-page" style={sectionStyle('feedbackAppendix')}>
-                            <ReportSectionHeader title="Appendix — Staff Feedback Channel (m1-02)" subtitle="Anonymous staff survey — circulate internally. No names or emails are collected." />
+                            <ReportSectionHeader part={sectionParts.feedbackAppendix} title="Staff Feedback Channel (m1-02)" subtitle="Anonymous staff survey — circulate internally. No names or emails are collected." />
                             <div className="flex flex-wrap items-start gap-6 page-break-inside-avoid">
                                 <img src={DR.buildLinkQrUrl?.(synthesis.feedbackFormUrl, 160)} alt="Feedback form QR code" className="w-[140px] h-[140px] border border-slate-200 rounded-lg bg-white p-2 shrink-0" />
                                 <div className="min-w-0 flex-1">
@@ -3351,8 +3349,8 @@
                                                             <input type="url" value={synthesis.clientDeliverableUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, clientDeliverableUrl: e.target.value }))} placeholder="https://drive.google.com/file/d/…" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
                                                         </div>
                                                         <div>
-                                                            <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Loom URL (m1-05)</label>
-                                                            <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="https://www.loom.com/share/…" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
+                                                            <label className="text-[9px] font-bold uppercase text-slate-500 tracking-wider block mb-1">Video walkthrough (optional)</label>
+                                                            <input type="url" value={synthesis.loomWalkthroughUrl || ''} onChange={(e) => setSynthesis(prev => ({ ...prev, loomWalkthroughUrl: e.target.value }))} placeholder="Loom, NotebookLM, or Google Drive video URL…" className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
                                                         </div>
                                                         {DRH().isMod1TaskInScope?.(activeProfile?.tasks, 'm1-02') && (
                                                             <div className="md:col-span-2">
@@ -3364,20 +3362,21 @@
                                                 </div>
                                                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
                                                     {[
-                                                        ['showExecutiveSummary', 'Summary'],
+                                                        ['showExecutiveSummary', 'Cover'],
                                                         ['showExecutiveLetter', 'Letter'],
-                                                        ['showFixOrder', 'Gantt'],
+                                                        ['showExecutiveSnapshot', 'Snapshot'],
                                                         ['showLeakageRanking', 'Rankings'],
                                                         ['showOrgChart', 'Org Chart'],
                                                         ['showFlowcharts', 'Workflows'],
                                                         ['showRaci', 'RACI'],
                                                         ['showSaas', 'Financials'],
-                                                        ['showSynthesis', 'Maturity'],
-                                                        ['showMatrix', 'Matrix'],
-                                                        ['showFindings', 'Risks'],
+                                                        ['showRecoveryPlan', 'Recovery Plan'],
+                                                        ['showOperationalOutlook', 'Outlook'],
                                                         ['showNextSteps', 'Next Steps'],
+                                                        ['showMatrixTable', 'Initiative List'],
                                                         ['showFeedbackAppendix', 'Feedback QR'],
                                                         ['showAppendix', 'Methodology'],
+                                                        ['showHowToRead', 'How to Read'],
                                                     ].map(([key, label]) => (
                                                         <label key={key} className="flex items-center gap-1 cursor-pointer hover:text-brandTeal-600">
                                                             <input type="checkbox" checked={!!printConfig[key]} onChange={e => { setPrintPreset('custom'); setPrintConfig({ ...printConfig, [key]: e.target.checked }); }} className="accent-brandTeal-500" />

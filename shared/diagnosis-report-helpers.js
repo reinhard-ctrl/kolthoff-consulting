@@ -928,9 +928,8 @@
       'Leak Scan Report (m1-05)',
       isMod1TaskInScope(tasks, 'm1-05'),
       top5Check.ready
-        && !!String(synthesis.clientDeliverableUrl || '').trim()
-        && !!String(synthesis.loomWalkthroughUrl || '').trim(),
-      !top5Check.ready ? 'Complete Top 5 (owner + week)' : 'Add Drive PDF + Loom URLs in Client Handoff',
+        && !!String(synthesis.clientDeliverableUrl || '').trim(),
+      !top5Check.ready ? 'Complete Top 5 (owner + week)' : 'Add Drive PDF URL in Client Handoff',
       'Build 90-Day Recovery Plan and client handoff links',
     );
 
@@ -1036,7 +1035,7 @@
       errors.push('Add a client deliverable link (Google Drive PDF URL) before marking Mod 1 complete.');
     }
     if (!String(synthesis.loomWalkthroughUrl || '').trim()) {
-      errors.push('Add a Loom walkthrough URL (Mod 1 deliverable) before marking Mod 1 complete.');
+      warnings.push('Optional: Add a video walkthrough URL (Loom, NotebookLM, Google Drive, etc.) for the client portal.');
     }
 
     const m102InScope = (tasks || []).some((t) => t.id === 'm1-02' && t.selected !== false);
@@ -1054,8 +1053,7 @@
 
     const ready =
       base.ready &&
-      !!String(synthesis.clientDeliverableUrl || '').trim() &&
-      !!String(synthesis.loomWalkthroughUrl || '').trim();
+      !!String(synthesis.clientDeliverableUrl || '').trim();
 
     return { ready, warnings, errors, top5: base.top5 };
   }
@@ -1760,88 +1758,124 @@
     full: {
       showExecutiveSummary: true,
       showExecutiveLetter: true,
-      showFixOrder: true,
+      showExecutiveSnapshot: true,
       showLeakageRanking: true,
       showOrgChart: true,
       showFlowcharts: true,
       flowchartsTopOnly: false,
       showRaci: true,
       showSaas: true,
-      showSynthesis: true,
-      showMatrix: true,
-      showFindings: true,
+      showRecoveryPlan: true,
+      showOperationalOutlook: true,
       showNextSteps: true,
+      showMatrixTable: true,
       showAppendix: true,
       showFeedbackAppendix: true,
+      showHowToRead: false,
     },
     briefing: {
       showExecutiveSummary: true,
       showExecutiveLetter: true,
-      showFixOrder: true,
+      showExecutiveSnapshot: true,
       showLeakageRanking: true,
       showOrgChart: false,
       showFlowcharts: true,
       flowchartsTopOnly: false,
       showRaci: false,
       showSaas: true,
-      showSynthesis: true,
-      showMatrix: true,
-      showFindings: true,
+      showRecoveryPlan: true,
+      showOperationalOutlook: true,
       showNextSteps: true,
+      showMatrixTable: false,
       showAppendix: false,
       showFeedbackAppendix: false,
+      showHowToRead: false,
     },
   };
 
-  /** Default PDF section sequence for the Leak Scan Report (after cover block). */
+  /** Maps legacy section IDs from saved orders to the 3-act structure. */
+  const LEGACY_REPORT_SECTION_ALIASES = {
+    readinessScorecard: 'executiveSnapshot',
+    keyFindings: 'executiveSnapshot',
+    riskFindings: 'executiveSnapshot',
+    recoveryGantt: 'recoveryPlan',
+    matrix: 'recoveryPlan',
+    synthesis: 'operationalOutlook',
+  };
+
+  /** Default PDF section sequence — Verdict → Evidence → Plan → Appendix. */
   const DEFAULT_REPORT_SECTION_ORDER = [
-    'howToRead',
-    'readinessScorecard',
-    'recoveryGantt',
-    'keyFindings',
+    'executiveSnapshot',
     'orgChart',
     'flowcharts',
     'leakageRanking',
-    'raci',
     'saas',
-    'synthesis',
-    'matrix',
-    'riskFindings',
+    'raci',
+    'recoveryPlan',
+    'operationalOutlook',
     'nextSteps',
     'methodology',
+    'matrixTable',
     'feedbackAppendix',
+    'howToRead',
   ];
 
   const REPORT_SECTION_CATALOG = {
-    howToRead: { label: 'How to Read This Report', configKey: 'showExecutiveSummary' },
-    readinessScorecard: { label: 'Operational Readiness Scorecard', configKey: 'showExecutiveSummary' },
-    recoveryGantt: { label: '90-Day Recovery Timeline', configKey: 'showFixOrder' },
-    keyFindings: { label: 'Key Findings', configKey: 'showExecutiveSummary' },
-    orgChart: { label: 'Organization & Team', configKey: 'showOrgChart', letter: true },
-    flowcharts: { label: 'Process Maps', configKey: 'showFlowcharts', letter: true },
-    leakageRanking: { label: 'Process Leakage Ranking', configKey: 'showLeakageRanking', letter: true },
-    raci: { label: 'RACI Matrix', configKey: 'showRaci', letter: true },
-    saas: { label: 'Financial Leakage', configKey: 'showSaas', letter: true },
-    synthesis: { label: 'Operational Maturity', configKey: 'showSynthesis', letter: true },
-    matrix: { label: 'Prioritization Matrix', configKey: 'showMatrix', letter: true },
-    riskFindings: { label: 'Operational Risk Profiles', configKey: 'showFindings', letter: true },
-    nextSteps: { label: 'Recommended Next Steps', configKey: 'showNextSteps', letter: true },
-    methodology: { label: 'Appendix — Methodology', configKey: 'showAppendix' },
-    feedbackAppendix: { label: 'Appendix — Staff Feedback', configKey: 'showFeedbackAppendix' },
+    executiveSnapshot: { label: 'Executive Snapshot', configKey: 'showExecutiveSnapshot', part: 'I' },
+    orgChart: { label: 'Organization & Team', configKey: 'showOrgChart', part: 'II' },
+    flowcharts: { label: 'Process Maps', configKey: 'showFlowcharts', part: 'II' },
+    leakageRanking: { label: 'Process Leakage Ranking', configKey: 'showLeakageRanking', part: 'II' },
+    saas: { label: 'Financial Leakage', configKey: 'showSaas', part: 'II' },
+    raci: { label: 'RACI Matrix', configKey: 'showRaci', part: 'II' },
+    recoveryPlan: { label: '90-Day Recovery Plan', configKey: 'showRecoveryPlan', part: 'III' },
+    operationalOutlook: { label: 'Operational Outlook', configKey: 'showOperationalOutlook', part: 'III' },
+    nextSteps: { label: 'Recommended Next Steps', configKey: 'showNextSteps', part: 'III' },
+    methodology: { label: 'Appendix — Methodology', configKey: 'showAppendix', part: 'Appendix' },
+    matrixTable: { label: 'Appendix — Full Initiative List', configKey: 'showMatrixTable', part: 'Appendix' },
+    feedbackAppendix: { label: 'Appendix — Staff Feedback', configKey: 'showFeedbackAppendix', part: 'Appendix' },
+    howToRead: { label: 'Appendix — How to Read', configKey: 'showHowToRead', part: 'Appendix' },
   };
 
-  const REPORT_LETTER_SECTION_IDS = Object.entries(REPORT_SECTION_CATALOG)
-    .filter(([, meta]) => meta.letter)
-    .map(([id]) => id);
+  function resolveReportSectionId(id) {
+    return LEGACY_REPORT_SECTION_ALIASES[id] || id;
+  }
+
+  /** Upgrade saved print toggles from pre–3-act configs. */
+  function normalizePrintConfig(cfg) {
+    const next = { ...(cfg || {}) };
+    if (next.showRecoveryPlan === undefined && next.showFixOrder !== undefined) {
+      next.showRecoveryPlan = next.showFixOrder;
+    }
+    if (next.showOperationalOutlook === undefined && next.showSynthesis !== undefined) {
+      next.showOperationalOutlook = next.showSynthesis;
+    }
+    if (next.showExecutiveSnapshot === undefined) {
+      if (next.showFindings !== undefined || next.showExecutiveSummary !== undefined) {
+        next.showExecutiveSnapshot = next.showExecutiveSummary !== false;
+      }
+    }
+    if (next.showMatrixTable === undefined && next.showMatrix !== undefined) {
+      next.showMatrixTable = next.showMatrix;
+    }
+    if (next.showHowToRead === undefined) {
+      next.showHowToRead = false;
+    }
+    return next;
+  }
 
   function normalizeReportSectionOrder(order) {
     const seen = new Set();
     const normalized = [];
-    (Array.isArray(order) ? order : []).forEach((id) => {
+    (Array.isArray(order) ? order : []).forEach((rawId) => {
+      const id = resolveReportSectionId(rawId);
       if (!REPORT_SECTION_CATALOG[id] || seen.has(id)) return;
       seen.add(id);
       normalized.push(id);
     });
+    if (Array.isArray(order) && order.includes('matrix') && !seen.has('matrixTable')) {
+      normalized.push('matrixTable');
+      seen.add('matrixTable');
+    }
     DEFAULT_REPORT_SECTION_ORDER.forEach((id) => {
       if (!seen.has(id)) normalized.push(id);
     });
@@ -1859,40 +1893,49 @@
     return copy;
   }
 
-  /** Assign A–I labels to lettered sections in the user's PDF order. */
-  function buildReportSectionLetterMap(sectionOrder, printConfig) {
-    const cfg = printConfig || {};
+  /** Assign Part I / II / III (or Appendix) labels from the section catalog. */
+  function buildReportSectionPartMap(sectionOrder, printConfig) {
+    const cfg = normalizePrintConfig(printConfig || {});
     const map = {};
-    let letterIdx = 0;
     normalizeReportSectionOrder(sectionOrder).forEach((id) => {
       const meta = REPORT_SECTION_CATALOG[id];
-      if (!meta?.letter || !cfg[meta.configKey]) return;
-      map[id] = String.fromCharCode(65 + letterIdx);
-      letterIdx += 1;
+      if (!meta?.part || !cfg[meta.configKey]) return;
+      map[id] = meta.part === 'Appendix' ? 'Appendix' : `Part ${meta.part}`;
     });
     return map;
   }
 
+  /** @deprecated Use buildReportSectionPartMap — kept for older callers. */
+  function buildReportSectionLetterMap(sectionOrder, printConfig) {
+    return buildReportSectionPartMap(sectionOrder, printConfig);
+  }
+
   function mergePrintConfigWithSectionOrder(baseConfig, sectionOrder) {
-    return {
+    return normalizePrintConfig({
       ...(baseConfig || {}),
       sectionOrder: normalizeReportSectionOrder(sectionOrder || baseConfig?.sectionOrder),
-    };
+    });
   }
 
   function isReportSectionVisible(sectionId, printConfig, ctx) {
-    const cfg = printConfig || {};
+    const cfg = normalizePrintConfig(printConfig || {});
     const meta = REPORT_SECTION_CATALOG[sectionId];
     if (!meta) return false;
     if (!cfg[meta.configKey]) return false;
-    if (sectionId === 'readinessScorecard') return (ctx?.scorecard || []).length > 0;
-    if (sectionId === 'recoveryGantt') return (ctx?.recoveryGanttRows || 0) > 0;
-    if (sectionId === 'keyFindings') return (ctx?.findingsCount || 0) > 0;
+    if (sectionId === 'executiveSnapshot') {
+      return (ctx?.findingsCount || 0) > 0
+        || (ctx?.riskProfileCount || 0) > 0
+        || (ctx?.scorecard || []).length > 0;
+    }
+    if (sectionId === 'recoveryPlan') {
+      return (ctx?.top5Count || 0) > 0
+        || (ctx?.recoveryGanttRows || 0) > 0
+        || (ctx?.matrixItemCount || 0) > 0;
+    }
     if (sectionId === 'orgChart') return !!(ctx?.hasOrgChart);
     if (sectionId === 'flowcharts') return (ctx?.workflowTabCount || 0) > 0;
     if (sectionId === 'leakageRanking') return (ctx?.processRankingCount || 0) > 0;
-    if (sectionId === 'matrix') return (ctx?.matrixItemCount || 0) > 0;
-    if (sectionId === 'riskFindings') return (ctx?.riskProfileCount || 0) > 0;
+    if (sectionId === 'matrixTable') return (ctx?.matrixItemCount || 0) > 0;
     if (sectionId === 'feedbackAppendix') return !!(ctx?.showFeedbackAppendix);
     return true;
   }
@@ -1973,8 +2016,11 @@
     PRINT_PRESETS,
     DEFAULT_REPORT_SECTION_ORDER,
     REPORT_SECTION_CATALOG,
+    LEGACY_REPORT_SECTION_ALIASES,
+    normalizePrintConfig,
     normalizeReportSectionOrder,
     moveReportSectionOrder,
+    buildReportSectionPartMap,
     buildReportSectionLetterMap,
     mergePrintConfigWithSectionOrder,
     isReportSectionVisible,

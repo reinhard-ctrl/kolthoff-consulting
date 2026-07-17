@@ -124,7 +124,7 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(result.warnings.length > 0);
   });
 
-  it('validateMod1Handoff requires deliverable link and Loom URL', () => {
+  it('validateMod1Handoff requires deliverable link; video walkthrough is optional', () => {
     const baseCtx = {
       tabs: [{ id: 'a', name: 'Sales', present: {} }],
       subSaaS: [{ id: 1, tool: 'X', billing: 100, users: 1 }],
@@ -139,9 +139,26 @@ describe('diagnosis-report-helpers', () => {
     const blocked = DRH.validateMod1Handoff(baseCtx);
     assert.equal(blocked.ready, false);
     assert.ok(blocked.errors.some((e) => e.includes('deliverable link')));
-    assert.ok(blocked.errors.some((e) => e.includes('Loom')));
+    assert.ok(!blocked.errors.some((e) => e.includes('Loom')));
+    assert.ok(blocked.warnings.some((w) => w.includes('Optional') && w.includes('video walkthrough')));
 
-    const ready = DRH.validateMod1Handoff({
+    const readyWithoutVideo = DRH.validateMod1Handoff({
+      ...baseCtx,
+      synthesis: {
+        ...baseCtx.synthesis,
+        matrix: {
+          items: [{
+            id: '1', text: 'Fix', effort: 2, impact: 4,
+            owner: 'Maria', targetWeek: 'Week 1–2', expectedSavings: 5000,
+          }],
+        },
+        clientDeliverableUrl: 'https://drive.google.com/file/d/abc/view',
+        staffFeedbackThemes: ['Slow approvals'],
+      },
+    });
+    assert.equal(readyWithoutVideo.ready, true);
+
+    const readyWithVideo = DRH.validateMod1Handoff({
       ...baseCtx,
       synthesis: {
         ...baseCtx.synthesis,
@@ -156,7 +173,8 @@ describe('diagnosis-report-helpers', () => {
         staffFeedbackThemes: ['Slow approvals'],
       },
     });
-    assert.equal(ready.ready, true);
+    assert.equal(readyWithVideo.ready, true);
+    assert.ok(!readyWithVideo.warnings.some((w) => w.includes('Optional') && w.includes('video walkthrough')));
   });
 
   it('normalizeStaffDirectoryRows filters empty names', () => {
@@ -496,25 +514,49 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(order[1], 'orgChart');
     assert.equal(order[2], 'flowcharts');
     assert.ok(order.includes('methodology'));
+    assert.ok(order.includes('executiveSnapshot'));
+  });
+
+  it('normalizeReportSectionOrder maps legacy section IDs to 3-act structure', () => {
+    const order = DRH.normalizeReportSectionOrder(['keyFindings', 'recoveryGantt', 'matrix', 'synthesis']);
+    assert.equal(order[0], 'executiveSnapshot');
+    assert.equal(order[1], 'recoveryPlan');
+    assert.ok(order.includes('matrixTable'));
+    assert.ok(order.includes('operationalOutlook'));
   });
 
   it('moveReportSectionOrder swaps adjacent sections', () => {
-    const start = ['keyFindings', 'orgChart', 'flowcharts', 'leakageRanking'];
+    const start = ['executiveSnapshot', 'orgChart', 'flowcharts', 'leakageRanking'];
     const moved = DRH.moveReportSectionOrder(start, 'flowcharts', -1);
     assert.equal(moved[1], 'flowcharts');
     assert.equal(moved[2], 'orgChart');
   });
 
-  it('buildReportSectionLetterMap follows enabled section order', () => {
-    const order = ['flowcharts', 'orgChart', 'raci'];
-    const letters = DRH.buildReportSectionLetterMap(order, {
-      showFlowcharts: true,
+  it('buildReportSectionPartMap assigns Part I / II / III labels', () => {
+    const order = ['executiveSnapshot', 'orgChart', 'flowcharts', 'recoveryPlan', 'operationalOutlook'];
+    const parts = DRH.buildReportSectionPartMap(order, {
+      showExecutiveSnapshot: true,
       showOrgChart: true,
-      showRaci: true,
+      showFlowcharts: true,
+      showRecoveryPlan: true,
+      showOperationalOutlook: true,
     });
-    assert.equal(letters.flowcharts, 'A');
-    assert.equal(letters.orgChart, 'B');
-    assert.equal(letters.raci, 'C');
+    assert.equal(parts.executiveSnapshot, 'Part I');
+    assert.equal(parts.orgChart, 'Part II');
+    assert.equal(parts.flowcharts, 'Part II');
+    assert.equal(parts.recoveryPlan, 'Part III');
+    assert.equal(parts.operationalOutlook, 'Part III');
+  });
+
+  it('normalizePrintConfig upgrades legacy print toggles', () => {
+    const cfg = DRH.normalizePrintConfig({
+      showFixOrder: true,
+      showSynthesis: false,
+      showMatrix: true,
+    });
+    assert.equal(cfg.showRecoveryPlan, true);
+    assert.equal(cfg.showOperationalOutlook, false);
+    assert.equal(cfg.showMatrixTable, true);
   });
 
   it('sortMatrixByImpactEffort orders items by impact ÷ effort', () => {
