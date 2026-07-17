@@ -1432,6 +1432,10 @@
             const weekOptions = DRH().TARGET_WEEK_OPTIONS || ['Week 1–2', 'Week 3–4', 'Week 5–6', 'Week 7–8', 'Week 9–10', 'Week 11–12'];
             const maturityRubric = DRH().MATURITY_RUBRIC || {};
             const top5Ids = useMemo(() => new Set(top5Preview.map((i) => i.id)), [top5Preview]);
+            const recoveryGanttPreview = useMemo(
+                () => DRH().buildRecoveryPlanGantt?.(matrixItems) || { rows: [], unscheduledCount: 0 },
+                [matrixItems],
+            );
 
             const readinessItems = useMemo(() => {
                 const items = [];
@@ -1554,7 +1558,7 @@
                     </div>
 
                     {/* B: 90-Day Recovery Plan — first */}
-                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Top 5 by impact ÷ effort appear on report page 1. Assign owner and target week on each priority." badge="Priority" defaultOpen>
+                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Top 5 by impact ÷ effort appear in Part III of the PDF. Assign owner and target week on each priority." badge="Priority" defaultOpen>
                         <div className="flex flex-wrap justify-between items-center gap-3">
                             <p className="text-[10px] text-slate-400">Build the prioritized recovery plan for the Leak Scan Report.</p>
                             <button type="button" onClick={() => setGenerateModalOpen(true)} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
@@ -1600,7 +1604,7 @@
                         {top5Preview.length > 0 && (
                             <div className={`bg-brandNavy-950/60 border rounded-xl p-4 ${top5Validation.ready && top5Validation.errors.length === 0 ? 'border-brandTeal-500/20' : 'border-amber-500/40'}`}>
                                 <div className="flex justify-between items-center mb-2">
-                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 5 preview (report page 1)</div>
+                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 5 preview (PDF Part III)</div>
                                     {top5Validation.errors.length > 0 && <span className="text-[9px] font-bold uppercase text-amber-400">Needs owner + target week</span>}
                                 </div>
                                 <ol className="space-y-2 list-decimal list-inside text-xs text-slate-300">
@@ -1621,6 +1625,21 @@
                                         );
                                     })}
                                 </ol>
+                            </div>
+                        )}
+
+                        {recoveryGanttPreview.rows.length > 0 && (
+                            <div className="rounded-xl border border-brandNavy-700 bg-white p-4 overflow-x-auto">
+                                <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                                    <div className="text-[10px] font-mono text-brandTeal-700 uppercase tracking-widest">90-Day timeline preview</div>
+                                    <span className="text-[9px] text-slate-500 font-mono">Updates as you assign target weeks</span>
+                                </div>
+                                <ReportRecoveryGanttChart gantt={recoveryGanttPreview} title="Implementation timeline (Gantt view)" />
+                                {recoveryGanttPreview.unscheduledCount > 0 && (
+                                    <p className="text-[9px] text-slate-500 mt-2 italic">
+                                        {recoveryGanttPreview.unscheduledCount} initiative{recoveryGanttPreview.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks to include them on this chart.
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -2133,25 +2152,19 @@
                             )}
                             {scorecard.length > 0 && (
                                 <div>
-                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Operational Readiness ({maturityIndex}/5 overall)</h3>
-                                    <table className="report-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Dimension</th>
-                                                <th className="w-[12%] text-center">Score</th>
-                                                <th>What we observed</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {scorecard.map((row) => (
-                                                <tr key={row.key}>
-                                                    <td className="font-semibold text-slate-900">{row.label}</td>
-                                                    <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
-                                                    <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Operational Readiness</h3>
+                                    <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 page-break-inside-avoid">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Maturity Scorecard</span>
+                                            <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered" desc5="Unified" />
+                                            <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal" desc5="Standardized" />
+                                            <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous" desc5="Clear RACI" />
+                                            <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented" desc5="Consolidated" />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
