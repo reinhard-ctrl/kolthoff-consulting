@@ -589,6 +589,7 @@
             loomWalkthroughUrl: '',
             clientDeliverableUrl: '',
             feedbackFormUrl: '',
+            feedbackResponsesUrl: '',
             feedbackLaunchGuide: DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '',
             executiveLetter: '',
             staffDirectoryDeliverableUrl: '',
@@ -1234,7 +1235,8 @@
 
         const Mod1StaffInputPanel = ({ synthesis, setSynthesis, clientCompany, tasks }) => {
             const m102InScope = DRH().isMod1TaskInScope?.(tasks, 'm1-02');
-            const [feedbackPaste, setFeedbackPaste] = useState('');
+            const [importStatus, setImportStatus] = useState('');
+            const [importing, setImporting] = useState(false);
 
             const updateFeedbackTheme = (idx, val) => {
                 setSynthesis(prev => {
@@ -1248,15 +1250,45 @@
                 ...prev,
                 staffFeedbackThemes: (prev.staffFeedbackThemes || []).filter((_, i) => i !== idx),
             }));
-            const importFeedbackLines = () => {
-                const lines = feedbackPaste.split('\n').map((l) => l.trim()).filter(Boolean);
-                if (!lines.length) return;
-                setSynthesis(prev => ({ ...prev, staffFeedbackThemes: lines }));
-                setFeedbackPaste('');
+
+            const responsesEditorUrl = synthesis.feedbackFormUrl?.trim()
+                ? DRH().buildFeedbackFormResponsesUrl?.(synthesis.feedbackFormUrl)
+                : '';
+
+            const importThemesFromSurvey = async () => {
+                const sheetRef = String(synthesis.feedbackResponsesUrl || '').trim();
+                if (!sheetRef) {
+                    setImportStatus('Add your linked Google Sheets responses URL first (Forms → Responses → Link to Sheets).');
+                    return;
+                }
+                const csvUrl = DRH().buildFeedbackResponsesCsvUrl?.(sheetRef);
+                if (!csvUrl) {
+                    setImportStatus('Could not parse the spreadsheet URL — paste the full Google Sheets link.');
+                    return;
+                }
+                setImporting(true);
+                setImportStatus('Fetching responses…');
+                try {
+                    const res = await fetch(csvUrl);
+                    if (!res.ok) {
+                        throw new Error('Could not fetch responses. Share the sheet as Anyone with the link can view, then retry.');
+                    }
+                    const csvText = await res.text();
+                    const result = DRH().extractStaffFeedbackThemesFromResponsesCsv?.(csvText) || { themes: [], meta: {} };
+                    if (!result.themes.length) {
+                        throw new Error('No open-ended responses found. Confirm the sheet is linked to your form and has answers.');
+                    }
+                    setSynthesis((prev) => ({ ...prev, staffFeedbackThemes: result.themes }));
+                    setImportStatus(`Imported ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
+                } catch (err) {
+                    setImportStatus(err.message || 'Import failed — check the spreadsheet link and sharing settings.');
+                } finally {
+                    setImporting(false);
+                }
             };
 
             return (
-                <details className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 no-print group">
+                <details open className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 no-print group">
                     <summary className="cursor-pointer list-none p-4 flex items-center justify-between gap-3 hover:bg-brandNavy-800/40 transition-colors">
                         <span className="flex items-center gap-2 min-w-0">
                             <span className="text-slate-500 group-open:rotate-90 transition-transform inline-block shrink-0">▸</span>
@@ -1264,11 +1296,11 @@
                         </span>
                         <span className="text-[9px] font-mono text-slate-500 uppercase tracking-wider shrink-0">Optional deliverables</span>
                     </summary>
-                    <div className="px-4 pb-4 space-y-4 border-t border-brandNavy-800/50 max-h-[70vh] overflow-y-auto">
+                    <div className="px-4 pb-6 space-y-4 border-t border-brandNavy-800/50">
                         {m102InScope && (
                             <div className="glass-panel rounded-xl p-4 space-y-4 bg-brandNavy-950/40 border border-brandNavy-800 pt-4">
                                 <h3 className="text-[10px] font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Anonymous Feedback Channel (m1-02)</h3>
-                                <p className="text-[10px] text-slate-400">Deploy the staff survey — preview the template, share the form link or QR, then import themes (no names) below.</p>
+                                <p className="text-[10px] text-slate-400">Deploy the staff survey — preview the template, share the form link or QR, then import themes from the linked responses sheet.</p>
                                 <FeedbackFormTemplateLauncher clientCompany={clientCompany} />
                                 <div>
                                     <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-1">Live Google Form URL (your copy)</label>
@@ -1293,7 +1325,37 @@
 
                         <div className="glass-panel rounded-xl p-4 space-y-3 bg-brandNavy-950/40 border border-brandNavy-800">
                             <h3 className="text-[10px] font-bold text-white uppercase tracking-wider border-b border-brandNavy-700 pb-2">Staff Feedback Themes</h3>
-                            <p className="text-[10px] text-slate-400">Anonymous feedback themes from Mod 1 staff survey (no names). These appear in the client report and feed the 90-Day Recovery Plan.</p>
+                            <p className="text-[10px] text-slate-400">Import open-ended answers from your linked Google Sheets responses tab — no manual copy/paste. Edit themes before they appear in the report and recovery plan.</p>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">Responses spreadsheet URL</label>
+                                <input
+                                    type="url"
+                                    value={synthesis.feedbackResponsesUrl || ''}
+                                    onChange={(e) => setSynthesis((prev) => ({ ...prev, feedbackResponsesUrl: e.target.value }))}
+                                    placeholder="https://docs.google.com/spreadsheets/d/…/edit"
+                                    className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                />
+                                <p className="text-[9px] text-slate-500 leading-relaxed">Google Forms → Responses → Link to Sheets. Share the sheet as <strong className="text-slate-400">Anyone with the link can view</strong> before importing.</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={importThemesFromSurvey}
+                                    disabled={importing || !synthesis.feedbackResponsesUrl?.trim()}
+                                    className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    {importing ? 'Importing…' : 'Import themes from survey'}
+                                </button>
+                                {responsesEditorUrl && (
+                                    <a href={responsesEditorUrl} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-slate-400 hover:text-white">Open form responses ↗</a>
+                                )}
+                                {synthesis.feedbackResponsesUrl?.trim() && (
+                                    <a href={synthesis.feedbackResponsesUrl.trim()} target="_blank" rel="noreferrer" className="text-[10px] font-bold uppercase text-slate-400 hover:text-white">Open responses sheet ↗</a>
+                                )}
+                            </div>
+                            {importStatus && (
+                                <p className={`text-[9px] leading-relaxed ${importStatus.startsWith('Imported') ? 'text-emerald-400' : 'text-amber-300'}`}>{importStatus}</p>
+                            )}
                             {(synthesis.staffFeedbackThemes || ['']).map((theme, idx) => (
                                 <div key={idx} className="flex gap-2">
                                     <input type="text" value={theme} onChange={(e) => updateFeedbackTheme(idx, e.target.value)} placeholder="e.g. Approvals take too long on busy days" className="flex-1 bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500" />
@@ -1302,12 +1364,7 @@
                                     )}
                                 </div>
                             ))}
-                            <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme</button>
-                            <div className="pt-3 border-t border-brandNavy-800 space-y-2">
-                                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Import from survey (one theme per line)</label>
-                                <textarea rows="3" value={feedbackPaste} onChange={(e) => setFeedbackPaste(e.target.value)} placeholder="Paste anonymous feedback themes here…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500 resize-none" />
-                                <button type="button" onClick={importFeedbackLines} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">Import lines</button>
-                            </div>
+                            <button type="button" onClick={addFeedbackTheme} className="text-[10px] font-bold uppercase text-brandTeal-400 hover:text-brandTeal-300">+ Add theme manually</button>
                         </div>
 
                         <div className="glass-panel rounded-xl p-4 space-y-3 bg-brandNavy-950/40 border border-brandNavy-800">
@@ -3257,13 +3314,13 @@
                             />
                         )}
 
-                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' || activeNav === 'orgchart' ? 'overflow-hidden' : activeNav === 'report' ? 'overflow-hidden w-full flex flex-col min-h-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
+                        <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' ? 'overflow-hidden' : activeNav === 'orgchart' ? 'overflow-y-auto' : activeNav === 'report' ? 'overflow-hidden w-full flex flex-col min-h-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
                             {activeNav === 'flowcharts' && (
                                 <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} iframeRef={workflowIframeRef} />
                             )}
                             {activeNav === 'orgchart' && (
-                                <div className="flex flex-col h-full min-h-0">
-                                    <div className="flex-1 min-h-0">
+                                <div className="flex flex-col min-h-0">
+                                    <div className="h-[52vh] min-h-[300px] max-h-[640px] shrink-0">
                                         <OrgChartBuilderPanel
                                             orgChartXml={orgChartXml}
                                             setOrgChartXml={setOrgChartXml}
