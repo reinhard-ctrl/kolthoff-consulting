@@ -55,15 +55,34 @@
     { processName: 'Items (Supplies/Equipment) Request', totalDocuments: 56, avgProcessTimeHours: 14.69 },
   ];
 
+  const LARK_PROCESS_SUMMARY_CLIENT = 'Infinitech Digital Gaming Corporation';
+
+  function isLarkProcessSummaryClient(clientCompany) {
+    const name = String(clientCompany || '').trim().toLowerCase();
+    if (!name) return false;
+    return name === LARK_PROCESS_SUMMARY_CLIENT.toLowerCase()
+      || name.includes('infinitech digital gaming');
+  }
+
   function normalizeLarkProcessSummary(rows) {
-    const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_LARK_PROCESS_SUMMARY;
-    return source
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
       .map((row, index) => ({
         processName: String(row?.processName ?? row?.name ?? '').trim() || `Process ${index + 1}`,
         totalDocuments: Math.max(0, Number(row?.totalDocuments ?? row?.documents ?? 0) || 0),
         avgProcessTimeHours: Math.max(0, Number(row?.avgProcessTimeHours ?? row?.avgHours ?? row?.hours ?? 0) || 0),
       }))
       .filter((row) => row.processName);
+  }
+
+  function getDefaultLarkProcessSummary() {
+    return normalizeLarkProcessSummary(DEFAULT_LARK_PROCESS_SUMMARY);
+  }
+
+  function resolveLarkProcessSummaryForClient(rows, clientCompany) {
+    if (!isLarkProcessSummaryClient(clientCompany)) return [];
+    if (Array.isArray(rows) && rows.length) return normalizeLarkProcessSummary(rows);
+    return getDefaultLarkProcessSummary();
   }
 
   function parseLarkProcessSummaryTsv(text) {
@@ -2294,7 +2313,9 @@
     if (sectionId === 'orgChart') return !!(ctx?.hasOrgChart);
     if (sectionId === 'flowcharts') return (ctx?.workflowTabCount || 0) > 0;
     if (sectionId === 'leakageRanking') return (ctx?.processRankingCount || 0) > 0;
-    if (sectionId === 'larkProcessSummary') return (ctx?.larkProcessSummaryCount || 0) > 0;
+    if (sectionId === 'larkProcessSummary') {
+      return !!(ctx?.larkProcessSummaryEligible) && (ctx?.larkProcessSummaryCount || 0) > 0;
+    }
     if (sectionId === 'matrixTable') return (ctx?.matrixItemCount || 0) > 0;
     if (sectionId === 'feedbackAppendix') return !!(ctx?.showFeedbackAppendix);
     return true;
@@ -2347,7 +2368,11 @@
     validateReportReadiness,
     validateMod1Handoff,
     DEFAULT_LARK_PROCESS_SUMMARY,
+    LARK_PROCESS_SUMMARY_CLIENT,
+    isLarkProcessSummaryClient,
     normalizeLarkProcessSummary,
+    getDefaultLarkProcessSummary,
+    resolveLarkProcessSummaryForClient,
     parseLarkProcessSummaryTsv,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     M102_FEEDBACK_FORM_TEMPLATE,

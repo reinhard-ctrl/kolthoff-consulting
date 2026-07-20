@@ -595,7 +595,7 @@
             executiveLetter: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
-            larkProcessSummary: DRH().normalizeLarkProcessSummary?.() || [],
+            larkProcessSummary: [],
             matrix: { items: [] },
         });
 
@@ -1967,14 +1967,15 @@
                         </div>
                     </StrategyAccordionSection>
 
-                    <StrategyAccordionSection title="Lark Process Summary" subtitle="Table after Process Leakage Ranking in the PDF — paste from Lark export or edit rows below." defaultOpen={false}>
+                    {DRH().isLarkProcessSummaryClient?.(clientCompany) && (
+                    <StrategyAccordionSection title="Lark Process Summary" subtitle="Table after Process Leakage Ranking in the PDF — Infinitech workspace only. Paste from Lark export or edit rows below." defaultOpen={false}>
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setSynthesis((prev) => ({
                                         ...prev,
-                                        larkProcessSummary: DRH().normalizeLarkProcessSummary?.() || [],
+                                        larkProcessSummary: DRH().getDefaultLarkProcessSummary?.() || [],
                                     }))}
                                     className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandNavy-700 text-slate-400 hover:text-white"
                                 >
@@ -2084,6 +2085,7 @@
                             </div>
                         </div>
                     </StrategyAccordionSection>
+                    )}
 
                     {/* C: Report Narrative */}
                     <StrategyAccordionSection title="Report Narrative" subtitle="3-year leakage forecast, next-phase recommendation, executive letter, and client handoff links." defaultOpen={false}>
@@ -2435,7 +2437,10 @@
                 hasOrgChart: !!(orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)),
                 workflowTabCount: workflowTabs.length,
                 processRankingCount: processRankings.length,
-                larkProcessSummaryCount: (synthesis.larkProcessSummary || []).length,
+                larkProcessSummaryEligible: DRH().isLarkProcessSummaryClient?.(clientCompany),
+                larkProcessSummaryCount: DRH().isLarkProcessSummaryClient?.(clientCompany)
+                    ? (synthesis.larkProcessSummary || []).length
+                    : 0,
                 matrixItemCount: activeItems.length,
                 riskProfileCount: riskProfiles.length,
                 showFeedbackAppendix: m102InScope && !!String(synthesis.feedbackFormUrl || '').trim(),
@@ -2668,7 +2673,7 @@
                         </div>
                     )}
 
-                    {printConfig.showLarkProcessSummary && (synthesis.larkProcessSummary || []).length > 0 && (
+                    {printConfig.showLarkProcessSummary && DRH().isLarkProcessSummaryClient?.(clientCompany) && (synthesis.larkProcessSummary || []).length > 0 && (
                         <div className="report-page" style={sectionStyle('larkProcessSummary')}>
                             <ReportSectionHeader part={sectionParts.larkProcessSummary} title="Process Volume &amp; Cycle Time" subtitle="Lark workflow export — documents submitted and average end-to-end process time per approval flow." />
                             <table className="report-table">
@@ -3108,7 +3113,8 @@
                 if (!profile) return;
                 if (profileHydratedIdRef.current === activeProfileId) return;
                 profileHydratedIdRef.current = activeProfileId;
-                setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
+                const clientName = EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company');
+                setClientCompany(clientName);
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
                     const diagnosisData = WT?.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
                     const reportTabs = diagnosisData.tabs || [];
@@ -3161,7 +3167,10 @@
                         if (!loadedSynthesis.feedbackLaunchGuide) {
                             loadedSynthesis.feedbackLaunchGuide = DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '';
                         }
-                        loadedSynthesis.larkProcessSummary = DRH().normalizeLarkProcessSummary?.(loadedSynthesis.larkProcessSummary) || [];
+                        loadedSynthesis.larkProcessSummary = DRH().resolveLarkProcessSummaryForClient?.(
+                            loadedSynthesis.larkProcessSummary,
+                            clientName,
+                        ) || [];
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
@@ -3194,7 +3203,9 @@
                             setPrintConfig((prev) => DRH().mergePrintConfigWithSectionOrder?.(prev, loadedSynthesis.reportSectionOrder) || prev);
                         }
                     } else {
-                        setSynthesis(createDefaultSynthesis());
+                        const defaultSyn = createDefaultSynthesis();
+                        defaultSyn.larkProcessSummary = DRH().resolveLarkProcessSummaryForClient?.([], clientName) || [];
+                        setSynthesis(defaultSyn);
                     }
                     autoSaveReadyRef.current = false;
                     setTimeout(() => { autoSaveReadyRef.current = true; }, 1200);
@@ -3756,7 +3767,7 @@
                                                         ['showExecutiveLetter', 'Letter'],
                                                         ['showExecutiveSnapshot', 'Snapshot'],
                                                         ['showLeakageRanking', 'Rankings'],
-                                                        ['showLarkProcessSummary', 'Lark Volume'],
+                                                        ...(DRH().isLarkProcessSummaryClient?.(clientCompany) ? [['showLarkProcessSummary', 'Lark Volume']] : []),
                                                         ['showOrgChart', 'Org Chart'],
                                                         ['showFlowcharts', 'Workflows'],
                                                         ['showRaci', 'RACI'],

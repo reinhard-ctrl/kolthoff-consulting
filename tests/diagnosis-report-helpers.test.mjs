@@ -655,10 +655,31 @@ describe('diagnosis-report-helpers', () => {
     assert.notEqual(sorted, items);
   });
 
-  it('normalizeLarkProcessSummary returns defaults when empty', () => {
-    const rows = DRH.normalizeLarkProcessSummary([]);
+  it('normalizeLarkProcessSummary returns empty array when no rows', () => {
+    assert.deepEqual(DRH.normalizeLarkProcessSummary([]), []);
+  });
+
+  it('isLarkProcessSummaryClient matches Infinitech Digital Gaming Corporation', () => {
+    assert.equal(DRH.isLarkProcessSummaryClient('Infinitech Digital Gaming Corporation'), true);
+    assert.equal(DRH.isLarkProcessSummaryClient('INFINITECH DIGITAL GAMING CORPORATION'), true);
+    assert.equal(DRH.isLarkProcessSummaryClient('Acme Corp'), false);
+  });
+
+  it('resolveLarkProcessSummaryForClient returns defaults only for Infinitech', () => {
+    const infinitech = DRH.resolveLarkProcessSummaryForClient([], 'Infinitech Digital Gaming Corporation');
+    assert.equal(infinitech.length, 7);
+    assert.equal(infinitech[0].processName, 'Manpower Request');
+
+    const other = DRH.resolveLarkProcessSummaryForClient([], 'Other Client Ltd');
+    assert.deepEqual(other, []);
+
+    const cleared = DRH.resolveLarkProcessSummaryForClient(infinitech, 'Other Client Ltd');
+    assert.deepEqual(cleared, []);
+  });
+
+  it('getDefaultLarkProcessSummary returns normalized default rows', () => {
+    const rows = DRH.getDefaultLarkProcessSummary();
     assert.equal(rows.length, 7);
-    assert.equal(rows[0].processName, 'Manpower Request');
     assert.equal(rows[5].totalDocuments, 267);
     assert.equal(rows[5].avgProcessTimeHours, 475.26);
   });

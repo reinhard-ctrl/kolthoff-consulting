@@ -250,7 +250,7 @@
                         </div>
                     )}
 
-                    {printConfig.showLarkProcessSummary !== false && (synthesis.larkProcessSummary || []).length > 0 && (
+                    {printConfig.showLarkProcessSummary !== false && DR.isLarkProcessSummaryClient?.(clientCompany) && (synthesis.larkProcessSummary || []).length > 0 && (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader number="A2" title="Process Volume & Cycle Time" subtitle="Lark workflow export — documents submitted and average end-to-end process time per approval flow." />
                             <table className="report-table">
