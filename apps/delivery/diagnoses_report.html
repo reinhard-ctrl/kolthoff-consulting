@@ -630,6 +630,7 @@
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             larkProcessSummary: [],
+            reportAppendices: [],
             reportCopy: {},
             matrix: { items: [] },
         });
@@ -2002,125 +2003,248 @@
                         </div>
                     </StrategyAccordionSection>
 
-                    {DRH().isLarkProcessSummaryClient?.(clientCompany) && (
-                    <StrategyAccordionSection title="Lark Process Summary" subtitle="Table after Process Leakage Ranking in the PDF — Infinitech workspace only. Paste from Lark export or edit rows below." defaultOpen={false}>
+                    <StrategyAccordionSection title="Report Appendices" subtitle="Optional attachments at the end of the PDF — add supplementary tables or custom notes." defaultOpen={false}>
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
+                                {DRH().isLarkProcessSummaryClient?.(clientCompany) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSynthesis((prev) => ({
+                                            ...prev,
+                                            reportAppendices: [
+                                                ...(prev.reportAppendices || []),
+                                                DRH().createReportAppendix?.('larkProcessSummary') || { type: 'larkProcessSummary', enabled: true },
+                                            ],
+                                        }))}
+                                        className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandTeal-500/40 text-brandTeal-300 hover:bg-brandTeal-500/10"
+                                    >
+                                        Add Lark table
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     onClick={() => setSynthesis((prev) => ({
                                         ...prev,
-                                        larkProcessSummary: DRH().getDefaultLarkProcessSummary?.() || [],
+                                        reportAppendices: [
+                                            ...(prev.reportAppendices || []),
+                                            DRH().createReportAppendix?.('custom') || { type: 'custom', enabled: true },
+                                        ],
                                     }))}
                                     className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandNavy-700 text-slate-400 hover:text-white"
                                 >
-                                    Reset to defaults
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setSynthesis((prev) => ({
-                                        ...prev,
-                                        larkProcessSummary: [...(prev.larkProcessSummary || []), { processName: '', totalDocuments: 0, avgProcessTimeHours: 0 }],
-                                    }))}
-                                    className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandTeal-500/40 text-brandTeal-300 hover:bg-brandTeal-500/10"
-                                >
-                                    Add row
+                                    Add custom appendix
                                 </button>
                             </div>
-                            <div className="overflow-x-auto border border-brandNavy-800 rounded-lg">
-                                <table className="w-full text-xs">
-                                    <thead>
-                                        <tr className="text-[9px] font-bold uppercase text-slate-500 border-b border-brandNavy-800">
-                                            <th className="text-left p-2">Process Name</th>
-                                            <th className="text-center p-2 w-28">Documents</th>
-                                            <th className="text-center p-2 w-32">Avg. hours</th>
-                                            <th className="w-10" />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(synthesis.larkProcessSummary || []).map((row, idx) => (
-                                            <tr key={`lark-edit-${idx}`} className="border-b border-brandNavy-900/80">
-                                                <td className="p-2">
-                                                    <input
-                                                        type="text"
-                                                        value={row.processName || ''}
-                                                        onChange={(e) => setSynthesis((prev) => ({
-                                                            ...prev,
-                                                            larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
-                                                                i === idx ? { ...item, processName: e.target.value } : item
-                                                            )),
-                                                        }))}
-                                                        className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={row.totalDocuments ?? 0}
-                                                        onChange={(e) => setSynthesis((prev) => ({
-                                                            ...prev,
-                                                            larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
-                                                                i === idx ? { ...item, totalDocuments: Number(e.target.value) || 0 } : item
-                                                            )),
-                                                        }))}
-                                                        className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-center font-mono text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                                                    />
-                                                </td>
-                                                <td className="p-2">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        step="0.01"
-                                                        value={row.avgProcessTimeHours ?? 0}
-                                                        onChange={(e) => setSynthesis((prev) => ({
-                                                            ...prev,
-                                                            larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
-                                                                i === idx ? { ...item, avgProcessTimeHours: Number(e.target.value) || 0 } : item
-                                                            )),
-                                                        }))}
-                                                        className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-center font-mono text-slate-200 focus:outline-none focus:border-brandTeal-500"
-                                                    />
-                                                </td>
-                                                <td className="p-2 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSynthesis((prev) => ({
-                                                            ...prev,
-                                                            larkProcessSummary: prev.larkProcessSummary.filter((_, i) => i !== idx),
-                                                        }))}
-                                                        className="text-slate-500 hover:text-rose-400 text-sm leading-none"
-                                                        title="Remove row"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div>
-                                <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Paste from Lark (tab-separated)</label>
-                                <textarea
-                                    rows="4"
-                                    placeholder={'Process Name\tTotal Documents Submitted\tAvg. Process Time Spent (hours)\nManpower Request\t1\t381.16'}
-                                    onBlur={(e) => {
-                                        const parsed = DRH().parseLarkProcessSummaryTsv?.(e.target.value) || [];
-                                        if (!parsed.length) return;
-                                        setSynthesis((prev) => ({
+                            {(synthesis.reportAppendices || []).length === 0 && (
+                                <p className="text-xs text-slate-400 italic">No appendices yet. Add one above to attach optional material after the main report sections.</p>
+                            )}
+                            {(DRH().normalizeReportAppendices?.(synthesis.reportAppendices) || []).map((appendix, appendixIdx) => (
+                                <div key={appendix.id} className="border border-brandNavy-800 rounded-lg p-4 space-y-3 bg-brandNavy-950/30">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-bold uppercase text-slate-300 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={appendix.enabled !== false}
+                                                onChange={(e) => setSynthesis((prev) => ({
+                                                    ...prev,
+                                                    reportAppendices: (prev.reportAppendices || []).map((item, i) => (
+                                                        i === appendixIdx ? { ...item, enabled: e.target.checked } : item
+                                                    )),
+                                                }))}
+                                                className="accent-brandTeal-500"
+                                            />
+                                            Include in PDF
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold uppercase text-slate-500">
+                                                {DRH().REPORT_APPENDIX_TYPES?.[appendix.type]?.label || 'Custom'}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSynthesis((prev) => ({
+                                                    ...prev,
+                                                    reportAppendices: (prev.reportAppendices || []).filter((_, i) => i !== appendixIdx),
+                                                }))}
+                                                className="text-slate-500 hover:text-rose-400 text-sm leading-none px-1"
+                                                title="Remove appendix"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Title</label>
+                                            <input
+                                                type="text"
+                                                value={appendix.title || ''}
+                                                onChange={(e) => setSynthesis((prev) => ({
+                                                    ...prev,
+                                                    reportAppendices: (prev.reportAppendices || []).map((item, i) => (
+                                                        i === appendixIdx ? { ...item, title: e.target.value } : item
+                                                    )),
+                                                }))}
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Subtitle</label>
+                                            <input
+                                                type="text"
+                                                value={appendix.subtitle || ''}
+                                                onChange={(e) => setSynthesis((prev) => ({
+                                                    ...prev,
+                                                    reportAppendices: (prev.reportAppendices || []).map((item, i) => (
+                                                        i === appendixIdx ? { ...item, subtitle: e.target.value } : item
+                                                    )),
+                                                }))}
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    {appendix.type === 'custom' && (
+                                        <div>
+                                            <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Body</label>
+                                            <textarea
+                                                rows="5"
+                                                value={appendix.body || ''}
+                                                onChange={(e) => setSynthesis((prev) => ({
+                                                    ...prev,
+                                                    reportAppendices: (prev.reportAppendices || []).map((item, i) => (
+                                                        i === appendixIdx ? { ...item, body: e.target.value } : item
+                                                    )),
+                                                }))}
+                                                placeholder="Paste notes, export summaries, or any supplementary context for the client…"
+                                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-y min-h-[100px]"
+                                            />
+                                        </div>
+                                    )}
+                                    {appendix.type === 'larkProcessSummary' && (
+                                        <p className="text-[10px] text-slate-400">Edit the Lark process rows below — this appendix renders that table when enabled and &ldquo;Optional Attachments&rdquo; is checked in the report toolbar.</p>
+                                    )}
+                                </div>
+                            ))}
+
+                            {DRH().isLarkProcessSummaryClient?.(clientCompany) && (synthesis.reportAppendices || []).some((a) => a.type === 'larkProcessSummary') && (
+                            <div className="border-t border-brandNavy-800 pt-4 space-y-4">
+                                <h4 className="text-[10px] font-bold uppercase text-brandTeal-400 tracking-wider">Lark process data</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSynthesis((prev) => ({
                                             ...prev,
-                                            larkProcessSummary: DRH().normalizeLarkProcessSummary?.(parsed) || [],
-                                        }));
-                                        e.target.value = '';
-                                    }}
-                                    className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none"
-                                />
-                                <p className="text-[9px] text-slate-500 mt-1">Paste tab-separated rows — imports when you click outside the field.</p>
+                                            larkProcessSummary: DRH().getDefaultLarkProcessSummary?.() || [],
+                                        }))}
+                                        className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandNavy-700 text-slate-400 hover:text-white"
+                                    >
+                                        Reset to defaults
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSynthesis((prev) => ({
+                                            ...prev,
+                                            larkProcessSummary: [...(prev.larkProcessSummary || []), { processName: '', totalDocuments: 0, avgProcessTimeHours: 0 }],
+                                        }))}
+                                        className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandTeal-500/40 text-brandTeal-300 hover:bg-brandTeal-500/10"
+                                    >
+                                        Add row
+                                    </button>
+                                </div>
+                                <div className="overflow-x-auto border border-brandNavy-800 rounded-lg">
+                                    <table className="w-full text-xs">
+                                        <thead>
+                                            <tr className="text-[9px] font-bold uppercase text-slate-500 border-b border-brandNavy-800">
+                                                <th className="text-left p-2">Process Name</th>
+                                                <th className="text-center p-2 w-28">Documents</th>
+                                                <th className="text-center p-2 w-32">Avg. hours</th>
+                                                <th className="w-10" />
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {(synthesis.larkProcessSummary || []).map((row, idx) => (
+                                                <tr key={`lark-edit-${idx}`} className="border-b border-brandNavy-900/80">
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="text"
+                                                            value={row.processName || ''}
+                                                            onChange={(e) => setSynthesis((prev) => ({
+                                                                ...prev,
+                                                                larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
+                                                                    i === idx ? { ...item, processName: e.target.value } : item
+                                                                )),
+                                                            }))}
+                                                            className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={row.totalDocuments ?? 0}
+                                                            onChange={(e) => setSynthesis((prev) => ({
+                                                                ...prev,
+                                                                larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
+                                                                    i === idx ? { ...item, totalDocuments: Number(e.target.value) || 0 } : item
+                                                                )),
+                                                            }))}
+                                                            className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-center font-mono text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            step="0.01"
+                                                            value={row.avgProcessTimeHours ?? 0}
+                                                            onChange={(e) => setSynthesis((prev) => ({
+                                                                ...prev,
+                                                                larkProcessSummary: prev.larkProcessSummary.map((item, i) => (
+                                                                    i === idx ? { ...item, avgProcessTimeHours: Number(e.target.value) || 0 } : item
+                                                                )),
+                                                            }))}
+                                                            className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-center font-mono text-slate-200 focus:outline-none focus:border-brandTeal-500"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSynthesis((prev) => ({
+                                                                ...prev,
+                                                                larkProcessSummary: prev.larkProcessSummary.filter((_, i) => i !== idx),
+                                                            }))}
+                                                            className="text-slate-500 hover:text-rose-400 text-sm leading-none"
+                                                            title="Remove row"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div>
+                                    <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Paste from Lark (tab-separated)</label>
+                                    <textarea
+                                        rows="4"
+                                        placeholder={'Process Name\tTotal Documents Submitted\tAvg. Process Time Spent (hours)\nManpower Request\t1\t381.16'}
+                                        onBlur={(e) => {
+                                            const parsed = DRH().parseLarkProcessSummaryTsv?.(e.target.value) || [];
+                                            if (!parsed.length) return;
+                                            setSynthesis((prev) => ({
+                                                ...prev,
+                                                larkProcessSummary: DRH().normalizeLarkProcessSummary?.(parsed) || [],
+                                            }));
+                                            e.target.value = '';
+                                        }}
+                                        className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none"
+                                    />
+                                    <p className="text-[9px] text-slate-500 mt-1">Paste tab-separated rows — imports when you click outside the field.</p>
+                                </div>
                             </div>
+                            )}
                         </div>
                     </StrategyAccordionSection>
-                    )}
 
                     {/* C: Report Narrative */}
                     <StrategyAccordionSection title="Report Narrative" subtitle="3-year leakage forecast, next-phase recommendation, executive letter, and client handoff links." defaultOpen={false}>
@@ -2564,6 +2688,13 @@
                 larkProcessSummaryCount: DRH().isLarkProcessSummaryClient?.(clientCompany)
                     ? (synthesis.larkProcessSummary || []).length
                     : 0,
+                enabledAppendixCount: (DR.getEnabledReportAppendices?.(synthesis.reportAppendices) || [])
+                    .filter((appendix) => DR.reportAppendixHasContent?.(appendix, {
+                        larkProcessSummaryEligible: DRH().isLarkProcessSummaryClient?.(clientCompany),
+                        larkProcessSummaryCount: DRH().isLarkProcessSummaryClient?.(clientCompany)
+                            ? (synthesis.larkProcessSummary || []).length
+                            : 0,
+                    })).length,
                 matrixItemCount: activeItems.length,
                 riskProfileCount: riskProfiles.length,
                 showFeedbackAppendix: m102InScope && !!String(synthesis.feedbackFormUrl || '').trim(),
@@ -2835,36 +2966,45 @@
                         </div>
                     )}
 
-                    {printConfig.showLarkProcessSummary && DRH().isLarkProcessSummaryClient?.(clientCompany) && (synthesis.larkProcessSummary || []).length > 0 && (
-                        <div className="report-page" style={sectionStyle('larkProcessSummary')}>
-                            <ReportSectionHeader
-                                part={sectionParts.larkProcessSummary}
-                                titleKey="sections.larkProcessSummary.title"
-                                subtitleKey="sections.larkProcessSummary.subtitle"
-                                reportCopy={reportCopy}
-                                editMode={reportEditMode}
-                                onCopyChange={onReportCopyChange}
-                            />
-                            <table className="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Process Name</th>
-                                        <th className="text-center">Total Documents Submitted</th>
-                                        <th className="text-right">Avg. Process Time Spent (hours)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {synthesis.larkProcessSummary.map((row, idx) => (
-                                        <tr key={`${row.processName}-${idx}`}>
-                                            <td className="font-bold">{row.processName}</td>
-                                            <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
-                                            <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                    {printConfig.showCustomAppendices && (DR.getEnabledReportAppendices?.(synthesis.reportAppendices) || [])
+                        .filter((appendix) => DR.reportAppendixHasContent?.(appendix, sectionCtx))
+                        .map((appendix) => (
+                        <div key={appendix.id} className="report-page" style={sectionStyle('customAppendices')}>
+                            <div className="mb-6 page-break-inside-avoid">
+                                <div className="report-accent-bar mb-3" />
+                                {sectionParts.customAppendices && (
+                                    <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">{sectionParts.customAppendices}</div>
+                                )}
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">{appendix.title}</h2>
+                                {appendix.subtitle && (
+                                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">{appendix.subtitle}</p>
+                                )}
+                            </div>
+                            {appendix.type === 'larkProcessSummary' && (synthesis.larkProcessSummary || []).length > 0 && (
+                                <table className="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Process Name</th>
+                                            <th className="text-center">Total Documents Submitted</th>
+                                            <th className="text-right">Avg. Process Time Spent (hours)</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {synthesis.larkProcessSummary.map((row, idx) => (
+                                            <tr key={`${row.processName}-${idx}`}>
+                                                <td className="font-bold">{row.processName}</td>
+                                                <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
+                                                <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                            {appendix.type === 'custom' && appendix.body && (
+                                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap page-break-inside-avoid">{appendix.body}</div>
+                            )}
                         </div>
-                    )}
+                    ))}
 
                     {printConfig.showRaci && (
                         <div className="report-page" style={sectionStyle('raci')}>
@@ -3314,7 +3454,7 @@
 
             // View State
             const [activeNav, setActiveNav] = useState('orgchart');
-            const [printConfig, setPrintConfig] = useState(() => DRH().mergePrintConfigWithSectionOrder?.(DRH().PRINT_PRESETS?.full || {}) || { ...(DRH().PRINT_PRESETS?.full || {}) });
+            const [printConfig, setPrintConfig] = useState(() => DRH().normalizePrintConfig?.(DRH().mergePrintConfigWithSectionOrder?.(DRH().PRINT_PRESETS?.full || {}) || {}) || { ...(DRH().PRINT_PRESETS?.full || {}) });
             const [printPreset, setPrintPreset] = useState('full');
             const [reportEditMode, setReportEditMode] = useState(false);
 
@@ -3470,6 +3610,11 @@
                             loadedSynthesis.larkProcessSummary,
                             clientName,
                         ) || [];
+                        loadedSynthesis.reportAppendices = DRH().resolveReportAppendicesForClient?.(
+                            Array.isArray(loadedSynthesis.reportAppendices) ? loadedSynthesis.reportAppendices : undefined,
+                            clientName,
+                            loadedSynthesis.larkProcessSummary,
+                        ) || [];
                         loadedSynthesis.reportCopy = DRH().normalizeReportCopy?.(loadedSynthesis.reportCopy) || {};
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
@@ -3505,6 +3650,7 @@
                     } else {
                         const defaultSyn = createDefaultSynthesis();
                         defaultSyn.larkProcessSummary = DRH().resolveLarkProcessSummaryForClient?.([], clientName) || [];
+                        defaultSyn.reportAppendices = [];
                         defaultSyn.reportCopy = {};
                         setSynthesis(defaultSyn);
                     }
@@ -4072,6 +4218,7 @@
                                                         <input type="text" value={preparedBy} onChange={(e) => setPreparedBy(e.target.value)} className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-brandTeal-500" />
                                                     </div>
                                                     <button type="button" onClick={() => setActiveNav('synthesis')} className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded text-[9px] font-bold uppercase shrink-0">Edit letter in Strategy</button>
+                                                    <button type="button" onClick={() => setActiveNav('synthesis')} className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded text-[9px] font-bold uppercase shrink-0">Edit appendices</button>
                                                 </div>
                                                 <div className="p-3 rounded-lg border border-brandTeal-200 bg-teal-50/40 space-y-2">
                                                     <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-900">Client handoff (syncs to portal)</div>
@@ -4099,7 +4246,7 @@
                                                         ['showExecutiveLetter', 'Letter'],
                                                         ['showExecutiveSnapshot', 'Snapshot'],
                                                         ['showLeakageRanking', 'Rankings'],
-                                                        ...(DRH().isLarkProcessSummaryClient?.(clientCompany) ? [['showLarkProcessSummary', 'Lark Volume']] : []),
+                                                        ['showCustomAppendices', 'Appendices'],
                                                         ['showOrgChart', 'Org Chart'],
                                                         ['showFlowcharts', 'Workflows'],
                                                         ['showRaci', 'RACI'],

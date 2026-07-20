@@ -261,6 +261,79 @@
     return Object.keys(normalizeReportCopy(copy)).length > 0;
   }
 
+  const REPORT_APPENDIX_TYPES = {
+    larkProcessSummary: {
+      label: 'Process Volume & Cycle Time (Lark)',
+      defaultTitle: 'Process Volume & Cycle Time',
+      defaultSubtitle: 'Lark workflow export — documents submitted and average end-to-end process time per approval flow.',
+    },
+    custom: {
+      label: 'Custom appendix',
+      defaultTitle: 'Additional Information',
+      defaultSubtitle: 'Supplementary material attached to this Leak Scan Report.',
+    },
+  };
+
+  function createReportAppendix(type, overrides) {
+    const meta = REPORT_APPENDIX_TYPES[type] || REPORT_APPENDIX_TYPES.custom;
+    const next = {
+      id: `appendix-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type: REPORT_APPENDIX_TYPES[type] ? type : 'custom',
+      title: meta.defaultTitle,
+      subtitle: meta.defaultSubtitle,
+      body: '',
+      enabled: true,
+      ...(overrides || {}),
+    };
+    next.title = String(next.title || meta.defaultTitle).trim() || meta.defaultTitle;
+    next.subtitle = String(next.subtitle ?? meta.defaultSubtitle).trim();
+    next.body = String(next.body || '');
+    next.enabled = next.enabled !== false;
+    return next;
+  }
+
+  function normalizeReportAppendices(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+      .map((item, index) => {
+        const type = REPORT_APPENDIX_TYPES[item?.type] ? item.type : 'custom';
+        const meta = REPORT_APPENDIX_TYPES[type];
+        return {
+          id: String(item?.id || `appendix-${index + 1}`),
+          type,
+          title: String(item?.title || meta.defaultTitle).trim() || meta.defaultTitle,
+          subtitle: String(item?.subtitle ?? meta.defaultSubtitle).trim(),
+          body: String(item?.body || ''),
+          enabled: item?.enabled !== false,
+        };
+      })
+      .filter((item) => item.id);
+  }
+
+  function getEnabledReportAppendices(items) {
+    return normalizeReportAppendices(items).filter((item) => item.enabled);
+  }
+
+  function reportAppendixHasContent(appendix, ctx) {
+    if (!appendix || appendix.enabled === false) return false;
+    if (appendix.type === 'larkProcessSummary') {
+      return !!(ctx?.larkProcessSummaryEligible) && (ctx?.larkProcessSummaryCount || 0) > 0;
+    }
+    const body = String(appendix.body || '').trim();
+    const title = String(appendix.title || '').trim();
+    return !!(body || title);
+  }
+
+  /** Migrate legacy workspaces: seed a Lark appendix when Infinitech rows exist but no appendix config was saved yet. */
+  function resolveReportAppendicesForClient(appendices, clientCompany, larkProcessSummary) {
+    if (Array.isArray(appendices)) return normalizeReportAppendices(appendices);
+    const rows = normalizeLarkProcessSummary(larkProcessSummary);
+    if (isLarkProcessSummaryClient(clientCompany) && rows.length) {
+      return [createReportAppendix('larkProcessSummary', { enabled: true })];
+    }
+    return [];
+  }
+
   function buildMaturityScorecardRows(synthesis) {
     const s = synthesis || {};
     return Object.entries(MATURITY_RUBRIC).map(([key, rubric]) => {
@@ -2220,7 +2293,6 @@
       showExecutiveLetter: true,
       showExecutiveSnapshot: true,
       showLeakageRanking: true,
-      showLarkProcessSummary: true,
       showOrgChart: true,
       showFlowcharts: true,
       flowchartsTopOnly: false,
@@ -2231,6 +2303,7 @@
       showNextSteps: true,
       showMatrixTable: true,
       showAppendix: true,
+      showCustomAppendices: true,
       showFeedbackAppendix: true,
       showHowToRead: false,
     },
@@ -2262,6 +2335,7 @@
     recoveryGantt: 'recoveryPlan',
     matrix: 'recoveryPlan',
     synthesis: 'operationalOutlook',
+    larkProcessSummary: 'customAppendices',
   };
 
   /** Default PDF section sequence — Verdict → Evidence → Plan → Appendix. */
@@ -2270,7 +2344,6 @@
     'orgChart',
     'flowcharts',
     'leakageRanking',
-    'larkProcessSummary',
     'saas',
     'raci',
     'recoveryPlan',
@@ -2279,6 +2352,7 @@
     'methodology',
     'matrixTable',
     'feedbackAppendix',
+    'customAppendices',
     'howToRead',
   ];
 
@@ -2287,7 +2361,6 @@
     orgChart: { label: 'Organization & Team', configKey: 'showOrgChart', part: 'II' },
     flowcharts: { label: 'Process Maps', configKey: 'showFlowcharts', part: 'II' },
     leakageRanking: { label: 'Process Leakage Ranking', configKey: 'showLeakageRanking', part: 'II' },
-    larkProcessSummary: { label: 'Process Volume & Cycle Time', configKey: 'showLarkProcessSummary', part: 'II' },
     saas: { label: 'Financial Leakage', configKey: 'showSaas', part: 'II' },
     raci: { label: 'RACI Matrix', configKey: 'showRaci', part: 'II' },
     recoveryPlan: { label: '90-Day Recovery Plan', configKey: 'showRecoveryPlan', part: 'III' },
@@ -2296,6 +2369,7 @@
     methodology: { label: 'Appendix — Methodology', configKey: 'showAppendix', part: 'Appendix' },
     matrixTable: { label: 'Appendix — Full Initiative List', configKey: 'showMatrixTable', part: 'Appendix' },
     feedbackAppendix: { label: 'Appendix — Staff Feedback', configKey: 'showFeedbackAppendix', part: 'Appendix' },
+    customAppendices: { label: 'Appendix — Optional Attachments', configKey: 'showCustomAppendices', part: 'Appendix' },
     howToRead: { label: 'Appendix — How to Read', configKey: 'showHowToRead', part: 'Appendix' },
   };
 
@@ -2323,9 +2397,10 @@
     if (next.showHowToRead === undefined) {
       next.showHowToRead = false;
     }
-    if (next.showLarkProcessSummary === undefined) {
-      next.showLarkProcessSummary = true;
+    if (next.showCustomAppendices === undefined) {
+      next.showCustomAppendices = next.showLarkProcessSummary !== false;
     }
+    delete next.showLarkProcessSummary;
     return next;
   }
 
@@ -2401,9 +2476,7 @@
     if (sectionId === 'orgChart') return !!(ctx?.hasOrgChart);
     if (sectionId === 'flowcharts') return (ctx?.workflowTabCount || 0) > 0;
     if (sectionId === 'leakageRanking') return (ctx?.processRankingCount || 0) > 0;
-    if (sectionId === 'larkProcessSummary') {
-      return !!(ctx?.larkProcessSummaryEligible) && (ctx?.larkProcessSummaryCount || 0) > 0;
-    }
+    if (sectionId === 'customAppendices') return (ctx?.enabledAppendixCount || 0) > 0;
     if (sectionId === 'matrixTable') return (ctx?.matrixItemCount || 0) > 0;
     if (sectionId === 'feedbackAppendix') return !!(ctx?.showFeedbackAppendix);
     return true;
@@ -2428,6 +2501,12 @@
     clearReportCopyOverrides,
     hasReportCopyOverrides,
     interpolateReportCopy,
+    REPORT_APPENDIX_TYPES,
+    createReportAppendix,
+    normalizeReportAppendices,
+    getEnabledReportAppendices,
+    reportAppendixHasContent,
+    resolveReportAppendicesForClient,
     MATURITY_RUBRIC,
     getQuadrant,
     stepMonthlyLoss,
