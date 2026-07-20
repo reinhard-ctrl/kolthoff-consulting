@@ -65,6 +65,194 @@
     return Math.round(hours * (Number(step.hourlyRate) || 0) * 22);
   }
 
+  const DEFAULT_PROCESS_METRICS = {
+    source: 'lark',
+    documentCompletionPct: null,
+    totalDocumentsSubmitted: 0,
+    openTodos: 0,
+    waitingOver48h: 0,
+    waitingOver7d: 0,
+    waitingOver30d: 0,
+    avgProcessTimeHours: 0,
+    approvalRatePct: null,
+    administrators: '',
+  };
+
+  function parsePercentValue(raw) {
+    if (raw == null || raw === '') return null;
+    const cleaned = String(raw).replace(/%/g, '').replace(/,/g, '').trim();
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function parseCountValue(raw) {
+    if (raw == null || raw === '') return 0;
+    const cleaned = String(raw).replace(/,/g, '').trim();
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function normalizeProcessMetrics(raw) {
+    const m = raw || {};
+    const completion = parsePercentValue(m.documentCompletionPct);
+    const approval = parsePercentValue(m.approvalRatePct);
+    let administrators = m.administrators;
+    if (Array.isArray(administrators)) {
+      administrators = administrators.filter(Boolean).join(', ');
+    }
+    return {
+      source: m.source || 'lark',
+      documentCompletionPct: completion,
+      totalDocumentsSubmitted: parseCountValue(m.totalDocumentsSubmitted),
+      openTodos: parseCountValue(m.openTodos),
+      waitingOver48h: parseCountValue(m.waitingOver48h),
+      waitingOver7d: parseCountValue(m.waitingOver7d),
+      waitingOver30d: parseCountValue(m.waitingOver30d),
+      avgProcessTimeHours: parseCountValue(m.avgProcessTimeHours),
+      approvalRatePct: approval,
+      administrators: String(administrators || '').trim(),
+    };
+  }
+
+  function getTabProcessMetrics(tab) {
+    return normalizeProcessMetrics(tab?.processMetrics);
+  }
+
+  function hasProcessMetrics(metrics) {
+    const m = normalizeProcessMetrics(metrics);
+    return m.totalDocumentsSubmitted > 0
+      || m.openTodos > 0
+      || m.avgProcessTimeHours > 0
+      || m.documentCompletionPct != null
+      || m.approvalRatePct != null
+      || m.waitingOver48h > 0
+      || m.waitingOver7d > 0
+      || m.waitingOver30d > 0;
+  }
+
+  function computeProcessLeakageScore(metrics) {
+    const m = normalizeProcessMetrics(metrics);
+    const completion = m.documentCompletionPct != null ? m.documentCompletionPct : 100;
+    const approval = m.approvalRatePct != null ? m.approvalRatePct : 100;
+    const docs = m.totalDocumentsSubmitted || 0;
+    const incompleteDocs = docs * Math.max(0, 100 - completion) / 100;
+    const backlogHours = m.openTodos * m.avgProcessTimeHours;
+    const agingTodos = m.waitingOver48h * 2 + m.waitingOver7d * 8 + m.waitingOver30d * 30;
+    const approvalFriction = docs * Math.max(0, 100 - approval) / 100;
+    const score = incompleteDocs * 3
+      + backlogHours
+      + agingTodos * 12
+      + approvalFriction * 2
+      + m.avgProcessTimeHours * (docs > 0 ? Math.log10(docs + 1) : 0);
+    return Math.round(score * 10) / 10;
+  }
+
+  function getProcessPrimarySignal(metrics) {
+    const m = normalizeProcessMetrics(metrics);
+    const signals = [
+      { key: 'aging', weight: m.waitingOver30d * 30 + m.waitingOver7d * 8 + m.waitingOver48h * 2, label: 'Aging to-do backlog (>48h / >7d / >30d)' },
+      { key: 'backlog', weight: m.openTodos * m.avgProcessTimeHours, label: `${m.openTodos} open to-do${m.openTodos === 1 ? '' : 's'} · ${m.avgProcessTimeHours}h avg cycle` },
+      { key: 'completion', weight: m.totalDocumentsSubmitted * Math.max(0, 100 - (m.documentCompletionPct != null ? m.documentCompletionPct : 100)), label: `${m.documentCompletionPct != null ? m.documentCompletionPct : '—'}% document completion` },
+      { key: 'approval', weight: m.totalDocumentsSubmitted * Math.max(0, 100 - (m.approvalRatePct != null ? m.approvalRatePct : 100)), label: `${m.approvalRatePct != null ? m.approvalRatePct : '—'}% one-time approval rate` },
+      { key: 'cycle', weight: m.avgProcessTimeHours * (m.openTodos || 1), label: `${m.avgProcessTimeHours}h average process time` },
+    ];
+    signals.sort((a, b) => b.weight - a.weight);
+    return signals[0]?.weight > 0 ? signals[0].label : 'No Lark friction signals recorded';
+  }
+
+  function parseLarkWorkflowExport(text) {
+    const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return [];
+    const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(',') ? ',' : '\t');
+    const headerCells = lines[0].split(delimiter).map((c) => c.trim().toLowerCase());
+    const headerIndex = (patterns) => {
+      const idx = headerCells.findIndex((cell) => patterns.some((p) => p.test(cell)));
+      return idx >= 0 ? idx : -1;
+    };
+    const idxName = headerIndex([/^process name/, /^process$/]);
+    const idxCompletion = headerIndex([/document completion/, /completion percentage/]);
+    const idxDocs = headerIndex([/total documents submitted/, /documents submitted/]);
+    const idxTodos = headerIndex([/^to-dos waiting/, /^to-dos$/]);
+    const idx48 = headerIndex([/>48h/, /48h/]);
+    const idx7 = headerIndex([/>7d/, /7d/]);
+    const idx30 = headerIndex([/>30d/, /30d/]);
+    const idxAvgTime = headerIndex([/avg\. process time/, /average process time/]);
+    const idxApproval = headerIndex([/approval rate/, /one-time approval/]);
+    const idxAdmin = headerIndex([/process administrator/, /administrator/]);
+    const dataLines = idxName >= 0 ? lines.slice(1) : lines;
+    const readCell = (cells, idx, fallbackIdx) => {
+      const i = idx >= 0 ? idx : fallbackIdx;
+      return i >= 0 && i < cells.length ? cells[i] : '';
+    };
+    return dataLines.map((line) => {
+      const cells = line.split(delimiter).map((c) => c.trim());
+      const processName = readCell(cells, idxName, 0);
+      if (!processName || /^process name$/i.test(processName)) return null;
+      const metrics = normalizeProcessMetrics({
+        source: 'lark',
+        documentCompletionPct: parsePercentValue(readCell(cells, idxCompletion, 1)),
+        totalDocumentsSubmitted: parseCountValue(readCell(cells, idxDocs, 2)),
+        openTodos: parseCountValue(readCell(cells, idxTodos, 3)),
+        waitingOver48h: parseCountValue(readCell(cells, idx48, 4)),
+        waitingOver7d: parseCountValue(readCell(cells, idx7, 5)),
+        waitingOver30d: parseCountValue(readCell(cells, idx30, 6)),
+        avgProcessTimeHours: parseCountValue(readCell(cells, idxAvgTime, 7)),
+        approvalRatePct: parsePercentValue(readCell(cells, idxApproval, 8)),
+        administrators: readCell(cells, idxAdmin, 9),
+      });
+      return { processName, metrics };
+    }).filter(Boolean);
+  }
+
+  function normalizeProcessName(name) {
+    return String(name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function matchLarkRowsToTabs(rows, tabs) {
+    const assignments = {};
+    const unmatched = [];
+    (rows || []).forEach((row) => {
+      const targetName = normalizeProcessName(row.processName);
+      const tab = (tabs || []).find((t) => normalizeProcessName(t.name) === targetName)
+        || (tabs || []).find((t) => normalizeProcessName(t.name).includes(targetName) || targetName.includes(normalizeProcessName(t.name)));
+      if (tab) assignments[tab.id] = row.metrics;
+      else unmatched.push(row);
+    });
+    return { assignments, unmatched };
+  }
+
+  function computeProcessPortfolioSummary(tabs) {
+    const rows = (tabs || [])
+      .map((tab) => ({ tab, metrics: getTabProcessMetrics(tab) }))
+      .filter(({ metrics }) => hasProcessMetrics(metrics));
+    const totalLeakageScore = rows.reduce((acc, { metrics }) => acc + computeProcessLeakageScore(metrics), 0);
+    const totalOpenTodos = rows.reduce((acc, { metrics }) => acc + metrics.openTodos, 0);
+    const totalDocumentsSubmitted = rows.reduce((acc, { metrics }) => acc + metrics.totalDocumentsSubmitted, 0);
+    const totalWaitingOver48h = rows.reduce((acc, { metrics }) => acc + metrics.waitingOver48h, 0);
+    const totalWaitingOver7d = rows.reduce((acc, { metrics }) => acc + metrics.waitingOver7d, 0);
+    const totalWaitingOver30d = rows.reduce((acc, { metrics }) => acc + metrics.waitingOver30d, 0);
+    const completionSamples = rows.map(({ metrics }) => metrics.documentCompletionPct).filter((v) => v != null);
+    const avgCompletionPct = completionSamples.length
+      ? Math.round((completionSamples.reduce((a, b) => a + b, 0) / completionSamples.length) * 10) / 10
+      : null;
+    const avgProcessTimeHours = rows.length
+      ? Math.round((rows.reduce((acc, { metrics }) => acc + metrics.avgProcessTimeHours, 0) / rows.length) * 10) / 10
+      : 0;
+    const backlogHours = rows.reduce((acc, { metrics }) => acc + metrics.openTodos * metrics.avgProcessTimeHours, 0);
+    return {
+      processCount: rows.length,
+      totalLeakageScore: Math.round(totalLeakageScore * 10) / 10,
+      totalOpenTodos,
+      totalDocumentsSubmitted,
+      totalWaitingOver48h,
+      totalWaitingOver7d,
+      totalWaitingOver30d,
+      avgCompletionPct,
+      avgProcessTimeHours,
+      backlogHours: Math.round(backlogHours * 10) / 10,
+    };
+  }
+
   function computeCoiForecast(annualChaosTax, saasAnnualWaste, expectedGrowth) {
     return buildCoiBreakdown(annualChaosTax, saasAnnualWaste, expectedGrowth).projected;
   }
@@ -100,7 +288,7 @@
   }
 
   const REPORT_METHODOLOGY_DISCLAIMER =
-    'Leakage figures are estimates based on stated delay minutes, salary assumptions, and subscription seat counts you provided. Validate numbers with your leadership team before acting. This report is operational advisory only — not legal, HR, tax, or accounting advice.';
+    'Process friction scores come from Lark workflow exports (completion %, open to-dos, cycle time, and approval rate). Subscription waste uses seat counts you provided. Validate figures with your leadership team before acting. This report is operational advisory only — not legal, HR, tax, or accounting advice.';
 
   function buildMaturityScorecardRows(synthesis) {
     const s = synthesis || {};
@@ -115,52 +303,50 @@
 
   function buildProcessRankings(tabs, DiagramEditor) {
     const rows = (tabs || []).map((tab) => {
-      const { vm, tasks } = getProcessNodes(tab, DiagramEditor);
-      const tax = DiagramEditor?.computeTabChaosTax?.(tasks) || { annual: 0 };
-      let topStep = null;
-      let topStepLoss = 0;
-      tasks.forEach((step) => {
-        const loss = stepMonthlyLoss(step);
-        if (loss > topStepLoss) {
-          topStepLoss = loss;
-          topStep = step;
-        }
-      });
+      const { vm } = getProcessNodes(tab, DiagramEditor);
+      const metrics = getTabProcessMetrics(tab);
+      const leakageScore = computeProcessLeakageScore(metrics);
       return {
         tabId: tab.id,
         tabName: tab.name,
-        annual: tax.annual || 0,
-        monthly: Math.round((tax.annual || 0) / 12),
-        topStepLabel: topStep?.label || '—',
-        topStepMonthly: topStepLoss,
-        taskCount: tasks.length,
+        metrics,
+        leakageScore,
+        documentCompletionPct: metrics.documentCompletionPct,
+        totalDocumentsSubmitted: metrics.totalDocumentsSubmitted,
+        openTodos: metrics.openTodos,
+        waitingOver48h: metrics.waitingOver48h,
+        waitingOver7d: metrics.waitingOver7d,
+        waitingOver30d: metrics.waitingOver30d,
+        avgProcessTimeHours: metrics.avgProcessTimeHours,
+        approvalRatePct: metrics.approvalRatePct,
+        administrators: metrics.administrators,
+        primarySignal: getProcessPrimarySignal(metrics),
+        taskCount: getProcessNodes(tab, DiagramEditor).tasks.length,
         svgCache: vm.svgCache || '',
+        hasMetrics: hasProcessMetrics(metrics),
       };
     });
-    const totalAnnual = rows.reduce((acc, r) => acc + r.annual, 0);
-    return rows
-      .map((r) => ({ ...r, pctOfTotal: totalAnnual > 0 ? Math.round((r.annual / totalAnnual) * 100) : 0 }))
-      .sort((a, b) => b.annual - a.annual);
+    const ranked = rows.filter((r) => r.hasMetrics);
+    const totalScore = ranked.reduce((acc, r) => acc + r.leakageScore, 0);
+    return ranked
+      .map((r) => ({ ...r, pctOfTotal: totalScore > 0 ? Math.round((r.leakageScore / totalScore) * 100) : 0 }))
+      .sort((a, b) => b.leakageScore - a.leakageScore);
   }
 
   function buildStepLeakageList(tabs, DiagramEditor) {
-    const all = [];
-    (tabs || []).forEach((tab) => {
-      const { tasks } = getProcessNodes(tab, DiagramEditor);
-      tasks.forEach((step) => {
-        const monthly = stepMonthlyLoss(step);
-        if (monthly <= 0) return;
-        all.push({
+    return (tabs || [])
+      .map((tab) => {
+        const metrics = getTabProcessMetrics(tab);
+        if (!hasProcessMetrics(metrics)) return null;
+        return {
           tabName: tab.name,
-          stepLabel: step.label,
-          delayMinutes: Number(step.delayMinutes) || 0,
-          affectedStaff: Number(step.affectedStaff) || 1,
-          monthly,
-          annual: monthly * 12,
-        });
-      });
-    });
-    return all.sort((a, b) => b.monthly - a.monthly);
+          metrics,
+          leakageScore: computeProcessLeakageScore(metrics),
+          primarySignal: getProcessPrimarySignal(metrics),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.leakageScore - a.leakageScore);
   }
 
   function buildRaciGaps(tabs, raciAssignments, DiagramEditor) {
@@ -212,9 +398,9 @@
     const topProcess = rankings[0];
     const raciGaps = buildRaciGaps(tabs, raciAssignments, DiagramEditor);
 
-    if (topProcess && topProcess.annual > 0) {
+    if (topProcess && topProcess.leakageScore > 0) {
       bullets.push(
-        `Highest-leak process: "${topProcess.tabName}" costs approximately ${formatCurrency(topProcess.monthly)}/month — bottleneck step "${topProcess.topStepLabel.replace(/\n/g, ' ')}".`
+        `Highest-friction process: "${topProcess.tabName}" — ${topProcess.primarySignal}.`
       );
     }
 
@@ -523,31 +709,32 @@
     let workflowIdx = 0;
 
     (tabs || []).forEach((tab) => {
-      const { tasks } = getProcessNodes(tab, DiagramEditor);
-      tasks.forEach((step) => {
-        const monthly = stepMonthlyLoss(step);
-        if (monthly <= 0) return;
-        const stepLabel = step.label.replace(/\n/g, ' ');
-        const text = `Reduce wait time on "${stepLabel}" in ${tab.name}`;
-        const key = text.toLowerCase();
-        if (existingTexts.has(key)) return;
-        existingTexts.add(key);
-        const impact = Math.min(5, Math.max(2, Math.round(monthly / 5000) + 2));
-        const effort = 2.5;
-        items.push({
-          id: `gen-step-${Date.now()}-${workflowIdx}`,
-          text,
-          effort,
-          impact,
-          owner: resolveOwnerFromRaci(tab, step, raciAssignments, DiagramEditor),
-          targetWeek: suggestTargetWeek(effort, impact, workflowIdx),
-          expectedSavings: monthly,
-          source: 'workflow',
-          sourceDetail: `${tab.name}, Step: ${stepLabel}`,
-          rootCauseKey: `workflow:${tab.name.toLowerCase()}`,
-        });
-        workflowIdx += 1;
+      const metrics = getTabProcessMetrics(tab);
+      if (!hasProcessMetrics(metrics)) return;
+      const score = computeProcessLeakageScore(metrics);
+      if (score <= 0) return;
+      const signal = getProcessPrimarySignal(metrics);
+      const text = metrics.openTodos > 0
+        ? `Clear ${metrics.openTodos} open to-do${metrics.openTodos === 1 ? '' : 's'} in ${tab.name}`
+        : `Improve ${tab.name} workflow completion and cycle time`;
+      const key = text.toLowerCase();
+      if (existingTexts.has(key)) return;
+      existingTexts.add(key);
+      const impact = Math.min(5, Math.max(2, Math.round(score / 500) + 2));
+      const effort = metrics.openTodos > 10 ? 3 : 2.5;
+      items.push({
+        id: `gen-process-${Date.now()}-${workflowIdx}`,
+        text,
+        effort,
+        impact,
+        owner: metrics.administrators ? String(metrics.administrators).split(',')[0].trim() : '',
+        targetWeek: suggestTargetWeek(effort, impact, workflowIdx),
+        expectedSavings: 0,
+        source: 'workflow',
+        sourceDetail: `${tab.name} — ${signal}`,
+        rootCauseKey: `workflow:${tab.name.toLowerCase()}`,
       });
+      workflowIdx += 1;
     });
 
     const seenTools = new Set();
@@ -714,8 +901,8 @@
     const hasLeakage = buildStepLeakageList(tabs, DiagramEditor).length > 0;
 
     if (!hasWorkflow) warnings.push('No workflow steps mapped — add at least one process in the Workflow Builder.');
-    if (!hasLeakage) warnings.push('No step delays recorded — set delay minutes on workflow tasks for leakage calculations.');
-    if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 2) — diagrams save separately.');
+    if (!hasLeakage) warnings.push('No Lark process metrics recorded — paste or enter Lark workflow export data on each process tab.');
+    if (hasWorkflow) warnings.push('Confirm you synced the Workflow Builder (Sync to Cloud in section 2) — diagrams and Lark metrics save separately.');
     if (workflowUpdatedAt && reportDataUpdatedAt && workflowUpdatedAt > reportDataUpdatedAt) {
       warnings.push('Workflow was saved after your last report sync — click Sync to Cloud here to refresh chaos tax in the PDF.');
     }
@@ -1213,7 +1400,7 @@
       'Workflow Study (m1-03)',
       isMod1TaskInScope(tasks, 'm1-03'),
       hasWorkflow && hasLeakage,
-      hasWorkflow ? 'Set delay minutes on bottleneck steps' : 'Map at least one workflow',
+      hasWorkflow ? 'Add Lark workflow metrics for each mapped process' : 'Map at least one workflow',
       'Map as-is workflows in section 2',
     );
     push(
@@ -1250,14 +1437,14 @@
     const rankings = buildProcessRankings(tabs, DiagramEditor);
     const top = rankings[0];
     const top5 = getTop5Fixes(synthesis.matrix?.items || []);
+    const portfolio = computeProcessPortfolioSummary(tabs);
     const saasMonthly = (subSaaS || []).reduce(
       (acc, curr) => acc + (Number(curr.billing) || 0) * (Number(curr.users) || 0),
       0,
     );
-    const processAnnual = rankings.reduce((acc, row) => acc + (row.annual || 0), 0);
-    const totalAnnual = processAnnual + saasMonthly * 12;
+    const totalAnnual = saasMonthly * 12;
     const recapture = computeRecaptureSummary(top5, totalAnnual);
-    const mappedProcesses = rankings.filter((row) => row.taskCount > 0);
+    const mappedProcesses = (tabs || []).filter((tab) => getProcessNodes(tab, DiagramEditor).tasks.length > 0 || hasProcessMetrics(tab.processMetrics));
     const processCount = mappedProcesses.length;
     const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
     const toolCount = (subSaaS || []).length;
@@ -1267,15 +1454,18 @@
       `We mapped ${processCount || 'no'} core process${processCount === 1 ? '' : 'es'}, ${staffCount || 'no'} team member${staffCount === 1 ? '' : 's'}, and ${toolCount} software subscription${toolCount === 1 ? '' : 's'} during your Module 1 Business Leak Scan.`,
     );
     if (mappedProcesses.length > 1) {
-      parts.push(` Processes mapped: ${mappedProcesses.map((row) => row.tabName).join(', ')}.`);
+      parts.push(` Processes mapped: ${mappedProcesses.map((row) => row.name).join(', ')}.`);
     }
-    if (top && top.annual > 0) {
+    if (top && top.leakageScore > 0) {
       parts.push(
-        ` The highest-leak process is "${top.tabName}" at approximately ${formatCurrency(top.monthly)}/month — bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process maps'}.`,
+        ` The highest-friction process is "${top.tabName}" — ${top.primarySignal}.`,
       );
     }
+    if (portfolio.totalOpenTodos > 0) {
+      parts.push(` Lark workflow data shows ${portfolio.totalOpenTodos} open to-do${portfolio.totalOpenTodos === 1 ? '' : 's'} across ${portfolio.processCount || processCount} process${(portfolio.processCount || processCount) === 1 ? '' : 'es'}.`);
+    }
     if (totalAnnual > 0) {
-      parts.push(` Total identified leakage is ${formatCurrency(totalAnnual)}/year (process delays + subscription overlap).`);
+      parts.push(` Identified subscription waste is ${formatCurrency(totalAnnual)}/year.`);
     }
     if (recapture.annual > 0 && top5.length > 0) {
       parts.push(
@@ -2255,6 +2445,15 @@
     REPORT_METHODOLOGY_DISCLAIMER,
     MATURITY_RUBRIC,
     getQuadrant,
+    DEFAULT_PROCESS_METRICS,
+    normalizeProcessMetrics,
+    getTabProcessMetrics,
+    hasProcessMetrics,
+    computeProcessLeakageScore,
+    getProcessPrimarySignal,
+    parseLarkWorkflowExport,
+    matchLarkRowsToTabs,
+    computeProcessPortfolioSummary,
     stepMonthlyLoss,
     computeCoiForecast,
     buildCoiBreakdown,

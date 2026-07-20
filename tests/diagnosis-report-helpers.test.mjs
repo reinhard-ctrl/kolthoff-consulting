@@ -8,24 +8,28 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const DRH = require('../shared/diagnosis-report-helpers.js');
 
+const sampleLarkMetrics = {
+  source: 'lark',
+  documentCompletionPct: 67.86,
+  totalDocumentsSubmitted: 56,
+  openTodos: 18,
+  waitingOver48h: 0,
+  waitingOver7d: 0,
+  waitingOver30d: 0,
+  avgProcessTimeHours: 14.69,
+  approvalRatePct: 97.37,
+  administrators: 'WZ,Jodel',
+};
+
 const mockDiagramEditor = {
-  getWorkflowViewModel: (present) => ({
+  getWorkflowViewModel: () => ({
     tasks: [
-      { id: 's1', type: 'task', label: 'Approve order', delayMinutes: 30, affectedStaff: 2, hourlyRate: 500 },
+      { id: 's1', type: 'task', label: 'Approve order' },
       { id: 'g1', type: 'gateway', label: 'Gate' },
     ],
     lanes: [{ id: 'l1', label: 'Ops', owner: 'Maria' }],
     svgCache: '',
   }),
-  computeTabChaosTax: (tasks) => {
-    let annual = 0;
-    tasks.forEach((t) => {
-      if (t.type === 'gateway') return;
-      const daily = ((t.delayMinutes || 0) * (t.affectedStaff || 1)) / 60;
-      annual += daily * (t.hourlyRate || 0) * 22 * 12;
-    });
-    return { annual: Math.round(annual) };
-  },
 };
 
 describe('diagnosis-report-helpers', () => {
@@ -45,12 +49,10 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(top[0].text, 'High');
   });
 
-  it('generateMatrixFromDiagnosis pre-fills owner from RACI accountable role', () => {
-    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+  it('generateMatrixFromDiagnosis pre-fills owner from Lark administrator', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {}, processMetrics: { ...sampleLarkMetrics, administrators: 'Maria, Finance' } }];
     const saas = [];
-    const items = DRH.generateMatrixFromDiagnosis(tabs, saas, [], mockDiagramEditor, {
-      raciAssignments: { s1: { l1: 'A' } },
-    });
+    const items = DRH.generateMatrixFromDiagnosis(tabs, saas, [], mockDiagramEditor);
     const workflowItem = items.find((i) => i.source === 'workflow');
     assert.equal(workflowItem?.owner, 'Maria');
     assert.ok(workflowItem?.sourceDetail?.includes('Sales'));
@@ -87,18 +89,42 @@ describe('diagnosis-report-helpers', () => {
     assert.match(line, /Sales, Step: Approve order/);
   });
 
-  it('buildProcessRankings sorts by annual leakage', () => {
+  it('buildProcessRankings sorts by Lark friction score', () => {
     const tabs = [
-      { id: 'a', name: 'Sales', present: {} },
-      { id: 'b', name: 'Ops', present: {} },
+      { id: 'a', name: 'Sales', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 5 } },
+      { id: 'b', name: 'Ops', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 45, avgProcessTimeHours: 475.26, documentCompletionPct: 5 } },
     ];
     const rankings = DRH.buildProcessRankings(tabs, mockDiagramEditor);
     assert.equal(rankings.length, 2);
-    assert.ok(rankings[0].annual >= 0);
+    assert.ok(rankings[0].leakageScore >= rankings[1].leakageScore);
+    assert.equal(rankings[0].tabName, 'Ops');
+  });
+
+  it('parseLarkWorkflowExport reads tab-separated Lark table', () => {
+    const text = [
+      'Process Name\tDocument Completion Percentage\tTotal Documents Submitted\tTo-dos\tTo-dos Waiting for More Than 48h\tTo-dos Waiting for More Than 7d\tTo-dos Waiting for More Than 30d\tAvg. Process Time Spent (hours)\tOne-time approval rate\tProcess Administrator',
+      'Payments Request\t83.15%\t267\t45\t0\t0\t0\t475.26\t94.59%\tFinance',
+    ].join('\n');
+    const rows = DRH.parseLarkWorkflowExport(text);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].processName, 'Payments Request');
+    assert.equal(rows[0].metrics.openTodos, 45);
+    assert.equal(rows[0].metrics.avgProcessTimeHours, 475.26);
+  });
+
+  it('computeProcessPortfolioSummary aggregates Lark metrics', () => {
+    const tabs = [
+      { id: 'a', name: 'Payments Request', processMetrics: { openTodos: 45, totalDocumentsSubmitted: 267, avgProcessTimeHours: 475.26, documentCompletionPct: 83.15 } },
+      { id: 'b', name: 'Petty Cash Replenishment Form', processMetrics: { openTodos: 16, totalDocumentsSubmitted: 19, avgProcessTimeHours: 11.32, documentCompletionPct: 15.79 } },
+    ];
+    const summary = DRH.computeProcessPortfolioSummary(tabs);
+    assert.equal(summary.totalOpenTodos, 61);
+    assert.equal(summary.processCount, 2);
+    assert.ok(summary.totalLeakageScore > 0);
   });
 
   it('generateMatrixFromDiagnosis adds workflow and saas items', () => {
-    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const tabs = [{ id: 'a', name: 'Sales', present: {}, processMetrics: sampleLarkMetrics }];
     const saas = [{ id: 1, tool: 'Slack', billing: 500, users: 10, reason: 'Cut idle seats' }];
     const items = DRH.generateMatrixFromDiagnosis(tabs, saas, [], mockDiagramEditor);
     assert.ok(items.length >= 2);
@@ -357,7 +383,7 @@ describe('diagnosis-report-helpers', () => {
 
   it('buildDefaultExecutiveLetter summarizes leakage and top process', () => {
     const letter = DRH.buildDefaultExecutiveLetter({
-      tabs: [{ id: 'a', name: 'Sales', present: {} }],
+      tabs: [{ id: 'a', name: 'Sales', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 45 } }],
       subSaaS: [{ tool: 'Slack', billing: 100, users: 5 }],
       synthesis: { matrix: { items: [{ id: '1', text: 'Fix', effort: 2, impact: 5, expectedSavings: 10000, owner: 'A', targetWeek: 'Week 1–2' }] } },
       orgChartMembers: [{ name: 'Jane' }],
@@ -366,6 +392,7 @@ describe('diagnosis-report-helpers', () => {
     });
     assert.match(letter, /Sales/);
     assert.match(letter, /team member/);
+    assert.match(letter, /open to-do/);
   });
 
   it('buildDefaultExecutiveLetter lists all mapped process names', () => {
@@ -385,20 +412,20 @@ describe('diagnosis-report-helpers', () => {
     assert.match(letter, /Sales, Fulfillment, Billing/);
   });
 
-  it('getBriefingWorkflowTabs returns only top-leak tab', () => {
+  it('getBriefingWorkflowTabs returns only top-friction tab', () => {
     const tabs = [
-      { id: 'a', name: 'Sales', present: {} },
-      { id: 'b', name: 'Ops', present: {} },
+      { id: 'a', name: 'Sales', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 5 } },
+      { id: 'b', name: 'Ops', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 45, documentCompletionPct: 5 } },
     ];
     const filtered = DRH.getBriefingWorkflowTabs(tabs, mockDiagramEditor);
     assert.equal(filtered.length, 1);
-    assert.equal(filtered[0].id, 'a');
+    assert.equal(filtered[0].id, 'b');
   });
 
   it('getReportWorkflowTabs returns all mapped workflows in editor tab order', () => {
     const tabs = [
-      { id: 'b', name: 'Ops', present: {} },
-      { id: 'a', name: 'Sales', present: {} },
+      { id: 'b', name: 'Ops', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 45 } },
+      { id: 'a', name: 'Sales', present: {}, processMetrics: { ...sampleLarkMetrics, openTodos: 5 } },
     ];
     const all = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor);
     assert.equal(all.length, 2);
@@ -406,7 +433,7 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(all[1].id, 'a');
     const topOnly = DRH.getReportWorkflowTabs(tabs, mockDiagramEditor, { topOnly: true });
     assert.equal(topOnly.length, 1);
-    assert.ok(['a', 'b'].includes(topOnly[0].id));
+    assert.equal(topOnly[0].id, 'b');
   });
 
   it('tabNeedsWorkflowSvgExport detects missing svg cache with drawio XML', () => {
@@ -440,7 +467,7 @@ describe('diagnosis-report-helpers', () => {
   });
 
   it('previewMatrixGeneration counts new items by source', () => {
-    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const tabs = [{ id: 'a', name: 'Sales', present: {}, processMetrics: sampleLarkMetrics }];
     const saas = [{ tool: 'Slack', billing: 500, users: 10, reason: 'Cut idle seats' }];
     const preview = DRH.previewMatrixGeneration(tabs, saas, [], mockDiagramEditor);
     assert.ok(preview.counts.total >= 2);
@@ -449,7 +476,7 @@ describe('diagnosis-report-helpers', () => {
   });
 
   it('generateMatrixFromDiagnosis replace mode discards existing items', () => {
-    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const tabs = [{ id: 'a', name: 'Sales', present: {}, processMetrics: sampleLarkMetrics }];
     const existing = [{ id: 'old', text: 'Keep me', effort: 2, impact: 4 }];
     const items = DRH.generateMatrixFromDiagnosis(tabs, [], existing, mockDiagramEditor, { replace: true });
     assert.ok(!items.some((i) => i.id === 'old'));

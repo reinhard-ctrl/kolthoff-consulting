@@ -87,6 +87,7 @@
     <script src="../../shared/mod-gating.js?v=20250707-mod2-gate-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250707-diagnosis-bpmn-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250707-diagnosis-bpmn-v1"></script>
+    <script src="../../shared/diagnosis-report-helpers.js?v=20250720-lark-metrics-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250707-diagnosis-bpmn-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
@@ -240,7 +241,9 @@
             );
         };
 
-        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, reorderTab, showLeakagePanel, diagramExportRef, hideApplyButton = false }) => {
+        const DRH = () => window.DiagnosisReportHelpers || {};
+
+        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, reorderTab, showLeakagePanel, diagramExportRef, hideApplyButton = false, onLarkImport }) => {
             const [editingTabId, setEditingTabId] = useState(null);
             const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
             const present = window.DiagramEditor?.normalizeWorkflowPresent(activeTab?.present) || { drawioXml: '', format: 'bpmn' };
@@ -253,17 +256,17 @@
             const handleXmlChange = (drawioXml) => updatePresent({ drawioXml });
             const handleSvgExport = (svgCache) => updatePresent({ svgCache });
 
-            const updateCellMeta = (cellId, field, value) => {
+            const updateProcessMetric = (field, value) => {
                 setTabs((prev) => prev.map((t) => {
                     if (t.id !== activeTabId) return t;
-                    const norm = window.DiagramEditor.normalizeWorkflowPresent(t.present);
-                    const cellMeta = { ...(norm.cellMeta || {}), [cellId]: { ...(norm.cellMeta?.[cellId] || {}), [field]: value } };
-                    return { ...t, present: { ...norm, cellMeta, format: norm.format === 'legacy' ? 'bpmn' : norm.format } };
+                    const base = DRH().normalizeProcessMetrics?.(t.processMetrics) || {};
+                    return { ...t, processMetrics: { ...base, source: 'lark', [field]: value } };
                 }));
             };
 
             const vm = window.DiagramEditor?.getWorkflowViewModel(activeTab?.present) || { tasks: [], lanes: [] };
-            const leakageTasks = vm.tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event');
+            const processMetrics = DRH().normalizeProcessMetrics?.(activeTab?.processMetrics) || {};
+            const leakageScore = DRH().computeProcessLeakageScore?.(processMetrics) || 0;
 
             return (
                 <div className="flex flex-col h-full min-h-0">
@@ -340,41 +343,58 @@
                         />
                     </div>
 
-                    {showLeakagePanel && leakageTasks.length > 0 && (
-                        <details className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 no-print group">
+                    {showLeakagePanel && (
+                        <details className="shrink-0 border-t border-brandNavy-800 bg-brandNavy-900 no-print group" open>
                             <summary className="cursor-pointer list-none p-4 flex items-center justify-between gap-3 hover:bg-brandNavy-800/40 transition-colors">
                                 <span className="flex items-center gap-2 min-w-0">
                                     <span className="text-slate-500 group-open:rotate-90 transition-transform inline-block shrink-0">▸</span>
-                                    <span className="text-[10px] font-mono uppercase tracking-wider text-rose-400 font-bold truncate">Task Leakage (Mod 1)</span>
+                                    <span className="text-[10px] font-mono uppercase tracking-wider text-rose-400 font-bold truncate">Process Metrics (Lark Export)</span>
                                 </span>
-                                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-wider shrink-0">{leakageTasks.length} task{leakageTasks.length === 1 ? '' : 's'}</span>
+                                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-wider shrink-0">Score {leakageScore}</span>
                             </summary>
-                            <div className="px-4 pb-4 max-h-56 overflow-y-auto border-t border-brandNavy-800/50">
-                                <div className="grid grid-cols-4 gap-2 items-end text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2 px-0.5 pt-3">
-                                    <span>BPMN Task</span>
-                                    <span className="text-rose-400">Delay (mins)</span>
-                                    <span>Staff Count</span>
-                                    <span>Hourly Rate ($)</span>
+                            <div className="px-4 pb-4 border-t border-brandNavy-800/50">
+                                <p className="text-[10px] text-slate-400 leading-relaxed pt-3 mb-3">Paste the Lark workflow table (tab-separated) using <strong className="text-slate-300">Import Lark Table</strong> above, or enter metrics manually for <span className="text-slate-200 font-semibold">{activeTab?.name}</span>. Tab names should match Lark process names.</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Completion %</span>
+                                        <input type="number" min="0" max="100" step="0.01" value={processMetrics.documentCompletionPct ?? ''} onChange={(e) => updateProcessMetric('documentCompletionPct', e.target.value === '' ? null : Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Documents Submitted</span>
+                                        <input type="number" min="0" value={processMetrics.totalDocumentsSubmitted || 0} onChange={(e) => updateProcessMetric('totalDocumentsSubmitted', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-rose-400 font-bold block mb-1">Open To-dos</span>
+                                        <input type="number" min="0" value={processMetrics.openTodos || 0} onChange={(e) => updateProcessMetric('openTodos', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-rose-500/30 rounded px-2 py-1.5 text-rose-300 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Avg Process Time (hrs)</span>
+                                        <input type="number" min="0" step="0.01" value={processMetrics.avgProcessTimeHours || 0} onChange={(e) => updateProcessMetric('avgProcessTimeHours', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Waiting &gt;48h</span>
+                                        <input type="number" min="0" value={processMetrics.waitingOver48h || 0} onChange={(e) => updateProcessMetric('waitingOver48h', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Waiting &gt;7d</span>
+                                        <input type="number" min="0" value={processMetrics.waitingOver7d || 0} onChange={(e) => updateProcessMetric('waitingOver7d', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Waiting &gt;30d</span>
+                                        <input type="number" min="0" value={processMetrics.waitingOver30d || 0} onChange={(e) => updateProcessMetric('waitingOver30d', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Approval Rate %</span>
+                                        <input type="number" min="0" max="100" step="0.01" value={processMetrics.approvalRatePct ?? ''} onChange={(e) => updateProcessMetric('approvalRatePct', e.target.value === '' ? null : Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200 font-mono" />
+                                    </label>
+                                    <label className="block md:col-span-2">
+                                        <span className="font-mono uppercase tracking-wider text-slate-400 font-bold block mb-1">Process Administrator</span>
+                                        <input type="text" value={processMetrics.administrators || ''} onChange={(e) => updateProcessMetric('administrators', e.target.value)} placeholder="Finance, WZ" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1.5 text-slate-200" />
+                                    </label>
                                 </div>
-                                <div className="space-y-2">
-                                    {leakageTasks.map((task) => (
-                                        <div key={task.id} className="grid grid-cols-4 gap-2 items-center text-[10px]">
-                                            <div className="col-span-1 font-semibold text-slate-200 truncate" title={task.label}>{task.label}</div>
-                                            <div>
-                                                <label className="sr-only">Delay minutes for {task.label}</label>
-                                                <input type="number" min="0" aria-label={`Delay minutes for ${task.label}`} value={task.delayMinutes || 0} onChange={(e) => updateCellMeta(task.id, 'delayMinutes', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-rose-500/30 rounded px-2 py-1 text-rose-300 font-mono" />
-                                            </div>
-                                            <div>
-                                                <label className="sr-only">Staff count for {task.label}</label>
-                                                <input type="number" min="0" aria-label={`Staff count for ${task.label}`} value={task.affectedStaff || 1} onChange={(e) => updateCellMeta(task.id, 'affectedStaff', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 font-mono" />
-                                            </div>
-                                            <div>
-                                                <label className="sr-only">Hourly rate for {task.label}</label>
-                                                <input type="number" min="0" aria-label={`Hourly rate for ${task.label}`} value={task.hourlyRate || 150} onChange={(e) => updateCellMeta(task.id, 'hourlyRate', Number(e.target.value))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded px-2 py-1 text-slate-200 font-mono" />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                {DRH().getProcessPrimarySignal && (
+                                    <p className="text-[10px] text-rose-300/90 font-mono mt-3">Primary signal: {DRH().getProcessPrimarySignal(processMetrics)}</p>
+                                )}
                             </div>
                         </details>
                     )}
@@ -523,6 +543,8 @@
             const [tabs, setTabs] = useState(workflowInit.tabs);
             const [activeTabId, setActiveTabId] = useState(workflowInit.activeTabId);
             const [raciAssignments, setRaciAssignments] = useState({});
+            const [larkImportText, setLarkImportText] = useState('');
+            const [showLarkImport, setShowLarkImport] = useState(false);
             const diagramExportRef = useRef(null);
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
@@ -605,6 +627,27 @@
 
             const triggerToast = (msg) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
 
+            const handleLarkImport = () => {
+                const rows = DRH().parseLarkWorkflowExport?.(larkImportText) || [];
+                if (!rows.length) {
+                    triggerToast('❌ Could not parse Lark table — copy the full export including headers');
+                    return;
+                }
+                const { assignments, unmatched } = DRH().matchLarkRowsToTabs?.(rows, tabs) || { assignments: {}, unmatched: rows };
+                const matchedCount = Object.keys(assignments).length;
+                if (!matchedCount) {
+                    triggerToast('❌ No tab names matched — rename workflow tabs to match Lark process names');
+                    return;
+                }
+                setTabs((prev) => prev.map((tab) => (
+                    assignments[tab.id] ? { ...tab, processMetrics: assignments[tab.id] } : tab
+                )));
+                const extra = unmatched.length ? ` · ${unmatched.length} unmatched` : '';
+                triggerToast(`✓ Imported Lark metrics for ${matchedCount} process${matchedCount === 1 ? '' : 'es'}${extra}`);
+                setShowLarkImport(false);
+                setLarkImportText('');
+            };
+
             const handleSaveToCloud = async ({ silent = false, tabsOverride = null, activeTabIdOverride = null } = {}) => {
                 if (authError) {
                     if (!silent) triggerToast("❌ Sync Disabled (GCP Key Issue)");
@@ -627,18 +670,14 @@
                     await window.setDoc(profileRef, { ...tabsPayload, raciAssignments }, { merge: true });
 
                     if (IS_DIAGNOSIS_MODE) {
-                        let totalAnnual = 0;
-                        saveTabs.forEach((tab) => {
-                            const vm = window.DiagramEditor?.getWorkflowViewModel(tab.present) || { tasks: [] };
-                            const tax = window.DiagramEditor?.computeTabChaosTax?.(vm.tasks) || { annual: 0 };
-                            totalAnnual += tax.annual || 0;
-                        });
+                        const portfolio = DRH().computeProcessPortfolioSummary?.(saveTabs) || { totalLeakageScore: 0 };
                         const EC = window.EngagementConfig || {};
                         const chaosTax = EC.buildChaosTaxPayload
-                            ? EC.buildChaosTaxPayload('diagnosis', totalAnnual, {})
-                            : { source: 'diagnosis', value: totalAnnual, inputs: {} };
+                            ? EC.buildChaosTaxPayload('diagnosis', 0, { larkMetrics: portfolio })
+                            : { source: 'diagnosis', value: 0, inputs: { larkMetrics: portfolio } };
                         await window.setDoc(profileRef, {
-                            annualOperationalLeakage: totalAnnual,
+                            annualOperationalLeakage: 0,
+                            processPortfolioSummary: portfolio,
                             chaosTax,
                         }, { merge: true });
                         if (window.PortalSync?.syncProfileToPortalIfExists) {
@@ -649,7 +688,8 @@
                                     raciAssignments,
                                     subSaaS: existing.subSaaS,
                                     chaosTax,
-                                    annualOperationalLeakage: totalAnnual,
+                                    annualOperationalLeakage: 0,
+                                    processPortfolioSummary: portfolio,
                                     id: activeProfileId,
                                 };
                                 await window.PortalSync.syncProfileToPortalIfExists(profileForSync, { syncIntakeAssets: false });
@@ -882,6 +922,22 @@
                                 <Mod2LockedPanel profile={activeProfile} appLabel="to-be workflows (Mod 2)" />
                             ) : (
                             <>
+                            {activeNav === 'flowcharts' && IS_DIAGNOSIS_MODE && (
+                                <div className="shrink-0 px-4 pt-3 no-print">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <button type="button" onClick={() => setShowLarkImport((v) => !v)} className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border border-brandTeal-500/40 text-brandTeal-400 hover:bg-brandTeal-500/10">
+                                            {showLarkImport ? 'Hide Lark Import' : 'Import Lark Table'}
+                                        </button>
+                                        <span className="text-[10px] text-slate-500">Paste the Lark workflow export — tab names must match process names.</span>
+                                    </div>
+                                    {showLarkImport && (
+                                        <div className="mb-3 p-3 rounded-lg border border-brandNavy-700 bg-brandNavy-900/80">
+                                            <textarea value={larkImportText} onChange={(e) => setLarkImportText(e.target.value)} rows={6} placeholder="Paste Lark table rows (tab-separated)…" className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-[11px] text-slate-200 font-mono mb-2" />
+                                            <button type="button" onClick={handleLarkImport} className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-brandTeal-500 hover:bg-brandTeal-600 text-brandNavy-955">Apply to matching tabs</button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             {activeNav === 'flowcharts' && (
                                 <BpmnWorkflowStudio
                                     tabs={tabs}

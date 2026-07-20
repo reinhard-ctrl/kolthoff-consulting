@@ -9,7 +9,12 @@
   };
 
   function stripTabsForSave(tabs) {
-    return (tabs || []).map((t) => ({ id: t.id, name: t.name, present: t.present }));
+    return (tabs || []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      present: t.present,
+      ...(t.processMetrics ? { processMetrics: t.processMetrics } : {}),
+    }));
   }
 
   function hydrateTabs(storedTabs) {
@@ -20,10 +25,10 @@
   function mergeTabsById(baseTabs, overlayTabs) {
     const byId = {};
     (baseTabs || []).forEach((t) => {
-      byId[t.id] = { id: t.id, name: t.name, present: t.present };
+      byId[t.id] = { id: t.id, name: t.name, present: t.present, processMetrics: t.processMetrics };
     });
     (overlayTabs || []).forEach((t) => {
-      byId[t.id] = { id: t.id, name: t.name, present: t.present };
+      byId[t.id] = { id: t.id, name: t.name, present: t.present, processMetrics: t.processMetrics };
     });
     const order = [];
     (overlayTabs || []).forEach((t) => {
