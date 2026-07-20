@@ -643,4 +643,25 @@ describe('diagnosis-report-helpers', () => {
     assert.deepEqual(sorted.map((i) => i.id), ['high', 'mid', 'low']);
     assert.notEqual(sorted, items);
   });
+
+  it('normalizeLarkProcessSummary returns defaults when empty', () => {
+    const rows = DRH.normalizeLarkProcessSummary([]);
+    assert.equal(rows.length, 7);
+    assert.equal(rows[0].processName, 'Manpower Request');
+    assert.equal(rows[5].totalDocuments, 267);
+    assert.equal(rows[5].avgProcessTimeHours, 475.26);
+  });
+
+  it('parseLarkProcessSummaryTsv parses headered tab-separated rows', () => {
+    const tsv = [
+      'Process Name\tTotal Documents Submitted\tAvg. Process Time Spent (hours)',
+      'Manpower Request\t1\t381.16',
+      'Payments Request\t267\t475.26',
+    ].join('\n');
+    const parsed = DRH.parseLarkProcessSummaryTsv(tsv);
+    assert.equal(parsed.length, 2);
+    assert.equal(parsed[1].processName, 'Payments Request');
+    assert.equal(parsed[1].totalDocuments, 267);
+    assert.equal(parsed[1].avgProcessTimeHours, 475.26);
+  });
 });
