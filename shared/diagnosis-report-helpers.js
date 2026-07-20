@@ -2113,6 +2113,7 @@
       showExecutiveLetter: true,
       showExecutiveSnapshot: true,
       showLeakageRanking: true,
+      showLarkProcessSummary: true,
       showOrgChart: true,
       showFlowcharts: true,
       flowchartsTopOnly: false,
@@ -2162,6 +2163,7 @@
     'orgChart',
     'flowcharts',
     'leakageRanking',
+    'larkProcessSummary',
     'saas',
     'raci',
     'recoveryPlan',
@@ -2178,6 +2180,7 @@
     orgChart: { label: 'Organization & Team', configKey: 'showOrgChart', part: 'II' },
     flowcharts: { label: 'Process Maps', configKey: 'showFlowcharts', part: 'II' },
     leakageRanking: { label: 'Process Leakage Ranking', configKey: 'showLeakageRanking', part: 'II' },
+    larkProcessSummary: { label: 'Process Volume & Cycle Time', configKey: 'showLarkProcessSummary', part: 'II' },
     saas: { label: 'Financial Leakage', configKey: 'showSaas', part: 'II' },
     raci: { label: 'RACI Matrix', configKey: 'showRaci', part: 'II' },
     recoveryPlan: { label: '90-Day Recovery Plan', configKey: 'showRecoveryPlan', part: 'III' },
@@ -2212,6 +2215,9 @@
     }
     if (next.showHowToRead === undefined) {
       next.showHowToRead = false;
+    }
+    if (next.showLarkProcessSummary === undefined) {
+      next.showLarkProcessSummary = true;
     }
     return next;
   }
@@ -2288,6 +2294,7 @@
     if (sectionId === 'orgChart') return !!(ctx?.hasOrgChart);
     if (sectionId === 'flowcharts') return (ctx?.workflowTabCount || 0) > 0;
     if (sectionId === 'leakageRanking') return (ctx?.processRankingCount || 0) > 0;
+    if (sectionId === 'larkProcessSummary') return (ctx?.larkProcessSummaryCount || 0) > 0;
     if (sectionId === 'matrixTable') return (ctx?.matrixItemCount || 0) > 0;
     if (sectionId === 'feedbackAppendix') return !!(ctx?.showFeedbackAppendix);
     return true;

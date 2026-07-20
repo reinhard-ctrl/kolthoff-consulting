@@ -515,6 +515,17 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(order[2], 'flowcharts');
     assert.ok(order.includes('methodology'));
     assert.ok(order.includes('executiveSnapshot'));
+    assert.ok(order.includes('larkProcessSummary'));
+  });
+
+  it('default report section order places Lark process summary after leakage ranking', () => {
+    const order = DRH.normalizeReportSectionOrder([]);
+    const rankingIdx = order.indexOf('leakageRanking');
+    const larkIdx = order.indexOf('larkProcessSummary');
+    const saasIdx = order.indexOf('saas');
+    assert.ok(rankingIdx >= 0);
+    assert.ok(larkIdx > rankingIdx);
+    assert.ok(saasIdx > larkIdx);
   });
 
   it('normalizeReportSectionOrder maps legacy section IDs to 3-act structure', () => {

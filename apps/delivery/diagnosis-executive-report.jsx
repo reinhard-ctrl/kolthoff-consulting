@@ -250,6 +250,30 @@
                         </div>
                     )}
 
+                    {printConfig.showLarkProcessSummary !== false && (synthesis.larkProcessSummary || []).length > 0 && (
+                        <div className="report-page print-force-break">
+                            <ReportSectionHeader number="A2" title="Process Volume & Cycle Time" subtitle="Lark workflow export — documents submitted and average end-to-end process time per approval flow." />
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Process Name</th>
+                                        <th className="text-center">Total Documents Submitted</th>
+                                        <th className="text-right">Avg. Process Time Spent (hours)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {synthesis.larkProcessSummary.map((row, idx) => (
+                                        <tr key={`${row.processName}-${idx}`}>
+                                            <td className="font-bold">{row.processName}</td>
+                                            <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
+                                            <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader number="B" title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
@@ -391,30 +415,6 @@
                                 <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
                                 <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total leakage</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
                             </div>
-                            {(synthesis.larkProcessSummary || []).length > 0 && (
-                                <div className="mt-6 page-break-inside-avoid">
-                                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 mb-3 font-serif">Process Volume &amp; Cycle Time</h3>
-                                    <p className="text-[10px] text-slate-600 mb-3 leading-relaxed">Lark workflow export — documents submitted and average end-to-end process time per approval flow.</p>
-                                    <table className="report-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Process Name</th>
-                                                <th className="text-center">Total Documents Submitted</th>
-                                                <th className="text-right">Avg. Process Time Spent (hours)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {synthesis.larkProcessSummary.map((row, idx) => (
-                                                <tr key={`${row.processName}-${idx}`}>
-                                                    <td className="font-bold">{row.processName}</td>
-                                                    <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
-                                                    <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
                         </div>
                     )}
 
