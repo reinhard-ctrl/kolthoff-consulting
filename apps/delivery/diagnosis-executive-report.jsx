@@ -250,29 +250,41 @@
                         </div>
                     )}
 
-                    {printConfig.showLarkProcessSummary !== false && DR.isLarkProcessSummaryClient?.(clientCompany) && (synthesis.larkProcessSummary || []).length > 0 && (
-                        <div className="report-page print-force-break">
-                            <ReportSectionHeader number="A2" title="Process Volume & Cycle Time" subtitle="Lark workflow export — documents submitted and average end-to-end process time per approval flow." />
-                            <table className="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Process Name</th>
-                                        <th className="text-center">Total Documents Submitted</th>
-                                        <th className="text-right">Avg. Process Time Spent (hours)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {synthesis.larkProcessSummary.map((row, idx) => (
-                                        <tr key={`${row.processName}-${idx}`}>
-                                            <td className="font-bold">{row.processName}</td>
-                                            <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
-                                            <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                    {printConfig.showCustomAppendices !== false && (DR.getEnabledReportAppendices?.(synthesis.reportAppendices) || [])
+                        .filter((appendix) => DR.reportAppendixHasContent?.(appendix, {
+                            larkProcessSummaryEligible: DR.isLarkProcessSummaryClient?.(clientCompany),
+                            larkProcessSummaryCount: DR.isLarkProcessSummaryClient?.(clientCompany)
+                                ? (synthesis.larkProcessSummary || []).length
+                                : 0,
+                        }))
+                        .map((appendix) => (
+                        <div key={appendix.id} className="report-page print-force-break">
+                            <ReportSectionHeader title={appendix.title} subtitle={appendix.subtitle || ''} />
+                            {appendix.type === 'larkProcessSummary' && (synthesis.larkProcessSummary || []).length > 0 && (
+                                <table className="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Process Name</th>
+                                            <th className="text-center">Total Documents Submitted</th>
+                                            <th className="text-right">Avg. Process Time Spent (hours)</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {synthesis.larkProcessSummary.map((row, idx) => (
+                                            <tr key={`${row.processName}-${idx}`}>
+                                                <td className="font-bold">{row.processName}</td>
+                                                <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
+                                                <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                            {appendix.type === 'custom' && appendix.body && (
+                                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap page-break-inside-avoid">{appendix.body}</div>
+                            )}
                         </div>
-                    )}
+                    ))}
 
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page print-force-break">

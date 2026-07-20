@@ -515,17 +515,48 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(order[2], 'flowcharts');
     assert.ok(order.includes('methodology'));
     assert.ok(order.includes('executiveSnapshot'));
-    assert.ok(order.includes('larkProcessSummary'));
+    assert.ok(order.includes('customAppendices'));
   });
 
-  it('default report section order places Lark process summary after leakage ranking', () => {
+  it('default report section order places custom appendices after feedback appendix', () => {
     const order = DRH.normalizeReportSectionOrder([]);
-    const rankingIdx = order.indexOf('leakageRanking');
-    const larkIdx = order.indexOf('larkProcessSummary');
+    const feedbackIdx = order.indexOf('feedbackAppendix');
+    const appendicesIdx = order.indexOf('customAppendices');
     const saasIdx = order.indexOf('saas');
-    assert.ok(rankingIdx >= 0);
-    assert.ok(larkIdx > rankingIdx);
-    assert.ok(saasIdx > larkIdx);
+    assert.ok(feedbackIdx >= 0);
+    assert.ok(appendicesIdx > feedbackIdx);
+    assert.ok(!order.includes('larkProcessSummary'));
+    assert.ok(saasIdx > order.indexOf('leakageRanking'));
+  });
+
+  it('normalizePrintConfig migrates showLarkProcessSummary to showCustomAppendices', () => {
+    const cfg = DRH.normalizePrintConfig({ showLarkProcessSummary: false });
+    assert.equal(cfg.showCustomAppendices, false);
+    assert.equal(cfg.showLarkProcessSummary, undefined);
+  });
+
+  it('report appendix helpers manage Lark and custom attachments', () => {
+    const lark = DRH.createReportAppendix('larkProcessSummary');
+    assert.equal(lark.type, 'larkProcessSummary');
+    assert.equal(lark.title, 'Process Volume & Cycle Time');
+
+    const custom = DRH.createReportAppendix('custom', { title: 'Vendor Notes', body: 'Extra context' });
+    assert.equal(custom.type, 'custom');
+    assert.equal(custom.body, 'Extra context');
+
+    const ctx = { larkProcessSummaryEligible: true, larkProcessSummaryCount: 3 };
+    assert.equal(DRH.reportAppendixHasContent(lark, ctx), true);
+    assert.equal(DRH.reportAppendixHasContent({ ...lark, enabled: false }, ctx), false);
+    assert.equal(DRH.reportAppendixHasContent(custom, ctx), true);
+    assert.equal(DRH.reportAppendixHasContent({ type: 'custom', enabled: true, title: '', body: '' }, ctx), false);
+
+    const migrated = DRH.resolveReportAppendicesForClient(undefined, 'Infinitech Digital Gaming Corporation', [
+      { processName: 'Test', totalDocuments: 1, avgProcessTimeHours: 2 },
+    ]);
+    assert.equal(migrated.length, 1);
+    assert.equal(migrated[0].type, 'larkProcessSummary');
+
+    assert.deepEqual(DRH.resolveReportAppendicesForClient([], 'Infinitech Digital Gaming Corporation', []), []);
   });
 
   it('normalizeReportSectionOrder maps legacy section IDs to 3-act structure', () => {
