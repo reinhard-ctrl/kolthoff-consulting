@@ -515,6 +515,17 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(order[2], 'flowcharts');
     assert.ok(order.includes('methodology'));
     assert.ok(order.includes('executiveSnapshot'));
+    assert.ok(order.includes('larkProcessSummary'));
+  });
+
+  it('default report section order places Lark process summary after leakage ranking', () => {
+    const order = DRH.normalizeReportSectionOrder([]);
+    const rankingIdx = order.indexOf('leakageRanking');
+    const larkIdx = order.indexOf('larkProcessSummary');
+    const saasIdx = order.indexOf('saas');
+    assert.ok(rankingIdx >= 0);
+    assert.ok(larkIdx > rankingIdx);
+    assert.ok(saasIdx > larkIdx);
   });
 
   it('normalizeReportSectionOrder maps legacy section IDs to 3-act structure', () => {
@@ -644,10 +655,31 @@ describe('diagnosis-report-helpers', () => {
     assert.notEqual(sorted, items);
   });
 
-  it('normalizeLarkProcessSummary returns defaults when empty', () => {
-    const rows = DRH.normalizeLarkProcessSummary([]);
+  it('normalizeLarkProcessSummary returns empty array when no rows', () => {
+    assert.deepEqual(DRH.normalizeLarkProcessSummary([]), []);
+  });
+
+  it('isLarkProcessSummaryClient matches Infinitech Digital Gaming Corporation', () => {
+    assert.equal(DRH.isLarkProcessSummaryClient('Infinitech Digital Gaming Corporation'), true);
+    assert.equal(DRH.isLarkProcessSummaryClient('INFINITECH DIGITAL GAMING CORPORATION'), true);
+    assert.equal(DRH.isLarkProcessSummaryClient('Acme Corp'), false);
+  });
+
+  it('resolveLarkProcessSummaryForClient returns defaults only for Infinitech', () => {
+    const infinitech = DRH.resolveLarkProcessSummaryForClient([], 'Infinitech Digital Gaming Corporation');
+    assert.equal(infinitech.length, 7);
+    assert.equal(infinitech[0].processName, 'Manpower Request');
+
+    const other = DRH.resolveLarkProcessSummaryForClient([], 'Other Client Ltd');
+    assert.deepEqual(other, []);
+
+    const cleared = DRH.resolveLarkProcessSummaryForClient(infinitech, 'Other Client Ltd');
+    assert.deepEqual(cleared, []);
+  });
+
+  it('getDefaultLarkProcessSummary returns normalized default rows', () => {
+    const rows = DRH.getDefaultLarkProcessSummary();
     assert.equal(rows.length, 7);
-    assert.equal(rows[0].processName, 'Manpower Request');
     assert.equal(rows[5].totalDocuments, 267);
     assert.equal(rows[5].avgProcessTimeHours, 475.26);
   });
@@ -663,5 +695,19 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(parsed[1].processName, 'Payments Request');
     assert.equal(parsed[1].totalDocuments, 267);
     assert.equal(parsed[1].avgProcessTimeHours, 475.26);
+  });
+
+  it('getReportCopyText interpolates template vars and uses overrides', () => {
+    const text = DRH.getReportCopyText({}, 'sections.raci.subtitle', { unassignedSteps: 3, totalSteps: 10 });
+    assert.match(text, /3 of 10/);
+    const custom = DRH.getReportCopyText({ 'sections.raci.subtitle': 'Custom RACI intro' }, 'sections.raci.subtitle');
+    assert.equal(custom, 'Custom RACI intro');
+  });
+
+  it('updateReportCopyField stores overrides and clears defaults', () => {
+    const next = DRH.updateReportCopyField({}, 'sections.saas.title', 'Custom title');
+    assert.equal(next['sections.saas.title'], 'Custom title');
+    const reset = DRH.updateReportCopyField(next, 'sections.saas.title', DRH.DEFAULT_REPORT_COPY['sections.saas.title']);
+    assert.equal(reset['sections.saas.title'], undefined);
   });
 });

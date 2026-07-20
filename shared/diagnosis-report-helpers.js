@@ -55,15 +55,34 @@
     { processName: 'Items (Supplies/Equipment) Request', totalDocuments: 56, avgProcessTimeHours: 14.69 },
   ];
 
+  const LARK_PROCESS_SUMMARY_CLIENT = 'Infinitech Digital Gaming Corporation';
+
+  function isLarkProcessSummaryClient(clientCompany) {
+    const name = String(clientCompany || '').trim().toLowerCase();
+    if (!name) return false;
+    return name === LARK_PROCESS_SUMMARY_CLIENT.toLowerCase()
+      || name.includes('infinitech digital gaming');
+  }
+
   function normalizeLarkProcessSummary(rows) {
-    const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_LARK_PROCESS_SUMMARY;
-    return source
+    if (!Array.isArray(rows) || !rows.length) return [];
+    return rows
       .map((row, index) => ({
         processName: String(row?.processName ?? row?.name ?? '').trim() || `Process ${index + 1}`,
         totalDocuments: Math.max(0, Number(row?.totalDocuments ?? row?.documents ?? 0) || 0),
         avgProcessTimeHours: Math.max(0, Number(row?.avgProcessTimeHours ?? row?.avgHours ?? row?.hours ?? 0) || 0),
       }))
       .filter((row) => row.processName);
+  }
+
+  function getDefaultLarkProcessSummary() {
+    return normalizeLarkProcessSummary(DEFAULT_LARK_PROCESS_SUMMARY);
+  }
+
+  function resolveLarkProcessSummaryForClient(rows, clientCompany) {
+    if (!isLarkProcessSummaryClient(clientCompany)) return [];
+    if (Array.isArray(rows) && rows.length) return normalizeLarkProcessSummary(rows);
+    return getDefaultLarkProcessSummary();
   }
 
   function parseLarkProcessSummaryTsv(text) {
@@ -153,6 +172,94 @@
 
   const REPORT_METHODOLOGY_DISCLAIMER =
     'Leakage figures are estimates based on stated delay minutes, salary assumptions, and subscription seat counts you provided. Validate numbers with your leadership team before acting. This report is operational advisory only — not legal, HR, tax, or accounting advice.';
+
+  const DEFAULT_REPORT_COPY = {
+    'cover.reportSubtitle': 'Where your team loses time and money — and your 90-Day Recovery Plan to address it.',
+    'cover.processLeakageHint': 'Manual delays & rework',
+    'cover.subscriptionOverlapHint': 'Licenses & duplicates',
+    'cover.videoWalkthroughIntro': 'Your consultant may share a Loom, NotebookLM, or Google Drive video — scan to watch before reading the detail sections.',
+    'sections.executiveSnapshot.title': 'Executive Snapshot',
+    'sections.executiveSnapshot.subtitle': 'Key findings, top risks, and operational readiness at a glance.',
+    'sections.howToRead.title': 'How to Read This Report',
+    'sections.howToRead.subtitle': 'A quick guide for owners and GMs reviewing your Business Leak Scan deliverable.',
+    'sections.orgChart.title': 'Organization & Team Structure',
+    'sections.orgChart.subtitle': 'As-is reporting lines collected during Module 1.',
+    'sections.flowcharts.title': 'Process Maps & Step Analysis',
+    'sections.flowcharts.subtitle': 'As-is workflows with delay times and per-step leakage calculations.',
+    'sections.flowcharts.subtitleBriefing': 'Highest-leak process with delay times and per-step leakage (briefing view).',
+    'sections.leakageRanking.title': 'Process Leakage Ranking',
+    'sections.leakageRanking.subtitle': 'Processes ranked by annual operational leakage. Focus fixes on the top rows first.',
+    'sections.larkProcessSummary.title': 'Process Volume & Cycle Time',
+    'sections.larkProcessSummary.subtitle': 'Lark workflow export — documents submitted and average end-to-end process time per approval flow.',
+    'sections.raci.title': 'RACI Accountability Matrix',
+    'sections.raci.subtitle': '{unassignedSteps} of {totalSteps} steps need clearer ownership.',
+    'sections.saas.title': 'Financial Leakage Breakdown',
+    'sections.saas.subtitle': 'Process leakage and subscription overlap — ranked processes above, subscription detail below.',
+    'sections.saas.processLeakageDesc': 'Fixable via SOPs, handoffs, and workflow redesign. {dailyWasteHours} hours lost daily across mapped processes.',
+    'sections.saas.subscriptionOverlapDesc': 'Quick-recapture: cancel duplicates and right-size seats within 30 days.',
+    'sections.saas.recaptureIntro': 'Up to {totalAnnualWaste} returned to margins by fixing process delays and optimizing software spend.',
+    'sections.recoveryPlan.title': '90-Day Recovery Plan',
+    'sections.recoveryPlan.subtitle': 'Your prioritized fixes, implementation timeline, and effort-vs-impact map.',
+    'sections.operationalOutlook.title': 'Operational Outlook',
+    'sections.operationalOutlook.subtitle': 'What happens if nothing changes — and the recommended next engagement phase.',
+    'sections.operationalOutlook.forecastIntro': 'At current leakage of {totalAnnualWaste}/year (process + subscriptions), growing the team by {expectedGrowth} people without fixing these processes compounds losses over 3 years.',
+    'sections.matrixTable.title': 'Full Initiative List',
+    'sections.matrixTable.subtitle': 'Complete 90-Day Recovery Plan register — reference for leadership tracking.',
+    'sections.nextSteps.title': 'Recommended Next Steps',
+    'sections.nextSteps.subtitle': 'A practical timeline to start recovering leakage this week.',
+    'sections.nextSteps.week12Fallback': 'Cancel unused SaaS seats and fix the highest-leak workflow step identified above.',
+    'sections.nextSteps.week36Fallback': 'Document top workflows and assign RACI owners for every handoff.',
+    'sections.nextSteps.week712Closing': 'Review progress on the 90-Day Recovery Plan with leadership. Decide whether to proceed to Module 2 for playbook and handbook delivery.',
+    'sections.methodology.title': 'Methodology',
+    'sections.methodology.subtitle': 'How leakage figures were calculated.',
+    'sections.methodology.disclaimer': REPORT_METHODOLOGY_DISCLAIMER,
+    'sections.feedbackAppendix.title': 'Staff Feedback Channel (m1-02)',
+    'sections.feedbackAppendix.subtitle': 'Anonymous staff survey — circulate internally. No names or emails are collected.',
+  };
+
+  function interpolateReportCopy(text, vars) {
+    return String(text || '').replace(/\{(\w+)\}/g, (_, key) => {
+      if (vars && vars[key] != null) return String(vars[key]);
+      return `{${key}}`;
+    });
+  }
+
+  function normalizeReportCopy(copy) {
+    const next = {};
+    if (!copy || typeof copy !== 'object') return next;
+    Object.entries(copy).forEach(([key, value]) => {
+      if (value == null) return;
+      const trimmed = String(value).trim();
+      if (!trimmed) return;
+      if (DEFAULT_REPORT_COPY[key] !== undefined && trimmed === DEFAULT_REPORT_COPY[key]) return;
+      next[key] = trimmed;
+    });
+    return next;
+  }
+
+  function getReportCopyText(copy, key, vars) {
+    const raw = (copy && copy[key]) || DEFAULT_REPORT_COPY[key] || '';
+    return interpolateReportCopy(raw, vars || {});
+  }
+
+  function updateReportCopyField(copy, key, value) {
+    const next = { ...(copy || {}) };
+    const trimmed = String(value ?? '').trim();
+    if (!trimmed || (DEFAULT_REPORT_COPY[key] !== undefined && trimmed === DEFAULT_REPORT_COPY[key])) {
+      delete next[key];
+    } else {
+      next[key] = trimmed;
+    }
+    return normalizeReportCopy(next);
+  }
+
+  function clearReportCopyOverrides(copy) {
+    return normalizeReportCopy({});
+  }
+
+  function hasReportCopyOverrides(copy) {
+    return Object.keys(normalizeReportCopy(copy)).length > 0;
+  }
 
   function buildMaturityScorecardRows(synthesis) {
     const s = synthesis || {};
@@ -2113,6 +2220,7 @@
       showExecutiveLetter: true,
       showExecutiveSnapshot: true,
       showLeakageRanking: true,
+      showLarkProcessSummary: true,
       showOrgChart: true,
       showFlowcharts: true,
       flowchartsTopOnly: false,
@@ -2162,6 +2270,7 @@
     'orgChart',
     'flowcharts',
     'leakageRanking',
+    'larkProcessSummary',
     'saas',
     'raci',
     'recoveryPlan',
@@ -2178,6 +2287,7 @@
     orgChart: { label: 'Organization & Team', configKey: 'showOrgChart', part: 'II' },
     flowcharts: { label: 'Process Maps', configKey: 'showFlowcharts', part: 'II' },
     leakageRanking: { label: 'Process Leakage Ranking', configKey: 'showLeakageRanking', part: 'II' },
+    larkProcessSummary: { label: 'Process Volume & Cycle Time', configKey: 'showLarkProcessSummary', part: 'II' },
     saas: { label: 'Financial Leakage', configKey: 'showSaas', part: 'II' },
     raci: { label: 'RACI Matrix', configKey: 'showRaci', part: 'II' },
     recoveryPlan: { label: '90-Day Recovery Plan', configKey: 'showRecoveryPlan', part: 'III' },
@@ -2212,6 +2322,9 @@
     }
     if (next.showHowToRead === undefined) {
       next.showHowToRead = false;
+    }
+    if (next.showLarkProcessSummary === undefined) {
+      next.showLarkProcessSummary = true;
     }
     return next;
   }
@@ -2288,6 +2401,9 @@
     if (sectionId === 'orgChart') return !!(ctx?.hasOrgChart);
     if (sectionId === 'flowcharts') return (ctx?.workflowTabCount || 0) > 0;
     if (sectionId === 'leakageRanking') return (ctx?.processRankingCount || 0) > 0;
+    if (sectionId === 'larkProcessSummary') {
+      return !!(ctx?.larkProcessSummaryEligible) && (ctx?.larkProcessSummaryCount || 0) > 0;
+    }
     if (sectionId === 'matrixTable') return (ctx?.matrixItemCount || 0) > 0;
     if (sectionId === 'feedbackAppendix') return !!(ctx?.showFeedbackAppendix);
     return true;
@@ -2305,6 +2421,13 @@
     TARGET_WEEK_OPTIONS,
     MATURITY_INDEX_EXPLAINER,
     REPORT_METHODOLOGY_DISCLAIMER,
+    DEFAULT_REPORT_COPY,
+    normalizeReportCopy,
+    getReportCopyText,
+    updateReportCopyField,
+    clearReportCopyOverrides,
+    hasReportCopyOverrides,
+    interpolateReportCopy,
     MATURITY_RUBRIC,
     getQuadrant,
     stepMonthlyLoss,
@@ -2340,7 +2463,11 @@
     validateReportReadiness,
     validateMod1Handoff,
     DEFAULT_LARK_PROCESS_SUMMARY,
+    LARK_PROCESS_SUMMARY_CLIENT,
+    isLarkProcessSummaryClient,
     normalizeLarkProcessSummary,
+    getDefaultLarkProcessSummary,
+    resolveLarkProcessSummaryForClient,
     parseLarkProcessSummaryTsv,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     M102_FEEDBACK_FORM_TEMPLATE,

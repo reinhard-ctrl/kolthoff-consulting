@@ -491,6 +491,40 @@
         .report-badge-rose { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
         .report-badge-teal { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
         .report-badge-amber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+
+        .report-doc.report-edit-mode .report-copy-edit {
+            width: 100%;
+            border: 1px dashed #94a3b8;
+            border-radius: 6px;
+            background: #fffbeb;
+            padding: 0.35rem 0.5rem;
+            font: inherit;
+            color: inherit;
+            line-height: inherit;
+            resize: vertical;
+        }
+        .report-doc.report-edit-mode .report-copy-edit:focus {
+            outline: 2px solid rgba(13, 148, 136, 0.35);
+            border-color: #0D9488;
+            background: #ffffff;
+        }
+        .report-doc.report-edit-mode .report-copy-edit-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-family: "Playfair Display", serif;
+            letter-spacing: -0.02em;
+        }
+        @media print {
+            .report-copy-edit {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                outline: none !important;
+                resize: none !important;
+            }
+        }
     </style>
     <script>
         if (new URLSearchParams(window.location.search).has('embed')) {
@@ -509,7 +543,7 @@
     <script src="../../shared/diagnosis-report-helpers.js?v=20250709-report-diagram-size-v1"></script>
 
     <script type="text/babel" data-presets="react,env">
-        const { useState, useMemo, useEffect, useRef } = React;
+        const { useState, useMemo, useEffect, useRef, useCallback } = React;
 
         const Icons = {
             Layout: () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>,
@@ -595,7 +629,8 @@
             executiveLetter: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
-            larkProcessSummary: DRH().normalizeLarkProcessSummary?.() || [],
+            larkProcessSummary: [],
+            reportCopy: {},
             matrix: { items: [] },
         });
 
@@ -1967,14 +2002,15 @@
                         </div>
                     </StrategyAccordionSection>
 
-                    <StrategyAccordionSection title="Lark Process Summary" subtitle="Table after Financial Leakage Breakdown in the PDF — paste from Lark export or edit rows below." defaultOpen={false}>
+                    {DRH().isLarkProcessSummaryClient?.(clientCompany) && (
+                    <StrategyAccordionSection title="Lark Process Summary" subtitle="Table after Process Leakage Ranking in the PDF — Infinitech workspace only. Paste from Lark export or edit rows below." defaultOpen={false}>
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setSynthesis((prev) => ({
                                         ...prev,
-                                        larkProcessSummary: DRH().normalizeLarkProcessSummary?.() || [],
+                                        larkProcessSummary: DRH().getDefaultLarkProcessSummary?.() || [],
                                     }))}
                                     className="px-3 py-1.5 rounded text-[9px] font-bold uppercase border border-brandNavy-700 text-slate-400 hover:text-white"
                                 >
@@ -2084,6 +2120,7 @@
                             </div>
                         </div>
                     </StrategyAccordionSection>
+                    )}
 
                     {/* C: Report Narrative */}
                     <StrategyAccordionSection title="Report Narrative" subtitle="3-year leakage forecast, next-phase recommendation, executive letter, and client handoff links." defaultOpen={false}>
@@ -2333,23 +2370,94 @@
             </div>
         );
 
-        const ReportSectionHeader = ({ part, title, subtitle }) => (
-            <div className="mb-6 page-break-inside-avoid">
-                <div className="report-accent-bar mb-4" />
-                {part && <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">{part}</div>}
-                <h2 className="text-xl font-black text-slate-900 uppercase font-serif tracking-tight">{title}</h2>
-                {subtitle && <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{subtitle}</p>}
-            </div>
-        );
+        const ReportCopyField = ({
+            copyKey, reportCopy, onCopyChange, editMode, multiline = false, rows = 2,
+            className = '', inputClassName = '', as = 'span', vars,
+        }) => {
+            const text = DRH().getReportCopyText?.(reportCopy, copyKey, vars) || '';
+            if (!editMode || !copyKey) {
+                if (as === 'p') return <p className={className}>{text}</p>;
+                if (as === 'h2') return <h2 className={className}>{text}</h2>;
+                if (as === 'h3') return <h3 className={className}>{text}</h3>;
+                return <span className={className}>{text}</span>;
+            }
+            const sharedProps = {
+                className: `report-copy-edit ${inputClassName || className}`.trim(),
+                value: text,
+                onChange: (e) => onCopyChange?.(copyKey, e.target.value),
+            };
+            if (multiline) {
+                return <textarea rows={rows} {...sharedProps} />;
+            }
+            return <input type="text" {...sharedProps} />;
+        };
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, executiveLetter, loomWalkthroughUrl, showExecutiveLetter }) => (
+        const ReportSectionHeader = ({
+            part, title, subtitle, titleKey, subtitleKey, subtitleVars,
+            reportCopy, editMode, onCopyChange,
+        }) => {
+            const resolvedTitle = titleKey
+                ? DRH().getReportCopyText?.(reportCopy, titleKey, subtitleVars)
+                : title;
+            const resolvedSubtitle = subtitleKey
+                ? DRH().getReportCopyText?.(reportCopy, subtitleKey, subtitleVars)
+                : subtitle;
+            return (
+                <div className="mb-6 page-break-inside-avoid">
+                    <div className="report-accent-bar mb-4" />
+                    {part && <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.2em] mb-1">{part}</div>}
+                    {editMode && titleKey ? (
+                        <ReportCopyField
+                            copyKey={titleKey}
+                            reportCopy={reportCopy}
+                            onCopyChange={onCopyChange}
+                            editMode
+                            inputClassName="report-copy-edit-title text-xl font-black text-slate-900 uppercase font-serif tracking-tight"
+                            as="h2"
+                        />
+                    ) : (
+                        <h2 className="text-xl font-black text-slate-900 uppercase font-serif tracking-tight">{resolvedTitle}</h2>
+                    )}
+                    {resolvedSubtitle && (
+                        editMode && subtitleKey ? (
+                            <ReportCopyField
+                                copyKey={subtitleKey}
+                                reportCopy={reportCopy}
+                                onCopyChange={onCopyChange}
+                                editMode
+                                multiline
+                                rows={2}
+                                className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl"
+                                as="p"
+                            />
+                        ) : (
+                            <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{resolvedSubtitle}</p>
+                        )
+                    )}
+                </div>
+            );
+        };
+
+        const ReportCover = ({
+            clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex,
+            executiveLetter, loomWalkthroughUrl, showExecutiveLetter, reportCopy, editMode, onCopyChange, onSynthesisFieldChange,
+        }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
                     <div className="text-[10px] font-mono font-bold text-brandTeal-600 uppercase tracking-[0.25em] mb-2">Module 1 — Business Leak Scan</div>
                     <div className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-400 mb-3">Kolthoff Consulting · Confidential Client Deliverable</div>
                     <h1 className="text-4xl font-black text-slate-900 font-serif tracking-tight leading-tight">Leak Scan Report</h1>
-                    <p className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed">Where your team loses time and money — and your 90-Day Recovery Plan to address it.</p>
+                    <ReportCopyField
+                        copyKey="cover.reportSubtitle"
+                        reportCopy={reportCopy}
+                        onCopyChange={onCopyChange}
+                        editMode={editMode}
+                        multiline
+                        rows={2}
+                        className="text-sm text-slate-600 mt-2 max-w-lg leading-relaxed"
+                        as="p"
+                    />
                 </div>
                 <div className="grid grid-cols-2 gap-6 text-xs mb-8 pb-6 border-b border-slate-200">
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Prepared for</span><span className="font-bold text-slate-900 text-sm">{clientCompany}</span></div>
@@ -2357,10 +2465,22 @@
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Lead strategist</span><span className="text-slate-700">{preparedBy}</span></div>
                     <div><span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold block mb-1">Maturity index</span><span className="font-mono font-bold text-brandTeal-700">{maturityIndex} / 5</span><p className="text-[9px] text-slate-400 mt-1 leading-relaxed max-w-xs">{DRH().MATURITY_INDEX_EXPLAINER || 'Operational readiness across communication, documentation, accountability, and software use.'}</p></div>
                 </div>
-                {showExecutiveLetter && executiveLetter && executiveLetter.trim() && (
+                {showExecutiveLetter && (executiveLetter?.trim() || editMode) && (
                     <div className="mb-8 p-5 border border-slate-200 rounded-xl bg-slate-50/80 page-break-inside-avoid">
                         <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Executive Summary</h3>
-                        <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{executiveLetter.trim()}</p>
+                        {editMode ? (
+                            <textarea
+                                rows={5}
+                                className="report-copy-edit w-full text-sm text-slate-800 leading-relaxed"
+                                value={executiveLetter || ''}
+                                onChange={(e) => onSynthesisFieldChange?.('executiveLetter', e.target.value)}
+                                placeholder="3–5 sentences for the owner…"
+                            />
+                        ) : (
+                            executiveLetter?.trim() && (
+                                <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{executiveLetter.trim()}</p>
+                            )
+                        )}
                     </div>
                 )}
                 <div className="report-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -2371,12 +2491,12 @@
                     <div className="report-kpi p-5 text-center">
                         <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Process Leakage</div>
                         <div className="report-kpi-value text-xl font-black text-rose-600">{formatCurrency(processAnnual)}</div>
-                        <div className="text-[9px] text-slate-400 mt-1">Manual delays & rework</div>
+                        <ReportCopyField copyKey="cover.processLeakageHint" reportCopy={reportCopy} onCopyChange={onCopyChange} editMode={editMode} className="text-[9px] text-slate-400 mt-1" as="p" />
                     </div>
                     <div className="report-kpi p-5 text-center">
                         <div className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-2">Subscription Overlap</div>
                         <div className="report-kpi-value text-xl font-black text-amber-700">{formatCurrency(saasAnnual)}</div>
-                        <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
+                        <ReportCopyField copyKey="cover.subscriptionOverlapHint" reportCopy={reportCopy} onCopyChange={onCopyChange} editMode={editMode} className="text-[9px] text-slate-400 mt-1" as="p" />
                     </div>
                 </div>
                 {loomWalkthroughUrl && loomWalkthroughUrl.trim() && (
@@ -2384,7 +2504,7 @@
                         <img src={DRH().buildLinkQrUrl?.(loomWalkthroughUrl, 120)} alt="Video walkthrough QR code" className="w-[100px] h-[100px] border border-white rounded-lg bg-white p-1 shrink-0" />
                         <div className="min-w-0">
                             <div className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1">Video Walkthrough (optional)</div>
-                            <p className="text-xs text-slate-700 leading-relaxed">Your consultant may share a Loom, NotebookLM, or Google Drive video — scan to watch before reading the detail sections.</p>
+                            <ReportCopyField copyKey="cover.videoWalkthroughIntro" reportCopy={reportCopy} onCopyChange={onCopyChange} editMode={editMode} multiline rows={2} className="text-xs text-slate-700 leading-relaxed" as="p" />
                             <p className="text-[10px] font-mono text-brandTeal-700 mt-1 break-all">{loomWalkthroughUrl.trim()}</p>
                         </div>
                     </div>
@@ -2392,8 +2512,13 @@
             </div>
         );
 
-        const ExecutiveReport = ({ clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, profileTasks, workflowSvgOverrides = {} }) => {
+        const ExecutiveReport = ({
+            clientCompany, preparedBy, tabs, raciAssignments, subSaaS, annualChaosTax, totalDailyWasteHours, synthesis,
+            projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, profileTasks, workflowSvgOverrides = {},
+            reportEditMode = false, onReportCopyChange, onSynthesisFieldChange,
+        }) => {
             const DR = DRH();
+            const reportCopy = synthesis.reportCopy || {};
             const saasMonthlyWaste = subSaaS.reduce((acc, curr) => acc + ((Number(curr.billing) || 0) * (Number(curr.users) || 0)), 0);
             const saasAnnualWaste = saasMonthlyWaste * 12;
             const totalAnnualWaste = annualChaosTax + saasAnnualWaste;
@@ -2435,6 +2560,10 @@
                 hasOrgChart: !!(orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)),
                 workflowTabCount: workflowTabs.length,
                 processRankingCount: processRankings.length,
+                larkProcessSummaryEligible: DRH().isLarkProcessSummaryClient?.(clientCompany),
+                larkProcessSummaryCount: DRH().isLarkProcessSummaryClient?.(clientCompany)
+                    ? (synthesis.larkProcessSummary || []).length
+                    : 0,
                 matrixItemCount: activeItems.length,
                 riskProfileCount: riskProfiles.length,
                 showFeedbackAppendix: m102InScope && !!String(synthesis.feedbackFormUrl || '').trim(),
@@ -2442,7 +2571,7 @@
             const sectionStyle = (id) => DR.buildReportSectionStyle?.(id, sectionOrder, printConfig, sectionCtx) || {};
 
             return (
-                <div className="report-doc w-full max-w-[850px] text-slate-900 relative flex flex-col gap-5 print:gap-0 print:flex print:flex-col print:bg-white print:p-0 print:shadow-none p-0 bg-transparent shadow-none">
+                <div className={`report-doc w-full max-w-[850px] text-slate-900 relative flex flex-col gap-5 print:gap-0 print:flex print:flex-col print:bg-white print:p-0 print:shadow-none p-0 bg-transparent shadow-none${reportEditMode ? ' report-edit-mode' : ''}`}>
 
                     {printConfig.showExecutiveSummary && (
                         <div style={{ order: 0 }}>
@@ -2457,13 +2586,24 @@
                             executiveLetter={synthesis.executiveLetter}
                             loomWalkthroughUrl={synthesis.loomWalkthroughUrl}
                             showExecutiveLetter={printConfig.showExecutiveLetter !== false}
+                            reportCopy={reportCopy}
+                            editMode={reportEditMode}
+                            onCopyChange={onReportCopyChange}
+                            onSynthesisFieldChange={onSynthesisFieldChange}
                         />
                         </div>
                     )}
 
                     {printConfig.showExecutiveSnapshot && (findings.length > 0 || riskProfiles.length > 0 || scorecard.length > 0) && (
                         <div className="report-page page-break-inside-avoid" style={sectionStyle('executiveSnapshot')}>
-                            <ReportSectionHeader part={sectionParts.executiveSnapshot} title="Executive Snapshot" subtitle="Key findings, top risks, and operational readiness at a glance." />
+                            <ReportSectionHeader
+                                part={sectionParts.executiveSnapshot}
+                                titleKey="sections.executiveSnapshot.title"
+                                subtitleKey="sections.executiveSnapshot.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             {findings.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">Key Findings</h3>
@@ -2525,7 +2665,14 @@
 
                     {printConfig.showHowToRead && (
                         <div className="report-page page-break-inside-avoid" style={sectionStyle('howToRead')}>
-                            <ReportSectionHeader part={sectionParts.howToRead} title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
+                            <ReportSectionHeader
+                                part={sectionParts.howToRead}
+                                titleKey="sections.howToRead.title"
+                                subtitleKey="sections.howToRead.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li className="page-break-inside-avoid"><strong>Start with the cover</strong> — executive summary, KPIs, and optional video walkthrough QR if your consultant shared one.</li>
                                 <li className="page-break-inside-avoid"><strong>Review the Executive Snapshot</strong> — key findings, risks, and readiness scores.</li>
@@ -2539,7 +2686,14 @@
 
                     {printConfig.showOrgChart && (orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)) && (
                         <div className="report-page" style={sectionStyle('orgChart')}>
-                            <ReportSectionHeader part={sectionParts.orgChart} title="Organization & Team Structure" subtitle="As-is reporting lines collected during Module 1." />
+                            <ReportSectionHeader
+                                part={sectionParts.orgChart}
+                                titleKey="sections.orgChart.title"
+                                subtitleKey="sections.orgChart.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             {orgChartSvg ? (
                                 <ReportDiagramFigure
                                     src={orgChartSvg}
@@ -2586,7 +2740,14 @@
                                 return (
                                     <div key={tab.id} className="report-page">
                                         {tabIdx === 0 ? (
-                                            <ReportSectionHeader part={sectionParts.flowcharts} title="Process Maps & Step Analysis" subtitle={printConfig.flowchartsTopOnly ? 'Highest-leak process with delay times and per-step leakage (briefing view).' : 'As-is workflows with delay times and per-step leakage calculations.'} />
+                                            <ReportSectionHeader
+                                                part={sectionParts.flowcharts}
+                                                titleKey="sections.flowcharts.title"
+                                                subtitleKey={printConfig.flowchartsTopOnly ? 'sections.flowcharts.subtitleBriefing' : 'sections.flowcharts.subtitle'}
+                                                reportCopy={reportCopy}
+                                                editMode={reportEditMode}
+                                                onCopyChange={onReportCopyChange}
+                                            />
                                         ) : (
                                             <div className="mb-6 page-break-inside-avoid">
                                                 <div className="report-accent-bar mb-3" />
@@ -2634,7 +2795,14 @@
 
                     {printConfig.showLeakageRanking && processRankings.length > 0 && (
                         <div className="report-page" style={sectionStyle('leakageRanking')}>
-                            <ReportSectionHeader part={sectionParts.leakageRanking} title="Process Leakage Ranking" subtitle="Processes ranked by annual operational leakage. Focus fixes on the top rows first." />
+                            <ReportSectionHeader
+                                part={sectionParts.leakageRanking}
+                                titleKey="sections.leakageRanking.title"
+                                subtitleKey="sections.leakageRanking.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             {topFixes[0] && (
                                 <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
                                     <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
@@ -2667,9 +2835,48 @@
                         </div>
                     )}
 
+                    {printConfig.showLarkProcessSummary && DRH().isLarkProcessSummaryClient?.(clientCompany) && (synthesis.larkProcessSummary || []).length > 0 && (
+                        <div className="report-page" style={sectionStyle('larkProcessSummary')}>
+                            <ReportSectionHeader
+                                part={sectionParts.larkProcessSummary}
+                                titleKey="sections.larkProcessSummary.title"
+                                subtitleKey="sections.larkProcessSummary.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
+                            <table className="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Process Name</th>
+                                        <th className="text-center">Total Documents Submitted</th>
+                                        <th className="text-right">Avg. Process Time Spent (hours)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {synthesis.larkProcessSummary.map((row, idx) => (
+                                        <tr key={`${row.processName}-${idx}`}>
+                                            <td className="font-bold">{row.processName}</td>
+                                            <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
+                                            <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+
                     {printConfig.showRaci && (
                         <div className="report-page" style={sectionStyle('raci')}>
-                            <ReportSectionHeader part={sectionParts.raci} title="RACI Accountability Matrix" subtitle={`${raciGaps.unassignedSteps} of ${raciGaps.totalSteps} steps need clearer ownership.`} />
+                            <ReportSectionHeader
+                                part={sectionParts.raci}
+                                titleKey="sections.raci.title"
+                                subtitleKey="sections.raci.subtitle"
+                                subtitleVars={{ unassignedSteps: raciGaps.unassignedSteps, totalSteps: raciGaps.totalSteps }}
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             {raciOrgInsights.length > 0 && (
                                 <ul className="text-xs text-slate-600 space-y-1 mb-4 list-disc list-inside page-break-inside-avoid">
                                     {raciOrgInsights.map((line, i) => <li key={i}>{line}</li>)}
@@ -2710,18 +2917,46 @@
 
                     {printConfig.showSaas && (
                         <div className="report-page" style={sectionStyle('saas')}>
-                            <ReportSectionHeader part={sectionParts.saas} title="Financial Leakage Breakdown" subtitle="Process leakage and subscription overlap — ranked processes above, subscription detail below." />
+                            <ReportSectionHeader
+                                part={sectionParts.saas}
+                                titleKey="sections.saas.title"
+                                subtitleKey="sections.saas.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div className="p-5 border-2 border-rose-200 rounded-xl bg-rose-50/30 page-break-inside-avoid">
                                     <div className="text-[9px] font-bold uppercase tracking-widest text-rose-700 mb-1">Process Leakage</div>
                                     <div className="text-2xl font-black font-mono text-rose-700">{formatCurrency(annualChaosTax)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
-                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Fixable via SOPs, handoffs, and workflow redesign. {totalDailyWasteHours.toFixed(1)} hours lost daily across mapped processes.</p>
+                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+                                        <ReportCopyField
+                                            copyKey="sections.saas.processLeakageDesc"
+                                            reportCopy={reportCopy}
+                                            onCopyChange={onReportCopyChange}
+                                            editMode={reportEditMode}
+                                            multiline
+                                            rows={2}
+                                            vars={{ dailyWasteHours: totalDailyWasteHours.toFixed(1) }}
+                                            as="span"
+                                        />
+                                    </p>
                                     <div className="text-[10px] font-mono text-rose-600 mt-2">{formatCurrency(Math.round(annualChaosTax / 12))}/month</div>
                                 </div>
                                 <div className="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30 page-break-inside-avoid">
                                     <div className="text-[9px] font-bold uppercase tracking-widest text-amber-800 mb-1">Subscription Overlap</div>
                                     <div className="text-2xl font-black font-mono text-amber-800">{formatCurrency(saasAnnualWaste)}<span className="text-xs font-normal text-slate-500">/yr</span></div>
-                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">Quick-recapture: cancel duplicates and right-size seats within 30 days.</p>
+                                    <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+                                        <ReportCopyField
+                                            copyKey="sections.saas.subscriptionOverlapDesc"
+                                            reportCopy={reportCopy}
+                                            onCopyChange={onReportCopyChange}
+                                            editMode={reportEditMode}
+                                            multiline
+                                            rows={2}
+                                            as="span"
+                                        />
+                                    </p>
                                     <div className="text-[10px] font-mono text-amber-700 mt-2">{formatCurrency(saasMonthlyWaste)}/month</div>
                                 </div>
                             </div>
@@ -2751,7 +2986,19 @@
                             )}
                             <div className="p-4 border border-emerald-300 rounded-xl bg-emerald-50/50 page-break-inside-avoid space-y-3">
                                 <div className="flex justify-between items-center gap-4">
-                                    <div className="text-sm text-slate-700 max-w-md"><strong className="text-emerald-800">Year 1 recapture opportunity:</strong> Up to {formatCurrency(totalAnnualWaste)} returned to margins by fixing process delays and optimizing software spend.</div>
+                                    <div className="text-sm text-slate-700 max-w-md">
+                                        <strong className="text-emerald-800">Year 1 recapture opportunity:</strong>{' '}
+                                        <ReportCopyField
+                                            copyKey="sections.saas.recaptureIntro"
+                                            reportCopy={reportCopy}
+                                            onCopyChange={onReportCopyChange}
+                                            editMode={reportEditMode}
+                                            multiline
+                                            rows={2}
+                                            vars={{ totalAnnualWaste: formatCurrency(totalAnnualWaste) }}
+                                            as="span"
+                                        />
+                                    </div>
                                     <div className="text-right shrink-0"><div className="text-[9px] uppercase font-bold text-slate-500">Total leakage</div><div className="text-xl font-black font-mono text-emerald-700">{formatCurrency(totalAnnualWaste)}</div></div>
                                 </div>
                                 {recapture.annual > 0 && (
@@ -2761,36 +3008,19 @@
                                     </div>
                                 )}
                             </div>
-                            {(synthesis.larkProcessSummary || []).length > 0 && (
-                                <div className="mt-6 page-break-inside-avoid">
-                                    <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 mb-3 font-serif">Process Volume &amp; Cycle Time</h3>
-                                    <p className="text-[10px] text-slate-600 mb-3 leading-relaxed">Lark workflow export — documents submitted and average end-to-end process time per approval flow.</p>
-                                    <table className="report-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Process Name</th>
-                                                <th className="text-center">Total Documents Submitted</th>
-                                                <th className="text-right">Avg. Process Time Spent (hours)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {synthesis.larkProcessSummary.map((row, idx) => (
-                                                <tr key={`${row.processName}-${idx}`}>
-                                                    <td className="font-bold">{row.processName}</td>
-                                                    <td className="text-center font-mono">{Number(row.totalDocuments || 0).toLocaleString()}</td>
-                                                    <td className="text-right font-mono">{Number(row.avgProcessTimeHours || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
                         </div>
                     )}
 
                     {printConfig.showRecoveryPlan && (topFixes.length > 0 || recoveryGanttFull.rows.length > 0 || activeItems.length > 0) && (
                         <div className="report-page" style={sectionStyle('recoveryPlan')}>
-                            <ReportSectionHeader part={sectionParts.recoveryPlan} title="90-Day Recovery Plan" subtitle="Your prioritized fixes, implementation timeline, and effort-vs-impact map." />
+                            <ReportSectionHeader
+                                part={sectionParts.recoveryPlan}
+                                titleKey="sections.recoveryPlan.title"
+                                subtitleKey="sections.recoveryPlan.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             {topFixes.length > 0 && (
                                 <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid mb-6">
                                     <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes</h3>
@@ -2876,24 +3106,59 @@
 
                     {printConfig.showOperationalOutlook && (
                         <div className="report-page" style={sectionStyle('operationalOutlook')}>
-                            <ReportSectionHeader part={sectionParts.operationalOutlook} title="Operational Outlook" subtitle="What happens if nothing changes — and the recommended next engagement phase." />
+                            <ReportSectionHeader
+                                part={sectionParts.operationalOutlook}
+                                titleKey="sections.operationalOutlook.title"
+                                subtitleKey="sections.operationalOutlook.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid mb-6">
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Operational Leakage Forecast</h3>
-                                <p className="text-xs text-slate-700 leading-relaxed mb-2">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong> (process + subscriptions), growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
+                                <p className="text-xs text-slate-700 leading-relaxed mb-2">
+                                    <ReportCopyField
+                                        copyKey="sections.operationalOutlook.forecastIntro"
+                                        reportCopy={reportCopy}
+                                        onCopyChange={onReportCopyChange}
+                                        editMode={reportEditMode}
+                                        multiline
+                                        rows={3}
+                                        vars={{ totalAnnualWaste: formatCurrency(totalAnnualWaste), expectedGrowth: synthesis.expectedGrowth || 0 }}
+                                        as="span"
+                                    />
+                                </p>
                                 {coiBreakdown.formulaLabel && <p className="text-[10px] text-slate-500 font-mono mb-2">{coiBreakdown.formulaLabel}</p>}
                                 {coiBreakdown.assumptionSentence && <p className="text-[10px] text-slate-600 mb-4 italic">{coiBreakdown.assumptionSentence}</p>}
                                 <div className="bg-white border border-rose-200 rounded-lg p-4 text-center"><div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Projected 3-Year Operational Loss</div><div className="text-3xl font-black font-mono text-rose-600">{formatCurrency(coiBreakdown.projected ?? projected3YearLoss)}</div></div>
                             </div>
                             <div className="border-l-4 border-brandTeal-600 bg-teal-50/50 p-5 rounded-r-xl page-break-inside-avoid">
                                 <h3 className="text-xs font-bold uppercase text-brandTeal-900 mb-2">Recommended Next Phase: {modByKey(synthesis.nextModuleId).title}</h3>
-                                <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>
+                                {reportEditMode ? (
+                                    <textarea
+                                        rows={4}
+                                        className="report-copy-edit w-full text-sm text-slate-800 leading-relaxed"
+                                        value={synthesis.customPitch || ''}
+                                        onChange={(e) => onSynthesisFieldChange?.('customPitch', e.target.value)}
+                                        placeholder="Recommend Mod 2+ based on Top 5 fixes…"
+                                    />
+                                ) : (
+                                    <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {printConfig.showMatrixTable && activeItems.length > 0 && (
                         <div className="report-page font-sans text-xs" style={sectionStyle('matrixTable')}>
-                            <ReportSectionHeader part={sectionParts.matrixTable} title="Full Initiative List" subtitle="Complete 90-Day Recovery Plan register — reference for leadership tracking." />
+                            <ReportSectionHeader
+                                part={sectionParts.matrixTable}
+                                titleKey="sections.matrixTable.title"
+                                subtitleKey="sections.matrixTable.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <table className="report-table">
                                 <thead>
                                     <tr>
@@ -2928,19 +3193,35 @@
 
                     {printConfig.showNextSteps && (
                         <div className="report-page" style={sectionStyle('nextSteps')}>
-                            <ReportSectionHeader part={sectionParts.nextSteps} title="Recommended Next Steps" subtitle="A practical timeline to start recovering leakage this week." />
+                            <ReportSectionHeader
+                                part={sectionParts.nextSteps}
+                                titleKey="sections.nextSteps.title"
+                                subtitleKey="sections.nextSteps.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <div className="space-y-4 text-sm">
                                 <div className="p-4 border-l-4 border-emerald-500 bg-emerald-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-emerald-900 text-xs uppercase tracking-wider block mb-1">Week 1–2 — Quick wins</strong>
-                                    <p className="text-slate-700 text-xs leading-relaxed">{quickWins.length ? quickWins.slice(0, 3).map(i => i.text).join('; ') : 'Cancel unused SaaS seats and fix the highest-leak workflow step identified above.'}</p>
+                                    <p className="text-slate-700 text-xs leading-relaxed">{quickWins.length ? quickWins.slice(0, 3).map(i => i.text).join('; ') : DRH().getReportCopyText(reportCopy, 'sections.nextSteps.week12Fallback')}</p>
                                 </div>
                                 <div className="p-4 border-l-4 border-blue-500 bg-blue-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-blue-900 text-xs uppercase tracking-wider block mb-1">Week 3–6 — Process fixes</strong>
-                                    <p className="text-slate-700 text-xs leading-relaxed">{majorProjects.length ? majorProjects.slice(0, 2).map(i => i.text).join('; ') : 'Document top workflows and assign RACI owners for every handoff.'}</p>
+                                    <p className="text-slate-700 text-xs leading-relaxed">{majorProjects.length ? majorProjects.slice(0, 2).map(i => i.text).join('; ') : DRH().getReportCopyText(reportCopy, 'sections.nextSteps.week36Fallback')}</p>
                                 </div>
                                 <div className="p-4 border-l-4 border-brandTeal-600 bg-teal-50/40 rounded-r-lg page-break-inside-avoid">
                                     <strong className="text-brandTeal-900 text-xs uppercase tracking-wider block mb-1">Week 7–12 — Structural changes</strong>
-                                    <p className="text-slate-700 text-xs leading-relaxed">Review progress on the 90-Day Recovery Plan with leadership. Decide whether to proceed to {modByKey('MOD 2').title} for playbook and handbook delivery.</p>
+                                    <ReportCopyField
+                                        copyKey="sections.nextSteps.week712Closing"
+                                        reportCopy={reportCopy}
+                                        onCopyChange={onReportCopyChange}
+                                        editMode={reportEditMode}
+                                        multiline
+                                        rows={2}
+                                        className="text-slate-700 text-xs leading-relaxed"
+                                        as="p"
+                                    />
                                     {synthesis.loomWalkthroughUrl && synthesis.loomWalkthroughUrl.trim() && (
                                         <p className="text-slate-700 text-xs mt-2"><strong>Video walkthrough:</strong> <span className="font-mono text-brandTeal-700 break-all">{synthesis.loomWalkthroughUrl.trim()}</span></p>
                                     )}
@@ -2962,19 +3243,42 @@
 
                     {printConfig.showAppendix && (
                         <div className="report-page" style={sectionStyle('methodology')}>
-                            <ReportSectionHeader part={sectionParts.methodology} title="Methodology" subtitle="How leakage figures were calculated." />
+                            <ReportSectionHeader
+                                part={sectionParts.methodology}
+                                titleKey="sections.methodology.title"
+                                subtitleKey="sections.methodology.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <div className="text-[10px] text-slate-600 space-y-3 leading-relaxed">
                                 <p><strong>Process leakage:</strong> Step delay (minutes) × affected staff × hourly rate × 22 working days × 12 months.</p>
                                 <p><strong>Subscription overlap:</strong> Monthly billing × active seats for tools flagged as under-utilized or duplicate.</p>
                                 <p><strong>Cost of inaction:</strong> Total annual leakage × 3 years × headcount growth factor (10% per expected new hire).</p>
-                                <p className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-700">{DRH().REPORT_METHODOLOGY_DISCLAIMER || 'Leakage figures are estimates. Validate with leadership before acting. Advisory only — not legal, HR, tax, or accounting advice.'}</p>
+                                <ReportCopyField
+                                    copyKey="sections.methodology.disclaimer"
+                                    reportCopy={reportCopy}
+                                    onCopyChange={onReportCopyChange}
+                                    editMode={reportEditMode}
+                                    multiline
+                                    rows={3}
+                                    className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 text-slate-700"
+                                    as="p"
+                                />
                             </div>
                         </div>
                     )}
 
                     {printConfig.showFeedbackAppendix && m102InScope && String(synthesis.feedbackFormUrl || '').trim() && (
                         <div className="report-page" style={sectionStyle('feedbackAppendix')}>
-                            <ReportSectionHeader part={sectionParts.feedbackAppendix} title="Staff Feedback Channel (m1-02)" subtitle="Anonymous staff survey — circulate internally. No names or emails are collected." />
+                            <ReportSectionHeader
+                                part={sectionParts.feedbackAppendix}
+                                titleKey="sections.feedbackAppendix.title"
+                                subtitleKey="sections.feedbackAppendix.subtitle"
+                                reportCopy={reportCopy}
+                                editMode={reportEditMode}
+                                onCopyChange={onReportCopyChange}
+                            />
                             <div className="flex flex-wrap items-start gap-6 page-break-inside-avoid">
                                 <img src={DR.buildLinkQrUrl?.(synthesis.feedbackFormUrl, 160)} alt="Feedback form QR code" className="w-[140px] h-[140px] border border-slate-200 rounded-lg bg-white p-2 shrink-0" />
                                 <div className="min-w-0 flex-1">
@@ -3012,6 +3316,7 @@
             const [activeNav, setActiveNav] = useState('orgchart');
             const [printConfig, setPrintConfig] = useState(() => DRH().mergePrintConfigWithSectionOrder?.(DRH().PRINT_PRESETS?.full || {}) || { ...(DRH().PRINT_PRESETS?.full || {}) });
             const [printPreset, setPrintPreset] = useState('full');
+            const [reportEditMode, setReportEditMode] = useState(false);
 
             const [clientCompany, setClientCompany] = useState('');
             const [preparedBy, setPreparedBy] = useState('Reinhard Ludwig A. Kolthoff');
@@ -3107,7 +3412,8 @@
                 if (!profile) return;
                 if (profileHydratedIdRef.current === activeProfileId) return;
                 profileHydratedIdRef.current = activeProfileId;
-                setClientCompany(EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company'));
+                const clientName = EC.getClientDisplayName ? EC.getClientDisplayName(profile) : (profile.clientCompany || 'Untitled Company');
+                setClientCompany(clientName);
                     setPreparedBy(profile.preparedBy || 'Reinhard Ludwig A. Kolthoff');
                     const diagnosisData = WT?.getDiagnosisTabs?.(profile) || { tabs: [], activeTabId: null };
                     const reportTabs = diagnosisData.tabs || [];
@@ -3160,7 +3466,11 @@
                         if (!loadedSynthesis.feedbackLaunchGuide) {
                             loadedSynthesis.feedbackLaunchGuide = DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '';
                         }
-                        loadedSynthesis.larkProcessSummary = DRH().normalizeLarkProcessSummary?.(loadedSynthesis.larkProcessSummary) || [];
+                        loadedSynthesis.larkProcessSummary = DRH().resolveLarkProcessSummaryForClient?.(
+                            loadedSynthesis.larkProcessSummary,
+                            clientName,
+                        ) || [];
+                        loadedSynthesis.reportCopy = DRH().normalizeReportCopy?.(loadedSynthesis.reportCopy) || {};
 
                         if (loadedSynthesis.matrix && !Array.isArray(loadedSynthesis.matrix.items)) {
                             const oldMatrix = loadedSynthesis.matrix;
@@ -3193,7 +3503,10 @@
                             setPrintConfig((prev) => DRH().mergePrintConfigWithSectionOrder?.(prev, loadedSynthesis.reportSectionOrder) || prev);
                         }
                     } else {
-                        setSynthesis(createDefaultSynthesis());
+                        const defaultSyn = createDefaultSynthesis();
+                        defaultSyn.larkProcessSummary = DRH().resolveLarkProcessSummaryForClient?.([], clientName) || [];
+                        defaultSyn.reportCopy = {};
+                        setSynthesis(defaultSyn);
                     }
                     autoSaveReadyRef.current = false;
                     setTimeout(() => { autoSaveReadyRef.current = true; }, 1200);
@@ -3273,6 +3586,17 @@
 
             const reportDate = useMemo(() => new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }), []);
 
+            const handleReportCopyChange = useCallback((key, value) => {
+                setSynthesis((prev) => ({
+                    ...prev,
+                    reportCopy: DRH().updateReportCopyField?.(prev.reportCopy, key, value) || {},
+                }));
+            }, []);
+
+            const handleSynthesisFieldChange = useCallback((field, value) => {
+                setSynthesis((prev) => ({ ...prev, [field]: value }));
+            }, []);
+
             const executiveReportProps = useMemo(() => ({
                 clientCompany,
                 preparedBy,
@@ -3289,7 +3613,10 @@
                 reportDate,
                 profileTasks: activeProfile?.tasks || [],
                 workflowSvgOverrides,
-            }), [clientCompany, preparedBy, diagnosisTabsForReport, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks, workflowSvgOverrides]);
+                reportEditMode,
+                onReportCopyChange: handleReportCopyChange,
+                onSynthesisFieldChange: handleSynthesisFieldChange,
+            }), [clientCompany, preparedBy, diagnosisTabsForReport, raciAssignments, subSaaS, totalAnnualChaosTax, totalDailyWasteHours, synthesis, projected3YearLoss, printConfig, orgChartSvg, orgChartMembers, reportDate, activeProfile?.tasks, workflowSvgOverrides, reportEditMode, handleReportCopyChange, handleSynthesisFieldChange]);
 
             const applyPrintPreset = (preset) => {
                 const cfg = DRH().PRINT_PRESETS?.[preset];
@@ -3338,6 +3665,7 @@
                     const proceed = window.confirm(`Report may be incomplete:\n\n${msg}\n\nPrint anyway?`);
                     if (!proceed) return;
                 }
+                setReportEditMode(false);
                 setIsPreparingPrint(true);
                 try {
                     let tabsForExport = diagnosisTabsForReport;
@@ -3710,6 +4038,22 @@
                                                 )}
                                                 <button type="button" onClick={() => applyPrintPreset('briefing')} className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-colors ${printPreset === 'briefing' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Briefing</button>
                                                 <button type="button" onClick={() => applyPrintPreset('full')} className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-colors ${printPreset === 'full' ? 'bg-brandTeal-600 text-white border-brandTeal-600' : 'bg-white text-slate-600 border-slate-300 hover:border-brandTeal-400'}`}>Full</button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReportEditMode((prev) => !prev)}
+                                                    className={`px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-colors ${reportEditMode ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300 hover:border-amber-400'}`}
+                                                >
+                                                    {reportEditMode ? 'Done editing' : 'Customize text'}
+                                                </button>
+                                                {reportEditMode && DRH().hasReportCopyOverrides?.(synthesis.reportCopy) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSynthesis((prev) => ({ ...prev, reportCopy: DRH().clearReportCopyOverrides?.(prev.reportCopy) || {} }))}
+                                                        className="px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-slate-300 bg-white text-slate-600 hover:border-rose-400 hover:text-rose-700"
+                                                    >
+                                                        Reset text
+                                                    </button>
+                                                )}
                                                 {!mod1DeliveredAt && (
                                                     <button type="button" onClick={handleMarkMod1Complete} disabled={isSaving || !!authError || !mod1Handoff.ready} title={!mod1Handoff.ready ? 'Complete report sections and deliverable links first' : ''} className="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-slate-700 disabled:opacity-50">Mark Mod 1</button>
                                                 )}
@@ -3755,6 +4099,7 @@
                                                         ['showExecutiveLetter', 'Letter'],
                                                         ['showExecutiveSnapshot', 'Snapshot'],
                                                         ['showLeakageRanking', 'Rankings'],
+                                                        ...(DRH().isLarkProcessSummaryClient?.(clientCompany) ? [['showLarkProcessSummary', 'Lark Volume']] : []),
                                                         ['showOrgChart', 'Org Chart'],
                                                         ['showFlowcharts', 'Workflows'],
                                                         ['showRaci', 'RACI'],
@@ -3807,6 +4152,11 @@
                                             </div>
                                         </details>
                                     </div>
+                                    {reportEditMode && (
+                                        <div className="mx-3 mb-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-[10px] text-amber-900 leading-relaxed no-print">
+                                            Edit mode — click highlighted fields in the preview to customize section titles, subtitles, and narrative text. Changes save with the workspace automatically.
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:flex-none print:block print:h-auto print:min-h-0 print:overflow-visible print:py-0 print:px-0 print:bg-transparent">
                                         <ExecutiveReport {...executiveReportProps} />
                                     </div>
