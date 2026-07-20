@@ -45,6 +45,58 @@
     },
   };
 
+  const DEFAULT_LARK_PROCESS_SUMMARY = [
+    { processName: 'Manpower Request', totalDocuments: 1, avgProcessTimeHours: 381.16 },
+    { processName: 'General Purchase/Payments Request', totalDocuments: 1, avgProcessTimeHours: 0 },
+    { processName: 'Petty Cash Replenishment Form', totalDocuments: 19, avgProcessTimeHours: 11.32 },
+    { processName: 'Project Approval', totalDocuments: 100, avgProcessTimeHours: 152.66 },
+    { processName: 'Procurement Request', totalDocuments: 54, avgProcessTimeHours: 151.86 },
+    { processName: 'Payments Request', totalDocuments: 267, avgProcessTimeHours: 475.26 },
+    { processName: 'Items (Supplies/Equipment) Request', totalDocuments: 56, avgProcessTimeHours: 14.69 },
+  ];
+
+  function normalizeLarkProcessSummary(rows) {
+    const source = Array.isArray(rows) && rows.length ? rows : DEFAULT_LARK_PROCESS_SUMMARY;
+    return source
+      .map((row, index) => ({
+        processName: String(row?.processName ?? row?.name ?? '').trim() || `Process ${index + 1}`,
+        totalDocuments: Math.max(0, Number(row?.totalDocuments ?? row?.documents ?? 0) || 0),
+        avgProcessTimeHours: Math.max(0, Number(row?.avgProcessTimeHours ?? row?.avgHours ?? row?.hours ?? 0) || 0),
+      }))
+      .filter((row) => row.processName);
+  }
+
+  function parseLarkProcessSummaryTsv(text) {
+    const lines = String(text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) return [];
+
+    const splitRow = (line) => line.split(/\t|,/).map((cell) => cell.trim());
+    const header = splitRow(lines[0]).map((cell) => cell.toLowerCase());
+    const nameIdx = header.findIndex((cell) => /process/.test(cell) && /name/.test(cell));
+    const docsIdx = header.findIndex((cell) => /document/.test(cell) || /total/.test(cell));
+    const hoursIdx = header.findIndex((cell) => /time/.test(cell) || /hour/.test(cell));
+    const startRow = nameIdx >= 0 || docsIdx >= 0 || hoursIdx >= 0 ? 1 : 0;
+
+    return lines.slice(startRow).map((line) => {
+      const cells = splitRow(line);
+      if (startRow === 0) {
+        return {
+          processName: cells[0] || '',
+          totalDocuments: Number(cells[1]) || 0,
+          avgProcessTimeHours: Number(cells[2]) || 0,
+        };
+      }
+      return {
+        processName: nameIdx >= 0 ? cells[nameIdx] || '' : cells[0] || '',
+        totalDocuments: Number(docsIdx >= 0 ? cells[docsIdx] : cells[1]) || 0,
+        avgProcessTimeHours: Number(hoursIdx >= 0 ? cells[hoursIdx] : cells[2]) || 0,
+      };
+    });
+  }
+
   function getQuadrant(effort, impact) {
     const e = Number(effort) || 3;
     const i = Number(impact) || 3;
@@ -2287,6 +2339,9 @@
     buildModulePitch,
     validateReportReadiness,
     validateMod1Handoff,
+    DEFAULT_LARK_PROCESS_SUMMARY,
+    normalizeLarkProcessSummary,
+    parseLarkProcessSummaryTsv,
     DEFAULT_FEEDBACK_LAUNCH_GUIDE,
     M102_FEEDBACK_FORM_TEMPLATE,
     getM102FeedbackFormTemplate,
