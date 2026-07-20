@@ -696,4 +696,18 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(parsed[1].totalDocuments, 267);
     assert.equal(parsed[1].avgProcessTimeHours, 475.26);
   });
+
+  it('getReportCopyText interpolates template vars and uses overrides', () => {
+    const text = DRH.getReportCopyText({}, 'sections.raci.subtitle', { unassignedSteps: 3, totalSteps: 10 });
+    assert.match(text, /3 of 10/);
+    const custom = DRH.getReportCopyText({ 'sections.raci.subtitle': 'Custom RACI intro' }, 'sections.raci.subtitle');
+    assert.equal(custom, 'Custom RACI intro');
+  });
+
+  it('updateReportCopyField stores overrides and clears defaults', () => {
+    const next = DRH.updateReportCopyField({}, 'sections.saas.title', 'Custom title');
+    assert.equal(next['sections.saas.title'], 'Custom title');
+    const reset = DRH.updateReportCopyField(next, 'sections.saas.title', DRH.DEFAULT_REPORT_COPY['sections.saas.title']);
+    assert.equal(reset['sections.saas.title'], undefined);
+  });
 });
