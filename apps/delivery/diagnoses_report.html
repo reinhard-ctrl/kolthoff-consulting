@@ -621,6 +621,7 @@
             customPitch: '',
             staffFeedbackThemes: [''],
             staffFeedbackClusters: [],
+            staffFeedbackAiSummary: '',
             loomWalkthroughUrl: '',
             clientDeliverableUrl: '',
             feedbackFormUrl: '',
@@ -1287,6 +1288,7 @@
                     ...prev,
                     staffFeedbackClusters: result.clusters,
                     staffFeedbackThemes: result.themes.length ? result.themes : [''],
+                    staffFeedbackAiSummary: DRH().buildStaffFeedbackAiSummary?.(result.clusters, result.themes) || '',
                 }));
                 setImportStatus(`Imported ${result.meta.questionCount || result.clusters.length} question group${(result.meta.questionCount || result.clusters.length) === 1 ? '' : 's'} · ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
             };
@@ -1538,6 +1540,34 @@
                             </details>
                             {importStatus && (
                                 <p className={`text-[9px] leading-relaxed ${importStatus.startsWith('Imported') ? 'text-emerald-400' : 'text-amber-300'}`}>{importStatus}</p>
+                            )}
+                            {(feedbackClusters.length > 0 || (synthesis.staffFeedbackThemes || []).some((t) => t && t.trim())) && (
+                                <div className="rounded-lg border border-brandTeal-500/30 bg-brandTeal-500/5 p-3 space-y-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <h4 className="text-[10px] font-bold uppercase text-brandTeal-300 tracking-wider">AI Summary (for PDF)</h4>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSynthesis((prev) => ({
+                                                ...prev,
+                                                staffFeedbackAiSummary: DRH().buildStaffFeedbackAiSummary?.(
+                                                    prev.staffFeedbackClusters,
+                                                    prev.staffFeedbackThemes,
+                                                ) || '',
+                                            }))}
+                                            className="px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-brandTeal-500/40 text-brandTeal-300 hover:bg-brandTeal-500/10"
+                                        >
+                                            Regenerate
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] text-slate-500 leading-relaxed">Appears at the top of Staff Feedback Themes in the Executive Snapshot PDF section. Edit freely — regenerate after importing new themes.</p>
+                                    <textarea
+                                        rows="5"
+                                        value={synthesis.staffFeedbackAiSummary || ''}
+                                        onChange={(e) => setSynthesis((prev) => ({ ...prev, staffFeedbackAiSummary: e.target.value }))}
+                                        placeholder="Regenerate to draft a summary from imported themes, or write your own…"
+                                        className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-y min-h-[100px]"
+                                    />
+                                </div>
                             )}
                             {feedbackClusters.length > 0 ? feedbackClusters.map((cluster) => (
                                 <div key={cluster.questionKey} className="rounded-lg border border-brandNavy-800 bg-brandNavy-950/60 p-3 space-y-2">
@@ -2781,6 +2811,20 @@
                             {feedbackClustersForReport.length > 0 && (
                                 <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid space-y-4">
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Staff Feedback Themes (Anonymous)</h4>
+                                    {(() => {
+                                        const aiSummary = DR.resolveStaffFeedbackAiSummary?.(
+                                            synthesis.staffFeedbackAiSummary,
+                                            feedbackClustersForReport,
+                                            synthesis.staffFeedbackThemes,
+                                        ) || '';
+                                        if (!aiSummary) return null;
+                                        return (
+                                            <div className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 page-break-inside-avoid">
+                                                <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1.5">AI Summary</div>
+                                                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                                            </div>
+                                        );
+                                    })()}
                                     {feedbackClustersForReport.map((cluster) => (
                                         <div key={cluster.questionKey} className="space-y-1.5">
                                             <div className="text-[10px] font-semibold text-slate-700 leading-relaxed">{cluster.question}</div>

@@ -624,6 +624,32 @@ describe('diagnosis-report-helpers', () => {
     assert.equal(DRH.isFeedbackResponsesHtmlPage('Timestamp,Answer\n2026-01-01,Hello'), false);
   });
 
+  it('buildStaffFeedbackAiSummary synthesizes cluster themes for PDF', () => {
+    const clusters = [
+      {
+        questionKey: 'frustration',
+        question: 'What part of your job is most frustrating?',
+        type: 'paragraph',
+        themes: ['Approvals take too long', 'Chasing email updates'],
+      },
+      {
+        questionKey: 'handoffs',
+        question: 'Where do requests get held up between teams?',
+        type: 'paragraph',
+        themes: ['Finance holds invoices'],
+      },
+    ];
+    const summary = DRH.buildStaffFeedbackAiSummary(clusters, []);
+    assert.match(summary, /2 anonymous survey questions/i);
+    assert.match(summary, /3 recurring themes/i);
+    assert.match(summary, /Approvals take too long/i);
+    assert.match(summary, /90-Day Recovery Plan/i);
+
+    assert.equal(DRH.resolveStaffFeedbackAiSummary('Custom consultant summary', clusters, []), 'Custom consultant summary');
+    assert.match(DRH.resolveStaffFeedbackAiSummary('', clusters, []), /Approvals take too long/i);
+    assert.equal(DRH.buildStaffFeedbackAiSummary([], []), '');
+  });
+
   it('extractStaffFeedbackThemesFromResponsesCsv pulls open-ended answers', () => {
     const csv = [
       'Timestamp,Role,Frustration,Fix one thing',
