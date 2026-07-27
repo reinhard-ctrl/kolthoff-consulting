@@ -34,15 +34,21 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(coi > 120000 * 3);
   });
 
-  it('getTop5Fixes dedupes by root cause and caps at five', () => {
+  it('getTop10Fixes dedupes by root cause and caps at ten', () => {
     const items = [
       { id: '1', text: 'Zoom seats', effort: 2, impact: 4, source: 'saas', sourceDetail: 'Zoom — 5 seats', expectedSavings: 5000, owner: 'Ops', targetWeek: 'Week 1–2' },
       { id: '2', text: 'Zoom review', effort: 2, impact: 3, source: 'saas', sourceDetail: 'Zoom — 3 seats', expectedSavings: 3000, owner: 'Ops', targetWeek: 'Week 1–2' },
       { id: '3', text: 'High', effort: 2, impact: 5, source: 'workflow', sourceDetail: 'Sales, Step: Approve', expectedSavings: 8000, owner: 'Maria', targetWeek: 'Week 3–4' },
     ];
-    const top = DRH.getTop5Fixes(items);
+    const top = DRH.getTop10Fixes(items);
     assert.equal(top.length, 2);
     assert.equal(top[0].text, 'High');
+  });
+
+  /** @deprecated alias */
+  it('getTop5Fixes alias returns same result as getTop10Fixes', () => {
+    const items = [{ id: '1', text: 'Fix A', effort: 2, impact: 5, expectedSavings: 1000 }];
+    assert.deepEqual(DRH.getTop5Fixes(items), DRH.getTop10Fixes(items));
   });
 
   it('generateMatrixFromDiagnosis pre-fills owner from RACI accountable role', () => {
@@ -69,7 +75,7 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(result.errors.some((e) => e.includes('target week')));
   });
 
-  it('computeRecaptureSummary sums Top 5 annual savings', () => {
+  it('computeRecaptureSummary sums Top 10 annual savings', () => {
     const top5 = [
       { expectedSavings: 10000 },
       { expectedSavings: 5000 },
@@ -132,6 +138,19 @@ describe('diagnosis-report-helpers', () => {
     const stored = '• Custom RACI insight';
     const resolved = DRH.resolveRaciAiSummary(stored, tabs, {}, mockDiagramEditor, {});
     assert.deepEqual(resolved, ['Custom RACI insight']);
+  });
+
+  it('buildRecoveryPlanAiSummary returns bullet points from Top 10 fixes', () => {
+    const items = [
+      { id: '1', text: 'Fix approvals', effort: 2, impact: 5, expectedSavings: 5000, owner: 'Maria', targetWeek: 'Week 1–2', source: 'workflow' },
+      { id: '2', text: 'Cut Zoom seats', effort: 2, impact: 4, expectedSavings: 3000, owner: 'Ops', targetWeek: 'Week 3–4', source: 'saas' },
+    ];
+    const bullets = DRH.buildRecoveryPlanAiSummary(items, {
+      formatCurrency: (v) => `$${v}`,
+      totalAnnualWaste: 240000,
+    });
+    assert.ok(bullets.length >= 2);
+    assert.match(bullets[0], /90-Day Recovery Plan/);
   });
 
   it('generateMatrixFromDiagnosis adds workflow and saas items', () => {
