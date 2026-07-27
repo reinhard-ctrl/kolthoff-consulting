@@ -1,3 +1,37 @@
+        const SummaryBulletList = ({ bullets, className = '' }) => {
+            const DR = DRH();
+            const parsed = (bullets || []).map((line) => DR.parseSummaryBulletLine?.(line) || { lead: '', body: String(line || '') })
+                .filter((bullet) => bullet && (bullet.lead || bullet.body));
+            if (!parsed.length) return null;
+            return (
+                <ul className={`report-summary-list space-y-2 ${className}`.trim()}>
+                    {parsed.map((bullet, idx) => (
+                        <li key={idx} className="text-xs text-slate-700 leading-relaxed flex gap-2 page-break-inside-avoid">
+                            <span className="text-brandTeal-600 font-black shrink-0 mt-px">•</span>
+                            <span>
+                                {bullet.lead ? (
+                                    <>
+                                        <strong className="font-bold text-slate-900">{bullet.lead}:</strong>{' '}
+                                    </>
+                                ) : null}
+                                {bullet.body}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            );
+        };
+
+        const ReportSummaryBlock = ({ title = 'Summary', bullets = [], className = 'mt-6' }) => {
+            if (!bullets?.length) return null;
+            return (
+                <div className={`${className} p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid`}>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">{title}</h4>
+                    <SummaryBulletList bullets={bullets} />
+                </div>
+            );
+        };
+
         const ReportSectionHeader = ({ number, title, subtitle }) => (
             <div className="mb-6 page-break-inside-avoid">
                 <div className="report-accent-bar mb-4" />
@@ -101,12 +135,11 @@
                             </div>
                         )}
                         {recoveryPlanAiSummaryBullets?.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20 p-4 border border-slate-200 rounded-lg bg-white/80 page-break-inside-avoid">
-                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
-                                <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                    {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                </ul>
-                            </div>
+                            <ReportSummaryBlock
+                                title="Summary"
+                                bullets={recoveryPlanAiSummaryBullets}
+                                className="mt-5 pt-4 border-t border-brandTeal-500/20 bg-white/80"
+                            />
                         )}
                     </div>
                 )}
@@ -206,12 +239,7 @@
                                 </p>
                             )}
                             {recoveryPlanAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
-                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                        {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                    </ul>
-                                </div>
+                                <ReportSummaryBlock title="Summary" bullets={recoveryPlanAiSummaryBullets} />
                             )}
                         </div>
                     )}
@@ -254,17 +282,18 @@
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Staff Feedback Themes (Anonymous)</h4>
                                     {(() => {
                                         const feedbackClusters = DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || [];
-                                        const aiSummary = DR.resolveStaffFeedbackAiSummary?.(
+                                        const summaryBullets = DR.resolveStaffFeedbackAiSummary?.(
                                             synthesis.staffFeedbackAiSummary,
                                             feedbackClusters,
                                             synthesis.staffFeedbackThemes,
-                                        ) || '';
-                                        if (aiSummary) {
+                                        ) || [];
+                                        if (summaryBullets.length) {
                                             return (
-                                                <div className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 mb-3">
-                                                    <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1.5">AI Summary</div>
-                                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
-                                                </div>
+                                                <ReportSummaryBlock
+                                                    title="Summary"
+                                                    bullets={summaryBullets}
+                                                    className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 mb-3"
+                                                />
                                             );
                                         }
                                         return null;
@@ -315,14 +344,7 @@
                                     ))}
                                 </tbody>
                             </table>
-                            {workflowAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Workflows</h4>
-                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                        {workflowAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                    </ul>
-                                </div>
-                            )}
+                            <ReportSummaryBlock title="Summary" bullets={workflowAiSummaryBullets} />
                         </div>
                     )}
 
@@ -381,14 +403,7 @@
                                     </tbody>
                                 </table>
                             )}
-                            {orgChartAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Org Chart</h4>
-                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                        {orgChartAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                    </ul>
-                                </div>
-                            )}
+                            <ReportSummaryBlock title="Summary" bullets={orgChartAiSummaryBullets} />
                         </div>
                     )}
 
@@ -463,14 +478,7 @@
                                     </div>
                                 );
                             })}
-                            {raciAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — RACI</h4>
-                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                        {raciAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                    </ul>
-                                </div>
-                            )}
+                            <ReportSummaryBlock title="Summary" bullets={raciAiSummaryBullets} />
                         </div>
                     )}
 

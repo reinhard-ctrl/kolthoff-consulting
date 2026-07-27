@@ -1380,43 +1380,42 @@
   /** Synthesized executive summary from anonymous staff feedback clusters (for PDF + Strategy). */
   function buildStaffFeedbackAiSummary(clusters, legacyThemes) {
     const normalized = normalizeStaffFeedbackClusters(clusters, legacyThemes);
-    if (!normalized.length) return '';
+    if (!normalized.length) return [];
 
     const allThemes = flattenStaffFeedbackClusters(normalized);
     const themeCount = allThemes.length;
     const questionCount = normalized.length;
-    const paragraphs = [];
+    const bullets = [];
 
-    paragraphs.push(
+    bullets.push(formatSummaryBullet(
+      'Staff voice',
       `Across ${questionCount} anonymous survey question${questionCount === 1 ? '' : 's'}, `
-      + `staff raised ${themeCount} recurring theme${themeCount === 1 ? '' : 's'}. `
-      + 'Patterns point to operational friction — delays, handoffs, and tool gaps — rather than isolated individual issues.',
-    );
+      + `your team raised ${themeCount} recurring theme${themeCount === 1 ? '' : 's'}. `
+      + 'The patterns point to operational friction — delays, handoffs, and tool gaps — not isolated people problems.',
+    ));
 
-    const clusterLines = normalized
-      .map((cluster) => {
-        const themes = (cluster.themes || []).map((t) => String(t).trim()).filter(Boolean);
-        if (!themes.length) return '';
-        const lead = themes.slice(0, 2).join('; ');
-        const rest = themes.length > 2
-          ? ` (plus ${themes.length - 2} related theme${themes.length - 2 === 1 ? '' : 's'})`
-          : '';
-        return `• ${shortenFeedbackQuestionLabel(cluster.question)}: ${lead}${rest}.`;
-      })
-      .filter(Boolean);
+    normalized.forEach((cluster) => {
+      const themes = (cluster.themes || []).map((t) => String(t).trim()).filter(Boolean);
+      if (!themes.length) return;
+      const lead = shortenFeedbackQuestionLabel(cluster.question, 48);
+      const leadThemes = themes.slice(0, 2).join('; ');
+      const rest = themes.length > 2
+        ? ` (plus ${themes.length - 2} related note${themes.length - 2 === 1 ? '' : 's'})`
+        : '';
+      bullets.push(formatSummaryBullet(lead, `${leadThemes}${rest}.`));
+    });
 
-    if (clusterLines.length) paragraphs.push(clusterLines.join('\n'));
+    bullets.push(formatSummaryBullet(
+      'Next step',
+      'Use the highest-friction themes in your 90-Day Recovery Plan — validate with leadership before changing roles or tools.',
+    ));
 
-    paragraphs.push(
-      'Recommended use: feed the highest-friction themes into the 90-Day Recovery Plan and validate with leadership before changing roles or tools.',
-    );
-
-    return paragraphs.join('\n\n');
+    return bullets.slice(0, 8);
   }
 
   function resolveStaffFeedbackAiSummary(storedSummary, clusters, legacyThemes) {
-    const trimmed = String(storedSummary || '').trim();
-    if (trimmed) return trimmed;
+    const manual = normalizeAiSummaryBullets(storedSummary);
+    if (manual.length) return manual;
     return buildStaffFeedbackAiSummary(clusters, legacyThemes);
   }
 
@@ -1585,7 +1584,7 @@
     return (tabs || []).filter((tab) => tab.id === topId);
   }
 
-  /** Parse stored AI summary (array or newline / bullet text) into bullet strings. */
+  /** Parse stored summary (array or newline / bullet text) into bullet strings. */
   function normalizeAiSummaryBullets(value) {
     if (Array.isArray(value)) {
       return value.map((line) => String(line || '').trim()).filter(Boolean);
@@ -1596,6 +1595,37 @@
       .split(/\n+/)
       .map((line) => line.replace(/^[-•*]\s*/, '').trim())
       .filter(Boolean);
+  }
+
+  /** Build one summary bullet — "Topic: plain-language detail" for PDF rendering. */
+  function formatSummaryBullet(lead, body) {
+    const topic = String(lead || '').trim();
+    const detail = String(body || '').trim();
+    if (!topic) return detail;
+    if (!detail) return topic;
+    return `${topic}: ${detail}`;
+  }
+
+  /** Split a summary bullet into bold lead + body (supports "Topic: detail" or "Topic — detail"). */
+  function parseSummaryBulletLine(line) {
+    const text = String(line || '').trim().replace(/^[-•*]\s*/, '');
+    if (!text) return null;
+    const colon = text.indexOf(':');
+    if (colon > 0 && colon <= 48) {
+      return { lead: text.slice(0, colon).trim(), body: text.slice(colon + 1).trim() };
+    }
+    const emDash = text.indexOf(' — ');
+    if (emDash > 0 && emDash <= 48) {
+      return { lead: text.slice(0, emDash).trim(), body: text.slice(emDash + 3).trim() };
+    }
+    return { lead: '', body: text };
+  }
+
+  /** Normalize stored summary text into { lead, body } objects for consistent PDF rendering. */
+  function normalizeSummaryBullets(value) {
+    return normalizeAiSummaryBullets(value)
+      .map(parseSummaryBulletLine)
+      .filter((bullet) => bullet && (bullet.lead || bullet.body));
   }
 
   /** @deprecated alias — use normalizeAiSummaryBullets */
@@ -1620,50 +1650,60 @@
     const totalAnnual = mapped.reduce((acc, row) => acc + (row.annual || 0), 0);
     const totalSteps = mapped.reduce((acc, row) => acc + (row.taskCount || 0), 0);
 
-    bullets.push(
-      `${mapped.length} as-is process${mapped.length === 1 ? '' : 'es'} mapped with ${totalSteps} workflow step${totalSteps === 1 ? '' : 's'}`
-        + (totalAnnual > 0 ? ` and ${formatCurrencyFn(totalAnnual)}/year in identified process leakage.` : '.'),
-    );
+    bullets.push(formatSummaryBullet(
+      'Big picture',
+      `We mapped ${mapped.length} as-is process${mapped.length === 1 ? '' : 'es'} with ${totalSteps} workflow step${totalSteps === 1 ? '' : 's'}`
+        + (totalAnnual > 0 ? ` — about ${formatCurrencyFn(totalAnnual)}/year in process leakage.` : '.'),
+    ));
 
     const top = mapped[0];
     if (top?.annual > 0) {
-      bullets.push(
-        `Highest-leak process: "${top.tabName}" (${formatCurrencyFn(top.monthly)}/mo, ${top.pctOfTotal}% of process leakage) — primary bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process map'}.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Top priority',
+        `"${top.tabName}" loses ${formatCurrencyFn(top.monthly)}/month (${top.pctOfTotal}% of process leakage). `
+        + `The main bottleneck is "${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process map'}".`,
+      ));
     }
 
     mapped.slice(1, 4).forEach((row, idx) => {
       if (row.annual <= 0) return;
-      bullets.push(
-        `#${idx + 2} "${row.tabName}": ${formatCurrencyFn(row.monthly)}/mo (${row.pctOfTotal}% of total) — bottleneck at "${String(row.topStepLabel || '').replace(/\n/g, ' ').trim()}".`,
-      );
+      bullets.push(formatSummaryBullet(
+        `Also flagged (#${idx + 2})`,
+        `"${row.tabName}" — ${formatCurrencyFn(row.monthly)}/month (${row.pctOfTotal}% of total). `
+        + `Bottleneck: "${String(row.topStepLabel || '').replace(/\n/g, ' ').trim()}".`,
+      ));
     });
 
     const unquantified = mapped.filter((row) => row.taskCount > 0 && row.annual === 0);
     if (unquantified.length) {
-      bullets.push(
-        `${unquantified.length} process${unquantified.length === 1 ? '' : 'es'} (${unquantified.map((row) => row.tabName).join(', ')}) need delay minutes on steps to quantify leakage — maps are included but financial impact is not yet modeled.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Still to quantify',
+        `${unquantified.length} process${unquantified.length === 1 ? '' : 'es'} (${unquantified.map((row) => row.tabName).join(', ')}) need delay minutes on steps before we can show a dollar impact.`,
+      ));
     }
 
     if (mapped.length >= 2 && top?.pctOfTotal >= 40) {
-      bullets.push(
-        `${top.pctOfTotal}% of process leakage concentrates in "${top.tabName}" — prioritize fixes there before spreading effort across lower-impact workflows.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Where to start',
+        `${top.pctOfTotal}% of process leakage sits in "${top.tabName}" — fix this process first before spreading effort elsewhere.`,
+      ));
     }
 
     const stepLeaks = buildStepLeakageList(tabs, DiagramEditor);
     if (stepLeaks.length >= 2) {
       const first = stepLeaks[0];
       const second = stepLeaks[1];
-      bullets.push(
-        `Top quantified step leaks: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo); "${String(second.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${second.tabName} (${formatCurrencyFn(second.monthly)}/mo).`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Costliest steps',
+        `"${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo); `
+        + `"${String(second.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${second.tabName} (${formatCurrencyFn(second.monthly)}/mo).`,
+      ));
     } else if (stepLeaks.length === 1) {
       const first = stepLeaks[0];
-      bullets.push(
-        `Largest quantified step leak: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo).`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Costliest step',
+        `"${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/month).`,
+      ));
     }
 
     return bullets.slice(0, 8);
@@ -1694,52 +1734,66 @@
 
     const assignedSteps = totalSteps - unassignedSteps;
     const assignedPct = Math.round((assignedSteps / totalSteps) * 100);
-    bullets.push(
-      `${totalSteps} workflow step${totalSteps === 1 ? '' : 's'} across ${processCount || 1} process${processCount === 1 ? '' : 'es'} — ${assignedSteps} (${assignedPct}%) have RACI assignments; ${unassignedSteps} still unassigned.`,
-    );
+    bullets.push(formatSummaryBullet(
+      'Coverage',
+      `${assignedSteps} of ${totalSteps} workflow steps (${assignedPct}%) have RACI assignments across ${processCount || 1} process${processCount === 1 ? '' : 'es'}.`,
+    ));
 
     if (unassignedSteps === 0 && noAccountable === 0) {
-      bullets.push('All mapped steps have RACI coverage with a designated Accountable (A) owner.');
+      bullets.push(formatSummaryBullet(
+        'Good news',
+        'Every mapped step has RACI coverage with a clear Accountable (A) owner.',
+      ));
     } else {
       if (unassignedSteps > 0) {
-        bullets.push(
-          `${unassignedSteps} step${unassignedSteps === 1 ? '' : 's'} have no RACI assignment — handoffs at these steps are highest risk for delays and rework.`,
-        );
+        bullets.push(formatSummaryBullet(
+          'Handoff risk',
+          `${unassignedSteps} step${unassignedSteps === 1 ? '' : 's'} have no RACI assignment — these handoffs are the highest risk for delays and rework.`,
+        ));
       }
       if (noAccountable > 0) {
-        bullets.push(
-          `${noAccountable} step${noAccountable === 1 ? '' : 's'} lack an Accountable (A) role — decisions may stall when work is shared but no one owns the outcome.`,
-        );
+        bullets.push(formatSummaryBullet(
+          'Decision gaps',
+          `${noAccountable} step${noAccountable === 1 ? '' : 's'} lack an Accountable (A) role — work may stall when no one owns the outcome.`,
+        ));
       }
     }
 
     const unownedLanes = gaps.filter((gap) => gap.issue.includes('Lane has no named owner'));
     if (unownedLanes.length) {
-      bullets.push(
-        `${unownedLanes.length} workflow lane${unownedLanes.length === 1 ? '' : 's'} have no named owner in the diagram — align swimlanes with org chart roles before Mod 2.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Team alignment',
+        `${unownedLanes.length} workflow lane${unownedLanes.length === 1 ? '' : 's'} have no named owner — match swimlanes to org chart roles before Module 2.`,
+      ));
     }
 
     const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
     if (staffCount > 0 && unassignedSteps > 0) {
-      bullets.push(
-        `${staffCount} staff mapped on the org chart, but ${unassignedSteps} workflow steps still lack RACI — close this gap before playbook build-out.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Org chart vs. RACI',
+        `${staffCount} people are on the org chart, but ${unassignedSteps} workflow steps still lack RACI — close this gap before playbook build-out.`,
+      ));
     }
 
     const accountability = Number(synthesis.accountability) || 3;
     if (accountability <= 2) {
-      bullets.push(`Handoff accountability maturity scored ${accountability}/5 — teams report ambiguous ownership at process boundaries.`);
+      bullets.push(formatSummaryBullet(
+        'Maturity signal',
+        `Handoff accountability scored ${accountability}/5 — teams report unclear ownership at process boundaries.`,
+      ));
     } else if (accountability >= 4 && unassignedSteps === 0) {
-      bullets.push(`Handoff accountability maturity scored ${accountability}/5 — RACI coverage supports clearer escalation paths.`);
+      bullets.push(formatSummaryBullet(
+        'Maturity signal',
+        `Handoff accountability scored ${accountability}/5 — RACI coverage supports clearer escalation paths.`,
+      ));
     }
 
     gaps.slice(0, 3).forEach((gap) => {
       const step = String(gap.stepLabel || '').replace(/\n/g, ' ').trim();
       if (gap.issue === 'No RACI assignment') {
-        bullets.push(`Gap: "${step}" in ${gap.tabName} — no roles assigned.`);
+        bullets.push(formatSummaryBullet('Specific gap', `"${step}" in ${gap.tabName} — no roles assigned yet.`));
       } else if (gap.issue === 'No accountable owner (A)') {
-        bullets.push(`Gap: "${step}" in ${gap.tabName} — roles assigned but no Accountable (A).`);
+        bullets.push(formatSummaryBullet('Specific gap', `"${step}" in ${gap.tabName} — roles listed but no Accountable (A).`));
       }
     });
 
@@ -1767,32 +1821,41 @@
     const scheduled = topFixes.filter((item) => parseTargetWeekRange(item.targetWeek));
     const unscheduled = topFixes.length - scheduled.length;
 
-    bullets.push(
-      `${topFixes.length} prioritized fix${topFixes.length === 1 ? '' : 'es'} in the 90-Day Recovery Plan`
-        + (recapture.annual > 0 ? ` — estimated Year 1 recapture ${formatCurrencyFn(recapture.annual)}` : '')
-        + (recapture.pctOfTotalLeakage > 0 ? ` (~${recapture.pctOfTotalLeakage}% of total identified leakage).` : '.'),
-    );
+    bullets.push(formatSummaryBullet(
+      'The plan',
+      `${topFixes.length} prioritized fix${topFixes.length === 1 ? '' : 'es'} in your 90-Day Recovery Plan`
+        + (recapture.annual > 0 ? ` — about ${formatCurrencyFn(recapture.annual)} recoverable in Year 1` : '')
+        + (recapture.pctOfTotalLeakage > 0 ? ` (~${recapture.pctOfTotalLeakage}% of total leakage).` : '.'),
+    ));
 
     const quickWins = topFixes.filter((item) => getQuadrant(Number(item.effort) || 3, Number(item.impact) || 3) === 'quickWin');
     if (quickWins.length) {
-      bullets.push(`${quickWins.length} quick win${quickWins.length === 1 ? '' : 's'} (high impact, low effort) — execute in Weeks 1–4 for early momentum.`);
+      bullets.push(formatSummaryBullet(
+        'Quick wins',
+        `${quickWins.length} high-impact, low-effort item${quickWins.length === 1 ? '' : 's'} — target Weeks 1–4 for early momentum.`,
+      ));
     }
 
     if (scheduled.length) {
-      bullets.push(
-        `${scheduled.length} of ${topFixes.length} top fixes have target weeks assigned`
-          + (unscheduled ? `; ${unscheduled} still need a week on the Gantt.` : '.'),
-      );
+      bullets.push(formatSummaryBullet(
+        'Timeline',
+        `${scheduled.length} of ${topFixes.length} top fixes have target weeks`
+          + (unscheduled ? `; ${unscheduled} still need a week on the Gantt chart.` : '.'),
+      ));
     } else {
-      bullets.push('No target weeks assigned yet — add target weeks in Strategy & Priorities to populate the implementation timeline.');
+      bullets.push(formatSummaryBullet(
+        'Timeline',
+        'No target weeks assigned yet — add weeks in Strategy & Priorities to populate the implementation timeline.',
+      ));
     }
 
     const lead = topFixes[0];
     if (lead) {
-      bullets.push(
-        `#1 priority: "${lead.text}" — owner ${String(lead.owner || '').trim() || 'TBD'}, target ${lead.targetWeek || 'TBD'}`
-          + (Number(lead.expectedSavings) > 0 ? `, est. ${formatCurrencyFn(lead.expectedSavings)}/mo savings.` : '.'),
-      );
+      bullets.push(formatSummaryBullet(
+        'Start here',
+        `"${lead.text}" — owner ${String(lead.owner || '').trim() || 'TBD'}, target ${lead.targetWeek || 'TBD'}`
+          + (Number(lead.expectedSavings) > 0 ? `, est. ${formatCurrencyFn(lead.expectedSavings)}/month savings.` : '.'),
+      ));
     }
 
     const sources = {};
@@ -1804,19 +1867,25 @@
     if (sources.workflow) sourceParts.push(`${sources.workflow} from process maps`);
     if (sources.saas) sourceParts.push(`${sources.saas} from SaaS audit`);
     if (sources.feedback) sourceParts.push(`${sources.feedback} from staff feedback`);
-    if (sourceParts.length) bullets.push(`Fix sources: ${sourceParts.join(', ')}.`);
+    if (sourceParts.length) {
+      bullets.push(formatSummaryBullet('Where fixes came from', `${sourceParts.join(', ')}.`));
+    }
 
     if (gantt.rows.length >= 1) {
       const first = gantt.rows[0];
       const last = gantt.rows[gantt.rows.length - 1];
-      bullets.push(
-        `Implementation timeline spans Week ${first.startWeek} through Week ${last.endWeek} across ${gantt.rows.length} scheduled initiative${gantt.rows.length === 1 ? '' : 's'}.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Implementation window',
+        `Week ${first.startWeek} through Week ${last.endWeek} across ${gantt.rows.length} scheduled initiative${gantt.rows.length === 1 ? '' : 's'}.`,
+      ));
     }
 
     const missingOwners = topFixes.filter((item) => !String(item.owner || '').trim()).length;
     if (missingOwners) {
-      bullets.push(`${missingOwners} top fix${missingOwners === 1 ? '' : 'es'} still need an assigned owner before kickoff.`);
+      bullets.push(formatSummaryBullet(
+        'Before kickoff',
+        `${missingOwners} top fix${missingOwners === 1 ? '' : 'es'} still need an assigned owner.`,
+      ));
     }
 
     return bullets.slice(0, 8);
@@ -1841,15 +1910,17 @@
     const missingReportsTo = rows.filter((row) => !row.reportsTo).length;
     const missingTitle = rows.filter((row) => !row.title).length;
 
-    bullets.push(
-      `${rows.length} staff member${rows.length === 1 ? '' : 's'} mapped on the as-is org chart`
+    bullets.push(formatSummaryBullet(
+      'Team snapshot',
+      `${rows.length} staff member${rows.length === 1 ? '' : 's'} on the as-is org chart`
         + (departments.length ? ` across ${departments.length} department${departments.length === 1 ? '' : 's'}.` : '.'),
-    );
+    ));
 
     if (departments.length) {
-      bullets.push(
-        `Departments represented: ${departments.slice(0, 6).join(', ')}${departments.length > 6 ? ` (+${departments.length - 6} more)` : ''}.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Departments',
+        `${departments.slice(0, 6).join(', ')}${departments.length > 6 ? ` (+${departments.length - 6} more)` : ''}.`,
+      ));
     }
 
     const reportsByManager = {};
@@ -1861,42 +1932,56 @@
     const managers = Object.entries(reportsByManager).sort((a, b) => b[1] - a[1]);
     if (managers.length) {
       const [topManager, count] = managers[0];
-      bullets.push(
-        `Primary reporting hub: ${topManager} has ${count} direct report${count === 1 ? '' : 's'}`
-          + (managers.length > 1 ? `; ${managers.length - 1} other manager${managers.length === 2 ? '' : 's'} with direct reports.` : ' on the chart.'),
-      );
+      bullets.push(formatSummaryBullet(
+        'Reporting lines',
+        `${topManager} has ${count} direct report${count === 1 ? '' : 's'}`
+          + (managers.length > 1 ? `; ${managers.length - 1} other manager${managers.length === 2 ? '' : 's'} also have direct reports.` : ' — the main hub on this chart.'),
+      ));
     } else if (missingReportsTo === rows.length) {
-      bullets.push('No reporting lines captured yet — add "Reports To" in the org chart or staff directory to clarify escalation paths.');
+      bullets.push(formatSummaryBullet(
+        'Reporting lines',
+        'No reporting lines captured yet — add "Reports To" in the org chart to clarify who escalates to whom.',
+      ));
     }
 
     if (missingReportsTo > 0 && missingReportsTo < rows.length) {
-      bullets.push(
-        `${missingReportsTo} staff member${missingReportsTo === 1 ? '' : 's'} lack a "Reports To" value — often the owner/GM row or roles added after the chart was drawn.`,
-      );
+      bullets.push(formatSummaryBullet(
+        'Data gaps',
+        `${missingReportsTo} staff member${missingReportsTo === 1 ? '' : 's'} missing "Reports To" — often the owner/GM row or roles added after the chart was drawn.`,
+      ));
     }
     if (missingDept > 0) {
-      bullets.push(
+      bullets.push(formatSummaryBullet(
+        'Data gaps',
         `${missingDept} roster row${missingDept === 1 ? '' : 's'} missing department — tagging departments improves RACI and workflow lane alignment.`,
-      );
+      ));
     }
     if (missingTitle > 0) {
-      bullets.push(
+      bullets.push(formatSummaryBullet(
+        'Data gaps',
         `${missingTitle} staff member${missingTitle === 1 ? '' : 's'} missing role/title on the directory table.`,
-      );
+      ));
     }
 
     if (String(opts.orgChartSvg || '').trim()) {
-      bullets.push('Org chart diagram exported for the PDF — use alongside the staff directory table for Mod 2 playbook ownership.');
+      bullets.push(formatSummaryBullet(
+        'For the PDF',
+        'Org chart diagram is exported — use it with the staff directory table when assigning Module 2 playbook owners.',
+      ));
     } else {
-      bullets.push('Org chart SVG not exported yet — open Org Chart, save to cloud, and re-print to include the visual diagram.');
+      bullets.push(formatSummaryBullet(
+        'For the PDF',
+        'Org chart diagram not exported yet — open Org Chart, save to cloud, and refresh before printing.',
+      ));
     }
 
     if (opts.tabs && opts.DiagramEditor) {
       const raciGaps = buildRaciGaps(opts.tabs, opts.raciAssignments || {}, opts.DiagramEditor);
       if (raciGaps.unassignedSteps > 0) {
-        bullets.push(
+        bullets.push(formatSummaryBullet(
+          'Link to RACI',
           `${raciGaps.unassignedSteps} workflow steps still lack RACI despite ${rows.length} staff on the org chart — assign owners using names from this directory.`,
-        );
+        ));
       }
     }
 
@@ -2975,6 +3060,9 @@
     normalizeAiSummaryBullets,
     normalizeWorkflowAiSummaryBullets,
     normalizeRaciAiSummaryBullets,
+    formatSummaryBullet,
+    parseSummaryBulletLine,
+    normalizeSummaryBullets,
     buildWorkflowAiSummary,
     resolveWorkflowAiSummary,
     buildRaciAiSummary,

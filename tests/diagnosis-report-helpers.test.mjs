@@ -112,8 +112,8 @@ describe('diagnosis-report-helpers', () => {
       formatCurrency: (v) => `$${v}`,
     });
     assert.ok(bullets.length >= 2);
-    assert.match(bullets[0], /2 as-is processes mapped/);
-    assert.match(bullets[1], /Highest-leak process/);
+    assert.match(bullets[0], /^Big picture:/);
+    assert.match(bullets[1], /^Top priority:/);
   });
 
   it('resolveWorkflowAiSummary prefers stored bullets over auto-generated', () => {
@@ -130,7 +130,7 @@ describe('diagnosis-report-helpers', () => {
       orgChartMembers: [{ name: 'Maria', title: 'Ops Lead' }],
     });
     assert.ok(bullets.length >= 2);
-    assert.match(bullets[0], /workflow step/);
+    assert.match(bullets[0], /^Coverage:/);
   });
 
   it('resolveRaciAiSummary prefers stored bullets over auto-generated', () => {
@@ -150,7 +150,7 @@ describe('diagnosis-report-helpers', () => {
       totalAnnualWaste: 240000,
     });
     assert.ok(bullets.length >= 2);
-    assert.match(bullets[0], /90-Day Recovery Plan/);
+    assert.match(bullets[0], /^The plan:/);
   });
 
   it('buildOrgChartAiSummary returns bullet points from staff directory', () => {
@@ -161,8 +161,16 @@ describe('diagnosis-report-helpers', () => {
     ];
     const bullets = DRH.buildOrgChartAiSummary(members, { orgChartSvg: 'data:image/svg+xml,abc' });
     assert.ok(bullets.length >= 2);
-    assert.match(bullets[0], /3 staff members mapped/);
+    assert.match(bullets[0], /^Team snapshot:/);
     assert.match(bullets.join(' '), /Jane has 1 direct report/);
+  });
+
+  it('formatSummaryBullet and parseSummaryBulletLine round-trip topic leads', () => {
+    const line = DRH.formatSummaryBullet('Big picture', 'We mapped 3 processes.');
+    assert.equal(line, 'Big picture: We mapped 3 processes.');
+    const parsed = DRH.parseSummaryBulletLine(line);
+    assert.equal(parsed.lead, 'Big picture');
+    assert.equal(parsed.body, 'We mapped 3 processes.');
   });
 
   it('resolveOrgChartAiSummary prefers stored bullets over auto-generated', () => {
@@ -714,14 +722,18 @@ describe('diagnosis-report-helpers', () => {
       },
     ];
     const summary = DRH.buildStaffFeedbackAiSummary(clusters, []);
-    assert.match(summary, /2 anonymous survey questions/i);
-    assert.match(summary, /3 recurring themes/i);
-    assert.match(summary, /Approvals take too long/i);
-    assert.match(summary, /90-Day Recovery Plan/i);
+    assert.ok(Array.isArray(summary));
+    assert.ok(summary.length >= 3);
+    assert.match(summary[0], /^Staff voice:/);
+    assert.match(summary.join('\n'), /Approvals take too long/i);
+    assert.match(summary.join('\n'), /90-Day Recovery Plan/i);
 
-    assert.equal(DRH.resolveStaffFeedbackAiSummary('Custom consultant summary', clusters, []), 'Custom consultant summary');
-    assert.match(DRH.resolveStaffFeedbackAiSummary('', clusters, []), /Approvals take too long/i);
-    assert.equal(DRH.buildStaffFeedbackAiSummary([], []), '');
+    assert.deepEqual(
+      DRH.resolveStaffFeedbackAiSummary('Overview: Custom consultant summary', clusters, []),
+      ['Overview: Custom consultant summary'],
+    );
+    assert.match(DRH.resolveStaffFeedbackAiSummary('', clusters, [])[0], /^Staff voice:/);
+    assert.deepEqual(DRH.buildStaffFeedbackAiSummary([], []), []);
   });
 
   it('extractStaffFeedbackThemesFromResponsesCsv pulls open-ended answers', () => {
