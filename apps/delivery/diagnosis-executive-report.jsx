@@ -126,6 +126,13 @@
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
             const raciGaps = DR.buildRaciGaps?.(tabs, raciAssignments, window.DiagramEditor) || { gaps: [], unassignedSteps: 0, totalSteps: 0 };
+            const raciAiSummaryBullets = DR.resolveRaciAiSummary?.(
+                synthesis.raciAiSummary,
+                tabs,
+                raciAssignments,
+                window.DiagramEditor,
+                { synthesis, orgChartMembers },
+            ) || [];
             const modules = EC_MODULES();
             const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
 
@@ -393,6 +400,14 @@
                                     </div>
                                 );
                             })}
+                            {raciAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — RACI</h4>
+                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                        {raciAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     )}
 
