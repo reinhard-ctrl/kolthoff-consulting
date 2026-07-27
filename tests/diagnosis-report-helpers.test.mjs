@@ -97,6 +97,43 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(rankings[0].annual >= 0);
   });
 
+  it('buildWorkflowAiSummary returns bullet points from process rankings', () => {
+    const tabs = [
+      { id: 'a', name: 'Sales', present: {} },
+      { id: 'b', name: 'Ops', present: {} },
+    ];
+    const bullets = DRH.buildWorkflowAiSummary(tabs, mockDiagramEditor, {
+      formatCurrency: (v) => `$${v}`,
+    });
+    assert.ok(bullets.length >= 2);
+    assert.match(bullets[0], /2 as-is processes mapped/);
+    assert.match(bullets[1], /Highest-leak process/);
+  });
+
+  it('resolveWorkflowAiSummary prefers stored bullets over auto-generated', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const stored = '• Custom workflow insight\nSecond bullet';
+    const resolved = DRH.resolveWorkflowAiSummary(stored, tabs, mockDiagramEditor, (v) => `$${v}`);
+    assert.deepEqual(resolved, ['Custom workflow insight', 'Second bullet']);
+  });
+
+  it('buildRaciAiSummary returns bullet points from RACI gaps', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const bullets = DRH.buildRaciAiSummary(tabs, {}, mockDiagramEditor, {
+      synthesis: { accountability: 2 },
+      orgChartMembers: [{ name: 'Maria', title: 'Ops Lead' }],
+    });
+    assert.ok(bullets.length >= 2);
+    assert.match(bullets[0], /workflow step/);
+  });
+
+  it('resolveRaciAiSummary prefers stored bullets over auto-generated', () => {
+    const tabs = [{ id: 'a', name: 'Sales', present: {} }];
+    const stored = '• Custom RACI insight';
+    const resolved = DRH.resolveRaciAiSummary(stored, tabs, {}, mockDiagramEditor, {});
+    assert.deepEqual(resolved, ['Custom RACI insight']);
+  });
+
   it('generateMatrixFromDiagnosis adds workflow and saas items', () => {
     const tabs = [{ id: 'a', name: 'Sales', present: {} }];
     const saas = [{ id: 1, tool: 'Slack', billing: 500, users: 10, reason: 'Cut idle seats' }];

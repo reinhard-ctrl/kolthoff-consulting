@@ -1578,6 +1578,174 @@
     return (tabs || []).filter((tab) => tab.id === topId);
   }
 
+  /** Parse stored AI summary (array or newline / bullet text) into bullet strings. */
+  function normalizeAiSummaryBullets(value) {
+    if (Array.isArray(value)) {
+      return value.map((line) => String(line || '').trim()).filter(Boolean);
+    }
+    const text = String(value || '').trim();
+    if (!text) return [];
+    return text
+      .split(/\n+/)
+      .map((line) => line.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean);
+  }
+
+  /** @deprecated alias — use normalizeAiSummaryBullets */
+  function normalizeWorkflowAiSummaryBullets(value) {
+    return normalizeAiSummaryBullets(value);
+  }
+
+  /** @deprecated alias — use normalizeAiSummaryBullets */
+  function normalizeRaciAiSummaryBullets(value) {
+    return normalizeAiSummaryBullets(value);
+  }
+
+  /** Deterministic workflow summary bullets from process rankings and step leakage. */
+  function buildWorkflowAiSummary(tabs, DiagramEditor, options) {
+    const opts = options || {};
+    const formatCurrencyFn = opts.formatCurrency || ((v) => String(v));
+    const rankings = buildProcessRankings(tabs, DiagramEditor);
+    const mapped = rankings.filter((row) => row.taskCount > 0 || row.annual > 0);
+    if (!mapped.length) return [];
+
+    const bullets = [];
+    const totalAnnual = mapped.reduce((acc, row) => acc + (row.annual || 0), 0);
+    const totalSteps = mapped.reduce((acc, row) => acc + (row.taskCount || 0), 0);
+
+    bullets.push(
+      `${mapped.length} as-is process${mapped.length === 1 ? '' : 'es'} mapped with ${totalSteps} workflow step${totalSteps === 1 ? '' : 's'}`
+        + (totalAnnual > 0 ? ` and ${formatCurrencyFn(totalAnnual)}/year in identified process leakage.` : '.'),
+    );
+
+    const top = mapped[0];
+    if (top?.annual > 0) {
+      bullets.push(
+        `Highest-leak process: "${top.tabName}" (${formatCurrencyFn(top.monthly)}/mo, ${top.pctOfTotal}% of process leakage) — primary bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process map'}.`,
+      );
+    }
+
+    mapped.slice(1, 4).forEach((row, idx) => {
+      if (row.annual <= 0) return;
+      bullets.push(
+        `#${idx + 2} "${row.tabName}": ${formatCurrencyFn(row.monthly)}/mo (${row.pctOfTotal}% of total) — bottleneck at "${String(row.topStepLabel || '').replace(/\n/g, ' ').trim()}".`,
+      );
+    });
+
+    const unquantified = mapped.filter((row) => row.taskCount > 0 && row.annual === 0);
+    if (unquantified.length) {
+      bullets.push(
+        `${unquantified.length} process${unquantified.length === 1 ? '' : 'es'} (${unquantified.map((row) => row.tabName).join(', ')}) need delay minutes on steps to quantify leakage — maps are included but financial impact is not yet modeled.`,
+      );
+    }
+
+    if (mapped.length >= 2 && top?.pctOfTotal >= 40) {
+      bullets.push(
+        `${top.pctOfTotal}% of process leakage concentrates in "${top.tabName}" — prioritize fixes there before spreading effort across lower-impact workflows.`,
+      );
+    }
+
+    const stepLeaks = buildStepLeakageList(tabs, DiagramEditor);
+    if (stepLeaks.length >= 2) {
+      const first = stepLeaks[0];
+      const second = stepLeaks[1];
+      bullets.push(
+        `Top quantified step leaks: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo); "${String(second.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${second.tabName} (${formatCurrencyFn(second.monthly)}/mo).`,
+      );
+    } else if (stepLeaks.length === 1) {
+      const first = stepLeaks[0];
+      bullets.push(
+        `Largest quantified step leak: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo).`,
+      );
+    }
+
+    return bullets.slice(0, 8);
+  }
+
+  /** Use consultant-edited summary when present; otherwise auto-generate from workflows. */
+  function resolveWorkflowAiSummary(stored, tabs, DiagramEditor, formatCurrencyFn) {
+    const manual = normalizeAiSummaryBullets(stored);
+    if (manual.length) return manual;
+    return buildWorkflowAiSummary(tabs, DiagramEditor, { formatCurrency: formatCurrencyFn });
+  }
+
+  /** Deterministic RACI summary bullets from assignment gaps and org alignment. */
+  function buildRaciAiSummary(tabs, raciAssignments, DiagramEditor, options) {
+    const opts = options || {};
+    const synthesis = opts.synthesis || {};
+    const orgChartMembers = opts.orgChartMembers || [];
+    const raciGaps = buildRaciGaps(tabs, raciAssignments, DiagramEditor);
+    const { totalSteps, unassignedSteps, noAccountable, gaps } = raciGaps;
+    if (totalSteps === 0) return [];
+
+    const bullets = [];
+    let processCount = 0;
+    (tabs || []).forEach((tab) => {
+      const { tasks } = getProcessNodes(tab, DiagramEditor);
+      if (tasks.filter((t) => t.type !== 'gateway' && t.type !== 'event').length) processCount += 1;
+    });
+
+    const assignedSteps = totalSteps - unassignedSteps;
+    const assignedPct = Math.round((assignedSteps / totalSteps) * 100);
+    bullets.push(
+      `${totalSteps} workflow step${totalSteps === 1 ? '' : 's'} across ${processCount || 1} process${processCount === 1 ? '' : 'es'} — ${assignedSteps} (${assignedPct}%) have RACI assignments; ${unassignedSteps} still unassigned.`,
+    );
+
+    if (unassignedSteps === 0 && noAccountable === 0) {
+      bullets.push('All mapped steps have RACI coverage with a designated Accountable (A) owner.');
+    } else {
+      if (unassignedSteps > 0) {
+        bullets.push(
+          `${unassignedSteps} step${unassignedSteps === 1 ? '' : 's'} have no RACI assignment — handoffs at these steps are highest risk for delays and rework.`,
+        );
+      }
+      if (noAccountable > 0) {
+        bullets.push(
+          `${noAccountable} step${noAccountable === 1 ? '' : 's'} lack an Accountable (A) role — decisions may stall when work is shared but no one owns the outcome.`,
+        );
+      }
+    }
+
+    const unownedLanes = gaps.filter((gap) => gap.issue.includes('Lane has no named owner'));
+    if (unownedLanes.length) {
+      bullets.push(
+        `${unownedLanes.length} workflow lane${unownedLanes.length === 1 ? '' : 's'} have no named owner in the diagram — align swimlanes with org chart roles before Mod 2.`,
+      );
+    }
+
+    const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
+    if (staffCount > 0 && unassignedSteps > 0) {
+      bullets.push(
+        `${staffCount} staff mapped on the org chart, but ${unassignedSteps} workflow steps still lack RACI — close this gap before playbook build-out.`,
+      );
+    }
+
+    const accountability = Number(synthesis.accountability) || 3;
+    if (accountability <= 2) {
+      bullets.push(`Handoff accountability maturity scored ${accountability}/5 — teams report ambiguous ownership at process boundaries.`);
+    } else if (accountability >= 4 && unassignedSteps === 0) {
+      bullets.push(`Handoff accountability maturity scored ${accountability}/5 — RACI coverage supports clearer escalation paths.`);
+    }
+
+    gaps.slice(0, 3).forEach((gap) => {
+      const step = String(gap.stepLabel || '').replace(/\n/g, ' ').trim();
+      if (gap.issue === 'No RACI assignment') {
+        bullets.push(`Gap: "${step}" in ${gap.tabName} — no roles assigned.`);
+      } else if (gap.issue === 'No accountable owner (A)') {
+        bullets.push(`Gap: "${step}" in ${gap.tabName} — roles assigned but no Accountable (A).`);
+      }
+    });
+
+    return bullets.slice(0, 8);
+  }
+
+  /** Use consultant-edited RACI summary when present; otherwise auto-generate. */
+  function resolveRaciAiSummary(stored, tabs, raciAssignments, DiagramEditor, options) {
+    const manual = normalizeAiSummaryBullets(stored);
+    if (manual.length) return manual;
+    return buildRaciAiSummary(tabs, raciAssignments, DiagramEditor, options);
+  }
+
   function tabHasReportableWorkflow(tab, DiagramEditor) {
     const { tasks } = getProcessNodes(tab, DiagramEditor);
     if (tasks.length > 0) return true;
@@ -2638,6 +2806,13 @@
     buildMod1DeliverableStatus,
     buildDefaultExecutiveLetter,
     getBriefingWorkflowTabs,
+    normalizeAiSummaryBullets,
+    normalizeWorkflowAiSummaryBullets,
+    normalizeRaciAiSummaryBullets,
+    buildWorkflowAiSummary,
+    resolveWorkflowAiSummary,
+    buildRaciAiSummary,
+    resolveRaciAiSummary,
     tabHasReportableWorkflow,
     tabNeedsWorkflowSvgExport,
     getReportWorkflowTabs,

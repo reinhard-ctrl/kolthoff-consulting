@@ -628,6 +628,8 @@
             feedbackResponsesUrl: '',
             feedbackLaunchGuide: DRH().DEFAULT_FEEDBACK_LAUNCH_GUIDE || '',
             executiveLetter: '',
+            workflowAiSummary: '',
+            raciAiSummary: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             larkProcessSummary: [],
@@ -2338,6 +2340,75 @@
                         </div>
 
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
+                            <div className="flex flex-wrap justify-between items-start gap-3">
+                                <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Workflow AI Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis after Process Leakage Ranking — one line per bullet.</p>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    const bullets = DRH().buildWorkflowAiSummary?.(
+                                        resolvedDiagnosisTabs,
+                                        window.DiagramEditor,
+                                        { formatCurrency },
+                                    ) || [];
+                                    setSynthesis((prev) => ({
+                                        ...prev,
+                                        workflowAiSummary: bullets.map((line) => `• ${line}`).join('\n'),
+                                    }));
+                                }} className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider">Regenerate from Workflows</button>
+                            </div>
+                            <textarea
+                                rows={5}
+                                value={synthesis.workflowAiSummary || ''}
+                                onChange={(e) => setSynthesis((prev) => ({ ...prev, workflowAiSummary: e.target.value }))}
+                                placeholder="Leave blank to auto-generate from workflow rankings when printing…"
+                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
+                            />
+                            {(synthesis.workflowAiSummary || '').trim() === '' && (
+                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
+                                    {(DRH().buildWorkflowAiSummary?.(resolvedDiagnosisTabs, window.DiagramEditor, { formatCurrency }) || []).slice(0, 4).map((line, idx) => (
+                                        <li key={idx}>{line}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="border-t border-brandNavy-800 pt-4 space-y-3">
+                            <div className="flex flex-wrap justify-between items-start gap-3">
+                                <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">RACI AI Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the RACI Accountability Matrix section — one line per bullet.</p>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    const bullets = DRH().buildRaciAiSummary?.(
+                                        resolvedDiagnosisTabs,
+                                        raciAssignments,
+                                        window.DiagramEditor,
+                                        { synthesis, orgChartMembers },
+                                    ) || [];
+                                    setSynthesis((prev) => ({
+                                        ...prev,
+                                        raciAiSummary: bullets.map((line) => `• ${line}`).join('\n'),
+                                    }));
+                                }} className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider">Regenerate from RACI</button>
+                            </div>
+                            <textarea
+                                rows={5}
+                                value={synthesis.raciAiSummary || ''}
+                                onChange={(e) => setSynthesis((prev) => ({ ...prev, raciAiSummary: e.target.value }))}
+                                placeholder="Leave blank to auto-generate from RACI assignments when printing…"
+                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
+                            />
+                            {(synthesis.raciAiSummary || '').trim() === '' && (
+                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
+                                    {(DRH().buildRaciAiSummary?.(resolvedDiagnosisTabs, raciAssignments, window.DiagramEditor, { synthesis, orgChartMembers }) || []).slice(0, 4).map((line, idx) => (
+                                        <li key={idx}>{line}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <h4 className="text-[10px] font-bold uppercase text-brandTeal-400 tracking-wider">Client Handoff (syncs to portal)</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
@@ -2681,6 +2752,12 @@
             const topFixes = DR.getTop5Fixes?.(activeItems) || [];
             const recapture = DR.computeRecaptureSummary?.(topFixes, totalAnnualWaste) || { monthly: 0, annual: 0, pctOfTotalLeakage: 0 };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
+            const workflowAiSummaryBullets = DR.resolveWorkflowAiSummary?.(
+                synthesis.workflowAiSummary,
+                tabs,
+                window.DiagramEditor,
+                formatCurrency,
+            ) || [];
             const workflowTabs = DR.getReportWorkflowTabs?.(tabs, window.DiagramEditor, {
                 topOnly: !!printConfig.flowchartsTopOnly,
             }) || tabs;
@@ -2691,6 +2768,13 @@
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
             const raciGaps = DR.buildRaciGaps?.(tabs, raciAssignments, window.DiagramEditor) || { gaps: [], unassignedSteps: 0, totalSteps: 0 };
             const raciOrgInsights = DR.buildRaciOrgInsights?.(tabs, raciAssignments, orgChartMembers, window.DiagramEditor) || [];
+            const raciAiSummaryBullets = DR.resolveRaciAiSummary?.(
+                synthesis.raciAiSummary,
+                tabs,
+                raciAssignments,
+                window.DiagramEditor,
+                { synthesis, orgChartMembers },
+            ) || [];
             const modules = EC_MODULES();
             const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
 
@@ -3007,6 +3091,24 @@
                                     ))}
                                 </tbody>
                             </table>
+                            {workflowAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Workflows</h4>
+                                    {reportEditMode ? (
+                                        <textarea
+                                            rows={Math.max(4, workflowAiSummaryBullets.length + 1)}
+                                            value={synthesis.workflowAiSummary || workflowAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
+                                            onChange={(e) => onSynthesisFieldChange?.('workflowAiSummary', e.target.value)}
+                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
+                                            placeholder="One bullet per line — leave blank to auto-generate from workflow data"
+                                        />
+                                    ) : (
+                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                            {workflowAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -3096,6 +3198,24 @@
                                     </div>
                                 );
                             })}
+                            {raciAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — RACI</h4>
+                                    {reportEditMode ? (
+                                        <textarea
+                                            rows={Math.max(4, raciAiSummaryBullets.length + 1)}
+                                            value={synthesis.raciAiSummary || raciAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
+                                            onChange={(e) => onSynthesisFieldChange?.('raciAiSummary', e.target.value)}
+                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
+                                            placeholder="One bullet per line — leave blank to auto-generate from RACI data"
+                                        />
+                                    ) : (
+                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                            {raciAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
