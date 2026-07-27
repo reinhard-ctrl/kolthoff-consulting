@@ -161,11 +161,25 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.google-auth.outputs.credentials_file_path }}
         run: |
-          npx --yes firebase-tools@15.22.3 deploy \
-            --only hosting,firestore:rules,storage \
-            --project kolthoff-portal \
-            --non-interactive \
-            --force
+          MAX_ATTEMPTS=4
+          DELAY=30
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "Firebase hosting deploy attempt ${attempt}/${MAX_ATTEMPTS}"
+            if npx --yes firebase-tools@15.22.3 deploy \
+              --only hosting,firestore:rules,storage \
+              --project kolthoff-portal \
+              --non-interactive \
+              --force; then
+              exit 0
+            fi
+            if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Deploy failed; retrying in ${DELAY}s (transient Firebase API errors are common)..."
+              sleep "$DELAY"
+              DELAY=$((DELAY * 2))
+            fi
+          done
+          echo "Firebase hosting deploy failed after ${MAX_ATTEMPTS} attempts."
+          exit 1
 
       - name: Deploy Cloud Functions
         continue-on-error: true
