@@ -629,6 +629,7 @@
             executiveLetter: '',
             workflowAiSummary: '',
             raciAiSummary: '',
+            recoveryPlanAiSummary: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             larkProcessSummary: [],
@@ -1683,14 +1684,14 @@
 
             const aiInsights = useMemo(() => DRH().buildOperationalInsights?.(insightCtx) || [], [insightCtx]);
             const matrixItems = synthesis.matrix?.items || [];
-            const top5Preview = useMemo(() => DRH().getTop5Fixes?.(matrixItems) || [], [matrixItems]);
-            const top5Validation = useMemo(() => DRH().validateTop5Readiness?.({
+            const topFixesPreview = useMemo(() => DRH().getTop10Fixes?.(matrixItems) || [], [matrixItems]);
+            const topFixesValidation = useMemo(() => DRH().validateTop5Readiness?.({
                 synthesis, tasks: activeProfile?.tasks || [],
-            }) || { ready: true, errors: [], warnings: [], top5: top5Preview }, [synthesis, top5Preview, activeProfile?.tasks]);
+            }) || { ready: true, errors: [], warnings: [], top10: topFixesPreview }, [synthesis, topFixesPreview, activeProfile?.tasks]);
             const nextPhaseHint = useMemo(() => DRH().buildNextPhaseHint?.(matrixItems, EC_MODULES()), [matrixItems]);
             const weekOptions = DRH().TARGET_WEEK_OPTIONS || ['Week 1–2', 'Week 3–4', 'Week 5–6', 'Week 7–8', 'Week 9–10', 'Week 11–12'];
             const maturityRubric = DRH().MATURITY_RUBRIC || {};
-            const top5Ids = useMemo(() => new Set(top5Preview.map((i) => i.id)), [top5Preview]);
+            const topFixesIds = useMemo(() => new Set(topFixesPreview.map((i) => i.id)), [topFixesPreview]);
             const recoveryGanttPreview = useMemo(
                 () => DRH().buildRecoveryPlanGantt?.(matrixItems) || { rows: [], unscheduledCount: 0 },
                 [matrixItems],
@@ -1699,7 +1700,7 @@
             const readinessItems = useMemo(() => {
                 const items = [];
                 const push = (label, ok, hint) => items.push({ label, status: ok ? 'ok' : (hint?.startsWith('block') ? 'error' : 'warn'), hint: hint || '' });
-                push('Top 5 have owner + target week', top5Validation.ready && top5Validation.errors.length === 0, top5Validation.errors[0]);
+                push('Top 10 have owner + target week', topFixesValidation.ready && topFixesValidation.errors.length === 0, topFixesValidation.errors[0]);
                 push('≥3 recovery plan items', matrixItems.length >= 3, matrixItems.length >= 3 ? '' : 'warn:Add more initiatives or generate from diagnosis');
                 push('Maturity calibrated', !DRH().isDefaultMaturity?.(synthesis), 'warn:Scores still default 3/5 — adjust from field observations');
                 push('Workflow synced to report', !workflowStale, workflowStale ? 'warn:Workflow saved after last sync — Sync to Cloud in sidebar' : '');
@@ -1710,7 +1711,7 @@
                     push('Video walkthrough (optional)', true, '');
                 }
                 return items;
-            }, [top5Validation, matrixItems.length, synthesis, workflowStale]);
+            }, [topFixesValidation, matrixItems.length, synthesis, workflowStale]);
 
             const updateScore = (key, val) => setSynthesis(prev => ({ ...prev, [key]: Number(val) }));
             const ScoreBarUI = ({ label, valKey, val }) => {
@@ -1791,7 +1792,7 @@
             return (
                 <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
                     {/* Readiness strip */}
-                    <div className={`sticky top-0 z-20 glass-panel rounded-xl p-4 border shadow-lg ${mod1Handoff?.errors?.length ? 'border-rose-500/40 bg-brandNavy-900' : top5Validation.ready ? 'border-brandTeal-500/30 bg-brandNavy-900' : 'border-amber-500/40 bg-brandNavy-900'}`}>
+                    <div className={`sticky top-0 z-20 glass-panel rounded-xl p-4 border shadow-lg ${mod1Handoff?.errors?.length ? 'border-rose-500/40 bg-brandNavy-900' : topFixesValidation.ready ? 'border-brandTeal-500/30 bg-brandNavy-900' : 'border-amber-500/40 bg-brandNavy-900'}`}>
                         <div className="flex flex-wrap justify-between items-start gap-3 mb-3">
                             <div>
                                 <div className="text-[10px] font-mono uppercase tracking-widest text-brandTeal-400 font-bold">Strategy readiness</div>
@@ -1817,7 +1818,7 @@
                     </div>
 
                     {/* B: 90-Day Recovery Plan — first */}
-                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Top 5 by impact ÷ effort appear in Part III of the PDF. Assign owner and target week on each priority." badge="Priority" defaultOpen>
+                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Top 10 by impact ÷ effort appear in Part III of the PDF. Assign owner and target week on each priority." badge="Priority" defaultOpen>
                         <div className="flex flex-wrap justify-between items-center gap-3">
                             <p className="text-[10px] text-slate-400">Build the prioritized recovery plan for the Leak Scan Report.</p>
                             <button type="button" onClick={() => setGenerateModalOpen(true)} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
@@ -1860,14 +1861,14 @@
                             </div>
                         )}
 
-                        {top5Preview.length > 0 && (
-                            <div className={`bg-brandNavy-950/60 border rounded-xl p-4 ${top5Validation.ready && top5Validation.errors.length === 0 ? 'border-brandTeal-500/20' : 'border-amber-500/40'}`}>
+                        {topFixesPreview.length > 0 && (
+                            <div className={`bg-brandNavy-950/60 border rounded-xl p-4 ${topFixesValidation.ready && topFixesValidation.errors.length === 0 ? 'border-brandTeal-500/20' : 'border-amber-500/40'}`}>
                                 <div className="flex justify-between items-center mb-2">
-                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 5 preview (PDF Part III)</div>
-                                    {top5Validation.errors.length > 0 && <span className="text-[9px] font-bold uppercase text-amber-400">Needs owner + target week</span>}
+                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 10 preview (PDF Part III)</div>
+                                    {topFixesValidation.errors.length > 0 && <span className="text-[9px] font-bold uppercase text-amber-400">Needs owner + target week</span>}
                                 </div>
                                 <ol className="space-y-2 list-decimal list-inside text-xs text-slate-300">
-                                    {top5Preview.map((item) => {
+                                    {topFixesPreview.map((item) => {
                                         const missingOwner = !String(item.owner || '').trim();
                                         const missingWeek = !String(item.targetWeek || '').trim();
                                         const missingSavings = !(Number(item.expectedSavings) > 0);
@@ -1918,14 +1919,14 @@
                                     {matrixItems.map((item, idx) => {
                                         const quad = getMatrixQuadrantUi(Number(item.effort), Number(item.impact));
                                         const isSelected = selectedItemId === item.id;
-                                        const inTop5 = top5Ids.has(item.id);
-                                        const missingMeta = inTop5 && (!String(item.owner || '').trim() || !String(item.targetWeek || '').trim());
+                                        const inTopFixes = topFixesIds.has(item.id);
+                                        const missingMeta = inTopFixes && (!String(item.owner || '').trim() || !String(item.targetWeek || '').trim());
                                         return (
                                             <button key={item.id} type="button" onClick={() => setSelectedItemId(item.id)} className={`w-full text-left p-2.5 rounded-lg border transition-all flex items-center gap-2 ${isSelected ? 'bg-brandNavy-955 border-brandTeal-500' : missingMeta ? 'bg-brandNavy-950/40 border-amber-500/40 hover:border-amber-500/60' : 'bg-brandNavy-950/40 border-brandNavy-800 hover:border-brandNavy-700'}`}>
                                                 <span className="font-mono text-[10px] font-bold text-brandTeal-400 w-5 shrink-0">{idx + 1}</span>
                                                 <span className="text-xs text-slate-200 truncate flex-1">{item.text}</span>
                                                 <span className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded border shrink-0 ${quad.color}`}>{quad.name}</span>
-                                                {inTop5 && <span className="text-[8px] font-bold text-brandTeal-400 shrink-0">TOP 5</span>}
+                                                {inTopFixes && <span className="text-[8px] font-bold text-brandTeal-400 shrink-0">TOP 10</span>}
                                             </button>
                                         );
                                     })}
@@ -1949,11 +1950,11 @@
                                         <div className="grid grid-cols-3 gap-2">
                                             <div>
                                                 <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Owner</label>
-                                                <input list="owner-suggestions" type="text" value={selectedItem.owner || ''} onChange={e => updateItemScore(selectedItem.id, 'owner', e.target.value)} placeholder="Name / role" className={`w-full bg-brandNavy-950 border rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500 ${top5Ids.has(selectedItem.id) && !String(selectedItem.owner || '').trim() ? 'border-amber-500/60' : 'border-brandNavy-700'}`} />
+                                                <input list="owner-suggestions" type="text" value={selectedItem.owner || ''} onChange={e => updateItemScore(selectedItem.id, 'owner', e.target.value)} placeholder="Name / role" className={`w-full bg-brandNavy-950 border rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500 ${topFixesIds.has(selectedItem.id) && !String(selectedItem.owner || '').trim() ? 'border-amber-500/60' : 'border-brandNavy-700'}`} />
                                             </div>
                                             <div>
                                                 <label className="text-[9px] font-bold uppercase text-slate-500 block mb-1">Target week</label>
-                                                <select value={selectedItem.targetWeek || ''} onChange={e => updateItemScore(selectedItem.id, 'targetWeek', e.target.value)} className={`w-full bg-brandNavy-950 border rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500 ${top5Ids.has(selectedItem.id) && !String(selectedItem.targetWeek || '').trim() ? 'border-amber-500/60' : 'border-brandNavy-700'}`}>
+                                                <select value={selectedItem.targetWeek || ''} onChange={e => updateItemScore(selectedItem.id, 'targetWeek', e.target.value)} className={`w-full bg-brandNavy-950 border rounded px-2 py-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500 ${topFixesIds.has(selectedItem.id) && !String(selectedItem.targetWeek || '').trim() ? 'border-amber-500/60' : 'border-brandNavy-700'}`}>
                                                     <option value="">Select…</option>
                                                     {weekOptions.map((w) => <option key={w} value={w}>{w}</option>)}
                                                 </select>
@@ -2283,7 +2284,7 @@
                                         ))}
                                     </div>
                                     {nextPhaseHint && <p className="text-[10px] text-brandTeal-300/90 bg-brandTeal-500/10 border border-brandTeal-500/20 rounded-lg p-2 mb-2">{nextPhaseHint}</p>}
-                                    <textarea rows="4" value={synthesis.customPitch} onChange={(e) => setSynthesis(prev => ({ ...prev, customPitch: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-xs text-white leading-relaxed outline-none focus:border-brandTeal-500 resize-none font-medium" placeholder="Recommend Mod 2+ based on Top 5 fixes…" />
+                                    <textarea rows="4" value={synthesis.customPitch} onChange={(e) => setSynthesis(prev => ({ ...prev, customPitch: e.target.value }))} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-3 text-xs text-white leading-relaxed outline-none focus:border-brandTeal-500 resize-none font-medium" placeholder="Recommend Mod 2+ based on Top 10 fixes…" />
                                 </div>
                             </div>
                         </div>
@@ -2379,6 +2380,39 @@
                         </div>
 
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
+                            <div className="flex flex-wrap justify-between items-start gap-3">
+                                <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Recovery Plan AI Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the 90-Day Recovery Plan section — one line per bullet.</p>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    const bullets = DRH().buildRecoveryPlanAiSummary?.(
+                                        matrixItems,
+                                        { formatCurrency, totalAnnualWaste },
+                                    ) || [];
+                                    setSynthesis((prev) => ({
+                                        ...prev,
+                                        recoveryPlanAiSummary: bullets.map((line) => `• ${line}`).join('\n'),
+                                    }));
+                                }} className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider">Regenerate from Recovery Plan</button>
+                            </div>
+                            <textarea
+                                rows={5}
+                                value={synthesis.recoveryPlanAiSummary || ''}
+                                onChange={(e) => setSynthesis((prev) => ({ ...prev, recoveryPlanAiSummary: e.target.value }))}
+                                placeholder="Leave blank to auto-generate from Top 10 fixes when printing…"
+                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
+                            />
+                            {(synthesis.recoveryPlanAiSummary || '').trim() === '' && (
+                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
+                                    {(DRH().buildRecoveryPlanAiSummary?.(matrixItems, { formatCurrency, totalAnnualWaste }) || []).slice(0, 4).map((line, idx) => (
+                                        <li key={idx}>{line}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <h4 className="text-[10px] font-bold uppercase text-brandTeal-400 tracking-wider">Client Handoff (syncs to portal)</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
@@ -2391,12 +2425,12 @@
                                     <p className="text-[9px] text-slate-500 mt-1">Optional — appears as QR on cover when set. Syncs to client portal.</p>
                                 </div>
                             </div>
-                            {top5Preview.length > 0 && (
+                            {topFixesPreview.length > 0 && (
                                 <div className="rounded-lg border border-brandNavy-700 bg-brandNavy-950/50 p-3">
                                     <div className="text-[9px] font-bold uppercase text-slate-500 mb-2">Recovery Plan preview (Part III)</div>
                                     <ol className="list-decimal list-inside text-[10px] text-slate-300 space-y-1">
-                                        {top5Preview.slice(0, 3).map((item) => <li key={item.id}>{item.text}</li>)}
-                                        {top5Preview.length > 3 && <li className="text-slate-500 italic">+{top5Preview.length - 3} more in full report</li>}
+                                        {topFixesPreview.slice(0, 3).map((item) => <li key={item.id}>{item.text}</li>)}
+                                        {topFixesPreview.length > 3 && <li className="text-slate-500 italic">+{topFixesPreview.length - 3} more in full report</li>}
                                     </ol>
                                 </div>
                             )}
@@ -2719,7 +2753,12 @@
             const totalAnnualWaste = annualChaosTax + saasAnnualWaste;
             const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
-            const topFixes = DR.getTop5Fixes?.(activeItems) || [];
+            const topFixes = DR.getTop10Fixes?.(activeItems) || [];
+            const recoveryPlanAiSummaryBullets = DR.resolveRecoveryPlanAiSummary?.(
+                synthesis.recoveryPlanAiSummary,
+                activeItems,
+                { formatCurrency, totalAnnualWaste },
+            ) || [];
             const recapture = DR.computeRecaptureSummary?.(topFixes, totalAnnualWaste) || { monthly: 0, annual: 0, pctOfTotalLeakage: 0 };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
             const workflowAiSummaryBullets = DR.resolveWorkflowAiSummary?.(
@@ -2763,7 +2802,7 @@
             const sectionCtx = {
                 scorecard,
                 recoveryGanttRows: recoveryGanttFull.rows.length,
-                top5Count: topFixes.length,
+                topFixCount: topFixes.length,
                 findingsCount: findings.length,
                 hasOrgChart: !!(orgChartSvg || (orgChartMembers && orgChartMembers.length > 0)),
                 workflowTabCount: workflowTabs.length,
@@ -2892,8 +2931,8 @@
                                 <li className="page-break-inside-avoid"><strong>Start with the cover</strong> — executive summary, KPIs, and optional video walkthrough QR if your consultant shared one.</li>
                                 <li className="page-break-inside-avoid"><strong>Review the Executive Snapshot</strong> — key findings, risks, and readiness scores.</li>
                                 <li className="page-break-inside-avoid"><strong>Study the evidence</strong> (Part II) — org chart, process maps, leakage ranking, and financial breakdown.</li>
-                                <li className="page-break-inside-avoid"><strong>Execute the Recovery Plan</strong> (Part III) — Top 5 fixes, timeline Gantt, and prioritization chart.</li>
-                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 5 fix before your next leadership meeting.</li>
+                                <li className="page-break-inside-avoid"><strong>Execute the Recovery Plan</strong> (Part III) — Top 10 fixes, timeline Gantt, and prioritization chart.</li>
+                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 10 fix before your next leadership meeting.</li>
                                 <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the operational outlook and recommended next steps.</li>
                             </ol>
                         </div>
@@ -3263,7 +3302,7 @@
                                 </div>
                                 {recapture.annual > 0 && (
                                     <div className="pt-3 border-t border-emerald-200 text-xs text-slate-700 leading-relaxed">
-                                        <strong className="text-emerald-800">If Top 5 fixes execute:</strong> estimated Year 1 recapture ≈ {formatCurrency(recapture.annual)}
+                                        <strong className="text-emerald-800">If Top 10 fixes execute:</strong> estimated Year 1 recapture ≈ {formatCurrency(recapture.annual)}
                                         {recapture.pctOfTotalLeakage > 0 && ` (~${recapture.pctOfTotalLeakage}% of total leakage recoverable in 90 days without new hires).`}
                                     </div>
                                 )}
@@ -3283,7 +3322,7 @@
                             />
                             {topFixes.length > 0 && (
                                 <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid mb-6">
-                                    <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 5 Fixes</h3>
+                                    <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 10 Fixes</h3>
                                     <table className="report-table">
                                         <thead>
                                             <tr>
@@ -3361,6 +3400,24 @@
                                     </div>
                                 </div>
                             )}
+                            {recoveryPlanAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
+                                    {reportEditMode ? (
+                                        <textarea
+                                            rows={Math.max(4, recoveryPlanAiSummaryBullets.length + 1)}
+                                            value={synthesis.recoveryPlanAiSummary || recoveryPlanAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
+                                            onChange={(e) => onSynthesisFieldChange?.('recoveryPlanAiSummary', e.target.value)}
+                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
+                                            placeholder="One bullet per line — leave blank to auto-generate from recovery plan data"
+                                        />
+                                    ) : (
+                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                            {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -3400,7 +3457,7 @@
                                         className="report-copy-edit w-full text-sm text-slate-800 leading-relaxed"
                                         value={synthesis.customPitch || ''}
                                         onChange={(e) => onSynthesisFieldChange?.('customPitch', e.target.value)}
-                                        placeholder="Recommend Mod 2+ based on Top 5 fixes…"
+                                        placeholder="Recommend Mod 2+ based on Top 10 fixes…"
                                     />
                                 ) : (
                                     <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>

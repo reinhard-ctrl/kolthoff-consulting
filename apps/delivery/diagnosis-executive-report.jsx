@@ -48,7 +48,7 @@
             );
         };
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, recoveryGanttTop5, showRecoveryGantt }) => (
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, recoveryGanttTop10, showRecoveryGantt, recoveryPlanAiSummaryBullets }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -80,7 +80,7 @@
                 </div>
                 {topFixes.length > 0 && (
                     <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 5 Fixes</h3>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 10 Fixes</h3>
                         <div className="space-y-0">
                             {topFixes.map((item, idx) => (
                                 <div key={item.id} className="report-fix-row">
@@ -95,9 +95,17 @@
                                 </div>
                             ))}
                         </div>
-                        {showRecoveryGantt && recoveryGanttTop5?.rows?.length > 0 && (
+                        {showRecoveryGantt && recoveryGanttTop10?.rows?.length > 0 && (
                             <div className="mt-5 pt-4 border-t border-brandTeal-500/20">
-                                <ReportRecoveryGanttChart gantt={recoveryGanttTop5} variant="compact" title="90-Day timeline (Top 5)" />
+                                <ReportRecoveryGanttChart gantt={recoveryGanttTop10} variant="compact" title="90-Day timeline (Top 10)" />
+                            </div>
+                        )}
+                        {recoveryPlanAiSummaryBullets?.length > 0 && (
+                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20 p-4 border border-slate-200 rounded-lg bg-white/80 page-break-inside-avoid">
+                                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
+                                <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                    {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                </ul>
                             </div>
                         )}
                     </div>
@@ -112,9 +120,14 @@
             const totalAnnualWaste = annualChaosTax + saasAnnualWaste;
             const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
-            const topFixes = DR.getTop5Fixes?.(activeItems) || [];
+            const topFixes = DR.getTop10Fixes?.(activeItems) || [];
             const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
-            const recoveryGanttTop5 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop5: true }) || { rows: [] };
+            const recoveryGanttTop10 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop10: true }) || { rows: [] };
+            const recoveryPlanAiSummaryBullets = DR.resolveRecoveryPlanAiSummary?.(
+                synthesis.recoveryPlanAiSummary,
+                activeItems,
+                { formatCurrency, totalAnnualWaste },
+            ) || [];
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
             const workflowAiSummaryBullets = DR.resolveWorkflowAiSummary?.(
                 synthesis.workflowAiSummary,
@@ -158,8 +171,9 @@
                             saasAnnual={saasAnnualWaste}
                             maturityIndex={maturityIndex}
                             topFixes={topFixes}
-                            recoveryGanttTop5={recoveryGanttTop5}
+                            recoveryGanttTop10={recoveryGanttTop10}
                             showRecoveryGantt={printConfig.showFixOrder}
+                            recoveryPlanAiSummaryBullets={recoveryPlanAiSummaryBullets}
                         />
                     )}
 
@@ -169,9 +183,9 @@
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li><strong>Start with the video walkthrough</strong> if your consultant shared a Loom link.</li>
                                 <li><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan on page 1.</li>
-                                <li><strong>Review the recovery timeline Gantt</strong> — target weeks for Top 5 fixes on page 1 and the full 90-day map in the timeline section.</li>
+                                <li><strong>Review the recovery timeline Gantt</strong> — target weeks for Top 10 fixes on page 1 and the full 90-day map in the timeline section.</li>
                                 <li><strong>Review process maps</strong> for the highest-leak workflow.</li>
-                                <li><strong>Assign owners and target weeks</strong> to each Top 5 fix.</li>
+                                <li><strong>Assign owners and target weeks</strong> to each Top 10 fix.</li>
                                 <li><strong>Decide on Module 2</strong> using the recommended next-phase notes.</li>
                             </ol>
                         </div>
@@ -185,6 +199,14 @@
                                 <p className="text-[10px] text-slate-500 mt-4 italic page-break-inside-avoid">
                                     {recoveryGanttFull.unscheduledCount} initiative{recoveryGanttFull.unscheduledCount === 1 ? '' : 's'} omitted — assign target weeks in Strategy &amp; Priorities to include them on this chart.
                                 </p>
+                            )}
+                            {recoveryPlanAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
+                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                        {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                    </ul>
+                                </div>
                             )}
                         </div>
                     )}

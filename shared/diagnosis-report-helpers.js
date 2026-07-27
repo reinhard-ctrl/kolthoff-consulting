@@ -726,19 +726,19 @@
   }
 
   function buildNextPhaseHint(matrixItems, modules) {
-    const top5 = getTop5Fixes(matrixItems || []);
-    if (!top5.length) return null;
+    const topFixes = getTop10Fixes(matrixItems || []);
+    if (!topFixes.length) return null;
     const mod2 = (modules || []).find((m) => m.key === 'MOD 2');
     const docKeywords = ['document', 'raci', 'handoff', 'playbook', 'accountable', 'sop'];
-    const docNeeded = top5.filter((i) => {
+    const docNeeded = topFixes.filter((i) => {
       const lower = String(i.text || '').toLowerCase();
       return docKeywords.some((kw) => lower.includes(kw));
     }).length;
     if (docNeeded >= 2) {
-      return `${docNeeded} of your Top ${top5.length} fixes need playbook documentation or RACI clarity — ${mod2?.title || 'Module 2'} is the natural next step.`;
+      return `${docNeeded} of your Top ${topFixes.length} fixes need playbook documentation or RACI clarity — ${mod2?.title || 'Module 2'} is the natural next step.`;
     }
-    if (top5.some((i) => i.source === 'saas')) {
-      return 'Subscription overlap appears in your Top 5 — Mod 2 playbooks help lock in seat reductions after quick wins.';
+    if (topFixes.some((i) => i.source === 'saas')) {
+      return 'Subscription overlap appears in your Top 10 — Mod 2 playbooks help lock in seat reductions after quick wins.';
     }
     return null;
   }
@@ -834,7 +834,9 @@
     return [...(matrixItems || [])].sort(compareMatrixImpactEffort);
   }
 
-  function getTop5Fixes(matrixItems) {
+  const TOP_RECOVERY_FIXES_LIMIT = 10;
+
+  function getTop10Fixes(matrixItems) {
     const items = (matrixItems || []).map((item) => {
       const effort = Number(item.effort) || 3;
       const impact = Number(item.impact) || 3;
@@ -854,24 +856,29 @@
       if (seen.has(key)) continue;
       seen.add(key);
       deduped.push(item);
-      if (deduped.length >= 5) break;
+      if (deduped.length >= TOP_RECOVERY_FIXES_LIMIT) break;
     }
     return deduped;
+  }
+
+  /** @deprecated alias — use getTop10Fixes */
+  function getTop5Fixes(matrixItems) {
+    return getTop10Fixes(matrixItems);
   }
 
   function validateTop5Readiness(ctx) {
     const { synthesis = {}, tasks = [] } = ctx;
     const matrixItems = synthesis.matrix?.items || [];
-    const top5 = getTop5Fixes(matrixItems);
+    const topFixes = getTop10Fixes(matrixItems);
     const errors = [];
     const warnings = [];
 
-    if (top5.length === 0) {
-      errors.push('No Top 5 fixes — add matrix items or click Generate from Diagnosis.');
-      return { ready: false, errors, warnings, top5 };
+    if (topFixes.length === 0) {
+      errors.push('No Top 10 fixes — add matrix items or click Generate from Diagnosis.');
+      return { ready: false, errors, warnings, top5: topFixes, top10: topFixes };
     }
 
-    top5.forEach((item, idx) => {
+    topFixes.forEach((item, idx) => {
       const n = idx + 1;
       if (!String(item.owner || '').trim()) errors.push(`Top ${n}: assign an owner for "${item.text.slice(0, 40)}…".`);
       if (!String(item.targetWeek || '').trim()) errors.push(`Top ${n}: set a target week.`);
@@ -890,7 +897,7 @@
     }
 
     const ready = errors.length === 0;
-    return { ready, errors, warnings, top5 };
+    return { ready, errors, warnings, top5: topFixes, top10: topFixes };
   }
 
   function buildModulePitch(modKey, totalAnnualWaste, formatCurrencyFn, modules) {
@@ -1462,7 +1469,7 @@
       isMod1TaskInScope(tasks, 'm1-05'),
       top5Check.ready
         && !!String(synthesis.clientDeliverableUrl || '').trim(),
-      !top5Check.ready ? 'Complete Top 5 (owner + week)' : 'Add Drive PDF URL in Client Handoff',
+      !top5Check.ready ? 'Complete Top 10 (owner + week)' : 'Add Drive PDF URL in Client Handoff',
       'Build 90-Day Recovery Plan and client handoff links',
     );
 
@@ -1481,14 +1488,14 @@
 
     const rankings = buildProcessRankings(tabs, DiagramEditor);
     const top = rankings[0];
-    const top5 = getTop5Fixes(synthesis.matrix?.items || []);
+    const topFixes = getTop10Fixes(synthesis.matrix?.items || []);
     const saasMonthly = (subSaaS || []).reduce(
       (acc, curr) => acc + (Number(curr.billing) || 0) * (Number(curr.users) || 0),
       0,
     );
     const processAnnual = rankings.reduce((acc, row) => acc + (row.annual || 0), 0);
     const totalAnnual = processAnnual + saasMonthly * 12;
-    const recapture = computeRecaptureSummary(top5, totalAnnual);
+    const recapture = computeRecaptureSummary(topFixes, totalAnnual);
     const mappedProcesses = rankings.filter((row) => row.taskCount > 0);
     const processCount = mappedProcesses.length;
     const staffCount = normalizeStaffDirectoryRows(orgChartMembers).length;
@@ -1509,9 +1516,9 @@
     if (totalAnnual > 0) {
       parts.push(` Total identified leakage is ${formatCurrency(totalAnnual)}/year (process delays + subscription overlap).`);
     }
-    if (recapture.annual > 0 && top5.length > 0) {
+    if (recapture.annual > 0 && topFixes.length > 0) {
       parts.push(
-        ` Executing the 90-Day Recovery Plan (Top ${top5.length} fixes in this Leak Scan Report) can recover approximately ${formatCurrency(recapture.annual)} in Year 1`,
+        ` Executing the 90-Day Recovery Plan (Top ${topFixes.length} fixes in this Leak Scan Report) can recover approximately ${formatCurrency(recapture.annual)} in Year 1`,
       );
       if (recapture.pctOfTotalLeakage > 0) {
         parts.push(` (~${recapture.pctOfTotalLeakage}% of total leakage) within 90 days without adding headcount.`);
@@ -1695,6 +1702,82 @@
     const manual = normalizeAiSummaryBullets(stored);
     if (manual.length) return manual;
     return buildRaciAiSummary(tabs, raciAssignments, DiagramEditor, options);
+  }
+
+  /** Deterministic 90-Day Recovery Plan summary bullets from Top 10 fixes and timeline. */
+  function buildRecoveryPlanAiSummary(matrixItems, options) {
+    const opts = options || {};
+    const formatCurrencyFn = opts.formatCurrency || ((v) => String(v));
+    const totalAnnualWaste = Number(opts.totalAnnualWaste) || 0;
+    const topFixes = getTop10Fixes(matrixItems);
+    if (!topFixes.length) return [];
+
+    const bullets = [];
+    const recapture = computeRecaptureSummary(topFixes, totalAnnualWaste);
+    const gantt = buildRecoveryPlanGantt(matrixItems, { onlyTop10: true });
+    const scheduled = topFixes.filter((item) => parseTargetWeekRange(item.targetWeek));
+    const unscheduled = topFixes.length - scheduled.length;
+
+    bullets.push(
+      `${topFixes.length} prioritized fix${topFixes.length === 1 ? '' : 'es'} in the 90-Day Recovery Plan`
+        + (recapture.annual > 0 ? ` — estimated Year 1 recapture ${formatCurrencyFn(recapture.annual)}` : '')
+        + (recapture.pctOfTotalLeakage > 0 ? ` (~${recapture.pctOfTotalLeakage}% of total identified leakage).` : '.'),
+    );
+
+    const quickWins = topFixes.filter((item) => getQuadrant(Number(item.effort) || 3, Number(item.impact) || 3) === 'quickWin');
+    if (quickWins.length) {
+      bullets.push(`${quickWins.length} quick win${quickWins.length === 1 ? '' : 's'} (high impact, low effort) — execute in Weeks 1–4 for early momentum.`);
+    }
+
+    if (scheduled.length) {
+      bullets.push(
+        `${scheduled.length} of ${topFixes.length} top fixes have target weeks assigned`
+          + (unscheduled ? `; ${unscheduled} still need a week on the Gantt.` : '.'),
+      );
+    } else {
+      bullets.push('No target weeks assigned yet — add target weeks in Strategy & Priorities to populate the implementation timeline.');
+    }
+
+    const lead = topFixes[0];
+    if (lead) {
+      bullets.push(
+        `#1 priority: "${lead.text}" — owner ${String(lead.owner || '').trim() || 'TBD'}, target ${lead.targetWeek || 'TBD'}`
+          + (Number(lead.expectedSavings) > 0 ? `, est. ${formatCurrencyFn(lead.expectedSavings)}/mo savings.` : '.'),
+      );
+    }
+
+    const sources = {};
+    topFixes.forEach((item) => {
+      const key = item.source || 'other';
+      sources[key] = (sources[key] || 0) + 1;
+    });
+    const sourceParts = [];
+    if (sources.workflow) sourceParts.push(`${sources.workflow} from process maps`);
+    if (sources.saas) sourceParts.push(`${sources.saas} from SaaS audit`);
+    if (sources.feedback) sourceParts.push(`${sources.feedback} from staff feedback`);
+    if (sourceParts.length) bullets.push(`Fix sources: ${sourceParts.join(', ')}.`);
+
+    if (gantt.rows.length >= 1) {
+      const first = gantt.rows[0];
+      const last = gantt.rows[gantt.rows.length - 1];
+      bullets.push(
+        `Implementation timeline spans Week ${first.startWeek} through Week ${last.endWeek} across ${gantt.rows.length} scheduled initiative${gantt.rows.length === 1 ? '' : 's'}.`,
+      );
+    }
+
+    const missingOwners = topFixes.filter((item) => !String(item.owner || '').trim()).length;
+    if (missingOwners) {
+      bullets.push(`${missingOwners} top fix${missingOwners === 1 ? '' : 'es'} still need an assigned owner before kickoff.`);
+    }
+
+    return bullets.slice(0, 8);
+  }
+
+  /** Use consultant-edited recovery plan summary when present; otherwise auto-generate. */
+  function resolveRecoveryPlanAiSummary(stored, matrixItems, options) {
+    const manual = normalizeAiSummaryBullets(stored);
+    if (manual.length) return manual;
+    return buildRecoveryPlanAiSummary(matrixItems, options);
   }
 
   function tabHasReportableWorkflow(tab, DiagramEditor) {
@@ -2428,9 +2511,10 @@
   function buildRecoveryPlanGantt(matrixItems, options) {
     const opts = options || {};
     const items = Array.isArray(matrixItems) ? matrixItems : [];
-    const top5List = getTop5Fixes(items);
-    const top5Ids = new Set(top5List.map((i) => i.id));
-    const source = opts.onlyTop5 ? top5List : items;
+    const topFixesList = getTop10Fixes(items);
+    const topFixIds = new Set(topFixesList.map((i) => i.id));
+    const onlyTop = opts.onlyTop10 ?? opts.onlyTop5;
+    const source = onlyTop ? topFixesList : items;
     const rows = [];
 
     source.forEach((item, idx) => {
@@ -2443,8 +2527,9 @@
         targetWeek: item.targetWeek,
         startWeek: range.startWeek,
         endWeek: range.endWeek,
-        rank: opts.onlyTop5 ? idx + 1 : items.findIndex((i) => i.id === item.id) + 1,
-        isTop5: top5Ids.has(item.id),
+        rank: onlyTop ? idx + 1 : items.findIndex((i) => i.id === item.id) + 1,
+        isTop5: topFixIds.has(item.id),
+        isTopFix: topFixIds.has(item.id),
       });
     });
 
@@ -2452,7 +2537,7 @@
     const maxWeek = Math.max(12, ...rows.map((r) => r.endWeek), 4);
     const unscheduledCount = items.filter((i) => !parseTargetWeekRange(i.targetWeek)).length;
 
-    return { rows, maxWeek, top5Ids: [...top5Ids], unscheduledCount };
+    return { rows, maxWeek, top5Ids: [...topFixIds], top10Ids: [...topFixIds], unscheduledCount };
   }
 
   const PRINT_PRESETS = {
@@ -2637,7 +2722,7 @@
         || (ctx?.scorecard || []).length > 0;
     }
     if (sectionId === 'recoveryPlan') {
-      return (ctx?.top5Count || 0) > 0
+      return (ctx?.topFixCount || ctx?.top5Count || 0) > 0
         || (ctx?.recoveryGanttRows || 0) > 0
         || (ctx?.matrixItemCount || 0) > 0;
     }
@@ -2761,6 +2846,10 @@
     resolveWorkflowAiSummary,
     buildRaciAiSummary,
     resolveRaciAiSummary,
+    buildRecoveryPlanAiSummary,
+    resolveRecoveryPlanAiSummary,
+    TOP_RECOVERY_FIXES_LIMIT,
+    getTop10Fixes,
     tabHasReportableWorkflow,
     tabNeedsWorkflowSvgExport,
     getReportWorkflowTabs,
