@@ -116,6 +116,12 @@
             const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
             const recoveryGanttTop5 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop5: true }) || { rows: [] };
             const processRankings = DR.buildProcessRankings?.(tabs, window.DiagramEditor) || [];
+            const workflowAiSummaryBullets = DR.resolveWorkflowAiSummary?.(
+                synthesis.workflowAiSummary,
+                tabs,
+                window.DiagramEditor,
+                formatCurrency,
+            ) || [];
             const insightCtx = { synthesis, subSaaS, tabs, raciAssignments, orgChartMembers, staffFeedbackThemes: synthesis.staffFeedbackThemes, formatCurrency, DiagramEditor: window.DiagramEditor };
             const findings = DR.buildOperationalInsights?.(insightCtx) || [];
             const riskProfiles = DR.buildRiskProfiles?.(insightCtx) || [];
@@ -247,6 +253,14 @@
                                     ))}
                                 </tbody>
                             </table>
+                            {workflowAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Workflows</h4>
+                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                        {workflowAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     )}
 

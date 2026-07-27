@@ -1529,6 +1529,87 @@
     return (tabs || []).filter((tab) => tab.id === topId);
   }
 
+  /** Parse stored workflow AI summary (array or newline / bullet text) into bullet strings. */
+  function normalizeWorkflowAiSummaryBullets(value) {
+    if (Array.isArray(value)) {
+      return value.map((line) => String(line || '').trim()).filter(Boolean);
+    }
+    const text = String(value || '').trim();
+    if (!text) return [];
+    return text
+      .split(/\n+/)
+      .map((line) => line.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean);
+  }
+
+  /** Deterministic workflow summary bullets from process rankings and step leakage. */
+  function buildWorkflowAiSummary(tabs, DiagramEditor, options) {
+    const opts = options || {};
+    const formatCurrencyFn = opts.formatCurrency || ((v) => String(v));
+    const rankings = buildProcessRankings(tabs, DiagramEditor);
+    const mapped = rankings.filter((row) => row.taskCount > 0 || row.annual > 0);
+    if (!mapped.length) return [];
+
+    const bullets = [];
+    const totalAnnual = mapped.reduce((acc, row) => acc + (row.annual || 0), 0);
+    const totalSteps = mapped.reduce((acc, row) => acc + (row.taskCount || 0), 0);
+
+    bullets.push(
+      `${mapped.length} as-is process${mapped.length === 1 ? '' : 'es'} mapped with ${totalSteps} workflow step${totalSteps === 1 ? '' : 's'}`
+        + (totalAnnual > 0 ? ` and ${formatCurrencyFn(totalAnnual)}/year in identified process leakage.` : '.'),
+    );
+
+    const top = mapped[0];
+    if (top?.annual > 0) {
+      bullets.push(
+        `Highest-leak process: "${top.tabName}" (${formatCurrencyFn(top.monthly)}/mo, ${top.pctOfTotal}% of process leakage) — primary bottleneck: ${String(top.topStepLabel || '').replace(/\n/g, ' ').trim() || 'see process map'}.`,
+      );
+    }
+
+    mapped.slice(1, 4).forEach((row, idx) => {
+      if (row.annual <= 0) return;
+      bullets.push(
+        `#${idx + 2} "${row.tabName}": ${formatCurrencyFn(row.monthly)}/mo (${row.pctOfTotal}% of total) — bottleneck at "${String(row.topStepLabel || '').replace(/\n/g, ' ').trim()}".`,
+      );
+    });
+
+    const unquantified = mapped.filter((row) => row.taskCount > 0 && row.annual === 0);
+    if (unquantified.length) {
+      bullets.push(
+        `${unquantified.length} process${unquantified.length === 1 ? '' : 'es'} (${unquantified.map((row) => row.tabName).join(', ')}) need delay minutes on steps to quantify leakage — maps are included but financial impact is not yet modeled.`,
+      );
+    }
+
+    if (mapped.length >= 2 && top?.pctOfTotal >= 40) {
+      bullets.push(
+        `${top.pctOfTotal}% of process leakage concentrates in "${top.tabName}" — prioritize fixes there before spreading effort across lower-impact workflows.`,
+      );
+    }
+
+    const stepLeaks = buildStepLeakageList(tabs, DiagramEditor);
+    if (stepLeaks.length >= 2) {
+      const first = stepLeaks[0];
+      const second = stepLeaks[1];
+      bullets.push(
+        `Top quantified step leaks: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo); "${String(second.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${second.tabName} (${formatCurrencyFn(second.monthly)}/mo).`,
+      );
+    } else if (stepLeaks.length === 1) {
+      const first = stepLeaks[0];
+      bullets.push(
+        `Largest quantified step leak: "${String(first.stepLabel || '').replace(/\n/g, ' ').trim()}" in ${first.tabName} (${formatCurrencyFn(first.monthly)}/mo).`,
+      );
+    }
+
+    return bullets.slice(0, 8);
+  }
+
+  /** Use consultant-edited summary when present; otherwise auto-generate from workflows. */
+  function resolveWorkflowAiSummary(stored, tabs, DiagramEditor, formatCurrencyFn) {
+    const manual = normalizeWorkflowAiSummaryBullets(stored);
+    if (manual.length) return manual;
+    return buildWorkflowAiSummary(tabs, DiagramEditor, { formatCurrency: formatCurrencyFn });
+  }
+
   function tabHasReportableWorkflow(tab, DiagramEditor) {
     const { tasks } = getProcessNodes(tab, DiagramEditor);
     if (tasks.length > 0) return true;
@@ -2586,6 +2667,9 @@
     buildMod1DeliverableStatus,
     buildDefaultExecutiveLetter,
     getBriefingWorkflowTabs,
+    normalizeWorkflowAiSummaryBullets,
+    buildWorkflowAiSummary,
+    resolveWorkflowAiSummary,
     tabHasReportableWorkflow,
     tabNeedsWorkflowSvgExport,
     getReportWorkflowTabs,
