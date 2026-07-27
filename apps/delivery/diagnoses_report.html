@@ -1858,7 +1858,7 @@
                     </div>
 
                     {/* B: 90-Day Recovery Plan — first */}
-                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Top 10 by impact ÷ effort appear in Part III of the PDF. Assign owner and target week on each priority." badge="Priority" defaultOpen>
+                    <StrategyAccordionSection title="90-Day Recovery Plan" subtitle="Assign owner and target week on each initiative — the PDF shows your implementation timeline (Gantt chart) in Part III." badge="Priority" defaultOpen>
                         <div className="flex flex-wrap justify-between items-center gap-3">
                             <p className="text-[10px] text-slate-400">Build the prioritized recovery plan for the Leak Scan Report.</p>
                             <button type="button" onClick={() => setGenerateModalOpen(true)} className="px-4 py-2 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors">
@@ -1898,33 +1898,6 @@
                                         <button type="button" onClick={() => applyGeneratedMatrix(generateMode)} className="px-4 py-2 bg-brandTeal-500 hover:bg-brandTeal-400 text-brandNavy-955 rounded-lg text-[10px] font-bold uppercase">Generate</button>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {topFixesPreview.length > 0 && (
-                            <div className={`bg-brandNavy-950/60 border rounded-xl p-4 ${topFixesValidation.ready && topFixesValidation.errors.length === 0 ? 'border-brandTeal-500/20' : 'border-amber-500/40'}`}>
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="text-[10px] font-mono text-brandTeal-400 uppercase tracking-widest">Top 10 preview (PDF Part III)</div>
-                                    {topFixesValidation.errors.length > 0 && <span className="text-[9px] font-bold uppercase text-amber-400">Needs owner + target week</span>}
-                                </div>
-                                <ol className="space-y-2 list-decimal list-inside text-xs text-slate-300">
-                                    {topFixesPreview.map((item) => {
-                                        const missingOwner = !String(item.owner || '').trim();
-                                        const missingWeek = !String(item.targetWeek || '').trim();
-                                        const missingSavings = !(Number(item.expectedSavings) > 0);
-                                        return (
-                                            <li key={item.id} className="leading-relaxed">
-                                                <span className="font-semibold text-white">{item.text}</span>
-                                                {(missingOwner || missingWeek || missingSavings) && (
-                                                    <span className="block text-[9px] text-amber-400 mt-0.5 font-mono uppercase">
-                                                        {missingOwner && 'Missing owner · '}{missingWeek && 'Missing week · '}{missingSavings && 'Missing savings'}
-                                                    </span>
-                                                )}
-                                                {item.source && <span className="block text-[9px] text-slate-500 mt-0.5">{DRH().formatMatrixEvidence?.(item, formatCurrency)}</span>}
-                                            </li>
-                                        );
-                                    })}
-                                </ol>
                             </div>
                         )}
 
@@ -2498,13 +2471,10 @@
                                     <p className="text-[9px] text-slate-500 mt-1">Optional — appears as QR on cover when set. Syncs to client portal.</p>
                                 </div>
                             </div>
-                            {topFixesPreview.length > 0 && (
+                            {recoveryGanttPreview.rows.length > 0 && (
                                 <div className="rounded-lg border border-brandNavy-700 bg-brandNavy-950/50 p-3">
-                                    <div className="text-[9px] font-bold uppercase text-slate-500 mb-2">Recovery Plan preview (Part III)</div>
-                                    <ol className="list-decimal list-inside text-[10px] text-slate-300 space-y-1">
-                                        {topFixesPreview.slice(0, 3).map((item) => <li key={item.id}>{item.text}</li>)}
-                                        {topFixesPreview.length > 3 && <li className="text-slate-500 italic">+{topFixesPreview.length - 3} more in full report</li>}
-                                    </ol>
+                                    <div className="text-[9px] font-bold uppercase text-slate-500 mb-1">Recovery Plan preview (Part III)</div>
+                                    <p className="text-[10px] text-slate-400">PDF shows the implementation timeline Gantt chart — assign target weeks on initiatives below to populate it.</p>
                                 </div>
                             )}
                         </div>
@@ -3082,8 +3052,8 @@
                                 <li className="page-break-inside-avoid"><strong>Start with the cover</strong> — executive summary, KPIs, and optional video walkthrough QR if your consultant shared one.</li>
                                 <li className="page-break-inside-avoid"><strong>Review the Executive Snapshot</strong> — key findings, risks, and readiness scores.</li>
                                 <li className="page-break-inside-avoid"><strong>Study the evidence</strong> (Part II) — org chart, process maps, leakage ranking, and financial breakdown.</li>
-                                <li className="page-break-inside-avoid"><strong>Execute the Recovery Plan</strong> (Part III) — Top 10 fixes, timeline Gantt, and prioritization chart.</li>
-                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each Top 10 fix before your next leadership meeting.</li>
+                                <li className="page-break-inside-avoid"><strong>Execute the Recovery Plan</strong> (Part III) — review the implementation timeline Gantt and prioritization chart.</li>
+                                <li className="page-break-inside-avoid"><strong>Assign owners and target weeks</strong> to each initiative before your next leadership meeting.</li>
                                 <li className="page-break-inside-avoid"><strong>Decide on Module 2</strong> using the operational outlook and recommended next steps.</li>
                             </ol>
                         </div>
@@ -3215,9 +3185,9 @@
                                 editMode={reportEditMode}
                                 onCopyChange={onReportCopyChange}
                             />
-                            {topFixes[0] && (
+                            {recoveryGanttFull.rows[0] && (
                                 <p className="text-xs text-slate-600 italic mb-4 page-break-inside-avoid border-l-2 border-brandTeal-500 pl-3">
-                                    <strong className="text-slate-800 not-italic">So what?</strong> Start with fix #1 ({topFixes[0].text}) — owner {topFixes[0].owner || 'TBD'}, target {topFixes[0].targetWeek || 'TBD'}.
+                                    <strong className="text-slate-800 not-italic">So what?</strong> Start with the first scheduled initiative ({recoveryGanttFull.rows[0].label}) — owner {recoveryGanttFull.rows[0].owner || 'TBD'}, target {recoveryGanttFull.rows[0].targetWeek || 'TBD'}.
                                 </p>
                             )}
                             <table className="report-table">
@@ -3438,7 +3408,7 @@
                                 </div>
                                 {recapture.annual > 0 && (
                                     <div className="pt-3 border-t border-emerald-200 text-xs text-slate-700 leading-relaxed">
-                                        <strong className="text-emerald-800">If Top 10 fixes execute:</strong> estimated Year 1 recapture ≈ {formatCurrency(recapture.annual)}
+                                        <strong className="text-emerald-800">If the recovery plan executes:</strong> estimated Year 1 recapture ≈ {formatCurrency(recapture.annual)}
                                         {recapture.pctOfTotalLeakage > 0 && ` (~${recapture.pctOfTotalLeakage}% of total leakage recoverable in 90 days without new hires).`}
                                     </div>
                                 )}
@@ -3446,7 +3416,7 @@
                         </div>
                     )}
 
-                    {printConfig.showRecoveryPlan && (topFixes.length > 0 || recoveryGanttFull.rows.length > 0 || activeItems.length > 0) && (
+                    {printConfig.showRecoveryPlan && (recoveryGanttFull.rows.length > 0 || activeItems.length > 0) && (
                         <div className="report-page" style={sectionStyle('recoveryPlan')}>
                             <ReportSectionHeader
                                 part={sectionParts.recoveryPlan}
@@ -3456,38 +3426,6 @@
                                 editMode={reportEditMode}
                                 onCopyChange={onReportCopyChange}
                             />
-                            {topFixes.length > 0 && (
-                                <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid mb-6">
-                                    <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">Top 10 Fixes</h3>
-                                    <table className="report-table">
-                                        <thead>
-                                            <tr>
-                                                <th className="w-8">#</th>
-                                                <th>Fix</th>
-                                                <th className="w-[18%]">Owner</th>
-                                                <th className="w-[14%]">Target</th>
-                                                <th className="w-[14%] text-right">Savings/mo</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {topFixes.map((item, idx) => (
-                                                <tr key={item.id}>
-                                                    <td className="font-mono font-bold text-brandTeal-700">{idx + 1}</td>
-                                                    <td>
-                                                        <div className="font-semibold text-slate-900">{item.text}</div>
-                                                        {DR.formatMatrixEvidence?.(item, formatCurrency) && (
-                                                            <div className="text-[9px] text-slate-500 mt-0.5 font-normal">{DR.formatMatrixEvidence(item, formatCurrency)}</div>
-                                                        )}
-                                                    </td>
-                                                    <td className="text-slate-600">{item.owner || '—'}</td>
-                                                    <td className="text-slate-600 font-mono text-[10px]">{item.targetWeek || '—'}</td>
-                                                    <td className="text-right font-mono font-bold text-rose-700">{item.expectedSavings > 0 ? formatCurrency(item.expectedSavings) : '—'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
                             {recoveryGanttFull.rows.length > 0 && (
                                 <div className="mb-6">
                                     <ReportRecoveryGanttChart gantt={recoveryGanttFull} title="Implementation Timeline Map (Gantt view)" />
