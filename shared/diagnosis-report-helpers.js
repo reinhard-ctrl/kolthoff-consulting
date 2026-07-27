@@ -1780,6 +1780,87 @@
     return buildRecoveryPlanAiSummary(matrixItems, options);
   }
 
+  /** Deterministic org chart summary bullets from staff directory and reporting lines. */
+  function buildOrgChartAiSummary(orgChartMembers, options) {
+    const opts = options || {};
+    const rows = normalizeStaffDirectoryRows(orgChartMembers);
+    if (!rows.length) return [];
+
+    const bullets = [];
+    const departments = [...new Set(rows.map((row) => row.department).filter(Boolean))];
+    const missingDept = rows.filter((row) => !row.department).length;
+    const missingReportsTo = rows.filter((row) => !row.reportsTo).length;
+    const missingTitle = rows.filter((row) => !row.title).length;
+
+    bullets.push(
+      `${rows.length} staff member${rows.length === 1 ? '' : 's'} mapped on the as-is org chart`
+        + (departments.length ? ` across ${departments.length} department${departments.length === 1 ? '' : 's'}.` : '.'),
+    );
+
+    if (departments.length) {
+      bullets.push(
+        `Departments represented: ${departments.slice(0, 6).join(', ')}${departments.length > 6 ? ` (+${departments.length - 6} more)` : ''}.`,
+      );
+    }
+
+    const reportsByManager = {};
+    rows.forEach((row) => {
+      if (row.reportsTo) {
+        reportsByManager[row.reportsTo] = (reportsByManager[row.reportsTo] || 0) + 1;
+      }
+    });
+    const managers = Object.entries(reportsByManager).sort((a, b) => b[1] - a[1]);
+    if (managers.length) {
+      const [topManager, count] = managers[0];
+      bullets.push(
+        `Primary reporting hub: ${topManager} has ${count} direct report${count === 1 ? '' : 's'}`
+          + (managers.length > 1 ? `; ${managers.length - 1} other manager${managers.length === 2 ? '' : 's'} with direct reports.` : ' on the chart.'),
+      );
+    } else if (missingReportsTo === rows.length) {
+      bullets.push('No reporting lines captured yet — add "Reports To" in the org chart or staff directory to clarify escalation paths.');
+    }
+
+    if (missingReportsTo > 0 && missingReportsTo < rows.length) {
+      bullets.push(
+        `${missingReportsTo} staff member${missingReportsTo === 1 ? '' : 's'} lack a "Reports To" value — often the owner/GM row or roles added after the chart was drawn.`,
+      );
+    }
+    if (missingDept > 0) {
+      bullets.push(
+        `${missingDept} roster row${missingDept === 1 ? '' : 's'} missing department — tagging departments improves RACI and workflow lane alignment.`,
+      );
+    }
+    if (missingTitle > 0) {
+      bullets.push(
+        `${missingTitle} staff member${missingTitle === 1 ? '' : 's'} missing role/title on the directory table.`,
+      );
+    }
+
+    if (String(opts.orgChartSvg || '').trim()) {
+      bullets.push('Org chart diagram exported for the PDF — use alongside the staff directory table for Mod 2 playbook ownership.');
+    } else {
+      bullets.push('Org chart SVG not exported yet — open Org Chart, save to cloud, and re-print to include the visual diagram.');
+    }
+
+    if (opts.tabs && opts.DiagramEditor) {
+      const raciGaps = buildRaciGaps(opts.tabs, opts.raciAssignments || {}, opts.DiagramEditor);
+      if (raciGaps.unassignedSteps > 0) {
+        bullets.push(
+          `${raciGaps.unassignedSteps} workflow steps still lack RACI despite ${rows.length} staff on the org chart — assign owners using names from this directory.`,
+        );
+      }
+    }
+
+    return bullets.slice(0, 8);
+  }
+
+  /** Use consultant-edited org chart summary when present; otherwise auto-generate. */
+  function resolveOrgChartAiSummary(stored, orgChartMembers, options) {
+    const manual = normalizeAiSummaryBullets(stored);
+    if (manual.length) return manual;
+    return buildOrgChartAiSummary(orgChartMembers, options);
+  }
+
   function tabHasReportableWorkflow(tab, DiagramEditor) {
     const { tasks } = getProcessNodes(tab, DiagramEditor);
     if (tasks.length > 0) return true;
@@ -2848,6 +2929,8 @@
     resolveRaciAiSummary,
     buildRecoveryPlanAiSummary,
     resolveRecoveryPlanAiSummary,
+    buildOrgChartAiSummary,
+    resolveOrgChartAiSummary,
     TOP_RECOVERY_FIXES_LIMIT,
     getTop10Fixes,
     tabHasReportableWorkflow,

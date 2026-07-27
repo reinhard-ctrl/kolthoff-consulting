@@ -153,6 +153,24 @@ describe('diagnosis-report-helpers', () => {
     assert.match(bullets[0], /90-Day Recovery Plan/);
   });
 
+  it('buildOrgChartAiSummary returns bullet points from staff directory', () => {
+    const members = [
+      { name: 'Jane', title: 'CEO', department: 'Executive', reportsTo: '' },
+      { name: 'Maria', title: 'Ops Lead', department: 'Operations', reportsTo: 'Jane' },
+      { name: 'Pedro', title: 'Analyst', department: 'Operations', reportsTo: 'Maria' },
+    ];
+    const bullets = DRH.buildOrgChartAiSummary(members, { orgChartSvg: 'data:image/svg+xml,abc' });
+    assert.ok(bullets.length >= 2);
+    assert.match(bullets[0], /3 staff members mapped/);
+    assert.match(bullets.join(' '), /Jane has 1 direct report/);
+  });
+
+  it('resolveOrgChartAiSummary prefers stored bullets over auto-generated', () => {
+    const stored = '• Custom org chart insight';
+    const resolved = DRH.resolveOrgChartAiSummary(stored, [{ name: 'Jane' }], {});
+    assert.deepEqual(resolved, ['Custom org chart insight']);
+  });
+
   it('generateMatrixFromDiagnosis adds workflow and saas items', () => {
     const tabs = [{ id: 'a', name: 'Sales', present: {} }];
     const saas = [{ id: 1, tool: 'Slack', billing: 500, users: 10, reason: 'Cut idle seats' }];
