@@ -889,7 +889,15 @@
                                     activeTabId={activeTabId}
                                     setActiveTabId={setActiveTabId}
                                     addNewTab={() => { const id = 'tab-' + Date.now(); setTabs([...tabs, createEmptyTab(id, IS_DIAGNOSIS_MODE ? 'As-Is Process' : 'To-Be Process')]); setActiveTabId(id); }}
-                                    closeTab={(e, id) => { e.stopPropagation(); if (tabs.length === 1) return; const newT = tabs.filter(t => t.id !== id); setTabs(newT); if (activeTabId === id) setActiveTabId(newT[0].id); }}
+                                    closeTab={(e, id) => {
+                                        e.stopPropagation();
+                                        if (tabs.length === 1) return;
+                                        const newT = tabs.filter(t => t.id !== id);
+                                        const newActiveId = activeTabId === id ? newT[0].id : activeTabId;
+                                        setTabs(newT);
+                                        setActiveTabId(newActiveId);
+                                        handleSaveToCloud({ silent: true, tabsOverride: newT, activeTabIdOverride: newActiveId }).catch(() => {});
+                                    }}
                                     renameTab={(id, name) => setTabs(tabs.map(t => t.id === id ? { ...t, name } : t))}
                                     reorderTab={(id, direction) => {
                                         setTabs((prev) => {

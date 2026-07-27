@@ -35,8 +35,14 @@ const profileWithExtra = {
   workflowBuilder: { tabs: [tabB], activeTabId: 'b', updatedAt: 2 },
 };
 const payloadMerged = WT.buildWorkflowTabsPayload('diagnosis', [tabA, tabBUpdated], 'b', profileWithExtra);
-assert.equal(payloadMerged.diagnosisWorkflow.tabs.map((t) => t.id).join(','), 'a,b,c');
-assert.equal(payloadMerged.diagnosisWorkflow.tabs.find((t) => t.id === 'c').present.nodes[0], 3);
+assert.equal(payloadMerged.diagnosisWorkflow.tabs.map((t) => t.id).join(','), 'a,b');
+assert.equal(payloadMerged.diagnosisWorkflow.tabs.find((t) => t.id === 'b').present.nodes.length, 2);
+assert.equal(payloadMerged.diagnosisWorkflow.tabs.find((t) => t.id === 'c'), undefined);
+
+const payloadDelete = WT.buildWorkflowTabsPayload('diagnosis', [tabBUpdated], 'b', profileWithExtra);
+assert.equal(payloadDelete.diagnosisWorkflow.tabs.map((t) => t.id).join(','), 'b');
+assert.equal(payloadDelete.diagnosisWorkflow.tabs.find((t) => t.id === 'a'), undefined);
+assert.equal(payloadDelete.diagnosisWorkflow.tabs.find((t) => t.id === 'c'), undefined);
 
 const payload = WT.buildWorkflowTabsPayload('diagnosis', [tabA, tabBUpdated], 'b', profile);
 assert.ok(payload.diagnosisWorkflow);

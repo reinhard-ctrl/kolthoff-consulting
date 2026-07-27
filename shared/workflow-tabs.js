@@ -70,13 +70,12 @@
     const clean = stripTabsForSave(localTabs);
     const sliceKey = SLICE_KEYS[app];
     const otherKey = app === 'diagnosis' ? SLICE_KEYS.workflow : SLICE_KEYS.diagnosis;
-    const existingSlice = existingProfile?.[sliceKey];
     const otherSlice = existingProfile?.[otherKey];
-    const mergedSliceTabs = mergeTabsById(existingSlice?.tabs, clean);
-    const canonicalTabs = mergeTabsById(otherSlice?.tabs, mergedSliceTabs);
+    // Editor local tabs are authoritative for this slice — do not merge in deleted tabs from Firestore.
+    const canonicalTabs = mergeTabsById(otherSlice?.tabs, clean);
 
     return {
-      [sliceKey]: { tabs: mergedSliceTabs, activeTabId, updatedAt: Date.now() },
+      [sliceKey]: { tabs: clean, activeTabId, updatedAt: Date.now() },
       tabs: canonicalTabs,
       activeTabId,
     };
