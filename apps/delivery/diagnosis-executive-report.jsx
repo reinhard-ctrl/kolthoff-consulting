@@ -82,7 +82,7 @@
             );
         };
 
-        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, topFixes, recoveryGanttTop10, showRecoveryGantt, recoveryPlanAiSummaryBullets }) => (
+        const ReportCover = ({ clientCompany, preparedBy, reportDate, totalAnnualWaste, processAnnual, saasAnnual, maturityIndex, recoveryGantt, showRecoveryGantt, recoveryPlanAiSummaryBullets }) => (
             <div className="report-page page-break-inside-avoid">
                 <div className="report-accent-bar mb-6" />
                 <div className="mb-8">
@@ -112,28 +112,10 @@
                         <div className="text-[9px] text-slate-400 mt-1">Licenses & duplicates</div>
                     </div>
                 </div>
-                {topFixes.length > 0 && (
+                {showRecoveryGantt && recoveryGantt?.rows?.length > 0 && (
                     <div className="border-2 border-brandTeal-500/30 rounded-xl p-6 bg-teal-50/30 page-break-inside-avoid">
-                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan — Top 10 Fixes</h3>
-                        <div className="space-y-0">
-                            {topFixes.map((item, idx) => (
-                                <div key={item.id} className="report-fix-row">
-                                    <div className="report-fix-num">{idx + 1}</div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-slate-900 text-sm leading-snug">{item.text}</div>
-                                        <div className="flex flex-wrap gap-2 mt-1.5">
-                                            {item.targetWeek && <span className="report-badge report-badge-teal">{item.targetWeek}</span>}
-                                            {item.expectedSavings > 0 && <span className="report-badge report-badge-rose">~{formatCurrency(item.expectedSavings)}/mo savings</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {showRecoveryGantt && recoveryGanttTop10?.rows?.length > 0 && (
-                            <div className="mt-5 pt-4 border-t border-brandTeal-500/20">
-                                <ReportRecoveryGanttChart gantt={recoveryGanttTop10} variant="compact" title="90-Day timeline (Top 10)" />
-                            </div>
-                        )}
+                        <h3 className="text-sm font-black uppercase tracking-wider text-brandTeal-900 mb-4 font-serif">90-Day Recovery Plan Timeline</h3>
+                        <ReportRecoveryGanttChart gantt={recoveryGantt} variant="compact" title="Implementation timeline (Gantt view)" />
                         {recoveryPlanAiSummaryBullets?.length > 0 && (
                             <ReportSummaryBlock
                                 title="Summary"
@@ -153,9 +135,7 @@
             const totalAnnualWaste = annualChaosTax + saasAnnualWaste;
             const maturityIndex = DR.computeMaturityIndex?.(synthesis) ?? 3;
             const activeItems = synthesis.matrix?.items || [];
-            const topFixes = DR.getTop10Fixes?.(activeItems) || [];
             const recoveryGanttFull = DR.buildRecoveryPlanGantt?.(activeItems) || { rows: [], unscheduledCount: 0 };
-            const recoveryGanttTop10 = DR.buildRecoveryPlanGantt?.(activeItems, { onlyTop10: true }) || { rows: [] };
             const recoveryPlanAiSummaryBullets = DR.resolveRecoveryPlanAiSummary?.(
                 synthesis.recoveryPlanAiSummary,
                 activeItems,
@@ -208,8 +188,7 @@
                             processAnnual={annualChaosTax}
                             saasAnnual={saasAnnualWaste}
                             maturityIndex={maturityIndex}
-                            topFixes={topFixes}
-                            recoveryGanttTop10={recoveryGanttTop10}
+                            recoveryGantt={recoveryGanttFull}
                             showRecoveryGantt={printConfig.showFixOrder}
                             recoveryPlanAiSummaryBullets={recoveryPlanAiSummaryBullets}
                         />
@@ -220,10 +199,10 @@
                             <ReportSectionHeader title="How to Read This Report" subtitle="A quick guide for owners and GMs reviewing your Business Leak Scan deliverable." />
                             <ol className="space-y-3 text-sm text-slate-700 leading-relaxed list-decimal list-inside">
                                 <li><strong>Start with the video walkthrough</strong> if your consultant shared a Loom link.</li>
-                                <li><strong>Read the Executive Summary</strong> and the 90-Day Recovery Plan on page 1.</li>
-                                <li><strong>Review the recovery timeline Gantt</strong> — target weeks for Top 10 fixes on page 1 and the full 90-day map in the timeline section.</li>
+                                <li><strong>Read the Executive Summary</strong> and the recovery timeline Gantt on page 1.</li>
+                                <li><strong>Review the full implementation timeline</strong> in the 90-Day Recovery Plan section.</li>
                                 <li><strong>Review process maps</strong> for the highest-leak workflow.</li>
-                                <li><strong>Assign owners and target weeks</strong> to each Top 10 fix.</li>
+                                <li><strong>Assign owners and target weeks</strong> to each initiative on the timeline.</li>
                                 <li><strong>Decide on Module 2</strong> using the recommended next-phase notes.</li>
                             </ol>
                         </div>
