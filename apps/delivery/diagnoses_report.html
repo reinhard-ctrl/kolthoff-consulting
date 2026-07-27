@@ -606,6 +606,15 @@
                     : tab.present,
             }))
         );
+
+        /** Merge Firestore diagnosis tabs with local state — overlay order wins, keeps tabs missing from stale parent saves. */
+        const mergeDiagnosisTabsForReport = (profile, localTabs) => {
+            const resolved = resolveDiagnosisTabsFromProfile(profile, localTabs);
+            const WT = window.WorkflowTabs;
+            const merged = WT?.mergeTabsById?.(resolved.tabs, localTabs)
+                || (resolved.tabs.length ? resolved.tabs : localTabs);
+            return hydrateDiagnosisTabsForPrint(merged);
+        };
         const printReadyWorkflowSvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
         const printReadyOrgChartSvg = (src) => DRH().normalizeReportDiagramSvg?.(src, { preserveConnectors: true }) || src || '';
         const printReadySvg = printReadyWorkflowSvg;
@@ -1653,10 +1662,10 @@
             const [generateModalOpen, setGenerateModalOpen] = useState(false);
             const [generateMode, setGenerateMode] = useState('append');
 
-            const resolvedDiagnosisTabs = useMemo(() => {
-                const resolved = resolveDiagnosisTabsFromProfile(activeProfile, tabs);
-                return resolved.tabs.length ? resolved.tabs : tabs;
-            }, [activeProfile, tabs, workflowUpdatedAt]);
+            const resolvedDiagnosisTabs = useMemo(
+                () => mergeDiagnosisTabsForReport(activeProfile, tabs),
+                [activeProfile, tabs, workflowUpdatedAt],
+            );
 
             const genOptions = useMemo(() => ({
                 raciAssignments,
@@ -3759,11 +3768,14 @@
             const workflowIframeRef = useRef(null);
             const workflowSvgExportRef = useRef(null);
             const [isPreparingPrint, setIsPreparingPrint] = useState(false);
+            const [isRefreshingReportTabs, setIsRefreshingReportTabs] = useState(false);
             const [workflowSvgOverrides, setWorkflowSvgOverrides] = useState({});
             const autoSaveReadyRef = useRef(false);
             const autoSaveTimerRef = useRef(null);
             const profileHydratedIdRef = useRef(null);
             const lastSyncedWorkflowAtRef = useRef(0);
+            const reportSyncGenRef = useRef(0);
+            const prevActiveNavRef = useRef(null);
 
             // 1) Auth Setup
             useEffect(() => {
@@ -3818,7 +3830,7 @@
                 lastSyncedWorkflowAtRef.current = wfUpdatedAt;
                 const resolved = resolveDiagnosisTabsFromProfile(profile, tabs);
                 if (!resolved.tabs.length) return;
-                setTabs(hydrateDiagnosisTabsForPrint(resolved.tabs));
+                setTabs((prev) => mergeDiagnosisTabsForReport(profile, prev));
                 if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
                 setWorkflowUpdatedAt(wfUpdatedAt);
             }, [activeProfileId, workbookProfiles]);
@@ -3960,13 +3972,10 @@
                 [workbookProfiles, activeProfileId],
             );
 
-            const diagnosisTabsForReport = useMemo(() => {
-                const resolved = resolveDiagnosisTabsFromProfile(activeProfile, tabs);
-                const WT = window.WorkflowTabs;
-                const merged = WT?.mergeTabsById?.(resolved.tabs, tabs)
-                    || (resolved.tabs.length ? resolved.tabs : tabs);
-                return hydrateDiagnosisTabsForPrint(merged);
-            }, [activeProfile, tabs, workflowUpdatedAt]);
+            const diagnosisTabsForReport = useMemo(
+                () => mergeDiagnosisTabsForReport(activeProfile, tabs),
+                [activeProfile, tabs, workflowUpdatedAt],
+            );
 
             const mod1Handoff = useMemo(() => DRH().validateMod1Handoff?.({
                 tabs: diagnosisTabsForReport, subSaaS, synthesis, orgChartSvg, raciAssignments, DiagramEditor: window.DiagramEditor,
@@ -4078,6 +4087,84 @@
                 }
             }, [activeProfileId, totalAnnualChaosTax, saasAnnualForCoi, synthesis.customPitch, synthesis.nextModuleId]);
 
+            const exportMissingWorkflowSvgs = async (tabsForExport) => {
+                const missingSvgTabs = (tabsForExport || []).filter((tab) => DRH().tabNeedsWorkflowSvgExport?.(tab));
+                if (!missingSvgTabs.length || !workflowSvgExportRef.current?.exportXml) return {};
+                const overrides = {};
+                for (const tab of missingSvgTabs) {
+                    try {
+                        const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
+                        const exported = await workflowSvgExportRef.current.exportXml(norm.drawioXml);
+                        const svg = printReadyWorkflowSvg(exported?.svg || '');
+                        if (svg) overrides[tab.id] = svg;
+                    } catch (exportErr) {
+                        console.warn('Report workflow SVG export failed for', tab.name, exportErr);
+                    }
+                }
+                return overrides;
+            };
+
+            const applyWorkflowSvgOverrides = (overrides) => {
+                if (!overrides || !Object.keys(overrides).length) return;
+                ReactDOM.flushSync(() => {
+                    setWorkflowSvgOverrides((prev) => ({ ...prev, ...overrides }));
+                    setTabs((prev) => prev.map((t) => (overrides[t.id]
+                        ? { ...t, present: { ...t.present, svgCache: overrides[t.id] } }
+                        : t)));
+                });
+            };
+
+            const syncDiagnosisTabsForReport = useCallback(async ({ exportAllTabs = true } = {}) => {
+                if (exportAllTabs && workflowIframeRef.current?.contentWindow) {
+                    try {
+                        await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true, exportAllTabs: true });
+                    } catch (embedSaveErr) {
+                        console.warn('Report workflow sync: embed save skipped', embedSaveErr);
+                    }
+                }
+
+                let profile = activeProfile;
+                if (isAuthed && activeProfileId && window.getDoc && window.firestoreDoc) {
+                    const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
+                    const profileSnap = await window.getDoc(profileRef);
+                    if (profileSnap.exists()) {
+                        profile = { id: activeProfileId, ...profileSnap.data() };
+                    }
+                }
+
+                let mergedTabs = [];
+                ReactDOM.flushSync(() => {
+                    setTabs((prev) => {
+                        mergedTabs = mergeDiagnosisTabsForReport(profile, prev);
+                        return mergedTabs;
+                    });
+                    const resolved = resolveDiagnosisTabsFromProfile(profile, mergedTabs);
+                    if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
+                    if (profile?.diagnosisWorkflow?.updatedAt) {
+                        setWorkflowUpdatedAt(profile.diagnosisWorkflow.updatedAt);
+                        lastSyncedWorkflowAtRef.current = profile.diagnosisWorkflow.updatedAt;
+                    }
+                });
+
+                const overrides = await exportMissingWorkflowSvgs(mergedTabs);
+                applyWorkflowSvgOverrides(overrides);
+                return mergedTabs;
+            }, [activeProfile, activeProfileId, isAuthed]);
+
+            useEffect(() => {
+                const enteredReport = activeNav === 'report' && prevActiveNavRef.current !== 'report';
+                prevActiveNavRef.current = activeNav;
+                if (!enteredReport || !activeProfileId) return;
+
+                const gen = ++reportSyncGenRef.current;
+                setIsRefreshingReportTabs(true);
+                syncDiagnosisTabsForReport({ exportAllTabs: true })
+                    .catch((err) => console.warn('Report preview workflow sync failed', err))
+                    .finally(() => {
+                        if (reportSyncGenRef.current === gen) setIsRefreshingReportTabs(false);
+                    });
+            }, [activeNav, activeProfileId, syncDiagnosisTabsForReport]);
+
             const handlePrintReport = async () => {
                 const errors = reportValidation.errors || [];
                 const warnings = reportValidation.warnings || [];
@@ -4094,53 +4181,7 @@
                 setReportEditMode(false);
                 setIsPreparingPrint(true);
                 try {
-                    if (workflowIframeRef.current?.contentWindow) {
-                        try {
-                            await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true, exportAllTabs: true });
-                        } catch (embedSaveErr) {
-                            console.warn('Report print: workflow embed save skipped', embedSaveErr);
-                        }
-                    }
-                    let tabsForExport = diagnosisTabsForReport;
-                    if (isAuthed && activeProfileId && window.getDoc && window.firestoreDoc) {
-                        const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
-                        const profileSnap = await window.getDoc(profileRef);
-                        if (profileSnap.exists()) {
-                            const freshProfile = { id: activeProfileId, ...profileSnap.data() };
-                            const resolved = resolveDiagnosisTabsFromProfile(freshProfile, tabs);
-                            tabsForExport = hydrateDiagnosisTabsForPrint(resolved.tabs.length ? resolved.tabs : tabs);
-                            ReactDOM.flushSync(() => {
-                                if (resolved.tabs.length) setTabs(hydrateDiagnosisTabsForPrint(resolved.tabs));
-                                if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
-                                if (freshProfile.diagnosisWorkflow?.updatedAt) {
-                                    setWorkflowUpdatedAt(freshProfile.diagnosisWorkflow.updatedAt);
-                                    lastSyncedWorkflowAtRef.current = freshProfile.diagnosisWorkflow.updatedAt;
-                                }
-                            });
-                        }
-                    }
-                    const missingSvgTabs = tabsForExport.filter((tab) => DRH().tabNeedsWorkflowSvgExport?.(tab));
-                    if (missingSvgTabs.length && workflowSvgExportRef.current?.exportXml) {
-                        const overrides = {};
-                        for (const tab of missingSvgTabs) {
-                            try {
-                                const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
-                                const exported = await workflowSvgExportRef.current.exportXml(norm.drawioXml);
-                                const svg = printReadyWorkflowSvg(exported?.svg || '');
-                                if (svg) overrides[tab.id] = svg;
-                            } catch (exportErr) {
-                                console.warn('Report print: workflow SVG export failed for', tab.name, exportErr);
-                            }
-                        }
-                        if (Object.keys(overrides).length) {
-                            ReactDOM.flushSync(() => {
-                                setWorkflowSvgOverrides((prev) => ({ ...prev, ...overrides }));
-                                setTabs((prev) => prev.map((t) => (overrides[t.id]
-                                    ? { ...t, present: { ...t.present, svgCache: overrides[t.id] } }
-                                    : t)));
-                            });
-                        }
-                    }
+                    await syncDiagnosisTabsForReport({ exportAllTabs: true });
                     document.body.classList.add('printing-report');
                     window.print();
                 } catch (printSyncErr) {
@@ -4592,6 +4633,12 @@
                                     {reportEditMode && (
                                         <div className="mx-3 mb-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-[10px] text-amber-900 leading-relaxed no-print">
                                             Edit mode — click highlighted fields in the preview to customize section titles, subtitles, and narrative text. Changes save with the workspace automatically.
+                                        </div>
+                                    )}
+                                    {isRefreshingReportTabs && (
+                                        <div className="mx-3 mb-2 px-3 py-2 rounded-lg border border-brandTeal-200 bg-teal-50 text-[10px] text-brandTeal-900 leading-relaxed no-print flex items-center gap-2">
+                                            <span className="inline-block w-3 h-3 border-2 border-brandTeal-600 border-t-transparent rounded-full animate-spin shrink-0" aria-hidden="true" />
+                                            Syncing all workflow diagrams for preview…
                                         </div>
                                     )}
                                     <div className="flex-1 min-h-0 overflow-y-auto w-full flex justify-center report-print-surface py-4 px-3 print:flex-none print:block print:h-auto print:min-h-0 print:overflow-visible print:py-0 print:px-0 print:bg-transparent">
