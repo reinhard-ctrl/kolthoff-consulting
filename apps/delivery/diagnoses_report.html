@@ -3684,8 +3684,10 @@
 
             const diagnosisTabsForReport = useMemo(() => {
                 const resolved = resolveDiagnosisTabsFromProfile(activeProfile, tabs);
-                const raw = resolved.tabs.length ? resolved.tabs : tabs;
-                return hydrateDiagnosisTabsForPrint(raw);
+                const WT = window.WorkflowTabs;
+                const merged = WT?.mergeTabsById?.(resolved.tabs, tabs)
+                    || (resolved.tabs.length ? resolved.tabs : tabs);
+                return hydrateDiagnosisTabsForPrint(merged);
             }, [activeProfile, tabs, workflowUpdatedAt]);
 
             const mod1Handoff = useMemo(() => DRH().validateMod1Handoff?.({
@@ -3814,6 +3816,13 @@
                 setReportEditMode(false);
                 setIsPreparingPrint(true);
                 try {
+                    if (workflowIframeRef.current?.contentWindow) {
+                        try {
+                            await requestWorkflowEmbedSave(workflowIframeRef.current, { applyDiagram: true, exportAllTabs: true });
+                        } catch (embedSaveErr) {
+                            console.warn('Report print: workflow embed save skipped', embedSaveErr);
+                        }
+                    }
                     let tabsForExport = diagnosisTabsForReport;
                     if (isAuthed && activeProfileId && window.getDoc && window.firestoreDoc) {
                         const profileRef = window.firestoreDoc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
@@ -3865,7 +3874,7 @@
                 }
             };
 
-            const handleSaveToCloud = async ({ silent = false, skipWorkflowTabs = false, orgOverride = null } = {}) => {
+            const handleSaveToCloud = async ({ silent = false, skipWorkflowTabs = true, orgOverride = null } = {}) => {
                 if (authError) {
                     if (!silent) triggerToast("❌ Sync Disabled (GCP Key Issue)");
                     return false;
@@ -4108,8 +4117,10 @@
                         )}
 
                         <div className={`flex-1 min-h-0 ${activeNav === 'flowcharts' ? 'overflow-hidden' : activeNav === 'orgchart' ? 'overflow-y-auto' : activeNav === 'report' ? 'overflow-hidden w-full flex flex-col min-h-0' : 'overflow-y-auto p-8 max-w-[1600px] mx-auto pb-24 w-full'}`}>
-                            {activeNav === 'flowcharts' && (
-                                <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} iframeRef={workflowIframeRef} />
+                            {activeProfileId && (
+                                <div className={activeNav === 'flowcharts' ? 'w-full h-full min-h-0' : 'no-print'} style={activeNav === 'flowcharts' ? undefined : { position: 'fixed', left: -10000, top: 0, width: 1200, height: 800, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }}>
+                                    <WorkflowBuilderEmbedPanel activeProfileId={activeProfileId} iframeRef={workflowIframeRef} />
+                                </div>
                             )}
                             {activeNav === 'orgchart' && (
                                 <div className="flex flex-col min-h-0">

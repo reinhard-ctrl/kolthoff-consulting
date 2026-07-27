@@ -70,11 +70,13 @@
     const clean = stripTabsForSave(localTabs);
     const sliceKey = SLICE_KEYS[app];
     const otherKey = app === 'diagnosis' ? SLICE_KEYS.workflow : SLICE_KEYS.diagnosis;
+    const existingSlice = existingProfile?.[sliceKey];
     const otherSlice = existingProfile?.[otherKey];
-    const canonicalTabs = mergeTabsById(otherSlice?.tabs, clean);
+    const mergedSliceTabs = mergeTabsById(existingSlice?.tabs, clean);
+    const canonicalTabs = mergeTabsById(otherSlice?.tabs, mergedSliceTabs);
 
     return {
-      [sliceKey]: { tabs: clean, activeTabId, updatedAt: Date.now() },
+      [sliceKey]: { tabs: mergedSliceTabs, activeTabId, updatedAt: Date.now() },
       tabs: canonicalTabs,
       activeTabId,
     };
