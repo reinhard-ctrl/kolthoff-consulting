@@ -631,6 +631,7 @@
             workflowAiSummary: '',
             raciAiSummary: '',
             recoveryPlanAiSummary: '',
+            orgChartAiSummary: '',
             staffDirectoryDeliverableUrl: '',
             privacyGroundRules: 'Customer and employee data is shared only on a need-to-know basis. Staff must not store client records in personal apps or devices.',
             larkProcessSummary: [],
@@ -1635,7 +1636,7 @@
 
         const SynthesisBuilder = ({
             synthesis, setSynthesis, annualChaosTax, projected3YearLoss, subSaaS, tabs,
-            raciAssignments, orgChartMembers, clientCompany, saasAnnualForCoi,
+            raciAssignments, orgChartMembers, orgChartSvg, clientCompany, saasAnnualForCoi,
             reportValidation, mod1Handoff, activeProfile, workflowUpdatedAt, reportDataUpdatedAt,
             onGoToReport,
         }) => {
@@ -2343,6 +2344,39 @@
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <div className="flex flex-wrap justify-between items-start gap-3">
                                 <div>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Org Chart AI Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the Organization &amp; Team Structure section — one line per bullet.</p>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    const bullets = DRH().buildOrgChartAiSummary?.(
+                                        orgChartMembers,
+                                        { orgChartSvg, tabs: resolvedDiagnosisTabs, raciAssignments, DiagramEditor: window.DiagramEditor },
+                                    ) || [];
+                                    setSynthesis((prev) => ({
+                                        ...prev,
+                                        orgChartAiSummary: bullets.map((line) => `• ${line}`).join('\n'),
+                                    }));
+                                }} className="px-3 py-1.5 bg-brandTeal-500/20 hover:bg-brandTeal-500/30 border border-brandTeal-500/40 text-brandTeal-300 rounded-lg text-[10px] font-bold uppercase tracking-wider">Regenerate from Org Chart</button>
+                            </div>
+                            <textarea
+                                rows={5}
+                                value={synthesis.orgChartAiSummary || ''}
+                                onChange={(e) => setSynthesis((prev) => ({ ...prev, orgChartAiSummary: e.target.value }))}
+                                placeholder="Leave blank to auto-generate from org chart when printing…"
+                                className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
+                            />
+                            {(synthesis.orgChartAiSummary || '').trim() === '' && (
+                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
+                                    {(DRH().buildOrgChartAiSummary?.(orgChartMembers, { orgChartSvg, tabs: resolvedDiagnosisTabs, raciAssignments, DiagramEditor: window.DiagramEditor }) || []).slice(0, 4).map((line, idx) => (
+                                        <li key={idx}>{line}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="border-t border-brandNavy-800 pt-4 space-y-3">
+                            <div className="flex flex-wrap justify-between items-start gap-3">
+                                <div>
                                     <h4 className="text-[10px] font-bold uppercase text-slate-300">Workflow AI Summary (PDF)</h4>
                                     <p className="text-[10px] text-slate-500">Bullet-point synthesis after Process Leakage Ranking — one line per bullet.</p>
                                 </div>
@@ -2814,6 +2848,11 @@
                 window.DiagramEditor,
                 { synthesis, orgChartMembers },
             ) || [];
+            const orgChartAiSummaryBullets = DR.resolveOrgChartAiSummary?.(
+                synthesis.orgChartAiSummary,
+                orgChartMembers,
+                { orgChartSvg, tabs, raciAssignments, DiagramEditor: window.DiagramEditor },
+            ) || [];
             const modules = EC_MODULES();
             const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
 
@@ -3018,6 +3057,24 @@
                                         ))}
                                     </tbody>
                                 </table>
+                            )}
+                            {orgChartAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Org Chart</h4>
+                                    {reportEditMode ? (
+                                        <textarea
+                                            rows={Math.max(4, orgChartAiSummaryBullets.length + 1)}
+                                            value={synthesis.orgChartAiSummary || orgChartAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
+                                            onChange={(e) => onSynthesisFieldChange?.('orgChartAiSummary', e.target.value)}
+                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
+                                            placeholder="One bullet per line — leave blank to auto-generate from org chart data"
+                                        />
+                                    ) : (
+                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                            {orgChartAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                        </ul>
+                                    )}
+                                </div>
                             )}
                             {synthesis.privacyGroundRules && synthesis.privacyGroundRules.trim() && (
                                 <div className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
@@ -4388,6 +4445,7 @@
                                     tabs={tabs}
                                     raciAssignments={raciAssignments}
                                     orgChartMembers={orgChartMembers}
+                                    orgChartSvg={orgChartSvg}
                                     clientCompany={clientCompany}
                                     reportValidation={reportValidation}
                                     mod1Handoff={mod1Handoff}

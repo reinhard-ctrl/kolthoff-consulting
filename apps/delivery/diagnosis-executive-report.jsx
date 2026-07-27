@@ -146,6 +146,11 @@
                 window.DiagramEditor,
                 { synthesis, orgChartMembers },
             ) || [];
+            const orgChartAiSummaryBullets = DR.resolveOrgChartAiSummary?.(
+                synthesis.orgChartAiSummary,
+                orgChartMembers,
+                { orgChartSvg, tabs, raciAssignments, DiagramEditor: window.DiagramEditor },
+            ) || [];
             const modules = EC_MODULES();
             const modByKey = (key) => modules.find(m => m.key === key) || { title: key, category: key };
 
@@ -375,6 +380,14 @@
                                         ))}
                                     </tbody>
                                 </table>
+                            )}
+                            {orgChartAiSummaryBullets.length > 0 && (
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Org Chart</h4>
+                                    <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                                        {orgChartAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
+                                    </ul>
+                                </div>
                             )}
                         </div>
                     )}
