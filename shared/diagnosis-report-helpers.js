@@ -1364,6 +1364,55 @@
     };
   }
 
+  function shortenFeedbackQuestionLabel(question, maxLen = 72) {
+    const q = String(question || '').trim();
+    if (q.length <= maxLen) return q;
+    return `${q.slice(0, maxLen - 1).trim()}…`;
+  }
+
+  /** Synthesized executive summary from anonymous staff feedback clusters (for PDF + Strategy). */
+  function buildStaffFeedbackAiSummary(clusters, legacyThemes) {
+    const normalized = normalizeStaffFeedbackClusters(clusters, legacyThemes);
+    if (!normalized.length) return '';
+
+    const allThemes = flattenStaffFeedbackClusters(normalized);
+    const themeCount = allThemes.length;
+    const questionCount = normalized.length;
+    const paragraphs = [];
+
+    paragraphs.push(
+      `Across ${questionCount} anonymous survey question${questionCount === 1 ? '' : 's'}, `
+      + `staff raised ${themeCount} recurring theme${themeCount === 1 ? '' : 's'}. `
+      + 'Patterns point to operational friction — delays, handoffs, and tool gaps — rather than isolated individual issues.',
+    );
+
+    const clusterLines = normalized
+      .map((cluster) => {
+        const themes = (cluster.themes || []).map((t) => String(t).trim()).filter(Boolean);
+        if (!themes.length) return '';
+        const lead = themes.slice(0, 2).join('; ');
+        const rest = themes.length > 2
+          ? ` (plus ${themes.length - 2} related theme${themes.length - 2 === 1 ? '' : 's'})`
+          : '';
+        return `• ${shortenFeedbackQuestionLabel(cluster.question)}: ${lead}${rest}.`;
+      })
+      .filter(Boolean);
+
+    if (clusterLines.length) paragraphs.push(clusterLines.join('\n'));
+
+    paragraphs.push(
+      'Recommended use: feed the highest-friction themes into the 90-Day Recovery Plan and validate with leadership before changing roles or tools.',
+    );
+
+    return paragraphs.join('\n\n');
+  }
+
+  function resolveStaffFeedbackAiSummary(storedSummary, clusters, legacyThemes) {
+    const trimmed = String(storedSummary || '').trim();
+    if (trimmed) return trimmed;
+    return buildStaffFeedbackAiSummary(clusters, legacyThemes);
+  }
+
   function normalizeStaffDirectoryRows(members) {
     return (members || [])
       .map((m) => ({
@@ -2567,6 +2616,9 @@
     normalizeStaffFeedbackClusters,
     extractStaffFeedbackClustersFromResponsesCsv,
     extractStaffFeedbackThemesFromResponsesCsv,
+    buildStaffFeedbackAiSummary,
+    resolveStaffFeedbackAiSummary,
+    shortenFeedbackQuestionLabel,
     normalizeStaffDirectoryRows,
     normalizeReportDiagramSvg,
     ensureReportDiagramDataUri,

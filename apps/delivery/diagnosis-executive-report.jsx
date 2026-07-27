@@ -210,11 +210,39 @@
                                 ))}
                             </ul>
                             {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
+                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid space-y-4">
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Staff Feedback Themes (Anonymous)</h4>
+                                    {(() => {
+                                        const feedbackClusters = DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || [];
+                                        const aiSummary = DR.resolveStaffFeedbackAiSummary?.(
+                                            synthesis.staffFeedbackAiSummary,
+                                            feedbackClusters,
+                                            synthesis.staffFeedbackThemes,
+                                        ) || '';
+                                        if (aiSummary) {
+                                            return (
+                                                <div className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 mb-3">
+                                                    <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1.5">AI Summary</div>
+                                                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+                                    {(DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || []).length > 0
+                                        ? (DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || []).map((cluster) => (
+                                            <div key={cluster.questionKey} className="space-y-1.5">
+                                                <div className="text-[10px] font-semibold text-slate-700 leading-relaxed">{cluster.question}</div>
+                                                <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                                    {cluster.themes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
+                                                </ul>
+                                            </div>
+                                        ))
+                                        : (
                                     <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
                                         {synthesis.staffFeedbackThemes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
                                     </ul>
+                                        )}
                                 </div>
                             )}
                         </div>
