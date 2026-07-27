@@ -1301,7 +1301,7 @@
                     ...prev,
                     staffFeedbackClusters: result.clusters,
                     staffFeedbackThemes: result.themes.length ? result.themes : [''],
-                    staffFeedbackAiSummary: DRH().buildStaffFeedbackAiSummary?.(result.clusters, result.themes) || '',
+                    staffFeedbackAiSummary: summaryBulletsToText(DRH().buildStaffFeedbackAiSummary?.(result.clusters, result.themes) || []),
                 }));
                 setImportStatus(`Imported ${result.meta.questionCount || result.clusters.length} question group${(result.meta.questionCount || result.clusters.length) === 1 ? '' : 's'} · ${result.themes.length} theme${result.themes.length === 1 ? '' : 's'} from ${result.meta.rowCount || 0} response${result.meta.rowCount === 1 ? '' : 's'}. Edit below before syncing.`);
             };
@@ -1557,22 +1557,22 @@
                             {(feedbackClusters.length > 0 || (synthesis.staffFeedbackThemes || []).some((t) => t && t.trim())) && (
                                 <div className="rounded-lg border border-brandTeal-500/30 bg-brandTeal-500/5 p-3 space-y-2">
                                     <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <h4 className="text-[10px] font-bold uppercase text-brandTeal-300 tracking-wider">AI Summary (for PDF)</h4>
+                                        <h4 className="text-[10px] font-bold uppercase text-brandTeal-300 tracking-wider">Summary (for PDF)</h4>
                                         <button
                                             type="button"
                                             onClick={() => setSynthesis((prev) => ({
                                                 ...prev,
-                                                staffFeedbackAiSummary: DRH().buildStaffFeedbackAiSummary?.(
+                                                staffFeedbackAiSummary: summaryBulletsToText(DRH().buildStaffFeedbackAiSummary?.(
                                                     prev.staffFeedbackClusters,
                                                     prev.staffFeedbackThemes,
-                                                ) || '',
+                                                ) || []),
                                             }))}
                                             className="px-2.5 py-1 rounded text-[9px] font-bold uppercase border border-brandTeal-500/40 text-brandTeal-300 hover:bg-brandTeal-500/10"
                                         >
                                             Regenerate
                                         </button>
                                     </div>
-                                    <p className="text-[9px] text-slate-500 leading-relaxed">Appears at the top of Staff Feedback Themes in the Executive Snapshot PDF section. Edit freely — regenerate after importing new themes.</p>
+                                    <p className="text-[9px] text-slate-500 leading-relaxed">Appears at the top of Staff Feedback Themes in the Executive Snapshot PDF section. Use &quot;Topic: detail&quot; bullets — regenerate after importing new themes.</p>
                                     <textarea
                                         rows="5"
                                         value={synthesis.staffFeedbackAiSummary || ''}
@@ -2353,8 +2353,8 @@
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <div className="flex flex-wrap justify-between items-start gap-3">
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Org Chart AI Summary (PDF)</h4>
-                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the Organization &amp; Team Structure section — one line per bullet.</p>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Org Chart Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet summary in the Organization section — topic lead, then plain-language detail.</p>
                                 </div>
                                 <button type="button" onClick={() => {
                                     const bullets = DRH().buildOrgChartAiSummary?.(
@@ -2375,19 +2375,19 @@
                                 className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
                             />
                             {(synthesis.orgChartAiSummary || '').trim() === '' && (
-                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
-                                    {(DRH().buildOrgChartAiSummary?.(orgChartMembers, { orgChartSvg, tabs: resolvedDiagnosisTabs, raciAssignments, DiagramEditor: window.DiagramEditor }) || []).slice(0, 4).map((line, idx) => (
-                                        <li key={idx}>{line}</li>
-                                    ))}
-                                </ul>
+                                <SummaryBulletList
+                                    compact
+                                    className="text-slate-400"
+                                    bullets={(DRH().buildOrgChartAiSummary?.(orgChartMembers, { orgChartSvg, tabs: resolvedDiagnosisTabs, raciAssignments, DiagramEditor: window.DiagramEditor }) || []).slice(0, 4)}
+                                />
                             )}
                         </div>
 
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <div className="flex flex-wrap justify-between items-start gap-3">
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Workflow AI Summary (PDF)</h4>
-                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis after Process Leakage Ranking — one line per bullet.</p>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Workflow Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet summary after Process Leakage Ranking — topic lead, then plain-language detail.</p>
                                 </div>
                                 <button type="button" onClick={() => {
                                     const bullets = DRH().buildWorkflowAiSummary?.(
@@ -2409,19 +2409,19 @@
                                 className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
                             />
                             {(synthesis.workflowAiSummary || '').trim() === '' && (
-                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
-                                    {(DRH().buildWorkflowAiSummary?.(resolvedDiagnosisTabs, window.DiagramEditor, { formatCurrency }) || []).slice(0, 4).map((line, idx) => (
-                                        <li key={idx}>{line}</li>
-                                    ))}
-                                </ul>
+                                <SummaryBulletList
+                                    compact
+                                    className="text-slate-400"
+                                    bullets={(DRH().buildWorkflowAiSummary?.(resolvedDiagnosisTabs, window.DiagramEditor, { formatCurrency }) || []).slice(0, 4)}
+                                />
                             )}
                         </div>
 
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <div className="flex flex-wrap justify-between items-start gap-3">
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">RACI AI Summary (PDF)</h4>
-                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the RACI Accountability Matrix section — one line per bullet.</p>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">RACI Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet summary in the Accountability Matrix section — topic lead, then plain-language detail.</p>
                                 </div>
                                 <button type="button" onClick={() => {
                                     const bullets = DRH().buildRaciAiSummary?.(
@@ -2444,19 +2444,19 @@
                                 className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
                             />
                             {(synthesis.raciAiSummary || '').trim() === '' && (
-                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
-                                    {(DRH().buildRaciAiSummary?.(resolvedDiagnosisTabs, raciAssignments, window.DiagramEditor, { synthesis, orgChartMembers }) || []).slice(0, 4).map((line, idx) => (
-                                        <li key={idx}>{line}</li>
-                                    ))}
-                                </ul>
+                                <SummaryBulletList
+                                    compact
+                                    className="text-slate-400"
+                                    bullets={(DRH().buildRaciAiSummary?.(resolvedDiagnosisTabs, raciAssignments, window.DiagramEditor, { synthesis, orgChartMembers }) || []).slice(0, 4)}
+                                />
                             )}
                         </div>
 
                         <div className="border-t border-brandNavy-800 pt-4 space-y-3">
                             <div className="flex flex-wrap justify-between items-start gap-3">
                                 <div>
-                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Recovery Plan AI Summary (PDF)</h4>
-                                    <p className="text-[10px] text-slate-500">Bullet-point synthesis in the 90-Day Recovery Plan section — one line per bullet.</p>
+                                    <h4 className="text-[10px] font-bold uppercase text-slate-300">Recovery Plan Summary (PDF)</h4>
+                                    <p className="text-[10px] text-slate-500">Bullet summary in the 90-Day Recovery Plan section — topic lead, then plain-language detail.</p>
                                 </div>
                                 <button type="button" onClick={() => {
                                     const bullets = DRH().buildRecoveryPlanAiSummary?.(
@@ -2477,11 +2477,11 @@
                                 className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-200 leading-relaxed focus:outline-none focus:border-brandTeal-500 resize-none font-mono"
                             />
                             {(synthesis.recoveryPlanAiSummary || '').trim() === '' && (
-                                <ul className="list-disc list-inside text-[10px] text-slate-400 space-y-1 leading-relaxed">
-                                    {(DRH().buildRecoveryPlanAiSummary?.(matrixItems, { formatCurrency, totalAnnualWaste }) || []).slice(0, 4).map((line, idx) => (
-                                        <li key={idx}>{line}</li>
-                                    ))}
-                                </ul>
+                                <SummaryBulletList
+                                    compact
+                                    className="text-slate-400"
+                                    bullets={(DRH().buildRecoveryPlanAiSummary?.(matrixItems, { formatCurrency, totalAnnualWaste }) || []).slice(0, 4)}
+                                />
                             )}
                         </div>
 
@@ -2692,6 +2692,64 @@
                 return <textarea rows={rows} {...sharedProps} />;
             }
             return <input type="text" {...sharedProps} />;
+        };
+
+        const summaryBulletsToText = (bullets) => (bullets || []).map((line) => `• ${line}`).join('\n');
+
+        const SummaryBulletList = ({ bullets, className = '', compact = false }) => {
+            const parsed = useMemo(() => {
+                const DR = DRH();
+                return (bullets || []).map((line) => {
+                    if (line && typeof line === 'object' && (line.body !== undefined || line.lead !== undefined)) return line;
+                    return DR.parseSummaryBulletLine?.(line) || { lead: '', body: String(line || '') };
+                }).filter((bullet) => bullet && (bullet.lead || bullet.body));
+            }, [bullets]);
+            if (!parsed.length) return null;
+            return (
+                <ul className={`report-summary-list space-y-${compact ? '1.5' : '2'} ${className}`.trim()}>
+                    {parsed.map((bullet, idx) => (
+                        <li key={idx} className={`${compact ? 'text-[10px]' : 'text-xs'} text-slate-700 leading-relaxed flex gap-2 page-break-inside-avoid`}>
+                            <span className="text-brandTeal-600 font-black shrink-0 mt-px">•</span>
+                            <span>
+                                {bullet.lead ? (
+                                    <>
+                                        <strong className="font-bold text-slate-900">{bullet.lead}:</strong>{' '}
+                                    </>
+                                ) : null}
+                                {bullet.body}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            );
+        };
+
+        const ReportSummaryBlock = ({
+            title = 'Summary',
+            bullets = [],
+            editMode = false,
+            fieldValue = '',
+            onFieldChange,
+            placeholder = 'One bullet per line — use "Topic: detail" format. Leave blank to auto-generate.',
+            className = 'mt-6',
+        }) => {
+            if (!editMode && !bullets.length) return null;
+            return (
+                <div className={`${className} p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid`}>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">{title}</h4>
+                    {editMode ? (
+                        <textarea
+                            rows={Math.max(4, bullets.length + 1)}
+                            value={fieldValue || summaryBulletsToText(bullets)}
+                            onChange={(e) => onFieldChange?.(e.target.value)}
+                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y font-mono"
+                            placeholder={placeholder}
+                        />
+                    ) : (
+                        <SummaryBulletList bullets={bullets} />
+                    )}
+                </div>
+            );
         };
 
         const ReportSectionHeader = ({
@@ -2983,17 +3041,18 @@
                                 <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid space-y-4">
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Staff Feedback Themes (Anonymous)</h4>
                                     {(() => {
-                                        const aiSummary = DR.resolveStaffFeedbackAiSummary?.(
+                                        const summaryBullets = DR.resolveStaffFeedbackAiSummary?.(
                                             synthesis.staffFeedbackAiSummary,
                                             feedbackClustersForReport,
                                             synthesis.staffFeedbackThemes,
-                                        ) || '';
-                                        if (!aiSummary) return null;
+                                        ) || [];
+                                        if (!summaryBullets.length) return null;
                                         return (
-                                            <div className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 page-break-inside-avoid">
-                                                <div className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-800 mb-1.5">AI Summary</div>
-                                                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
-                                            </div>
+                                            <ReportSummaryBlock
+                                                title="Summary"
+                                                bullets={summaryBullets}
+                                                className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40"
+                                            />
                                         );
                                     })()}
                                     {feedbackClustersForReport.map((cluster) => (
@@ -3067,24 +3126,13 @@
                                     </tbody>
                                 </table>
                             )}
-                            {orgChartAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Org Chart</h4>
-                                    {reportEditMode ? (
-                                        <textarea
-                                            rows={Math.max(4, orgChartAiSummaryBullets.length + 1)}
-                                            value={synthesis.orgChartAiSummary || orgChartAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
-                                            onChange={(e) => onSynthesisFieldChange?.('orgChartAiSummary', e.target.value)}
-                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
-                                            placeholder="One bullet per line — leave blank to auto-generate from org chart data"
-                                        />
-                                    ) : (
-                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                            {orgChartAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
+                            <ReportSummaryBlock
+                                title="Summary"
+                                bullets={orgChartAiSummaryBullets}
+                                editMode={reportEditMode}
+                                fieldValue={synthesis.orgChartAiSummary}
+                                onFieldChange={(value) => onSynthesisFieldChange?.('orgChartAiSummary', value)}
+                            />
                             {synthesis.privacyGroundRules && synthesis.privacyGroundRules.trim() && (
                                 <div className="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
                                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-2">Privacy Ground Rules</h4>
@@ -3196,24 +3244,13 @@
                                     ))}
                                 </tbody>
                             </table>
-                            {workflowAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — Workflows</h4>
-                                    {reportEditMode ? (
-                                        <textarea
-                                            rows={Math.max(4, workflowAiSummaryBullets.length + 1)}
-                                            value={synthesis.workflowAiSummary || workflowAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
-                                            onChange={(e) => onSynthesisFieldChange?.('workflowAiSummary', e.target.value)}
-                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
-                                            placeholder="One bullet per line — leave blank to auto-generate from workflow data"
-                                        />
-                                    ) : (
-                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                            {workflowAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
+                            <ReportSummaryBlock
+                                title="Summary"
+                                bullets={workflowAiSummaryBullets}
+                                editMode={reportEditMode}
+                                fieldValue={synthesis.workflowAiSummary}
+                                onFieldChange={(value) => onSynthesisFieldChange?.('workflowAiSummary', value)}
+                            />
                         </div>
                     )}
 
@@ -3303,24 +3340,13 @@
                                     </div>
                                 );
                             })}
-                            {raciAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — RACI</h4>
-                                    {reportEditMode ? (
-                                        <textarea
-                                            rows={Math.max(4, raciAiSummaryBullets.length + 1)}
-                                            value={synthesis.raciAiSummary || raciAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
-                                            onChange={(e) => onSynthesisFieldChange?.('raciAiSummary', e.target.value)}
-                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
-                                            placeholder="One bullet per line — leave blank to auto-generate from RACI data"
-                                        />
-                                    ) : (
-                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                            {raciAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
+                            <ReportSummaryBlock
+                                title="Summary"
+                                bullets={raciAiSummaryBullets}
+                                editMode={reportEditMode}
+                                fieldValue={synthesis.raciAiSummary}
+                                onFieldChange={(value) => onSynthesisFieldChange?.('raciAiSummary', value)}
+                            />
                         </div>
                     )}
 
@@ -3510,24 +3536,13 @@
                                     </div>
                                 </div>
                             )}
-                            {recoveryPlanAiSummaryBullets.length > 0 && (
-                                <div className="mt-6 p-4 border border-slate-200 rounded-lg bg-slate-50 page-break-inside-avoid">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-3">AI Summary — 90-Day Recovery Plan</h4>
-                                    {reportEditMode ? (
-                                        <textarea
-                                            rows={Math.max(4, recoveryPlanAiSummaryBullets.length + 1)}
-                                            value={synthesis.recoveryPlanAiSummary || recoveryPlanAiSummaryBullets.map((line) => `• ${line}`).join('\n')}
-                                            onChange={(e) => onSynthesisFieldChange?.('recoveryPlanAiSummary', e.target.value)}
-                                            className="w-full text-xs text-slate-700 leading-relaxed border border-slate-300 rounded-lg p-3 bg-white resize-y"
-                                            placeholder="One bullet per line — leave blank to auto-generate from recovery plan data"
-                                        />
-                                    ) : (
-                                        <ul className="list-disc list-inside text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                                            {recoveryPlanAiSummaryBullets.map((line, idx) => <li key={idx}>{line}</li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                            )}
+                            <ReportSummaryBlock
+                                title="Summary"
+                                bullets={recoveryPlanAiSummaryBullets}
+                                editMode={reportEditMode}
+                                fieldValue={synthesis.recoveryPlanAiSummary}
+                                onFieldChange={(value) => onSynthesisFieldChange?.('recoveryPlanAiSummary', value)}
+                            />
                         </div>
                     )}
 
