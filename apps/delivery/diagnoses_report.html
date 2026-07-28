@@ -689,12 +689,25 @@
             }))
         );
 
-        /** Merge Firestore diagnosis tabs with local state — overlay order wins, keeps tabs missing from stale parent saves. */
-        const mergeDiagnosisTabsForReport = (profile, localTabs) => {
+        /** Merge Firestore diagnosis tabs with local state.
+         *  Default: local wins (parent edits). When preferRemote or workflow is newer than report sync, Firestore wins. */
+        const mergeDiagnosisTabsForReport = (profile, localTabs, options = {}) => {
             const resolved = resolveDiagnosisTabsFromProfile(profile, localTabs);
             const WT = window.WorkflowTabs;
-            const merged = WT?.mergeTabsById?.(resolved.tabs, localTabs)
-                || (resolved.tabs.length ? resolved.tabs : localTabs);
+            const remoteTabs = resolved.tabs;
+            if (!remoteTabs.length) return hydrateDiagnosisTabsForPrint(localTabs);
+
+            const wfUpdatedAt = profile?.diagnosisWorkflow?.updatedAt || 0;
+            const reportUpdatedAt = options.reportDataUpdatedAt || 0;
+            const preferRemote = options.preferRemote
+                || (wfUpdatedAt > 0 && wfUpdatedAt > reportUpdatedAt);
+
+            const merged = preferRemote
+                ? (WT?.mergeTabsRemoteOverLocal?.(localTabs, remoteTabs)
+                    || WT?.mergeTabsById?.(localTabs, remoteTabs)
+                    || remoteTabs)
+                : (WT?.mergeTabsById?.(remoteTabs, localTabs) || remoteTabs);
+
             return hydrateDiagnosisTabsForPrint(merged);
         };
         const printReadyWorkflowSvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
@@ -1745,8 +1758,8 @@
             const [generateMode, setGenerateMode] = useState('append');
 
             const resolvedDiagnosisTabs = useMemo(
-                () => mergeDiagnosisTabsForReport(activeProfile, tabs),
-                [activeProfile, tabs, workflowUpdatedAt],
+                () => mergeDiagnosisTabsForReport(activeProfile, tabs, { reportDataUpdatedAt }),
+                [activeProfile, tabs, workflowUpdatedAt, reportDataUpdatedAt],
             );
 
             const genOptions = useMemo(() => ({
@@ -3858,7 +3871,7 @@
                 lastSyncedWorkflowAtRef.current = wfUpdatedAt;
                 const resolved = resolveDiagnosisTabsFromProfile(profile, tabs);
                 if (!resolved.tabs.length) return;
-                setTabs((prev) => mergeDiagnosisTabsForReport(profile, prev));
+                setTabs((prev) => mergeDiagnosisTabsForReport(profile, prev, { preferRemote: true }));
                 if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
                 setWorkflowUpdatedAt(wfUpdatedAt);
             }, [activeProfileId, workbookProfiles]);
@@ -4001,8 +4014,8 @@
             );
 
             const diagnosisTabsForReport = useMemo(
-                () => mergeDiagnosisTabsForReport(activeProfile, tabs),
-                [activeProfile, tabs, workflowUpdatedAt],
+                () => mergeDiagnosisTabsForReport(activeProfile, tabs, { reportDataUpdatedAt }),
+                [activeProfile, tabs, workflowUpdatedAt, reportDataUpdatedAt],
             );
 
             const mod1Handoff = useMemo(() => DRH().validateMod1Handoff?.({
@@ -4163,7 +4176,7 @@
                 let mergedTabs = [];
                 ReactDOM.flushSync(() => {
                     setTabs((prev) => {
-                        mergedTabs = mergeDiagnosisTabsForReport(profile, prev);
+                        mergedTabs = mergeDiagnosisTabsForReport(profile, prev, { preferRemote: true });
                         return mergedTabs;
                     });
                     const resolved = resolveDiagnosisTabsFromProfile(profile, mergedTabs);
