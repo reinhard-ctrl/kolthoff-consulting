@@ -4,18 +4,15 @@
                 .filter((bullet) => bullet && (bullet.lead || bullet.body));
             if (!parsed.length) return null;
             return (
-                <ul className={`report-summary-list space-y-2 ${className}`.trim()}>
+                <ul className={`report-summary-list ${className}`.trim()}>
                     {parsed.map((bullet, idx) => (
-                        <li key={idx} className="text-xs text-slate-700 leading-relaxed flex gap-2 page-break-inside-avoid">
-                            <span className="text-brandTeal-600 font-black shrink-0 mt-px">•</span>
-                            <span>
-                                {bullet.lead ? (
-                                    <>
-                                        <strong className="font-bold text-slate-900">{bullet.lead}:</strong>{' '}
-                                    </>
-                                ) : null}
-                                {bullet.body}
-                            </span>
+                        <li key={idx} className="report-summary-list__item page-break-inside-avoid">
+                            {bullet.lead ? (
+                                <>
+                                    <strong className="report-summary-list__topic">{bullet.lead}:</strong>{' '}
+                                </>
+                            ) : null}
+                            {bullet.body}
                         </li>
                     ))}
                 </ul>
@@ -248,12 +245,9 @@
                     {printConfig.showExecutiveSummary && findings.length > 0 && (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader title="Key Findings" subtitle="Summary of the highest-impact operational issues identified during your Business Leak Scan." />
-                            <ul className="space-y-3">
+                            <ul className="report-findings-list">
                                 {findings.map((pt, i) => (
-                                    <li key={i} className="flex gap-3 text-sm text-slate-700 leading-relaxed page-break-inside-avoid">
-                                        <span className="text-brandTeal-600 font-black shrink-0">{i + 1}.</span>
-                                        <span>{pt}</span>
-                                    </li>
+                                    <li key={i} className="report-findings-list__item page-break-inside-avoid">{pt}</li>
                                 ))}
                             </ul>
                             {(synthesis.staffFeedbackThemes || []).filter(t => t && t.trim()).length > 0 && (
@@ -268,26 +262,25 @@
                                         ) || [];
                                         if (summaryBullets.length) {
                                             return (
-                                                <ReportSummaryBlock
-                                                    title="Summary"
-                                                    bullets={summaryBullets}
-                                                    className="p-3 border border-brandTeal-200 rounded-lg bg-teal-50/40 mb-3"
-                                                />
+                                                <div className="space-y-2">
+                                                    <h5 className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Summary</h5>
+                                                    <SummaryBulletList bullets={summaryBullets} />
+                                                </div>
                                             );
                                         }
                                         return null;
                                     })()}
                                     {(DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || []).length > 0
                                         ? (DR.normalizeStaffFeedbackClusters?.(synthesis.staffFeedbackClusters, synthesis.staffFeedbackThemes) || []).map((cluster) => (
-                                            <div key={cluster.questionKey} className="space-y-1.5">
+                                            <div key={cluster.questionKey} className="space-y-1.5 pt-1 border-t border-slate-200/80">
                                                 <div className="text-[10px] font-semibold text-slate-700 leading-relaxed">{cluster.question}</div>
-                                                <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                                <ul className="report-theme-list text-xs text-slate-600 space-y-1.5">
                                                     {cluster.themes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
                                                 </ul>
                                             </div>
                                         ))
                                         : (
-                                    <ul className="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                    <ul className="report-theme-list text-xs text-slate-600 space-y-1.5">
                                         {synthesis.staffFeedbackThemes.filter(t => t && t.trim()).map((t, i) => <li key={i}>{t}</li>)}
                                     </ul>
                                         )}

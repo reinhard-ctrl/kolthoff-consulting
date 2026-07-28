@@ -1377,6 +1377,18 @@
     return `${q.slice(0, maxLen - 1).trim()}…`;
   }
 
+  /** Short PDF-friendly lead for staff feedback cluster bullets (Q1 — first few words). */
+  function formatFeedbackClusterLead(index, question) {
+    const qNum = `Q${Number(index) + 1}`;
+    const q = String(question || '').trim().replace(/\?+$/, '');
+    if (!q) return qNum;
+    const words = q.split(/\s+/).filter(Boolean);
+    const snippet = words.slice(0, 5).join(' ');
+    if (!snippet) return qNum;
+    const label = snippet.length > 28 ? `${snippet.slice(0, 27).trim()}…` : snippet;
+    return `${qNum} — ${label}`;
+  }
+
   /** Synthesized executive summary from anonymous staff feedback clusters (for PDF + Strategy). */
   function buildStaffFeedbackAiSummary(clusters, legacyThemes) {
     const normalized = normalizeStaffFeedbackClusters(clusters, legacyThemes);
@@ -1394,10 +1406,10 @@
       + 'The patterns point to operational friction — delays, handoffs, and tool gaps — not isolated people problems.',
     ));
 
-    normalized.forEach((cluster) => {
+    normalized.forEach((cluster, idx) => {
       const themes = (cluster.themes || []).map((t) => String(t).trim()).filter(Boolean);
       if (!themes.length) return;
-      const lead = shortenFeedbackQuestionLabel(cluster.question, 48);
+      const lead = formatFeedbackClusterLead(idx, cluster.question);
       const leadThemes = themes.slice(0, 2).join('; ');
       const rest = themes.length > 2
         ? ` (plus ${themes.length - 2} related note${themes.length - 2 === 1 ? '' : 's'})`
