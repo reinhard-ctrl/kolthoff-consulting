@@ -35,6 +35,11 @@
     return order.map((id) => byId[id]);
   }
 
+  /** Firestore / iframe workflow save wins over stale local cache (keeps local-only tabs). */
+  function mergeTabsRemoteOverLocal(localTabs, remoteTabs) {
+    return mergeTabsById(localTabs, remoteTabs);
+  }
+
   /** True when profile uses Mod 1 / Mod 2 slice fields (post-split). */
   function hasSliceSplit(profile) {
     return !!(profile?.diagnosisWorkflow || profile?.workflowBuilder);
@@ -165,6 +170,7 @@
     stripTabsForSave,
     hydrateTabs,
     mergeTabsById,
+    mergeTabsRemoteOverLocal,
     hasSliceSplit,
     resolveWorkflowTabs,
     buildWorkflowTabsPayload,

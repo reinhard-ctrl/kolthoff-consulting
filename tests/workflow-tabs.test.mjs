@@ -21,6 +21,24 @@ const tabBUpdated = { id: 'b', name: 'B', present: { nodes: [1, 2] } };
 assert.equal(WT.mergeTabsById([tabA], [tabBUpdated]).map((t) => t.id).join(','), 'b,a');
 assert.equal(WT.mergeTabsById([tabA], [tabBUpdated]).find((t) => t.id === 'b').present.nodes.length, 2);
 
+const tabLeakageLocal = {
+  id: 'wf1',
+  name: 'Process',
+  present: { cellMeta: { t1: { delayMinutes: 10 } }, format: 'bpmn' },
+};
+const tabLeakageRemote = {
+  id: 'wf1',
+  name: 'Process',
+  present: { cellMeta: { t1: { delayMinutes: 45 } }, format: 'bpmn' },
+};
+const remoteMerged = WT.mergeTabsRemoteOverLocal([tabLeakageLocal], [tabLeakageRemote]);
+assert.equal(remoteMerged.find((t) => t.id === 'wf1').present.cellMeta.t1.delayMinutes, 45);
+
+const localOnly = { id: 'local-only', name: 'Draft', present: { cellMeta: {} } };
+const remoteWinsKeepsLocal = WT.mergeTabsRemoteOverLocal([tabLeakageLocal, localOnly], [tabLeakageRemote]);
+assert.equal(remoteWinsKeepsLocal.map((t) => t.id).join(','), 'wf1,local-only');
+assert.equal(remoteWinsKeepsLocal.find((t) => t.id === 'wf1').present.cellMeta.t1.delayMinutes, 45);
+
 const profile = {
   diagnosisWorkflow: { tabs: [tabA], activeTabId: 'a', updatedAt: 1 },
   workflowBuilder: { tabs: [tabB], activeTabId: 'b', updatedAt: 2 },
