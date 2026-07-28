@@ -726,6 +726,7 @@ describe('diagnosis-report-helpers', () => {
     assert.ok(summary.length >= 3);
     assert.match(summary[0], /^Staff voice:/);
     assert.match(summary.join('\n'), /Approvals take too long/i);
+    assert.match(summary.join('\n'), /Q1 —/);
     assert.match(summary.join('\n'), /90-Day Recovery Plan/i);
 
     assert.deepEqual(
