@@ -38,6 +38,64 @@
             </div>
         );
 
+        const MATURITY_BAR_ANCHORS = {
+            communication: { desc1: 'Scattered', desc5: 'Unified' },
+            documentation: { desc1: 'Tribal', desc5: 'Standardized' },
+            accountability: { desc1: 'Ambiguous', desc5: 'Clear RACI' },
+            software: { desc1: 'Fragmented', desc5: 'Consolidated' },
+        };
+
+        const ScoreBar = ({ label, value, desc1, desc5, observed }) => {
+            const score = Math.max(1, Math.min(5, Number(value) || 3));
+            return (
+                <div className="report-maturity-bar-row page-break-inside-avoid">
+                    <div className="report-maturity-bar-row__header">
+                        <span>{label}</span>
+                        <span className="report-maturity-bar-row__score">Level {score}/5</span>
+                    </div>
+                    <div className="report-maturity-bar" aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div
+                                key={i}
+                                className={`report-maturity-bar__segment${i <= score ? ' report-maturity-bar__segment--filled' : ''}`}
+                            />
+                        ))}
+                    </div>
+                    {(desc1 || desc5) && (
+                        <div className="report-maturity-bar-row__labels">
+                            {desc1 ? <span>{desc1}</span> : <span />}
+                            {desc5 ? <span>{desc5}</span> : null}
+                        </div>
+                    )}
+                    {observed ? <p className="report-maturity-bar-row__observed">{observed}</p> : null}
+                </div>
+            );
+        };
+
+        const MaturityScorecardPanel = ({ scorecard, maturityIndex, className = '' }) => {
+            if (!scorecard?.length) return null;
+            return (
+                <div className={`border border-slate-200 rounded-xl p-6 bg-slate-50 page-break-inside-avoid ${className}`.trim()}>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Maturity Scorecard</h3>
+                        <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
+                    </div>
+                    <div className="space-y-4">
+                        {scorecard.map((row) => (
+                            <ScoreBar
+                                key={row.key}
+                                label={row.label}
+                                value={row.score}
+                                desc1={MATURITY_BAR_ANCHORS[row.key]?.desc1}
+                                desc5={MATURITY_BAR_ANCHORS[row.key]?.desc5}
+                                observed={row.observed}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         const ReportRecoveryGanttChart = ({ gantt, variant = 'full', title }) => {
             if (!gantt?.rows?.length) return null;
             const { rows, maxWeek } = gantt;
@@ -226,18 +284,7 @@
                         return (
                             <div className="report-page print-force-break page-break-inside-avoid">
                                 <ReportSectionHeader title="Operational Readiness Scorecard" subtitle="How prepared your team is to execute the 90-Day Recovery Plan — scored 1 (baseline) to 5 (target)." />
-                                <table className="report-table">
-                                    <thead><tr><th>Dimension</th><th className="w-[12%] text-center">Score</th><th>What we observed</th></tr></thead>
-                                    <tbody>
-                                        {scorecard.map((row) => (
-                                            <tr key={row.key}>
-                                                <td className="font-semibold text-slate-900">{row.label}</td>
-                                                <td className="text-center font-mono font-bold text-brandTeal-700">{row.score} / 5</td>
-                                                <td className="text-slate-600 text-[10px] leading-relaxed">{row.observed}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                <MaturityScorecardPanel scorecard={scorecard} maturityIndex={maturityIndex} />
                             </div>
                         );
                     })()}
@@ -502,21 +549,12 @@
                         </div>
                     )}
 
-                    {printConfig.showSynthesis && (
+                    {printConfig.showSynthesis && (() => {
+                        const scorecard = DR.buildMaturityScorecardRows?.(synthesis) || [];
+                        return (
                         <div className="report-page print-force-break">
                             <ReportSectionHeader number="F" title="Operational Maturity & 3-Year Leakage Forecast" subtitle="How ready your business is to scale — and what happens if nothing changes." />
-                            <div className="border border-slate-200 rounded-xl p-6 bg-slate-50 mb-6 page-break-inside-avoid">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider">Maturity Scorecard</h3>
-                                    <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
-                                </div>
-                                <div className="space-y-4">
-                                    <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered" desc5="Unified" />
-                                    <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal" desc5="Standardized" />
-                                    <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous" desc5="Clear RACI" />
-                                    <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented" desc5="Consolidated" />
-                                </div>
-                            </div>
+                            <MaturityScorecardPanel scorecard={scorecard} maturityIndex={maturityIndex} className="mb-6" />
                             <div className="border-2 border-rose-200 bg-rose-50/40 rounded-xl p-6 page-break-inside-avoid">
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-rose-900 mb-2">3-Year Operational Leakage Forecast</h3>
                                 <p className="text-xs text-slate-700 leading-relaxed mb-2">At current leakage of <strong>{formatCurrency(totalAnnualWaste)}/year</strong> (process + subscriptions), growing the team by <strong>{synthesis.expectedGrowth || 0} people</strong> without fixing these processes compounds losses over 3 years.</p>
@@ -529,7 +567,8 @@
                                 <p className="text-sm text-slate-800 leading-relaxed">{synthesis.customPitch || 'Select a module in the Strategy section to generate your recommendation.'}</p>
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {printConfig.showMatrix && activeItems.length > 0 && (
                         <div className="report-page print-force-break font-sans text-xs">

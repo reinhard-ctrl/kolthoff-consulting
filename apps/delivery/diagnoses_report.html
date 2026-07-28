@@ -360,6 +360,15 @@
                 font-size: 10px !important;
                 line-height: 1.45 !important;
             }
+            .report-maturity-bar__segment {
+                min-height: 12px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .report-maturity-bar__segment--filled {
+                background: #14B8A6 !important;
+                border-color: #0D9488 !important;
+            }
             .report-diagram-figure {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
@@ -572,6 +581,65 @@
         }
         .report-theme-list li:last-child {
             margin-bottom: 0;
+        }
+
+        .report-maturity-bar-row {
+            margin-bottom: 0;
+        }
+        .report-maturity-bar-row + .report-maturity-bar-row {
+            margin-top: 1rem;
+        }
+        .report-maturity-bar-row__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.375rem;
+        }
+        .report-maturity-bar-row__score {
+            color: #0D9488;
+            font-family: ui-monospace, monospace;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .report-maturity-bar {
+            display: flex;
+            gap: 4px;
+            height: 12px;
+            margin-bottom: 0.35rem;
+        }
+        .report-maturity-bar__segment {
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 12px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .report-maturity-bar__segment--filled {
+            background: #14B8A6;
+            border-color: #0D9488;
+        }
+        .report-maturity-bar-row__labels {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.75rem;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .report-maturity-bar-row__observed {
+            margin-top: 0.35rem;
+            font-size: 10px;
+            line-height: 1.45;
+            color: #475569;
         }
 
         .report-doc.report-edit-mode .report-copy-edit {
@@ -2579,23 +2647,39 @@
         };
 
         // --- SCORE BAR RE-ESTABLISHED DEFINITION ---
-        const ScoreBar = ({ label, value, desc1, desc5 }) => (
-            <div>
-                <div className="flex justify-between text-xs font-bold text-slate-800 mb-1.5">
-                    <span>{label}</span>
-                    <span className="text-brandTeal-600 font-mono">Level {value}/5</span>
+        const MATURITY_BAR_ANCHORS = {
+            communication: { desc1: 'Scattered', desc5: 'Unified' },
+            documentation: { desc1: 'Tribal', desc5: 'Standardized' },
+            accountability: { desc1: 'Ambiguous', desc5: 'Clear RACI' },
+            software: { desc1: 'Fragmented', desc5: 'Consolidated' },
+        };
+
+        const ScoreBar = ({ label, value, desc1, desc5, observed }) => {
+            const score = Math.max(1, Math.min(5, Number(value) || 3));
+            return (
+                <div className="report-maturity-bar-row page-break-inside-avoid">
+                    <div className="report-maturity-bar-row__header">
+                        <span>{label}</span>
+                        <span className="report-maturity-bar-row__score">Level {score}/5</span>
+                    </div>
+                    <div className="report-maturity-bar" aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <div
+                                key={i}
+                                className={`report-maturity-bar__segment${i <= score ? ' report-maturity-bar__segment--filled' : ''}`}
+                            />
+                        ))}
+                    </div>
+                    {(desc1 || desc5) && (
+                        <div className="report-maturity-bar-row__labels">
+                            {desc1 ? <span>{desc1}</span> : <span />}
+                            {desc5 ? <span>{desc5}</span> : null}
+                        </div>
+                    )}
+                    {observed ? <p className="report-maturity-bar-row__observed">{observed}</p> : null}
                 </div>
-                <div className="flex gap-1 h-3 mb-1">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className={`flex-1 rounded-sm ${i <= value ? 'bg-brandTeal-500' : 'bg-slate-200'}`}></div>
-                    ))}
-                </div>
-                <div className="flex justify-between text-[9px] text-slate-500 font-medium uppercase tracking-wider">
-                    <span>{desc1}</span>
-                    <span>{desc5}</span>
-                </div>
-            </div>
-        );
+            );
+        };
 
         const ReportDiagramFigure = ({ src, alt, caption, featured = true, preserveConnectors = false }) => {
             const diagramSrc = useMemo(
@@ -3088,10 +3172,16 @@
                                             <span className="report-badge report-badge-teal">Overall {maturityIndex}/5</span>
                                         </div>
                                         <div className="space-y-4">
-                                            <ScoreBar label="Team Communication" value={synthesis.communication} desc1="Scattered" desc5="Unified" />
-                                            <ScoreBar label="Process Documentation" value={synthesis.documentation} desc1="Tribal" desc5="Standardized" />
-                                            <ScoreBar label="Handoff Accountability" value={synthesis.accountability} desc1="Ambiguous" desc5="Clear RACI" />
-                                            <ScoreBar label="Software Utilization" value={synthesis.software} desc1="Fragmented" desc5="Consolidated" />
+                                            {scorecard.map((row) => (
+                                                <ScoreBar
+                                                    key={row.key}
+                                                    label={row.label}
+                                                    value={row.score}
+                                                    desc1={MATURITY_BAR_ANCHORS[row.key]?.desc1}
+                                                    desc5={MATURITY_BAR_ANCHORS[row.key]?.desc5}
+                                                    observed={row.observed}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
