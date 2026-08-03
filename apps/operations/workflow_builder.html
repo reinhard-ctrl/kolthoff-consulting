@@ -828,12 +828,20 @@
 
             const applyDiagramAndSave = async ({ silent = false, applyDiagram = true, exportAllTabs = false } = {}) => {
                 let tabsToSave = tabsRef.current || tabs;
+                let activeTabIdOverride = null;
                 if (applyDiagram) {
-                    tabsToSave = exportAllTabs
-                        ? await exportAllTabDiagrams()
-                        : await exportActiveTabDiagram();
+                    if (exportAllTabs) {
+                        activeTabIdOverride = activeTabIdRef.current;
+                        tabsToSave = await exportAllTabDiagrams();
+                    } else {
+                        tabsToSave = await exportActiveTabDiagram();
+                    }
                 }
-                return handleSaveToCloud({ silent, tabsOverride: tabsToSave });
+                return handleSaveToCloud({
+                    silent,
+                    tabsOverride: tabsToSave,
+                    activeTabIdOverride: activeTabIdOverride ?? undefined,
+                });
             };
 
             applyDiagramAndSaveRef.current = applyDiagramAndSave;
