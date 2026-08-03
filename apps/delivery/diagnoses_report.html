@@ -778,6 +778,15 @@
 
             return hydrateDiagnosisTabsForPrint(merged);
         };
+
+        /** Keep the tab the user picked (e.g. RACI) unless it no longer exists after merge. */
+        const resolveActiveTabIdAfterMerge = (currentId, mergedTabs, remoteActiveTabId) => {
+            const tabs = mergedTabs || [];
+            if (currentId && tabs.some((t) => t.id === currentId)) return currentId;
+            if (remoteActiveTabId && tabs.some((t) => t.id === remoteActiveTabId)) return remoteActiveTabId;
+            return tabs[0]?.id || currentId;
+        };
+
         const printReadyWorkflowSvg = (src) => DRH().normalizeReportDiagramSvg?.(src) || src || '';
         const printReadyOrgChartSvg = (src) => DRH().normalizeReportDiagramSvg?.(src, { preserveConnectors: true }) || src || '';
         const printReadySvg = printReadyWorkflowSvg;
@@ -3961,8 +3970,11 @@
                 lastSyncedWorkflowAtRef.current = wfUpdatedAt;
                 const resolved = resolveDiagnosisTabsFromProfile(profile, tabs);
                 if (!resolved.tabs.length) return;
-                setTabs((prev) => mergeDiagnosisTabsForReport(profile, prev, { preferRemote: true }));
-                if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
+                setTabs((prev) => {
+                    const merged = mergeDiagnosisTabsForReport(profile, prev, { preferRemote: true });
+                    setActiveTabId((currentId) => resolveActiveTabIdAfterMerge(currentId, merged, resolved.activeTabId));
+                    return merged;
+                });
                 setWorkflowUpdatedAt(wfUpdatedAt);
             }, [activeProfileId, workbookProfiles]);
 
@@ -4270,7 +4282,7 @@
                         return mergedTabs;
                     });
                     const resolved = resolveDiagnosisTabsFromProfile(profile, mergedTabs);
-                    if (resolved.activeTabId) setActiveTabId(resolved.activeTabId);
+                    setActiveTabId((currentId) => resolveActiveTabIdAfterMerge(currentId, mergedTabs, resolved.activeTabId));
                     if (profile?.diagnosisWorkflow?.updatedAt) {
                         setWorkflowUpdatedAt(profile.diagnosisWorkflow.updatedAt);
                         lastSyncedWorkflowAtRef.current = profile.diagnosisWorkflow.updatedAt;
