@@ -132,6 +132,7 @@
             const configuredRef = useRef(false);
             const pendingXmlRef = useRef(xml);
             const exportWaitRef = useRef(null);
+            const readyWaitersRef = useRef([]);
             const presetData = window.DiagramEditor?.getPreset(preset);
             const embedUrl = window.DiagramEditor?.getDrawioEmbedUrl({
                 libs: presetData?.embedLibs || presetData?.configure?.defaultLibraries?.split(';')[0] || 'bpmn',
@@ -148,6 +149,26 @@
                     autosave: 1,
                 });
             };
+
+            const notifyReady = () => {
+                readyWaitersRef.current.forEach((resolve) => resolve());
+                readyWaitersRef.current = [];
+            };
+
+            const waitForReady = (timeoutMs = 15000) => new Promise((resolve, reject) => {
+                if (readyRef.current && configuredRef.current) {
+                    setTimeout(resolve, 150);
+                    return;
+                }
+                readyWaitersRef.current.push(resolve);
+                setTimeout(() => {
+                    const idx = readyWaitersRef.current.indexOf(resolve);
+                    if (idx >= 0) {
+                        readyWaitersRef.current.splice(idx, 1);
+                        reject(new Error('Diagram editor ready timed out'));
+                    }
+                }, timeoutMs);
+            });
 
             const maybeFinishExport = () => {
                 const pending = exportWaitRef.current;
@@ -168,7 +189,7 @@
             });
 
             useEffect(() => {
-                if (exportControllerRef) exportControllerRef.current = { applyDiagram };
+                if (exportControllerRef) exportControllerRef.current = { applyDiagram, waitForReady };
             });
 
             useEffect(() => {
@@ -192,6 +213,7 @@
                     if (msg.event === 'init') {
                         readyRef.current = true;
                         sendLoad(pendingXmlRef.current);
+                        notifyReady();
                     }
                     if (msg.event === 'export') {
                         if (msg.format === 'xml' && msg.xml) {
@@ -240,18 +262,26 @@
             );
         };
 
-        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, setActiveTabId, addNewTab, closeTab, renameTab, reorderTab, showLeakagePanel, diagramExportRef, hideApplyButton = false }) => {
+        const BpmnWorkflowStudio = ({ tabs, setTabs, activeTabId, switchActiveTab, switchingTabRef, addNewTab, closeTab, renameTab, reorderTab, showLeakagePanel, diagramExportRef, hideApplyButton = false }) => {
             const [editingTabId, setEditingTabId] = useState(null);
+            const activeTabIdRef = useRef(activeTabId);
+            useEffect(() => { activeTabIdRef.current = activeTabId; }, [activeTabId]);
             const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
             const present = window.DiagramEditor?.normalizeWorkflowPresent(activeTab?.present) || { drawioXml: '', format: 'bpmn' };
             const isLegacy = present.format === 'legacy';
 
-            const updatePresent = (patch) => {
-                setTabs((prev) => prev.map((t) => (t.id === activeTabId ? { ...t, present: { ...window.DiagramEditor.normalizeWorkflowPresent(t.present), ...patch, format: 'bpmn' } } : t)));
+            const updatePresentForTab = (tabId, patch) => {
+                setTabs((prev) => prev.map((t) => (t.id === tabId ? { ...t, present: { ...window.DiagramEditor.normalizeWorkflowPresent(t.present), ...patch, format: 'bpmn' } } : t)));
             };
 
-            const handleXmlChange = (drawioXml) => updatePresent({ drawioXml });
-            const handleSvgExport = (svgCache) => updatePresent({ svgCache });
+            const handleXmlChange = (drawioXml) => {
+                if (switchingTabRef?.current) return;
+                updatePresentForTab(activeTabIdRef.current, { drawioXml });
+            };
+            const handleSvgExport = (svgCache) => {
+                if (switchingTabRef?.current) return;
+                updatePresentForTab(activeTabIdRef.current, { svgCache });
+            };
 
             const updateCellMeta = (cellId, field, value) => {
                 setTabs((prev) => prev.map((t) => {
@@ -304,7 +334,7 @@
                                 ) : (
                                     <button
                                         type="button"
-                                        onClick={() => setActiveTabId(tab.id)}
+                                        onClick={() => switchActiveTab(tab.id)}
                                         onDoubleClick={(e) => { e.preventDefault(); setEditingTabId(tab.id); }}
                                         className="text-[10px] font-bold uppercase text-slate-200 truncate max-w-[160px]"
                                         title="Double-click to rename"
@@ -330,6 +360,7 @@
 
                     <div className="flex-1 min-h-0 p-4">
                         <DrawIoEmbed
+                            key={activeTabId}
                             preset="bpmn"
                             xml={isLegacy ? window.DiagramEditor.BLANK_BPMN_XML : present.drawioXml}
                             onXmlChange={handleXmlChange}
@@ -529,6 +560,7 @@
             const applyDiagramAndSaveRef = useRef(null);
             const tabsRef = useRef(tabs);
             const activeTabIdRef = useRef(activeTabId);
+            const switchingTabRef = useRef(false);
             const profileHydratedIdRef = useRef(null);
             const lastOwnSaveAtRef = useRef(0);
             const WORKFLOW_IDLE_SAVE_MS = 15000;
@@ -715,44 +747,80 @@
                 }
             };
 
+            const switchActiveTab = async (newTabId) => {
+                if (!newTabId || newTabId === activeTabIdRef.current) return;
+                switchingTabRef.current = true;
+                try {
+                    await exportActiveTabDiagram();
+                    setActiveTabId(newTabId);
+                    await diagramExportRef.current?.waitForReady?.();
+                } catch (switchErr) {
+                    console.warn('Workflow tab switch failed:', switchErr);
+                    setActiveTabId(newTabId);
+                } finally {
+                    switchingTabRef.current = false;
+                }
+            };
+
             const exportAllTabDiagrams = async () => {
                 const snapshot = tabsRef.current || [];
                 const originalActiveId = activeTabIdRef.current;
                 const updated = [...snapshot];
                 let currentActiveId = originalActiveId;
+                switchingTabRef.current = true;
 
-                for (let i = 0; i < updated.length; i++) {
-                    const tab = updated[i];
-                    const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
-                    if (norm.format === 'legacy') continue;
-                    const xml = String(norm.drawioXml || '').trim();
-                    if (xml.length < 120 && !String(norm.svgCache || '').trim()) continue;
+                try {
+                    for (let i = 0; i < updated.length; i++) {
+                        const tab = updated[i];
+                        const norm = window.DiagramEditor?.normalizeWorkflowPresent(tab.present) || {};
+                        if (norm.format === 'legacy') continue;
+                        const xml = String(norm.drawioXml || '').trim();
+                        if (xml.length < 120 && !String(norm.svgCache || '').trim()) continue;
 
-                    if (tab.id !== currentActiveId) {
-                        currentActiveId = tab.id;
-                        setActiveTabId(tab.id);
-                        await new Promise((resolve) => setTimeout(resolve, 750));
-                    }
-
-                    try {
-                        const exported = await diagramExportRef.current?.applyDiagram?.();
-                        if (exported?.svg || exported?.xml) {
-                            updated[i] = {
-                                ...tab,
-                                present: {
-                                    ...norm,
-                                    drawioXml: exported.xml || norm.drawioXml,
-                                    svgCache: exported.svg || norm.svgCache,
-                                    format: 'bpmn',
-                                },
-                            };
+                        if (tab.id !== currentActiveId) {
+                            await exportActiveTabDiagram();
+                            currentActiveId = tab.id;
+                            setActiveTabId(tab.id);
+                            try {
+                                await diagramExportRef.current?.waitForReady?.();
+                            } catch (readyErr) {
+                                console.warn('Workflow tab ready wait failed:', tab.name, readyErr);
+                            }
                         }
-                    } catch (exportErr) {
-                        console.warn('Workflow tab SVG export failed:', tab.name, exportErr);
+
+                        try {
+                            const exported = await diagramExportRef.current?.applyDiagram?.();
+                            if (exported?.svg || exported?.xml) {
+                                const latestIdx = updated.findIndex((t) => t.id === tab.id);
+                                const latestTab = latestIdx >= 0 ? updated[latestIdx] : tab;
+                                const latestNorm = window.DiagramEditor?.normalizeWorkflowPresent(latestTab.present) || norm;
+                                updated[latestIdx >= 0 ? latestIdx : i] = {
+                                    ...latestTab,
+                                    present: {
+                                        ...latestNorm,
+                                        drawioXml: exported.xml || latestNorm.drawioXml,
+                                        svgCache: exported.svg || latestNorm.svgCache,
+                                        format: 'bpmn',
+                                    },
+                                };
+                            }
+                        } catch (exportErr) {
+                            console.warn('Workflow tab SVG export failed:', tab.name, exportErr);
+                        }
                     }
+
+                    if (originalActiveId !== currentActiveId) {
+                        setActiveTabId(originalActiveId);
+                        try {
+                            await diagramExportRef.current?.waitForReady?.();
+                        } catch (readyErr) {
+                            console.warn('Workflow restore tab ready wait failed:', readyErr);
+                        }
+                    }
+                } finally {
+                    switchingTabRef.current = false;
                 }
 
-                if (originalActiveId !== currentActiveId) setActiveTabId(originalActiveId);
                 setTabs(updated);
                 tabsRef.current = updated;
                 return updated;
@@ -887,16 +955,40 @@
                                     tabs={tabs}
                                     setTabs={setTabs}
                                     activeTabId={activeTabId}
-                                    setActiveTabId={setActiveTabId}
-                                    addNewTab={() => { const id = 'tab-' + Date.now(); setTabs([...tabs, createEmptyTab(id, IS_DIAGNOSIS_MODE ? 'As-Is Process' : 'To-Be Process')]); setActiveTabId(id); }}
-                                    closeTab={(e, id) => {
+                                    switchActiveTab={switchActiveTab}
+                                    switchingTabRef={switchingTabRef}
+                                    addNewTab={async () => {
+                                        switchingTabRef.current = true;
+                                        try {
+                                            await exportActiveTabDiagram();
+                                            const id = 'tab-' + Date.now();
+                                            const newTabs = [...(tabsRef.current || tabs), createEmptyTab(id, IS_DIAGNOSIS_MODE ? 'As-Is Process' : 'To-Be Process')];
+                                            setTabs(newTabs);
+                                            tabsRef.current = newTabs;
+                                            setActiveTabId(id);
+                                            await diagramExportRef.current?.waitForReady?.();
+                                        } finally {
+                                            switchingTabRef.current = false;
+                                        }
+                                    }}
+                                    closeTab={async (e, id) => {
                                         e.stopPropagation();
                                         if (tabs.length === 1) return;
-                                        const newT = tabs.filter(t => t.id !== id);
-                                        const newActiveId = activeTabId === id ? newT[0].id : activeTabId;
-                                        setTabs(newT);
-                                        setActiveTabId(newActiveId);
-                                        handleSaveToCloud({ silent: true, tabsOverride: newT, activeTabIdOverride: newActiveId }).catch(() => {});
+                                        switchingTabRef.current = true;
+                                        try {
+                                            if (activeTabId === id) await exportActiveTabDiagram();
+                                            const newT = tabs.filter((t) => t.id !== id);
+                                            const newActiveId = activeTabId === id ? newT[0].id : activeTabId;
+                                            setTabs(newT);
+                                            tabsRef.current = newT;
+                                            if (activeTabId === id) {
+                                                setActiveTabId(newActiveId);
+                                                await diagramExportRef.current?.waitForReady?.();
+                                            }
+                                            handleSaveToCloud({ silent: true, tabsOverride: newT, activeTabIdOverride: newActiveId }).catch(() => {});
+                                        } finally {
+                                            switchingTabRef.current = false;
+                                        }
                                     }}
                                     renameTab={(id, name) => setTabs(tabs.map(t => t.id === id ? { ...t, name } : t))}
                                     reorderTab={(id, direction) => {
