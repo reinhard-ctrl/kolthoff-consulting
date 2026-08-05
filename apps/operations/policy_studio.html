@@ -187,6 +187,8 @@
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
+    <script src="../../shared/policy-chapters.js?v=20250805-chapters-v1"></script>
+    <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -284,6 +286,33 @@
                     title: 'Code of Conduct',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Compliance Officer' },
                     introduction: 'These rules set the baseline for respectful, honest work with teammates, clients, and partners.',
+                    chapters: [
+                        {
+                            id: 'ch-workplace',
+                            title: 'Workplace standards',
+                            sections: [
+                                { id: 'c-1', title: 'Dress & appearance', content: 'Dress neat and work-appropriate. Business casual Mon–Thu; smart casual Fri. Unsafe or extreme clothing is not allowed in operations areas.' },
+                                { id: 'c-2', title: 'Anti-harassment (RA 11313)', content: 'Zero tolerance for harassment, bullying, or discrimination. Report concerns to HR/Compliance. Confirmed violations can lead to termination and legal referral.' },
+                                { id: 'c-7', title: 'Substance-free workplace', content: 'Do not work under the influence of illegal drugs or misuse of substances. Violations may lead to termination. Testing may follow OSH rules.' }
+                            ]
+                        },
+                        {
+                            id: 'ch-integrity',
+                            title: 'Integrity & company interests',
+                            sections: [
+                                { id: 'c-3', title: 'Conflicts of interest', content: 'Avoid personal deals that conflict with company duties. Do not take competitor side work, misuse company assets for private ventures, or accept significant vendor gifts without Compliance approval.' },
+                                { id: 'c-4', title: 'Company IP & assets', content: 'Work you create here belongs to the company. Protect devices and systems. Do not use company time, tools, or data for personal freelancing.' },
+                                { id: 'c-6', title: 'Anti-bribery & whistleblowing', content: 'No bribes or kickbacks. Report concerns through the confidential Compliance channel. Retaliation for good-faith reports is prohibited.' }
+                            ]
+                        },
+                        {
+                            id: 'ch-comms',
+                            title: 'Communications',
+                            sections: [
+                                { id: 'c-5', title: 'Social media', content: 'Keep personal posts separate from work. Do not share client data, pricing, or internal discussions. Only authorized spokespeople speak for the company.' }
+                            ]
+                        }
+                    ],
                     sections: [
                         { id: 'c-1', title: 'Dress & appearance', content: 'Dress neat and work-appropriate. Business casual Mon–Thu; smart casual Fri. Unsafe or extreme clothing is not allowed in operations areas.' },
                         { id: 'c-2', title: 'Anti-harassment (RA 11313)', content: 'Zero tolerance for harassment, bullying, or discrimination. Report concerns to HR/Compliance. Confirmed violations can lead to termination and legal referral.' },
@@ -444,7 +473,9 @@
         const migrateJobRoleFromContent = (role) => JR().migrateJobRoleFromContent?.(role) || role;
         const compileJobRoleMarkdown = (role) => JR().compileJobRoleMarkdown?.(role) || `# ${role?.title || 'Job Role Profile'}`;
         const PDI = () => window.PolicyDocImport || {};
+        const PC = () => window.PolicyChapters || {};
         const STANDARD_DOCS_WITH_GDOC_IMPORT = ['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'];
+        const STANDARD_DOCS_WITH_CHAPTERS = STANDARD_DOCS_WITH_GDOC_IMPORT;
 
         const Icons = {
             Print: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
@@ -626,6 +657,36 @@
             );
         };
 
+        const applyMarkdownFormat = (textarea, value, onChange, format) => {
+            if (!textarea) return;
+            const helper = window.MarkdownFormat?.applyMarkdownFormat;
+            if (!helper) return;
+            const start = textarea.selectionStart ?? String(value || '').length;
+            const end = textarea.selectionEnd ?? start;
+            const result = helper(value, start, end, format);
+            onChange(result.value);
+            requestAnimationFrame(() => {
+                if (!textarea) return;
+                textarea.focus();
+                textarea.setSelectionRange(result.selectionStart, result.selectionEnd);
+                textarea.style.height = 'auto';
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            });
+        };
+
+        const MarkdownToolbarBtn = ({ label, title, onClick, children }) => (
+            <button
+                type="button"
+                title={title || label}
+                aria-label={label}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onClick}
+                className="min-w-[1.75rem] h-7 px-1.5 inline-flex items-center justify-center rounded text-[11px] font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-transparent hover:border-slate-300 transition-colors"
+            >
+                {children || label}
+            </button>
+        );
+
         const MarkdownField = ({ id, value, onChange, placeholder, className, isEditMode }) => {
             const fileRef = useRef();
             const textareaRef = useRef(null);
@@ -651,6 +712,32 @@
                 }
             }, [isEditMode]);
 
+            const runFormat = (format) => {
+                applyMarkdownFormat(textareaRef.current, value, onChange, format);
+            };
+
+            const handleKeyDown = (e) => {
+                const mod = e.metaKey || e.ctrlKey;
+                if (!mod) return;
+                const key = e.key.toLowerCase();
+                if (key === 'b') {
+                    e.preventDefault();
+                    runFormat('bold');
+                } else if (key === 'i') {
+                    e.preventDefault();
+                    runFormat('italic');
+                } else if (key === 'k') {
+                    e.preventDefault();
+                    runFormat('link');
+                } else if (e.shiftKey && key === '8') {
+                    e.preventDefault();
+                    runFormat('bullet');
+                } else if (e.shiftKey && key === '7') {
+                    e.preventDefault();
+                    runFormat('number');
+                }
+            };
+
             const handleFile = (e) => {
                 if(!e.target.files[0]) return;
                 const reader = new FileReader();
@@ -665,11 +752,16 @@
                         canvas.height = img.height * scaleSize;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        onChange(value + `\n\n![Embedded Image](${canvas.toDataURL('image/jpeg', 0.8)})\n\n`);
+                        const ta = textareaRef.current;
+                        const raw = String(value || '');
+                        const pos = ta ? ta.selectionStart : raw.length;
+                        const insert = `\n\n![Embedded Image](${canvas.toDataURL('image/jpeg', 0.8)})\n\n`;
+                        onChange(raw.slice(0, pos) + insert + raw.slice(pos));
                     }
                     img.src = e.target.result;
                 }
                 reader.readAsDataURL(e.target.files[0]);
+                e.target.value = '';
             };
 
             if (!isEditMode) {
@@ -677,25 +769,42 @@
             }
 
             return (
-                <div className="relative group/md rounded border border-transparent hover:border-slate-200 focus-within:border-brandTeal-404 bg-white">
+                <div className="relative group/md rounded border border-slate-200 focus-within:border-brandTeal-500 bg-white no-print-border">
+                    <div className="no-print flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-slate-100 bg-slate-50 rounded-t">
+                        <MarkdownToolbarBtn label="Bold" title="Bold (Ctrl+B)" onClick={() => runFormat('bold')}><span className="font-black">B</span></MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Italic" title="Italic (Ctrl+I)" onClick={() => runFormat('italic')}><span className="italic font-serif">I</span></MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Strikethrough" title="Strikethrough" onClick={() => runFormat('strike')}><span className="line-through">S</span></MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Heading" title="Heading" onClick={() => runFormat('h2')}>H</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Subheading" title="Subheading" onClick={() => runFormat('h3')}>H3</MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Bullet list" title="Bullet list (Ctrl+Shift+8)" onClick={() => runFormat('bullet')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Numbered list" title="Numbered list (Ctrl+Shift+7)" onClick={() => runFormat('number')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="18" x2="20" y2="18"/><text x="3" y="7.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">1</text><text x="3" y="13.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">2</text><text x="3" y="19.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">3</text></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Quote" title="Quote" onClick={() => runFormat('quote')}>“”</MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Link" title="Insert link (Ctrl+K)" onClick={() => runFormat('link')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Inline code" title="Inline code" onClick={() => runFormat('code')}>&lt;/&gt;</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Divider" title="Horizontal divider" onClick={() => runFormat('hr')}>—</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Insert image" title="Insert image" onClick={() => fileRef.current && fileRef.current.click()}>
+                            <Icons.Image />
+                        </MarkdownToolbarBtn>
+                    </div>
                     <textarea 
                         id={id}
                         ref={textareaRef} 
                         value={value} 
-                        onChange={e => onChange(e.target.value)} 
-                        placeholder={placeholder} 
+                        onChange={e => onChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder || 'Write here… Use the toolbar for lists, bold, and more.'} 
                         className={`w-full bg-transparent resize-none overflow-hidden focus:outline-none p-2 text-slate-800 ${className}`} 
                         rows={2} 
                     />
-                    <button 
-                        type="button"
-                        onClick={() => fileRef.current.click()} 
-                        title="Insert Image" 
-                        aria-label="Insert Image"
-                        className="absolute bottom-1 right-1 opacity-0 group-hover/md:opacity-100 bg-slate-100 p-1.5 rounded text-slate-500 hover:text-brandTeal-600 shadow-sm transition-all z-10 no-print"
-                    >
-                        <Icons.Image />
-                    </button>
                     <input type="file" ref={fileRef} hidden onChange={handleFile} accept="image/*" />
                 </div>
             );
@@ -945,7 +1054,10 @@
                         return;
                     }
                     const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
-                    mergedStandardDocs[key] = {
+                    const chaptersSource = loadedDoc.chapters?.length
+                        ? loadedDoc.chapters
+                        : (defaultDoc.chapters?.length ? defaultDoc.chapters : undefined);
+                    let mergedDoc = {
                         ...defaultDoc,
                         ...loadedDoc,
                         docControl: {
@@ -954,8 +1066,17 @@
                         },
                         sections: key === 'jobDescriptions'
                             ? (sectionsSource || []).map((sec) => migrateJobRoleFromContent(sec))
-                            : sectionsSource
+                            : sectionsSource,
+                        chapters: chaptersSource
                     };
+                    if (STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc) {
+                        // Prefer loaded chapters; else loaded sections; else defaults (already on mergedDoc)
+                        if (!loadedDoc.chapters?.length && loadedDoc.sections?.length) {
+                            mergedDoc = { ...mergedDoc, chapters: undefined };
+                        }
+                        mergedDoc = PC().normalizeStandardPolicyDoc(mergedDoc);
+                    }
+                    mergedStandardDocs[key] = mergedDoc;
                 });
                 
                 return {
@@ -1220,19 +1341,23 @@
                             return;
                         }
 
-                        let mdContent = `# ${doc.title || 'Standard Document'}\n\n`;
-                        if (doc.introduction) mdContent += `## Introduction\n${doc.introduction}\n\n`;
-
-                        if (doc.sections && doc.sections.length > 0) {
-                            doc.sections.forEach((sec, idx) => {
-                                mdContent += `## ${idx + 1}. ${sec.title}\n${sec.content}\n\n`;
-                            });
-                        }
+                        let mdContent = PC().compileStandardPolicyMarkdown
+                            ? PC().compileStandardPolicyMarkdown(doc)
+                            : (() => {
+                                let md = `# ${doc.title || 'Standard Document'}\n\n`;
+                                if (doc.introduction) md += `## Introduction\n${doc.introduction}\n\n`;
+                                if (doc.sections && doc.sections.length > 0) {
+                                    doc.sections.forEach((sec, idx) => {
+                                        md += `## ${idx + 1}. ${sec.title}\n${sec.content}\n\n`;
+                                    });
+                                }
+                                return md.trim();
+                            })();
 
                         policiesArray.push({
                             id: `doc-${key}`,
                             title: doc.title || 'Standard Document',
-                            content: mdContent.trim(),
+                            content: mdContent,
                             lastUpdated: doc.docControl?.lastReviewed || defaultDate
                         });
                     });
@@ -1529,10 +1654,172 @@
                     }
                 }
             }));
-            const updateStandardSection = (key, secId, field, val) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).map(s => s.id === secId ? { ...s, [field]: val } : s) } }));
-            const addStandardSection = (key) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: [...(docs[key]?.sections || []), { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details...' }] } }));
-            const removeStandardSection = (key, secId) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).filter(s => s.id !== secId) } }));
-            const reorderStandardSection = (key, idx, dir) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: moveArrayItem(docs[key]?.sections || [], idx, dir) } }));
+
+            const patchStandardPolicyDoc = (key, mutator) => updateDocState('standardDocs', (docs) => {
+                const current = docs[key] || {};
+                const base = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
+                    ? PC().normalizeStandardPolicyDoc(current)
+                    : current;
+                const next = mutator(base);
+                const normalized = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
+                    ? PC().normalizeStandardPolicyDoc(next)
+                    : next;
+                return { ...docs, [key]: normalized };
+            });
+
+            const updateStandardSection = (key, secId, field, val) => {
+                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                    return updateDocState('standardDocs', docs => ({
+                        ...docs,
+                        [key]: {
+                            ...docs[key],
+                            sections: (docs[key]?.sections || []).map((s) => (s.id === secId ? { ...s, [field]: val } : s)),
+                        },
+                    }));
+                }
+                return patchStandardPolicyDoc(key, (doc) => ({
+                    ...doc,
+                    chapters: (doc.chapters || []).map((ch) => ({
+                        ...ch,
+                        sections: (ch.sections || []).map((s) => (s.id === secId ? { ...s, [field]: val } : s)),
+                    })),
+                }));
+            };
+
+            const addStandardChapter = (key) => patchStandardPolicyDoc(key, (doc) => ({
+                ...doc,
+                chapters: [
+                    ...(doc.chapters || []),
+                    PC().createEmptyChapter?.({ title: 'New Chapter' }) || {
+                        id: 'ch-' + Date.now(),
+                        title: 'New Chapter',
+                        sections: [{ id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                    },
+                ],
+            }));
+
+            const updateStandardChapter = (key, chapterId, field, val) => patchStandardPolicyDoc(key, (doc) => ({
+                ...doc,
+                chapters: (doc.chapters || []).map((ch) => (ch.id === chapterId ? { ...ch, [field]: val } : ch)),
+            }));
+
+            const removeStandardChapter = (key, chapterId) => patchStandardPolicyDoc(key, (doc) => {
+                const chapters = (doc.chapters || []).filter((ch) => ch.id !== chapterId);
+                return {
+                    ...doc,
+                    chapters: chapters.length
+                        ? chapters
+                        : [PC().createEmptyChapter?.({ title: 'Policy provisions' }) || { id: 'ch-main', title: 'Policy provisions', sections: [{ id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }] }],
+                };
+            });
+
+            const reorderStandardChapter = (key, idx, dir) => patchStandardPolicyDoc(key, (doc) => ({
+                ...doc,
+                chapters: moveArrayItem(doc.chapters || [], idx, dir),
+            }));
+
+            const addStandardSection = (key, chapterId) => {
+                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                    return updateDocState('standardDocs', docs => ({
+                        ...docs,
+                        [key]: {
+                            ...docs[key],
+                            sections: [...(docs[key]?.sections || []), { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details...' }],
+                        },
+                    }));
+                }
+                return patchStandardPolicyDoc(key, (doc) => {
+                    const chapters = doc.chapters || [];
+                    const targetId = chapterId || chapters[chapters.length - 1]?.id;
+                    const fresh = PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' };
+                    if (!targetId) {
+                        return {
+                            ...doc,
+                            chapters: [PC().createEmptyChapter?.({ sections: [fresh] }) || { id: 'ch-' + Date.now(), title: 'New Chapter', sections: [fresh] }],
+                        };
+                    }
+                    return {
+                        ...doc,
+                        chapters: chapters.map((ch) => (
+                            ch.id === targetId ? { ...ch, sections: [...(ch.sections || []), fresh] } : ch
+                        )),
+                    };
+                });
+            };
+
+            const removeStandardSection = (key, chapterId, secId) => {
+                // Legacy flat-section callers pass (key, secId) only
+                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                    const legacySecId = secId == null ? chapterId : secId;
+                    return updateDocState('standardDocs', docs => ({
+                        ...docs,
+                        [key]: {
+                            ...docs[key],
+                            sections: (docs[key]?.sections || []).filter((s) => s.id !== legacySecId),
+                        },
+                    }));
+                }
+                return patchStandardPolicyDoc(key, (doc) => ({
+                    ...doc,
+                    chapters: (doc.chapters || []).map((ch) => {
+                        if (ch.id !== chapterId) return ch;
+                        const nextSections = (ch.sections || []).filter((s) => s.id !== secId);
+                        return {
+                            ...ch,
+                            sections: nextSections.length
+                                ? nextSections
+                                : [PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                        };
+                    }),
+                }));
+            };
+
+            const reorderStandardSection = (key, chapterIdOrIdx, idxOrDir, maybeDir) => {
+                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                    // Legacy: (key, idx, dir)
+                    const idx = chapterIdOrIdx;
+                    const dir = idxOrDir;
+                    return updateDocState('standardDocs', docs => ({
+                        ...docs,
+                        [key]: {
+                            ...docs[key],
+                            sections: moveArrayItem(docs[key]?.sections || [], idx, dir),
+                        },
+                    }));
+                }
+                const chapterId = chapterIdOrIdx;
+                const idx = idxOrDir;
+                const dir = maybeDir;
+                return patchStandardPolicyDoc(key, (doc) => ({
+                    ...doc,
+                    chapters: (doc.chapters || []).map((ch) => (
+                        ch.id === chapterId ? { ...ch, sections: moveArrayItem(ch.sections || [], idx, dir) } : ch
+                    )),
+                }));
+            };
+
+            /** Move a section to the previous (-1) or next (+1) chapter (appended). */
+            const moveStandardSectionToChapter = (key, fromChapterId, secId, chapterDir) => patchStandardPolicyDoc(key, (doc) => {
+                const chapters = [...(doc.chapters || [])];
+                const fromIdx = chapters.findIndex((ch) => ch.id === fromChapterId);
+                const toIdx = fromIdx + chapterDir;
+                if (fromIdx < 0 || toIdx < 0 || toIdx >= chapters.length) return doc;
+                const fromCh = chapters[fromIdx];
+                const section = (fromCh.sections || []).find((s) => s.id === secId);
+                if (!section) return doc;
+                const nextFromSections = (fromCh.sections || []).filter((s) => s.id !== secId);
+                chapters[fromIdx] = {
+                    ...fromCh,
+                    sections: nextFromSections.length
+                        ? nextFromSections
+                        : [PC().createEmptySection?.({ title: 'New Section', content: 'Details…' }) || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                };
+                chapters[toIdx] = {
+                    ...chapters[toIdx],
+                    sections: [...(chapters[toIdx].sections || []), section],
+                };
+                return { ...doc, chapters };
+            });
 
             const openDocImportModal = (docKey) => {
                 setDocImportTargetKey(docKey);
@@ -1751,10 +2038,17 @@
                     setDocImportStatus('Import helpers not loaded. Refresh and try again.');
                     return;
                 }
-                updateDocState('standardDocs', (docs) => ({
-                    ...docs,
-                    [key]: apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle }),
-                }));
+                updateDocState('standardDocs', (docs) => {
+                    const applied = apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle });
+                    const withChapters = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
+                        ? PC().normalizeStandardPolicyDoc({
+                            ...applied,
+                            chapters: undefined, // force rebuild from imported sections
+                            sections: applied.sections || [],
+                        })
+                        : applied;
+                    return { ...docs, [key]: withChapters };
+                });
                 const label = (docImportUpdateTitle && parsed.title)
                     ? parsed.title
                     : (localPolicyData.standardDocs?.[key]?.title || key);
@@ -2156,9 +2450,16 @@
             };
 
             const renderStandardEditor = (docKey) => {
-                const doc = localPolicyData.standardDocs?.[docKey];
-                if (!doc || !activeClient) return null;
-                const sectionsList = [{title: 'Introduction'}, ...(doc.sections || [])];
+                const rawDoc = localPolicyData.standardDocs?.[docKey];
+                if (!rawDoc || !activeClient) return null;
+                const usesChapters = STANDARD_DOCS_WITH_CHAPTERS.includes(docKey);
+                const doc = usesChapters && PC().normalizeStandardPolicyDoc
+                    ? PC().normalizeStandardPolicyDoc(rawDoc)
+                    : rawDoc;
+                const chapters = usesChapters ? (doc.chapters || []) : null;
+                const sectionsList = usesChapters
+                    ? (PC().tocEntries?.(doc) || [{ title: 'Introduction' }, ...(doc.sections || [])])
+                    : [{ title: 'Introduction' }, ...(doc.sections || [])];
                 const canImportDoc = isEditMode && STANDARD_DOCS_WITH_GDOC_IMPORT.includes(docKey);
 
                 return (
@@ -2268,9 +2569,20 @@
 
                         <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                    <h2 className="text-xl font-bold text-slate-900 uppercase">2. Document Sections</h2>
-                                    {isEditMode && (
+                                <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                    <h2 className="text-xl font-bold text-slate-900 uppercase">{usesChapters ? '2. Chapters & Sections' : '2. Document Sections'}</h2>
+                                    {isEditMode && usesChapters && (
+                                        <div className="no-print flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => addStandardChapter(docKey)}
+                                                className="text-[10px] uppercase font-bold bg-brandNavy-900 text-brandTeal-400 border border-brandNavy-700 px-3 py-1.5 rounded hover:bg-brandNavy-800"
+                                            >
+                                                + Add Chapter
+                                            </button>
+                                        </div>
+                                    )}
+                                    {isEditMode && !usesChapters && (
                                         <button 
                                             type="button"
                                             onClick={() => addStandardSection(docKey)} 
@@ -2280,27 +2592,118 @@
                                         </button>
                                     )}
                                 </div>
-                                
+
+                                {usesChapters ? (
+                                    <div className="space-y-12 mt-6">
+                                        {chapters.map((chapter, chIdx) => (
+                                            <div key={chapter.id} className="page-break-avoid">
+                                                <div className="flex flex-wrap items-end justify-between gap-3 mb-4 border-b border-slate-200 pb-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        {isEditMode && (
+                                                            <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                                <button type="button" aria-label="Move Chapter Up" title="Move chapter up" onClick={() => reorderStandardChapter(docKey, chIdx, -1)} disabled={chIdx === 0} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                <button type="button" aria-label="Move Chapter Down" title="Move chapter down" onClick={() => reorderStandardChapter(docKey, chIdx, 1)} disabled={chIdx === chapters.length - 1} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                            </div>
+                                                        )}
+                                                        <span className="font-mono text-sm font-bold shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}</span>
+                                                        <label htmlFor={`std-ch-title-${chapter.id}`} className="sr-only">Chapter Title</label>
+                                                        <AutoResizeTextarea
+                                                            id={`std-ch-title-${chapter.id}`}
+                                                            value={chapter.title}
+                                                            onChange={(val) => updateStandardChapter(docKey, chapter.id, 'title', val)}
+                                                            isEditMode={isEditMode}
+                                                            className={`text-lg font-bold text-slate-900 uppercase flex-1 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                            placeholder="Chapter title"
+                                                        />
+                                                    </div>
+                                                    {isEditMode && (
+                                                        <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => addStandardSection(docKey, chapter.id)}
+                                                                className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200"
+                                                            >
+                                                                + Add Section
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                aria-label="Delete Chapter"
+                                                                title="Delete chapter"
+                                                                onClick={() => removeStandardChapter(docKey, chapter.id)}
+                                                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"
+                                                            >
+                                                                <Icons.Trash />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-8 pl-1 md:pl-2">
+                                                    {(chapter.sections || []).map((section, idx) => (
+                                                        <div key={section.id} className="page-break-avoid">
+                                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                                                {isEditMode && (
+                                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, chapter.id, idx, -1)} disabled={idx === 0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, chapter.id, idx, 1)} disabled={idx === (chapter.sections || []).length - 1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                                    </div>
+                                                                )}
+                                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
+                                                                <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
+                                                                <AutoResizeTextarea
+                                                                    id={`std-sec-title-${section.id}`}
+                                                                    value={section.title}
+                                                                    onChange={(val) => updateStandardSection(docKey, section.id, 'title', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                />
+                                                                {isEditMode && (
+                                                                    <div className="no-print flex items-center gap-1 shrink-0">
+                                                                        <button type="button" aria-label="Move section to previous chapter" title="Move to previous chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, -1)} disabled={chIdx === 0} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↑</button>
+                                                                        <button type="button" aria-label="Move section to next chapter" title="Move to next chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, 1)} disabled={chIdx === chapters.length - 1} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↓</button>
+                                                                        <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, chapter.id, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"><Icons.Trash /></button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="pl-4">
+                                                                <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
+                                                                <MarkdownField
+                                                                    id={`std-sec-content-${section.id}`}
+                                                                    value={section.content}
+                                                                    onChange={(val) => updateStandardSection(docKey, section.id, 'content', val)}
+                                                                    className="text-sm text-slate-600 leading-relaxed"
+                                                                    isEditMode={isEditMode}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
                                 <div className="space-y-8 mt-6">
                                     {(doc.sections || []).map((section, idx) => (
-                                        <div key={section.id} className="relative group page-break-avoid">
-                                            {isEditMode && (
-                                                <div className="no-print absolute -left-16 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button type="button" aria-label="Move Section Up" onClick={() => reorderStandardSection(docKey, idx, -1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx===0}><Icons.ArrowUp /></button>
-                                                    <button type="button" aria-label="Move Section Down" onClick={() => reorderStandardSection(docKey, idx, 1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx===(doc.sections || []).length-1}><Icons.ArrowDown /></button>
-                                                    <button type="button" aria-label="Delete Section" onClick={() => removeStandardSection(docKey, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                </div>
-                                            )}
-                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                <span className="mr-3 font-mono text-sm" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx+1}</span>
+                                        <div key={section.id} className="page-break-avoid">
+                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                                {isEditMode && (
+                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, idx, -1)} disabled={idx===0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, idx, 1)} disabled={idx===(doc.sections || []).length-1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                    </div>
+                                                )}
+                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx+1}</span>
                                                 <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
                                                 <AutoResizeTextarea 
                                                     id={`std-sec-title-${section.id}`}
                                                     value={section.title} 
                                                     onChange={val => updateStandardSection(docKey, section.id, 'title', val)} 
                                                     isEditMode={isEditMode} 
-                                                    className={`font-bold text-slate-900 ${!isEditMode?'preview-mode-input':''}`} 
+                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode?'preview-mode-input':''}`} 
                                                 />
+                                                {isEditMode && (
+                                                    <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, section.id)} className="no-print p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200 shrink-0"><Icons.Trash /></button>
+                                                )}
                                             </div>
                                             <div className="pl-4">
                                                 <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
@@ -2315,6 +2718,7 @@
                                         </div>
                                     ))}
                                 </div>
+                                )}
                             </td>
                         </tr>
                     </React.Fragment>
