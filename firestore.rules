@@ -145,7 +145,11 @@ service cloud.firestore {
 
     // Google Doc import for Policy Studio — Firestore trigger fetches text (no public Cloud Function required)
     match /artifacts/kolthoff-admin-app/public/data/google_doc_import_requests/{requestId} {
-      allow read: if isStaffMember() && resource.data.requestedBy == request.auth.uid;
+      // Allow listen before create (resource is null) and owner reads after.
+      allow read: if isStaffMember() && (
+        resource == null ||
+        resource.data.requestedBy == request.auth.uid
+      );
       allow create: if isStaffMember() &&
         request.resource.data.status == 'pending' &&
         request.resource.data.documentUrl is string &&

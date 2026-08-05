@@ -1943,28 +1943,49 @@
                     finish(reject, new Error('Timed out waiting for Google Doc fetch. Use File → Download → Plain text (.txt) and upload instead.'));
                 }, 45000);
 
-                unsub = window.onSnapshot(
-                    ref,
-                    (snap) => {
-                        const data = snap.data();
-                        if (!data) return;
-                        if (data.status === 'complete' && typeof data.text === 'string') {
-                            finish(resolve, data.text);
-                            return;
-                        }
-                        if (data.status === 'error') {
-                            finish(reject, new Error(data.error || 'Google Doc fetch failed'));
-                        }
-                    },
-                    (err) => finish(reject, err),
-                );
+                const attachListener = () => {
+                    unsub = window.onSnapshot(
+                        ref,
+                        (snap) => {
+                            const data = snap.data();
+                            if (!data) return;
+                            if (data.status === 'complete' && typeof data.text === 'string') {
+                                finish(resolve, data.text);
+                                return;
+                            }
+                            if (data.status === 'error') {
+                                finish(reject, new Error(data.error || 'Google Doc fetch failed'));
+                            }
+                        },
+                        (err) => {
+                            const msg = String(err?.message || err || '');
+                            if (/permission|insufficient/i.test(msg)) {
+                                finish(reject, new Error('Could not listen for Google Doc fetch (permissions). Upload a .txt export instead.'));
+                                return;
+                            }
+                            finish(reject, err instanceof Error ? err : new Error(msg));
+                        },
+                    );
+                };
 
+                // Create the request first, then listen — rules deny reads when resource is null
+                // if we only check resource.data.requestedBy (listen-before-create used to fail silently).
                 window.setDoc(ref, {
                     status: 'pending',
                     documentUrl: String(documentUrl || '').trim(),
                     requestedBy: authUser.uid,
                     requestedAt: Date.now(),
-                }).catch((err) => finish(reject, err));
+                }).then(() => {
+                    if (settled) return;
+                    attachListener();
+                }).catch((err) => {
+                    const msg = String(err?.message || err || '');
+                    if (/permission|insufficient/i.test(msg)) {
+                        finish(reject, new Error('Could not start Google Doc fetch (permissions). Sign in as staff, or upload a .txt export instead.'));
+                        return;
+                    }
+                    finish(reject, err instanceof Error ? err : new Error(msg));
+                });
             });
 
             const fetchGoogleDocText = async (documentUrl) => {
@@ -1973,8 +1994,8 @@
                     return await fetchGoogleDocTextViaFirestore(documentUrl);
                 } catch (fsErr) {
                     const fsMsg = String(fsErr?.message || fsErr || '');
-                    // Fall through to HTTP/callable only for infra/setup issues, not share/access errors
-                    if (/share as anyone|not accessible|valid google docs|timed out|sign in required/i.test(fsMsg)) {
+                    // Do not fall through for user/share/auth failures — HTTP/callable are usually 403 here too
+                    if (/share as anyone|not accessible|valid google docs|timed out|sign in required|permissions|login page|\.txt/i.test(fsMsg)) {
                         throw fsErr instanceof Error ? fsErr : new Error(fsMsg);
                     }
                     console.warn('Firestore Google Doc fetch failed, trying API fallback', fsErr);
