@@ -271,13 +271,16 @@
       min-width: 0;
     }
 
-    html.kolthoff-embed .planner-main-header {
-      display: block !important;
-    }
+    /* Screen-only: keep tab nav in admin embed without overriding print/PDF chrome hide */
+    @media screen {
+      html.kolthoff-embed .planner-main-header {
+        display: block !important;
+      }
 
-    html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
-      display: flex !important;
-      visibility: visible !important;
+      html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
+        display: flex !important;
+        visibility: visible !important;
+      }
     }
 
     /* Compact top chrome — more vertical room for planner / doc preview */
@@ -401,8 +404,11 @@
         page-break-inside: auto;
       }
 
+      .no-print,
       .planner-main-header,
+      .planner-main-header nav[aria-label="Main Navigation"],
       .planner-workspace-toolbar,
+      html.kolthoff-embed .no-print,
       html.kolthoff-embed .planner-main-header,
       html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"],
       html.kolthoff-embed .planner-workspace-toolbar {
@@ -572,7 +578,7 @@
 
   <div id="root"></div>
 
-  <script src="../../shared/embed-mode.js?v=20250702-embed-v3"></script>
+  <script src="../../shared/embed-mode.js?v=20250805-print-chrome-v1"></script>
   <script type="module" src="../../shared/product-config.js"></script>
   <script src="../../shared/engagement-config.js?v=20250701-content-v1"></script>
   <script src="../../shared/product-catalog.js?v=20250705-pro-v1"></script>
