@@ -11,6 +11,199 @@
     { value: 'partner', label: 'Partner' },
   ];
 
+  function renderConsultantBadge(tier) {
+    const labelMap = { principal: 'Strategist', senior: 'Architect', associate: 'Specialist', partner: 'IT Partner' };
+    const styleMap = {
+      principal: 'bg-purple-100 text-purple-700 border-purple-200',
+      senior: 'bg-brandTeal-100 text-brandTeal-700 border-brandTeal-200',
+      associate: 'bg-slate-100 text-slate-600 border-slate-200',
+      partner: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    };
+    return React.createElement(
+      'span',
+      { className: `text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border ${styleMap[tier] || styleMap.associate}` },
+      labelMap[tier] || 'Specialist',
+    );
+  }
+
+  /**
+   * Same Implementation Timeline Map (Gantt view) used on the proposal roadmap page.
+   */
+  function renderRoadmapGanttChart(props) {
+    const {
+      schedule,
+      modPhase,
+      modTitle,
+      otherPhaseLabel = 'Addendum Scope',
+      emptyMessage = 'Select one or more deliverables to generate the synchronized Gantt timeline.',
+    } = props || {};
+    if (!schedule) return null;
+    const {
+      items = [],
+      scheduledP1 = [],
+      scheduledP2 = [],
+      scheduledP3 = [],
+      scheduledP4 = [],
+      scheduledOther = [],
+      maxWeek = 4,
+      clientReviewWeeks = 0,
+    } = schedule;
+    const phaseLabel = typeof modPhase === 'function'
+      ? modPhase
+      : (n) => `Phase ${n}`;
+    const retainerLabel = typeof modTitle === 'function' ? modTitle(4) : 'Care Plan';
+
+    if (!items.length) {
+      return React.createElement(
+        'div',
+        { className: 'p-8 text-center border-2 border-dashed rounded-xl font-sans' },
+        React.createElement('h4', { className: 'text-sm font-bold text-slate-900' }, 'No Active Tasks Selected'),
+        React.createElement('p', { className: 'text-xs text-slate-500 mt-1' }, emptyMessage),
+      );
+    }
+
+    const phaseBlocks = [
+      {
+        key: 'mod1',
+        label: phaseLabel(1),
+        tasks: scheduledP1,
+        previous: [],
+        showReviewGap: false,
+      },
+      {
+        key: 'mod2',
+        label: phaseLabel(2),
+        tasks: scheduledP2,
+        previous: scheduledP1,
+        showReviewGap: scheduledP2.length > 0 && scheduledP1.length > 0 && clientReviewWeeks > 0,
+      },
+      {
+        key: 'mod3',
+        label: phaseLabel(3),
+        tasks: scheduledP3,
+        previous: scheduledP2.length > 0 ? scheduledP2 : scheduledP1,
+        showReviewGap: scheduledP3.length > 0
+          && (scheduledP2.length > 0 || scheduledP1.length > 0)
+          && clientReviewWeeks > 0,
+      },
+      {
+        key: 'other',
+        label: otherPhaseLabel,
+        tasks: scheduledOther.filter((t) => !t.isRetainer),
+        previous: [...scheduledP1, ...scheduledP2, ...scheduledP3],
+        showReviewGap: scheduledOther.some((t) => !t.isRetainer)
+          && (scheduledP1.length + scheduledP2.length + scheduledP3.length) > 0
+          && clientReviewWeeks > 0,
+      },
+      {
+        key: 'mod4',
+        label: phaseLabel(4),
+        tasks: scheduledP4,
+        previous: [],
+        showReviewGap: false,
+      },
+      {
+        key: 'other-retainer',
+        label: otherPhaseLabel,
+        tasks: scheduledOther.filter((t) => t.isRetainer),
+        previous: [],
+        showReviewGap: false,
+      },
+    ];
+
+    // Merge non-mod retainers into the other project block when both exist.
+    const visibleBlocks = phaseBlocks.filter((block) => {
+      if (block.key === 'other-retainer') {
+        const hasOtherProject = scheduledOther.some((t) => !t.isRetainer);
+        return !hasOtherProject && block.tasks.length > 0;
+      }
+      if (block.key === 'other') return scheduledOther.length > 0;
+      return block.tasks.length > 0;
+    }).map((block) => (block.key === 'other' ? { ...block, tasks: scheduledOther } : block));
+
+    return React.createElement(
+      'div',
+      { className: 'roadmap-gantt-chart border border-slate-200 rounded-xl p-6 bg-slate-50/50 font-sans font-medium text-left' },
+      React.createElement('h4', { className: 'text-xs font-mono font-bold text-slate-500 uppercase tracking-widest mb-4 text-left' }, 'Implementation Timeline Map (Gantt view)'),
+      React.createElement(
+        'div',
+        { className: 'roadmap-gantt-grid overflow-x-auto space-y-4 text-left font-sans font-medium' },
+        React.createElement(
+          'div',
+          { className: 'grid grid-cols-12 gap-2 text-center text-[10px] font-mono font-bold text-slate-500 uppercase pb-2 border-b border-slate-200 text-left' },
+          React.createElement('div', { className: 'col-span-4 text-left font-bold' }, 'Expert'),
+          React.createElement(
+            'div',
+            { className: 'col-span-8 grid text-center font-bold roadmap-gantt-week-header', style: { gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` } },
+            Array.from({ length: maxWeek }, (_, i) => i + 1).map((wk) => React.createElement(
+              'div',
+              { key: wk, className: 'border-l border-slate-200 pl-1 text-center font-bold' },
+              `Wk ${wk}`,
+            )),
+          ),
+        ),
+        visibleBlocks.map((block) => {
+          const maxPrevEndWeek = block.previous.length > 0
+            ? Math.max(...block.previous.map((t) => t.endWeek))
+            : 0;
+          const reviewStartWk = block.showReviewGap ? maxPrevEndWeek + 1 : 1;
+          const reviewEndWk = block.showReviewGap ? reviewStartWk + clientReviewWeeks - 1 : 1;
+          return React.createElement(
+            'div',
+            { key: block.key, className: 'space-y-3 font-medium text-left' },
+            React.createElement('div', { className: 'text-[11px] font-extrabold text-brandTeal-600 uppercase border-b border-slate-200 pb-1 mt-4 text-left' }, block.label),
+            block.showReviewGap && React.createElement(
+              'div',
+              { className: 'grid grid-cols-12 gap-2 items-center text-xs mt-2 mb-3 text-left font-semibold' },
+              React.createElement(
+                'div',
+                { className: 'col-span-4 pr-2 font-medium text-left' },
+                React.createElement('div', { className: 'font-bold text-slate-400 italic text-left' }, 'Your review period'),
+              ),
+              React.createElement(
+                'div',
+                { className: 'col-span-8 grid h-6 items-center roadmap-gantt-row-grid', style: { gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` } },
+                React.createElement(
+                  'div',
+                  { className: 'h-5 roadmap-gantt-bar opacity-80', style: { gridColumnStart: reviewStartWk, gridColumnEnd: reviewEndWk + 1 } },
+                  React.createElement('div', { className: 'roadmap-gantt-bar-fill bg-amber-50 border border-amber-200 shadow-sm', 'aria-hidden': 'true' }),
+                  React.createElement('span', { className: 'roadmap-gantt-bar-label text-amber-700 font-bold font-mono text-[8px] uppercase' }, '⏳ Review Buffer'),
+                ),
+              ),
+            ),
+            block.tasks.map((task) => React.createElement(
+              'div',
+              { key: task.id, className: 'grid grid-cols-12 gap-2 items-center text-xs text-left' },
+              React.createElement(
+                'div',
+                { className: 'col-span-4 pr-2 font-medium text-left font-semibold min-w-0' },
+                React.createElement('div', { className: 'font-bold text-slate-900 line-clamp-1 text-left', title: task.deliverable }, task.deliverable || 'Untitled deliverable'),
+                React.createElement('div', { className: 'flex items-center gap-1.5 mt-0.5 text-left' }, renderConsultantBadge(task.tier)),
+              ),
+              React.createElement(
+                'div',
+                { className: 'col-span-8 grid h-8 items-center text-center font-bold roadmap-gantt-row-grid min-w-0', style: { gridTemplateColumns: `repeat(${maxWeek}, minmax(0, 1fr))` } },
+                task.isRetainer
+                  ? React.createElement(
+                    'div',
+                    { className: 'h-6 roadmap-gantt-bar', style: { gridColumn: `${task.startWeek} / span ${maxWeek - task.startWeek + 1}` }, title: `Continuous ${retainerLabel}` },
+                    React.createElement('div', { className: 'roadmap-gantt-bar-fill bg-indigo-50 border border-indigo-200 shadow-sm', 'aria-hidden': 'true' }),
+                    React.createElement('span', { className: 'roadmap-gantt-bar-label text-indigo-700 font-bold font-mono text-[9px] uppercase tracking-wider' }, `Continuous ${retainerLabel}`),
+                  )
+                  : React.createElement(
+                    'div',
+                    { className: 'h-6 roadmap-gantt-bar', style: { gridColumnStart: task.startWeek, gridColumnEnd: task.endWeek + 1 }, title: `Wk ${task.startWeek} - ${task.endWeek}` },
+                    React.createElement('div', { className: 'roadmap-gantt-bar-fill bg-brandTeal-50 border border-brandTeal-200 shadow-sm', 'aria-hidden': 'true' }),
+                    React.createElement('span', { className: 'roadmap-gantt-bar-label text-brandTeal-800 font-bold font-mono text-[9px] uppercase' }, `Wk ${task.startWeek} - ${task.endWeek}`),
+                  ),
+              ),
+            )),
+          );
+        }),
+      ),
+    );
+  }
+
   function renderAddendumTaskList(props) {
     const {
       addendum,
@@ -388,6 +581,9 @@
       includeTax,
       formatCurrency,
       addendumEconomics,
+      addendumGanttSchedule,
+      modPhase,
+      modTitle,
       renderSignaturesBlock,
       renderPrintBrandLogo,
       brand,
@@ -397,6 +593,8 @@
     } = props;
     if (!addendum || !addendumEconomics || !addendumParty) return null;
     const selectedTasks = (addendum.tasks || []).filter((t) => t.selected);
+    const isCustomScope = selectedTasks.length > 0
+      && selectedTasks.every((t) => t.isCustom || String(t.id || '').startsWith('custom-'));
     const totalBase = addendumEconomics.finalProjectCostBase + addendumEconomics.retainerCostTotalBase;
     const vat = includeTax ? Math.round(totalBase * 0.12) : 0;
     const total = totalBase + vat;
@@ -451,9 +649,7 @@
           React.createElement(
             'h2',
             { className: 'text-sm font-mono uppercase tracking-wider text-slate-400 font-bold' },
-            selectedTasks.every((t) => t.isCustom || String(t.id || '').startsWith('custom-'))
-              ? 'Custom scope deliverables'
-              : 'Additional deliverables',
+            isCustomScope ? 'Custom scope deliverables' : 'Additional deliverables',
           ),
           React.createElement(
             'div',
@@ -467,6 +663,19 @@
               task.scopeDetails?.output && React.createElement('p', { className: 'text-xs text-slate-600 mt-1' }, React.createElement('strong', null, 'Output: '), task.scopeDetails.output),
             )),
           ),
+        ),
+        addendumGanttSchedule && React.createElement(
+          'div',
+          { className: 'border-t border-slate-200 pt-5 space-y-3' },
+          React.createElement('h2', { className: 'text-sm font-mono uppercase tracking-wider text-slate-400 font-bold' }, 'Implementation roadmap'),
+          React.createElement('p', { className: 'text-[10px] text-slate-500 leading-relaxed' }, 'Timeline for this addendum scope only — same Gantt view as the proposal roadmap.'),
+          renderRoadmapGanttChart({
+            schedule: addendumGanttSchedule,
+            modPhase,
+            modTitle,
+            otherPhaseLabel: isCustomScope ? 'Custom Scope' : 'Addendum Scope',
+            emptyMessage: 'Select or define addendum deliverables to generate the synchronized Gantt timeline.',
+          }),
         ),
         React.createElement(
           'div',
@@ -520,5 +729,6 @@
   global.PlannerAddendumUI = {
     renderAddendumEditor,
     renderAddendumPrintDocument,
+    renderRoadmapGanttChart,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
