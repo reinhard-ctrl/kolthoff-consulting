@@ -1719,6 +1719,29 @@
                 }));
             };
 
+            /** Move a section to the previous (-1) or next (+1) chapter (appended). */
+            const moveStandardSectionToChapter = (key, fromChapterId, secId, chapterDir) => patchStandardPolicyDoc(key, (doc) => {
+                const chapters = [...(doc.chapters || [])];
+                const fromIdx = chapters.findIndex((ch) => ch.id === fromChapterId);
+                const toIdx = fromIdx + chapterDir;
+                if (fromIdx < 0 || toIdx < 0 || toIdx >= chapters.length) return doc;
+                const fromCh = chapters[fromIdx];
+                const section = (fromCh.sections || []).find((s) => s.id === secId);
+                if (!section) return doc;
+                const nextFromSections = (fromCh.sections || []).filter((s) => s.id !== secId);
+                chapters[fromIdx] = {
+                    ...fromCh,
+                    sections: nextFromSections.length
+                        ? nextFromSections
+                        : [PC().createEmptySection?.({ title: 'New Section', content: 'Details…' }) || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                };
+                chapters[toIdx] = {
+                    ...chapters[toIdx],
+                    sections: [...(chapters[toIdx].sections || []), section],
+                };
+                return { ...doc, chapters };
+            });
+
             const openDocImportModal = (docKey) => {
                 setDocImportTargetKey(docKey);
                 setDocImportUrl('');
@@ -2494,16 +2517,15 @@
                                 {usesChapters ? (
                                     <div className="space-y-12 mt-6">
                                         {chapters.map((chapter, chIdx) => (
-                                            <div key={chapter.id} className="relative group/chapter page-break-avoid">
-                                                {isEditMode && (
-                                                    <div className="no-print absolute -left-16 top-1 flex gap-1 opacity-0 group-hover/chapter:opacity-100 transition-opacity">
-                                                        <button type="button" aria-label="Move Chapter Up" onClick={() => reorderStandardChapter(docKey, chIdx, -1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={chIdx === 0}><Icons.ArrowUp /></button>
-                                                        <button type="button" aria-label="Move Chapter Down" onClick={() => reorderStandardChapter(docKey, chIdx, 1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={chIdx === chapters.length - 1}><Icons.ArrowDown /></button>
-                                                        <button type="button" aria-label="Delete Chapter" onClick={() => removeStandardChapter(docKey, chapter.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                    </div>
-                                                )}
+                                            <div key={chapter.id} className="page-break-avoid">
                                                 <div className="flex flex-wrap items-end justify-between gap-3 mb-4 border-b border-slate-200 pb-2">
-                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        {isEditMode && (
+                                                            <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                                <button type="button" aria-label="Move Chapter Up" title="Move chapter up" onClick={() => reorderStandardChapter(docKey, chIdx, -1)} disabled={chIdx === 0} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                <button type="button" aria-label="Move Chapter Down" title="Move chapter down" onClick={() => reorderStandardChapter(docKey, chIdx, 1)} disabled={chIdx === chapters.length - 1} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                            </div>
+                                                        )}
                                                         <span className="font-mono text-sm font-bold shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}</span>
                                                         <label htmlFor={`std-ch-title-${chapter.id}`} className="sr-only">Chapter Title</label>
                                                         <AutoResizeTextarea
@@ -2516,36 +2538,53 @@
                                                         />
                                                     </div>
                                                     {isEditMode && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => addStandardSection(docKey, chapter.id)}
-                                                            className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0"
-                                                        >
-                                                            + Add Section
-                                                        </button>
+                                                        <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => addStandardSection(docKey, chapter.id)}
+                                                                className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200"
+                                                            >
+                                                                + Add Section
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                aria-label="Delete Chapter"
+                                                                title="Delete chapter"
+                                                                onClick={() => removeStandardChapter(docKey, chapter.id)}
+                                                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"
+                                                            >
+                                                                <Icons.Trash />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </div>
 
-                                                <div className="space-y-8 pl-1 md:pl-4">
+                                                <div className="space-y-8 pl-1 md:pl-2">
                                                     {(chapter.sections || []).map((section, idx) => (
-                                                        <div key={section.id} className="relative group page-break-avoid">
-                                                            {isEditMode && (
-                                                                <div className="no-print absolute -left-12 md:-left-14 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <button type="button" aria-label="Move Section Up" onClick={() => reorderStandardSection(docKey, chapter.id, idx, -1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx === 0}><Icons.ArrowUp /></button>
-                                                                    <button type="button" aria-label="Move Section Down" onClick={() => reorderStandardSection(docKey, chapter.id, idx, 1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx === (chapter.sections || []).length - 1}><Icons.ArrowDown /></button>
-                                                                    <button type="button" aria-label="Delete Section" onClick={() => removeStandardSection(docKey, chapter.id, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                                </div>
-                                                            )}
-                                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                                <span className="mr-3 font-mono text-sm" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
+                                                        <div key={section.id} className="page-break-avoid">
+                                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                                                {isEditMode && (
+                                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, chapter.id, idx, -1)} disabled={idx === 0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, chapter.id, idx, 1)} disabled={idx === (chapter.sections || []).length - 1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                                    </div>
+                                                                )}
+                                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
                                                                 <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
                                                                 <AutoResizeTextarea
                                                                     id={`std-sec-title-${section.id}`}
                                                                     value={section.title}
                                                                     onChange={(val) => updateStandardSection(docKey, section.id, 'title', val)}
                                                                     isEditMode={isEditMode}
-                                                                    className={`font-bold text-slate-900 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
                                                                 />
+                                                                {isEditMode && (
+                                                                    <div className="no-print flex items-center gap-1 shrink-0">
+                                                                        <button type="button" aria-label="Move section to previous chapter" title="Move to previous chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, -1)} disabled={chIdx === 0} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↑</button>
+                                                                        <button type="button" aria-label="Move section to next chapter" title="Move to next chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, 1)} disabled={chIdx === chapters.length - 1} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↓</button>
+                                                                        <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, chapter.id, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"><Icons.Trash /></button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="pl-4">
                                                                 <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
@@ -2566,24 +2605,26 @@
                                 ) : (
                                 <div className="space-y-8 mt-6">
                                     {(doc.sections || []).map((section, idx) => (
-                                        <div key={section.id} className="relative group page-break-avoid">
-                                            {isEditMode && (
-                                                <div className="no-print absolute -left-16 top-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button type="button" aria-label="Move Section Up" onClick={() => reorderStandardSection(docKey, idx, -1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx===0}><Icons.ArrowUp /></button>
-                                                    <button type="button" aria-label="Move Section Down" onClick={() => reorderStandardSection(docKey, idx, 1)} className="p-1 text-slate-400 hover:bg-slate-100 rounded" disabled={idx===(doc.sections || []).length-1}><Icons.ArrowDown /></button>
-                                                    <button type="button" aria-label="Delete Section" onClick={() => removeStandardSection(docKey, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                </div>
-                                            )}
-                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                <span className="mr-3 font-mono text-sm" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx+1}</span>
+                                        <div key={section.id} className="page-break-avoid">
+                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                                {isEditMode && (
+                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
+                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, idx, -1)} disabled={idx===0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, idx, 1)} disabled={idx===(doc.sections || []).length-1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                    </div>
+                                                )}
+                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx+1}</span>
                                                 <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
                                                 <AutoResizeTextarea 
                                                     id={`std-sec-title-${section.id}`}
                                                     value={section.title} 
                                                     onChange={val => updateStandardSection(docKey, section.id, 'title', val)} 
                                                     isEditMode={isEditMode} 
-                                                    className={`font-bold text-slate-900 ${!isEditMode?'preview-mode-input':''}`} 
+                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode?'preview-mode-input':''}`} 
                                                 />
+                                                {isEditMode && (
+                                                    <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, section.id)} className="no-print p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200 shrink-0"><Icons.Trash /></button>
+                                                )}
                                             </div>
                                             <div className="pl-4">
                                                 <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
