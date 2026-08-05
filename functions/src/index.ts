@@ -584,24 +584,40 @@ async function fetchGoogleDocPlainText(documentUrl: string): Promise<string> {
     );
   }
 
-  const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-  const res = await fetch(exportUrl, { redirect: 'follow' });
-  if (!res.ok) {
+  const exportUrls = [
+    `https://docs.google.com/document/d/${docId}/export?format=txt`,
+    `https://docs.google.com/feeds/download/documents/export/Export?id=${encodeURIComponent(docId)}&exportFormat=txt`,
+  ];
+  const fetchHeaders = {
+    'User-Agent': 'Mozilla/5.0 (compatible; KolthoffPolicyStudio/1.0; +https://kolthoff-consulting.com)',
+    Accept: 'text/plain,text/*,*/*',
+  };
+
+  let lastStatus = 0;
+  let text = '';
+  for (const exportUrl of exportUrls) {
+    const res = await fetch(exportUrl, { redirect: 'follow', headers: fetchHeaders });
+    lastStatus = res.status;
+    if (!res.ok) continue;
+    text = await res.text();
+    const sample = text.trim().slice(0, 256).toLowerCase();
+    if (sample.startsWith('<!doctype html') || sample.startsWith('<html') || sample.includes('accounts.google.com')) {
+      continue;
+    }
+    if (text.trim()) return text;
+  }
+
+  if (lastStatus && lastStatus !== 200) {
     throw new HttpsError(
       'failed-precondition',
       'Could not fetch Google Doc. Share as Anyone with the link can view, or download as .txt / .md and upload it instead.',
     );
   }
 
-  const text = await res.text();
-  const sample = text.trim().slice(0, 256).toLowerCase();
-  if (sample.startsWith('<!doctype html') || sample.startsWith('<html')) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Doc not accessible from the server. Share as Anyone with the link can view, or use File → Download → Plain text (.txt) and upload.',
-    );
-  }
-  return text;
+  throw new HttpsError(
+    'failed-precondition',
+    'Doc not accessible from the server. Share as Anyone with the link can view, or use File → Download → Plain text (.txt) and upload.',
+  );
 }
 
 /**
