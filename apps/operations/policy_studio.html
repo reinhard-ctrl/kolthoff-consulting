@@ -712,6 +712,13 @@
                     : DEFAULT_DOCUMENT_DATA.sops;
                 return seed[0]?.id || null;
             });
+            // Each Job Role Profile is its own document/file — selected by section id
+            const [activeJobRoleId, setActiveJobRoleId] = useState(() => {
+                const seed = isStandalone
+                    ? (window.STANDALONE_POLICIES?.standardDocs?.jobDescriptions?.sections || [])
+                    : DEFAULT_DOCUMENT_DATA.standardDocs.jobDescriptions.sections;
+                return seed[0]?.id || null;
+            });
             // Force dynamic "Preview Mode" on standalone startup, "Edit Mode" otherwise
             const [isEditMode, setIsEditMode] = useState(!isStandalone);
 
@@ -721,10 +728,16 @@
             const [showBulkResetModal, setShowBulkResetModal] = useState(false);
 
             const makeSopId = () => `sop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const makeJobRoleId = () => `jd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
             const openSopDocument = (sopId) => {
                 setActiveSopId(sopId || null);
                 setActiveMode('sop');
+            };
+
+            const openJobRoleDocument = (roleId) => {
+                setActiveJobRoleId(roleId || null);
+                setActiveMode('jobDescriptions');
             };
 
             // 1) Auth Setup - Bypassed in standalone, bound strictly to current browser origin
@@ -911,6 +924,18 @@
                 }
             }, [localPolicyData.sops, activeSopId]);
 
+            // Keep the active Job Role Profile file selection valid
+            useEffect(() => {
+                const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
+                if (!roles.length) {
+                    if (activeJobRoleId) setActiveJobRoleId(null);
+                    return;
+                }
+                if (!activeJobRoleId || !roles.some((r) => r.id === activeJobRoleId)) {
+                    setActiveJobRoleId(roles[0].id);
+                }
+            }, [localPolicyData.standardDocs?.jobDescriptions?.sections, activeJobRoleId]);
+
             const inferToastTone = (msg) => {
                 const text = String(msg || '');
                 if (text.includes('🔒') || /locked|Complete Mod 1/i.test(text)) return 'lock';
@@ -1087,6 +1112,33 @@
                     Object.keys(localPolicyData.standardDocs).forEach(key => {
                         if (key === 'orgChart') return;
                         const doc = localPolicyData.standardDocs[key];
+
+                        // Job Role Profiles: one vault file per role
+                        if (key === 'jobDescriptions') {
+                            const roles = doc.sections || [];
+                            if (!roles.length) {
+                                policiesArray.push({
+                                    id: 'doc-jobDescriptions',
+                                    title: doc.title || 'Role Alignment Profile Guides',
+                                    content: `# ${doc.title || 'Role Alignment Profile Guides'}\n\n${doc.introduction || ''}`.trim(),
+                                    lastUpdated: doc.docControl?.lastReviewed || defaultDate
+                                });
+                                return;
+                            }
+                            roles.forEach((role, idx) => {
+                                let mdContent = `# ${role.title || `Role Profile ${idx + 1}`}\n\n`;
+                                if (doc.introduction) mdContent += `## Guide Purpose\n${doc.introduction}\n\n`;
+                                mdContent += `## Role Responsibilities\n${role.content || ''}\n`;
+                                policiesArray.push({
+                                    id: role.id || `doc-jobDescriptions-${idx + 1}`,
+                                    title: role.title || `Role Profile ${idx + 1}`,
+                                    content: mdContent.trim(),
+                                    lastUpdated: doc.docControl?.lastReviewed || defaultDate
+                                });
+                            });
+                            return;
+                        }
+
                         let mdContent = `# ${doc.title || 'Standard Document'}\n\n`;
                         if (doc.introduction) mdContent += `## Introduction\n${doc.introduction}\n\n`;
 
@@ -1174,6 +1226,41 @@
                         }));
                     }
                     triggerToast('🔄 This SOP file reinitialized to default template! Remember to save changes.');
+                } else if (activeMode === 'jobDescriptions') {
+                    const templates = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.standardDocs.jobDescriptions.sections || []));
+                    const templateRole = templates[0] || { id: 'jd-1', title: 'New Role Profile', content: 'Role responsibilities and competencies...' };
+                    const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
+                    if (!activeJobRoleId || !roles.some((r) => r.id === activeJobRoleId)) {
+                        const fresh = { ...templateRole, id: makeJobRoleId() };
+                        setLocalPolicyData((prev) => ({
+                            ...prev,
+                            standardDocs: {
+                                ...prev.standardDocs,
+                                jobDescriptions: {
+                                    ...JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.standardDocs.jobDescriptions)),
+                                    ...(prev.standardDocs?.jobDescriptions || {}),
+                                    sections: [fresh],
+                                },
+                            },
+                        }));
+                        setActiveJobRoleId(fresh.id);
+                    } else {
+                        const matchIdx = roles.findIndex((r) => r.id === activeJobRoleId);
+                        const roleTemplate = templates[matchIdx] || templateRole;
+                        setLocalPolicyData((prev) => ({
+                            ...prev,
+                            standardDocs: {
+                                ...prev.standardDocs,
+                                jobDescriptions: {
+                                    ...prev.standardDocs.jobDescriptions,
+                                    sections: (prev.standardDocs.jobDescriptions?.sections || []).map((r) =>
+                                        r.id === activeJobRoleId ? { ...roleTemplate, id: r.id } : r
+                                    ),
+                                },
+                            },
+                        }));
+                    }
+                    triggerToast('🔄 This Job Role Profile file reinitialized to default template! Remember to save changes.');
                 } else if (activeMode === 'handbook') {
                     setLocalPolicyData(prev => ({
                         ...prev,
@@ -1364,6 +1451,49 @@
             const removeStandardSection = (key, secId) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).filter(s => s.id !== secId) } }));
             const reorderStandardSection = (key, idx, dir) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: moveArrayItem(docs[key]?.sections || [], idx, dir) } }));
 
+            // Job Role Profile handlers — each section is a separate file
+            const addJobRole = () => {
+                const fresh = {
+                    id: makeJobRoleId(),
+                    title: 'New Job Role Profile',
+                    content: 'Outline essential responsibilities, reporting lines, and core competencies for this role.',
+                };
+                updateDocState('standardDocs', (docs) => ({
+                    ...docs,
+                    jobDescriptions: {
+                        ...(docs.jobDescriptions || {}),
+                        sections: [...(docs.jobDescriptions?.sections || []), fresh],
+                    },
+                }));
+                openJobRoleDocument(fresh.id);
+            };
+            const deleteJobRole = (roleId) => {
+                const remaining = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).filter((r) => r.id !== roleId);
+                updateDocState('standardDocs', (docs) => ({
+                    ...docs,
+                    jobDescriptions: {
+                        ...(docs.jobDescriptions || {}),
+                        sections: remaining,
+                    },
+                }));
+                if (activeJobRoleId === roleId) {
+                    if (remaining[0]) openJobRoleDocument(remaining[0].id);
+                    else {
+                        setActiveJobRoleId(null);
+                        setActiveMode('dashboard');
+                    }
+                }
+            };
+
+            const activeJobRole = useMemo(() => {
+                const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
+                return roles.find((r) => r.id === activeJobRoleId) || null;
+            }, [localPolicyData.standardDocs?.jobDescriptions?.sections, activeJobRoleId]);
+            const activeJobRoleIndex = useMemo(() => {
+                if (!activeJobRoleId) return -1;
+                return (localPolicyData.standardDocs?.jobDescriptions?.sections || []).findIndex((r) => r.id === activeJobRoleId);
+            }, [localPolicyData.standardDocs?.jobDescriptions?.sections, activeJobRoleId]);
+
             const updateOrgChartPolicy = (patch) => updateDocState('standardDocs', docs => ({
                 ...docs,
                 orgChart: {
@@ -1448,6 +1578,7 @@
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
+                if (activeMode === 'jobDescriptions') return activeJobRole?.title || 'Job Role Profile';
                 if (activeMode === 'handbook') return localPolicyData.handbook?.title || 'Employee Handbook';
                 if (activeMode === 'branding') return 'Branding & Identity';
                 if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
@@ -1523,8 +1654,18 @@
                     title: sop.title || `Procedure ${idx + 1}`,
                     obj: sop,
                 }));
+                const jobRoleDocs = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => ({
+                    id: `jobRole:${role.id}`,
+                    jobRoleId: role.id,
+                    group: 'HR',
+                    title: role.title || `Role Profile ${idx + 1}`,
+                    obj: {
+                        docControl: localPolicyData.standardDocs?.jobDescriptions?.docControl,
+                    },
+                }));
                 const docsList = [
                     ...sopDocs,
+                    ...jobRoleDocs,
                     { id: 'handbook', group: 'HR', title: 'Employee Handbook', obj: localPolicyData.handbook },
                     { id: 'orgChart', group: 'HR', title: 'Org Chart & Reporting Policy', obj: localPolicyData.standardDocs?.orgChart },
                     { id: 'conduct', group: 'Legal', title: 'Code of Conduct', obj: localPolicyData.standardDocs?.conduct },
@@ -1535,7 +1676,6 @@
                     { id: 'sla', group: 'Ops', title: 'Service Levels (SLA)', obj: localPolicyData.standardDocs?.sla },
                     { id: 'onboarding', group: 'HR', title: 'Onboarding Plan', obj: localPolicyData.standardDocs?.onboarding },
                     { id: 'performanceReview', group: 'HR', title: 'Performance Appraisal', obj: localPolicyData.standardDocs?.performanceReview },
-                    { id: 'jobDescriptions', group: 'HR', title: 'Role Profiles', obj: localPolicyData.standardDocs?.jobDescriptions }
                 ];
 
                 return (
@@ -1595,7 +1735,11 @@
                                     <button 
                                         key={d.id} 
                                         type="button"
-                                        onClick={() => (d.sopId ? openSopDocument(d.sopId) : setActiveMode(d.id))} 
+                                        onClick={() => {
+                                            if (d.sopId) openSopDocument(d.sopId);
+                                            else if (d.jobRoleId) openJobRoleDocument(d.jobRoleId);
+                                            else setActiveMode(d.id);
+                                        }} 
                                         className="text-left bg-white border border-slate-200 rounded-lg p-5 cursor-pointer hover:shadow-lg hover:border-brandTeal-404 transition-all group animate-fade-in"
                                     >
                                         <div className="flex justify-between items-start mb-3">
@@ -2147,7 +2291,46 @@
                                     <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">HR & Talent</h3>
                                     <button type="button" aria-pressed={activeMode === 'handbook'} onClick={() => setActiveMode('handbook')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'handbook' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.BookOpen /> <span className="text-xs ml-2">Employee Handbook</span></button>
                                     <button type="button" aria-pressed={activeMode === 'orgChart'} onClick={() => setActiveMode('orgChart')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'orgChart' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Sitemap /> <span className="text-xs ml-2">Org Chart Policy</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'jobDescriptions'} onClick={() => setActiveMode('jobDescriptions')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'jobDescriptions' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Briefcase /> <span className="text-xs ml-2">Job Role Profiles</span></button>
+                                    <div className="mb-1 mt-1">
+                                        <div className="px-2 py-1 flex items-center justify-between gap-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Job Role Profiles</span>
+                                            {isEditMode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addJobRole}
+                                                    className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
+                                                    title="Add a new job role profile file"
+                                                >
+                                                    + New
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="space-y-0.5 pl-1">
+                                            {(localPolicyData.standardDocs?.jobDescriptions?.sections || []).length === 0 ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setActiveMode('jobDescriptions'); setActiveJobRoleId(null); }}
+                                                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'jobDescriptions' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
+                                                >
+                                                    <Icons.Briefcase /> <span className="text-xs ml-2">No role files yet</span>
+                                                </button>
+                                            ) : (
+                                                (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => (
+                                                    <button
+                                                        key={role.id}
+                                                        type="button"
+                                                        aria-pressed={activeMode === 'jobDescriptions' && activeJobRoleId === role.id}
+                                                        onClick={() => openJobRoleDocument(role.id)}
+                                                        className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'jobDescriptions' && activeJobRoleId === role.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
+                                                        title={role.title || `Role Profile ${idx + 1}`}
+                                                    >
+                                                        <span className="shrink-0 mt-0.5"><Icons.Briefcase /></span>
+                                                        <span className="text-xs ml-2 leading-snug break-words">{role.title || `Role Profile ${idx + 1}`}</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
                                     <button type="button" aria-pressed={activeMode === 'onboarding'} onClick={() => setActiveMode('onboarding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'onboarding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Users /> <span className="text-xs ml-2">Onboarding & 90-Day</span></button>
                                     <button type="button" aria-pressed={activeMode === 'performanceReview'} onClick={() => setActiveMode('performanceReview')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'performanceReview' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Performance Reviews</span></button>
                                 </div>
@@ -2908,7 +3091,135 @@
                                             {/* --- STANDARD DOCS DISPATCHER --- */}
                                             {activeMode === 'orgChart' && renderOrgChartPolicyEditor()}
 
-                                            {['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview', 'jobDescriptions'].includes(activeMode) && (
+                                            {activeMode === 'jobDescriptions' && (() => {
+                                                const pack = localPolicyData.standardDocs?.jobDescriptions;
+                                                const role = activeJobRole;
+                                                const roleIdx = activeJobRoleIndex >= 0 ? activeJobRoleIndex : 0;
+                                                if (!pack || !activeClient) return null;
+                                                return (
+                                                    <React.Fragment>
+                                                        <tr className="block print:table-row no-print">
+                                                            <td className="block print:table-cell p-10 pb-0 flex flex-wrap justify-end gap-2">
+                                                                {isEditMode && (
+                                                                    <button type="button" onClick={addJobRole} className="flex items-center text-xs font-bold bg-slate-100 text-slate-700 px-4 py-2 border border-slate-200 rounded hover:bg-slate-200 transition-colors">
+                                                                        <Icons.Plus /> <span className="ml-1">New Role File</span>
+                                                                    </button>
+                                                                )}
+                                                                {isEditMode && role && (
+                                                                    <button type="button" onClick={() => deleteJobRole(role.id)} className="flex items-center text-xs font-bold bg-rose-50 text-rose-700 px-4 py-2 border border-rose-200 rounded hover:bg-rose-100 transition-colors" title="Delete this job role profile file">
+                                                                        <Icons.Trash /> <span className="ml-1">Delete File</span>
+                                                                    </button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+
+                                                        {!role ? (
+                                                            <tr className="block print:table-row">
+                                                                <td className="block print:table-cell p-10 align-top">
+                                                                    <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center bg-slate-50">
+                                                                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-2">No role profile file selected</h3>
+                                                                        <p className="text-xs text-slate-500 mb-4 max-w-md mx-auto">Each job role profile is its own document. Create a file to define responsibilities and competencies for one role.</p>
+                                                                        {isEditMode && (
+                                                                            <button type="button" onClick={addJobRole} className="inline-flex items-center text-xs font-bold bg-brandTeal-500 text-white px-4 py-2 rounded hover:bg-brandTeal-600 transition-colors">
+                                                                                <Icons.Plus /> <span className="ml-1">New Role File</span>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            <React.Fragment>
+                                                                <tr className="block print:table-row">
+                                                                    <td className="block print:table-cell px-10 pt-10 pb-0 align-top space-y-6">
+                                                                        <div>
+                                                                            <div className="font-bold text-xs uppercase tracking-widest mb-1" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Job Role Profile · File {roleIdx + 1}</div>
+                                                                            <label htmlFor={`job-role-title-${role.id}`} className="sr-only">Role Title</label>
+                                                                            <AutoResizeTextarea
+                                                                                id={`job-role-title-${role.id}`}
+                                                                                value={role.title}
+                                                                                onChange={(val) => updateStandardSection('jobDescriptions', role.id, 'title', val)}
+                                                                                isEditMode={isEditMode}
+                                                                                className={`text-2xl font-bold text-slate-900 uppercase print-section-title ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                                placeholder="Role Title"
+                                                                            />
+                                                                        </div>
+
+                                                                        <section aria-label="Document Control" className="bg-slate-50 border border-slate-200 rounded p-4">
+                                                                            <strong className="block text-[10px] uppercase text-slate-555 mb-3 border-b border-slate-200 pb-2">Document Control</strong>
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                                                <div>
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-404 block mb-1">Version</span>
+                                                                                    {isEditMode ? (
+                                                                                        <input id={`jd-version-${role.id}`} type="text" value={pack.docControl?.version || ''} onChange={(e) => updateStandardDocControl('jobDescriptions', 'version', e.target.value)} className="w-full bg-white border border-slate-200 p-1.5 rounded focus:outline-none font-mono text-slate-800" />
+                                                                                    ) : (
+                                                                                        <span className="font-mono text-slate-800 font-bold block py-1.5">{pack.docControl?.version || '1.0'}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-404 block mb-1">Effective Date</span>
+                                                                                    {isEditMode ? (
+                                                                                        <input id={`jd-effdate-${role.id}`} type="date" value={pack.docControl?.effectiveDate || ''} onChange={(e) => updateStandardDocControl('jobDescriptions', 'effectiveDate', e.target.value)} className="w-full bg-white border border-slate-200 p-1.5 rounded focus:outline-none font-mono text-slate-800" />
+                                                                                    ) : (
+                                                                                        <span className="font-mono text-slate-800 font-bold block py-1.5">{pack.docControl?.effectiveDate || 'Not Set'}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-404 block mb-1">Last Reviewed</span>
+                                                                                    {isEditMode ? (
+                                                                                        <input id={`jd-revdate-${role.id}`} type="date" value={pack.docControl?.lastReviewed || ''} onChange={(e) => updateStandardDocControl('jobDescriptions', 'lastReviewed', e.target.value)} className="w-full bg-white border border-slate-200 p-1.5 rounded focus:outline-none font-mono text-slate-800" />
+                                                                                    ) : (
+                                                                                        <span className="font-mono text-slate-800 font-bold block py-1.5">{pack.docControl?.lastReviewed || 'Not Set'}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span className="text-[10px] uppercase font-bold text-slate-404 block mb-1">Document Owner</span>
+                                                                                    {isEditMode ? (
+                                                                                        <input id={`jd-owner-${role.id}`} type="text" value={pack.docControl?.owner || ''} onChange={(e) => updateStandardDocControl('jobDescriptions', 'owner', e.target.value)} className="w-full bg-white border border-slate-200 p-1.5 rounded focus:outline-none font-semibold text-slate-800" />
+                                                                                    ) : (
+                                                                                        <span className="text-slate-800 font-bold block py-1.5">{pack.docControl?.owner || 'Not Assigned'}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </section>
+                                                                    </td>
+                                                                </tr>
+
+                                                                <tr className="block print:table-row page-break-avoid">
+                                                                    <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Guide Purpose</h2>
+                                                                        <label htmlFor={`jd-intro-${role.id}`} className="sr-only">Guide Purpose</label>
+                                                                        <MarkdownField
+                                                                            id={`jd-intro-${role.id}`}
+                                                                            value={pack.introduction || ''}
+                                                                            onChange={(val) => updateStandardDoc('jobDescriptions', 'introduction', val)}
+                                                                            className="text-sm text-slate-700 leading-relaxed"
+                                                                            isEditMode={isEditMode}
+                                                                            placeholder="Shared purpose for role profile guides..."
+                                                                        />
+                                                                    </td>
+                                                                </tr>
+
+                                                                <tr className="block print:table-row">
+                                                                    <td className="block print:table-cell px-10 pt-8 pb-10 w-full align-top">
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Role Responsibilities & Competencies</h2>
+                                                                        <label htmlFor={`jd-content-${role.id}`} className="sr-only">Role Content</label>
+                                                                        <MarkdownField
+                                                                            id={`jd-content-${role.id}`}
+                                                                            value={role.content || ''}
+                                                                            onChange={(val) => updateStandardSection('jobDescriptions', role.id, 'content', val)}
+                                                                            className="text-sm text-slate-600 leading-relaxed"
+                                                                            isEditMode={isEditMode}
+                                                                            placeholder="Essential responsibilities, reporting lines, and core competencies..."
+                                                                        />
+                                                                    </td>
+                                                                </tr>
+                                                            </React.Fragment>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })()}
+
+                                            {['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'].includes(activeMode) && (
                                                 renderStandardEditor(activeMode)
                                             )}
 
