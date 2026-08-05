@@ -108,11 +108,35 @@
 
   function tocEntries(doc) {
     const normalized = normalizeStandardPolicyDoc(doc);
-    const entries = [{ title: 'Introduction' }];
-    (normalized.chapters || []).forEach((ch) => {
-      entries.push({ title: ch.title || 'Chapter', kind: 'chapter' });
-      (ch.sections || []).forEach((sec) => {
-        entries.push({ title: sec.title || 'Section', kind: 'section' });
+    const entries = [{ title: 'Introduction', kind: 'intro', number: '' }];
+    (normalized.chapters || []).forEach((ch, chIdx) => {
+      const chapterNo = chIdx + 1;
+      entries.push({
+        title: ch.title || 'Chapter',
+        kind: 'chapter',
+        number: `${chapterNo}.`,
+      });
+      (ch.sections || []).forEach((sec, secIdx) => {
+        entries.push({
+          title: sec.title || 'Section',
+          kind: 'section',
+          number: `${chapterNo}.${secIdx + 1}`,
+        });
+      });
+    });
+    return entries;
+  }
+
+  /** Flat (non-chapter) outline: Introduction + 1. / 2. / 3. sections */
+  function tocEntriesFlat(doc) {
+    const raw = doc && typeof doc === 'object' ? doc : {};
+    const entries = [{ title: 'Introduction', kind: 'intro', number: '' }];
+    (raw.sections || []).forEach((sec, idx) => {
+      entries.push({
+        title: sec.title || 'Section',
+        kind: 'section',
+        number: `${idx + 1}.`,
+        id: sec.id,
       });
     });
     return entries;
@@ -125,6 +149,7 @@
     normalizeStandardPolicyDoc,
     compileStandardPolicyMarkdown,
     tocEntries,
+    tocEntriesFlat,
   };
 
   global.PolicyChapters = api;

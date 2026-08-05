@@ -58,6 +58,26 @@ assert.match(md, /## 1\. Workplace/);
 assert.match(md, /### 1\.1 Dress/);
 assert.match(md, /## 2\. Ethics/);
 
+const toc = PC.tocEntries(withChapters);
+assert.equal(toc[0].title, 'Introduction');
+assert.equal(toc[0].number, '');
+assert.equal(toc[1].number, '1.');
+assert.equal(toc[1].title, 'Workplace');
+assert.equal(toc[2].number, '1.1');
+assert.equal(toc[2].title, 'Dress');
+assert.equal(toc[3].number, '2.');
+assert.equal(toc[4].number, '2.1');
+
+const flatToc = PC.tocEntriesFlat({
+  introduction: 'Hi',
+  sections: [
+    { id: 'a', title: 'First' },
+    { id: 'b', title: 'Second' },
+  ],
+});
+assert.equal(flatToc[1].number, '1.');
+assert.equal(flatToc[2].number, '2.');
+
 const emptyCh = PC.createEmptyChapter({ title: 'New Chapter' });
 assert.equal(emptyCh.title, 'New Chapter');
 assert.equal(emptyCh.sections.length, 1);

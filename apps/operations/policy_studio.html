@@ -187,7 +187,7 @@
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
-    <script src="../../shared/policy-chapters.js?v=20250805-chapters-v1"></script>
+    <script src="../../shared/policy-chapters.js?v=20250805-outline-v1"></script>
     <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
     <script src="../../shared/google-doc-export.js?v=20250805-gdoc-export-v1"></script>
 
@@ -819,8 +819,10 @@
                     <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase">Table of Contents</h2>
                     <ul className="space-y-4 mt-8 text-slate-700 font-medium">
                         {sections.map((s, i) => (
-                             <li key={i} className="flex justify-between border-b border-slate-200 pb-2 border-dotted">
-                                 <span className="font-bold">{i+1}. {s.title}</span>
+                             <li key={s.id || `${s.kind || 'item'}-${i}`} className={`flex justify-between border-b border-slate-200 pb-2 border-dotted ${s.kind === 'section' ? 'pl-4' : ''}`}>
+                                 <span className="font-bold">
+                                    {s.number ? `${s.number} ${s.title}` : s.title}
+                                 </span>
                              </li>
                         ))}
                     </ul>
@@ -2635,8 +2637,11 @@
                     : rawDoc;
                 const chapters = usesChapters ? (doc.chapters || []) : null;
                 const sectionsList = usesChapters
-                    ? (PC().tocEntries?.(doc) || [{ title: 'Introduction' }, ...(doc.sections || [])])
-                    : [{ title: 'Introduction' }, ...(doc.sections || [])];
+                    ? (PC().tocEntries?.(doc) || [{ title: 'Introduction', kind: 'intro', number: '' }, ...(doc.sections || [])])
+                    : (PC().tocEntriesFlat?.(doc) || [
+                        { title: 'Introduction', kind: 'intro', number: '' },
+                        ...(doc.sections || []).map((s, i) => ({ ...s, kind: 'section', number: `${i + 1}.` })),
+                    ]);
                 const canImportDoc = isEditMode && STANDARD_DOCS_WITH_GDOC_IMPORT.includes(docKey);
 
                 return (
@@ -2732,7 +2737,7 @@
 
                         <tr className="block print:table-row page-break-avoid">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>1. Introduction & Purpose</h2>
+                                <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Introduction & Purpose</h2>
                                 <label htmlFor={`std-intro-${docKey}`} className="sr-only">Introduction & Purpose</label>
                                 <MarkdownField 
                                     id={`std-intro-${docKey}`}
@@ -2765,7 +2770,7 @@
                                                             </div>
                                                         )}
                                                         <div className="flex items-baseline gap-2 min-w-0">
-                                                            <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}</span>
+                                                            <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>{chIdx + 1}.</span>
                                                             <label htmlFor={`std-ch-title-${chapter.id}`} className="sr-only">Chapter title</label>
                                                             <AutoResizeTextarea
                                                                 id={`std-ch-title-${chapter.id}`}
@@ -2792,7 +2797,7 @@
                                                                         </div>
                                                                     )}
                                                                     <div className="flex items-baseline gap-2 mb-2 min-w-0">
-                                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
+                                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>{chIdx + 1}.{idx + 1}</span>
                                                                         <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section title</label>
                                                                         <AutoResizeTextarea
                                                                             id={`std-sec-title-${section.id}`}
@@ -2855,15 +2860,12 @@
                                     </div>
                                 ) : (
                                     <div>
-                                        <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                            <h2 className="text-xl font-bold text-slate-900 uppercase">2. Document Sections</h2>
-                                        </div>
                                         {isEditMode && (
-                                            <p className="no-print text-[11px] text-slate-400 mt-4 mb-2 leading-relaxed">
+                                            <p className="no-print text-[11px] text-slate-400 mb-2 leading-relaxed">
                                                 Hover a section to move or delete it.
                                             </p>
                                         )}
-                                        <div className="space-y-8 mt-6">
+                                        <div className="space-y-8 mt-2">
                                             {(doc.sections || []).map((section, idx) => (
                                                 <div key={section.id} className="page-break-avoid relative group/sec">
                                                     {isEditMode && (
@@ -2873,8 +2875,8 @@
                                                             <button type="button" aria-label="Delete section" title="Delete section" onClick={() => removeStandardSection(docKey, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
                                                         </div>
                                                     )}
-                                                    <div className="flex items-baseline gap-2 mb-2 min-w-0">
-                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx + 1}</span>
+                                                    <div className="flex items-baseline gap-2 mb-2 min-w-0 border-b border-slate-200 pb-2">
+                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>{idx + 1}.</span>
                                                         <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section title</label>
                                                         <AutoResizeTextarea
                                                             id={`std-sec-title-${section.id}`}
