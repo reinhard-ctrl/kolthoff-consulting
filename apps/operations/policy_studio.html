@@ -1057,7 +1057,7 @@
                     const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
                     const chaptersSource = loadedDoc.chapters?.length
                         ? loadedDoc.chapters
-                        : (defaultDoc.chapters?.length ? defaultDoc.chapters : undefined);
+                        : (defaultDoc.chapters?.length ? defaultDoc.chapters : null);
                     let mergedDoc = {
                         ...defaultDoc,
                         ...loadedDoc,
@@ -1068,12 +1068,16 @@
                         sections: key === 'jobDescriptions'
                             ? (sectionsSource || []).map((sec) => migrateJobRoleFromContent(sec))
                             : sectionsSource,
-                        chapters: chaptersSource
                     };
+                    // Never write `chapters: undefined` — Firestore rejects it and cloud save fails.
+                    delete mergedDoc.chapters;
+                    if (Array.isArray(chaptersSource) && chaptersSource.length) {
+                        mergedDoc.chapters = chaptersSource;
+                    }
                     if (STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc) {
-                        // Prefer loaded chapters; else loaded sections; else defaults (already on mergedDoc)
-                        if (!loadedDoc.chapters?.length && loadedDoc.sections?.length) {
-                            mergedDoc = { ...mergedDoc, chapters: undefined };
+                        // Prefer loaded chapters; else rebuild from loaded/default sections
+                        if (!loadedDoc.chapters?.length && (loadedDoc.sections?.length || mergedDoc.sections?.length)) {
+                            delete mergedDoc.chapters;
                         }
                         mergedDoc = PC().normalizeStandardPolicyDoc(mergedDoc);
                     }
@@ -1142,6 +1146,22 @@
                 setTimeout(() => setToast(null), resolvedTone === 'lock' ? 4500 : 3000);
             };
 
+            /** Firestore rejects undefined field values — omit them recursively before setDoc. */
+            const stripUndefinedDeep = (value) => {
+                if (Array.isArray(value)) {
+                    return value.map((item) => stripUndefinedDeep(item));
+                }
+                if (value !== null && typeof value === 'object') {
+                    const out = {};
+                    Object.entries(value).forEach(([key, nested]) => {
+                        if (nested === undefined) return;
+                        out[key] = stripUndefinedDeep(nested);
+                    });
+                    return out;
+                }
+                return value;
+            };
+
             const handleSaveToCloud = async () => {
                 if (isStandalone) {
                     triggerToast("💾 Saved Locally! Standalone portal operates completely client-side.");
@@ -1156,18 +1176,19 @@
                 setIsSaving(true);
                 try {
                     const policyRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'policy_documents', activeProfileId);
-                    await window.setDoc(policyRef, localPolicyData);
+                    const payload = stripUndefinedDeep(localPolicyData);
+                    await window.setDoc(policyRef, payload);
                     
                     const profileRef = window.doc(window.firebaseDb, 'artifacts', window.appId, 'public', 'data', 'workbook_profiles', activeProfileId);
                     
-                    await window.setDoc(profileRef, {
+                    await window.setDoc(profileRef, stripUndefinedDeep({
                         clientCompany: activeClient.clientCompany,
                         clientRep: activeClient.clientRep,
                         sponsorTitle: activeClient.sponsorTitle,
                         policySignatoryName: activeClient.policySignatoryName,
                         policySignatoryTitle: activeClient.policySignatoryTitle,
                         branding: activeClient.branding
-                    }, { merge: true });
+                    }), { merge: true });
 
                     if (window.PortalSync?.syncProfileToPortalIfExists) {
                         try {
@@ -1184,7 +1205,9 @@
                     triggerToast("💾 Synced to Cloud!");
                 } catch (e) {
                     console.error("Save error:", e);
-                    triggerToast("❌ Error saving to cloud.");
+                    const detail = String(e?.message || e?.code || '').trim();
+                    const short = detail.length > 120 ? `${detail.slice(0, 117)}…` : detail;
+                    triggerToast(short ? `❌ Error saving to cloud: ${short}` : "❌ Error saving to cloud.");
                 }
                 setIsSaving(false);
             };
@@ -1691,10 +1714,10 @@
                 ...doc,
                 chapters: [
                     ...(doc.chapters || []),
-                    PC().createEmptyChapter?.({ title: 'New Chapter' }) || {
+                    PC().createEmptyChapter?.() || {
                         id: 'ch-' + Date.now(),
-                        title: 'New Chapter',
-                        sections: [{ id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                        title: 'Untitled chapter',
+                        sections: [{ id: 'sec-' + Date.now(), title: 'Untitled section', content: '' }],
                     },
                 ],
             }));
@@ -1710,7 +1733,7 @@
                     ...doc,
                     chapters: chapters.length
                         ? chapters
-                        : [PC().createEmptyChapter?.({ title: 'Policy provisions' }) || { id: 'ch-main', title: 'Policy provisions', sections: [{ id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }] }],
+                        : [PC().createEmptyChapter?.({ title: 'Policy provisions' }) || { id: 'ch-main', title: 'Policy provisions', sections: [{ id: 'sec-' + Date.now(), title: 'Untitled section', content: '' }] }],
                 };
             });
 
@@ -1725,18 +1748,18 @@
                         ...docs,
                         [key]: {
                             ...docs[key],
-                            sections: [...(docs[key]?.sections || []), { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details...' }],
+                            sections: [...(docs[key]?.sections || []), { id: 'sec-' + Date.now(), title: 'Untitled section', content: '' }],
                         },
                     }));
                 }
                 return patchStandardPolicyDoc(key, (doc) => {
                     const chapters = doc.chapters || [];
                     const targetId = chapterId || chapters[chapters.length - 1]?.id;
-                    const fresh = PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' };
+                    const fresh = PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'Untitled section', content: '' };
                     if (!targetId) {
                         return {
                             ...doc,
-                            chapters: [PC().createEmptyChapter?.({ sections: [fresh] }) || { id: 'ch-' + Date.now(), title: 'New Chapter', sections: [fresh] }],
+                            chapters: [PC().createEmptyChapter?.({ sections: [fresh] }) || { id: 'ch-' + Date.now(), title: 'Untitled chapter', sections: [fresh] }],
                         };
                     }
                     return {
@@ -1769,7 +1792,7 @@
                             ...ch,
                             sections: nextSections.length
                                 ? nextSections
-                                : [PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                                : [PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'Untitled section', content: '' }],
                         };
                     }),
                 }));
@@ -1791,15 +1814,52 @@
                 const chapterId = chapterIdOrIdx;
                 const idx = idxOrDir;
                 const dir = maybeDir;
-                return patchStandardPolicyDoc(key, (doc) => ({
-                    ...doc,
-                    chapters: (doc.chapters || []).map((ch) => (
-                        ch.id === chapterId ? { ...ch, sections: moveArrayItem(ch.sections || [], idx, dir) } : ch
-                    )),
-                }));
+                // At chapter edges, move the section into the neighboring chapter (Docs-like block move).
+                return patchStandardPolicyDoc(key, (doc) => {
+                    const chapters = [...(doc.chapters || [])];
+                    const chIdx = chapters.findIndex((ch) => ch.id === chapterId);
+                    if (chIdx < 0) return doc;
+                    const sections = [...(chapters[chIdx].sections || [])];
+                    if (dir === -1 && idx === 0 && chIdx > 0) {
+                        const [moved] = sections.splice(0, 1);
+                        if (!moved) return doc;
+                        chapters[chIdx] = {
+                            ...chapters[chIdx],
+                            sections: sections.length
+                                ? sections
+                                : [PC().createEmptySection?.({ title: 'New section', content: '' }) || { id: 'sec-' + Date.now(), title: 'New section', content: '' }],
+                        };
+                        chapters[chIdx - 1] = {
+                            ...chapters[chIdx - 1],
+                            sections: [...(chapters[chIdx - 1].sections || []), moved],
+                        };
+                        return { ...doc, chapters };
+                    }
+                    if (dir === 1 && idx === sections.length - 1 && chIdx < chapters.length - 1) {
+                        const [moved] = sections.splice(sections.length - 1, 1);
+                        if (!moved) return doc;
+                        chapters[chIdx] = {
+                            ...chapters[chIdx],
+                            sections: sections.length
+                                ? sections
+                                : [PC().createEmptySection?.({ title: 'New section', content: '' }) || { id: 'sec-' + Date.now(), title: 'New section', content: '' }],
+                        };
+                        chapters[chIdx + 1] = {
+                            ...chapters[chIdx + 1],
+                            sections: [moved, ...(chapters[chIdx + 1].sections || [])],
+                        };
+                        return { ...doc, chapters };
+                    }
+                    return {
+                        ...doc,
+                        chapters: chapters.map((ch) => (
+                            ch.id === chapterId ? { ...ch, sections: moveArrayItem(ch.sections || [], idx, dir) } : ch
+                        )),
+                    };
+                });
             };
 
-            /** Move a section to the previous (-1) or next (+1) chapter (appended). */
+            /** @deprecated Prefer edge-crossing reorderStandardSection; kept for compatibility. */
             const moveStandardSectionToChapter = (key, fromChapterId, secId, chapterDir) => patchStandardPolicyDoc(key, (doc) => {
                 const chapters = [...(doc.chapters || [])];
                 const fromIdx = chapters.findIndex((ch) => ch.id === fromChapterId);
@@ -1813,7 +1873,7 @@
                     ...fromCh,
                     sections: nextFromSections.length
                         ? nextFromSections
-                        : [PC().createEmptySection?.({ title: 'New Section', content: 'Details…' }) || { id: 'sec-' + Date.now(), title: 'New Section', content: 'Details…' }],
+                        : [PC().createEmptySection?.() || { id: 'sec-' + Date.now(), title: 'Untitled section', content: '' }],
                 };
                 chapters[toIdx] = {
                     ...chapters[toIdx],
@@ -2041,13 +2101,12 @@
                 }
                 updateDocState('standardDocs', (docs) => {
                     const applied = apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle });
-                    const withChapters = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
-                        ? PC().normalizeStandardPolicyDoc({
-                            ...applied,
-                            chapters: undefined, // force rebuild from imported sections
-                            sections: applied.sections || [],
-                        })
-                        : applied;
+                    let withChapters = applied;
+                    if (STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc) {
+                        const rebuilt = { ...applied, sections: applied.sections || [] };
+                        delete rebuilt.chapters; // force rebuild from imported sections (never undefined)
+                        withChapters = PC().normalizeStandardPolicyDoc(rebuilt);
+                    }
                     return { ...docs, [key]: withChapters };
                 });
                 const label = (docImportUpdateTitle && parsed.title)
@@ -2666,155 +2725,171 @@
 
                         <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                    <h2 className="text-xl font-bold text-slate-900 uppercase">{usesChapters ? '2. Chapters & Sections' : '2. Document Sections'}</h2>
-                                    {isEditMode && usesChapters && (
-                                        <div className="no-print flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => addStandardChapter(docKey)}
-                                                className="text-[10px] uppercase font-bold bg-brandNavy-900 text-brandTeal-400 border border-brandNavy-700 px-3 py-1.5 rounded hover:bg-brandNavy-800"
-                                            >
-                                                + Add Chapter
-                                            </button>
-                                        </div>
-                                    )}
-                                    {isEditMode && !usesChapters && (
-                                        <button 
-                                            type="button"
-                                            onClick={() => addStandardSection(docKey)} 
-                                            className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200"
-                                        >
-                                            + Add Section
-                                        </button>
-                                    )}
-                                </div>
-
                                 {usesChapters ? (
-                                    <div className="space-y-12 mt-6">
-                                        {chapters.map((chapter, chIdx) => (
-                                            <div key={chapter.id} className="page-break-avoid">
-                                                <div className="flex flex-wrap items-end justify-between gap-3 mb-4 border-b border-slate-200 pb-2">
-                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div>
+                                        {isEditMode && (
+                                            <p className="no-print text-[11px] text-slate-400 mb-6 leading-relaxed">
+                                                Write like a Google Doc — chapters and sections are headings in the document. Hover a block to move or delete it.
+                                            </p>
+                                        )}
+                                        <div className="space-y-12">
+                                            {chapters.map((chapter, chIdx) => (
+                                                <div key={chapter.id} className="page-break-avoid">
+                                                    <div className="relative group/ch mb-5 border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
                                                         {isEditMode && (
-                                                            <div className="no-print flex flex-col gap-0.5 shrink-0">
-                                                                <button type="button" aria-label="Move Chapter Up" title="Move chapter up" onClick={() => reorderStandardChapter(docKey, chIdx, -1)} disabled={chIdx === 0} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
-                                                                <button type="button" aria-label="Move Chapter Down" title="Move chapter down" onClick={() => reorderStandardChapter(docKey, chIdx, 1)} disabled={chIdx === chapters.length - 1} className="p-1 text-slate-500 hover:bg-slate-100 rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                            <div className="no-print absolute -left-11 top-0 flex flex-col gap-0.5 opacity-0 group-hover/ch:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
+                                                                <button type="button" aria-label="Move chapter up" title="Move chapter up" onClick={() => reorderStandardChapter(docKey, chIdx, -1)} disabled={chIdx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                <button type="button" aria-label="Move chapter down" title="Move chapter down" onClick={() => reorderStandardChapter(docKey, chIdx, 1)} disabled={chIdx === chapters.length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                                <button type="button" aria-label="Delete chapter" title="Delete chapter" onClick={() => removeStandardChapter(docKey, chapter.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
                                                             </div>
                                                         )}
-                                                        <span className="font-mono text-sm font-bold shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}</span>
-                                                        <label htmlFor={`std-ch-title-${chapter.id}`} className="sr-only">Chapter Title</label>
-                                                        <AutoResizeTextarea
-                                                            id={`std-ch-title-${chapter.id}`}
-                                                            value={chapter.title}
-                                                            onChange={(val) => updateStandardChapter(docKey, chapter.id, 'title', val)}
-                                                            isEditMode={isEditMode}
-                                                            className={`text-lg font-bold text-slate-900 uppercase flex-1 ${!isEditMode ? 'preview-mode-input' : ''}`}
-                                                            placeholder="Chapter title"
-                                                        />
+                                                        <div className="flex items-baseline gap-2 min-w-0">
+                                                            <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}</span>
+                                                            <label htmlFor={`std-ch-title-${chapter.id}`} className="sr-only">Chapter title</label>
+                                                            <AutoResizeTextarea
+                                                                id={`std-ch-title-${chapter.id}`}
+                                                                value={chapter.title}
+                                                                onChange={(val) => updateStandardChapter(docKey, chapter.id, 'title', val)}
+                                                                isEditMode={isEditMode}
+                                                                className={`text-xl font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                placeholder="Chapter title"
+                                                            />
+                                                        </div>
                                                     </div>
+
+                                                    <div className="space-y-8 pl-0 md:pl-1">
+                                                        {(chapter.sections || []).map((section, idx) => {
+                                                            const canMoveUp = !(idx === 0 && chIdx === 0);
+                                                            const canMoveDown = !(idx === (chapter.sections || []).length - 1 && chIdx === chapters.length - 1);
+                                                            return (
+                                                                <div key={section.id} className="page-break-avoid relative group/sec">
+                                                                    {isEditMode && (
+                                                                        <div className="no-print absolute -left-11 top-0 flex flex-col gap-0.5 opacity-0 group-hover/sec:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
+                                                                            <button type="button" aria-label="Move section up" title="Move up (crosses chapters at edges)" onClick={() => reorderStandardSection(docKey, chapter.id, idx, -1)} disabled={!canMoveUp} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                                            <button type="button" aria-label="Move section down" title="Move down (crosses chapters at edges)" onClick={() => reorderStandardSection(docKey, chapter.id, idx, 1)} disabled={!canMoveDown} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                                            <button type="button" aria-label="Delete section" title="Delete section" onClick={() => removeStandardSection(docKey, chapter.id, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex items-baseline gap-2 mb-2 min-w-0">
+                                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
+                                                                        <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section title</label>
+                                                                        <AutoResizeTextarea
+                                                                            id={`std-sec-title-${section.id}`}
+                                                                            value={section.title}
+                                                                            onChange={(val) => updateStandardSection(docKey, section.id, 'title', val)}
+                                                                            isEditMode={isEditMode}
+                                                                            className={`text-base font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                            placeholder="Section title"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="pl-0 md:pl-6">
+                                                                        <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section content</label>
+                                                                        <MarkdownField
+                                                                            id={`std-sec-content-${section.id}`}
+                                                                            value={section.content}
+                                                                            onChange={(val) => updateStandardSection(docKey, section.id, 'content', val)}
+                                                                            className="text-sm text-slate-600 leading-relaxed"
+                                                                            isEditMode={isEditMode}
+                                                                            placeholder="Start writing…"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
                                                     {isEditMode && (
-                                                        <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                        <div className="no-print mt-4 pl-0 md:pl-6">
                                                             <button
                                                                 type="button"
                                                                 onClick={() => addStandardSection(docKey, chapter.id)}
-                                                                className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200"
+                                                                className="text-[11px] text-slate-500 hover:text-slate-800 font-medium"
                                                             >
-                                                                + Add Section
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                aria-label="Delete Chapter"
-                                                                title="Delete chapter"
-                                                                onClick={() => removeStandardChapter(docKey, chapter.id)}
-                                                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"
-                                                            >
-                                                                <Icons.Trash />
+                                                                + Add section
                                                             </button>
                                                         </div>
                                                     )}
                                                 </div>
+                                            ))}
+                                        </div>
 
-                                                <div className="space-y-8 pl-1 md:pl-2">
-                                                    {(chapter.sections || []).map((section, idx) => (
-                                                        <div key={section.id} className="page-break-avoid">
-                                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                                {isEditMode && (
-                                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
-                                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, chapter.id, idx, -1)} disabled={idx === 0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
-                                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, chapter.id, idx, 1)} disabled={idx === (chapter.sections || []).length - 1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
-                                                                    </div>
-                                                                )}
-                                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{chIdx + 1}.{idx + 1}</span>
-                                                                <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
-                                                                <AutoResizeTextarea
-                                                                    id={`std-sec-title-${section.id}`}
-                                                                    value={section.title}
-                                                                    onChange={(val) => updateStandardSection(docKey, section.id, 'title', val)}
-                                                                    isEditMode={isEditMode}
-                                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
-                                                                />
-                                                                {isEditMode && (
-                                                                    <div className="no-print flex items-center gap-1 shrink-0">
-                                                                        <button type="button" aria-label="Move section to previous chapter" title="Move to previous chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, -1)} disabled={chIdx === 0} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↑</button>
-                                                                        <button type="button" aria-label="Move section to next chapter" title="Move to next chapter" onClick={() => moveStandardSectionToChapter(docKey, chapter.id, section.id, 1)} disabled={chIdx === chapters.length - 1} className="px-1.5 py-1 text-[9px] font-bold uppercase text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none">Ch ↓</button>
-                                                                        <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, chapter.id, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200"><Icons.Trash /></button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            <div className="pl-4">
-                                                                <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
-                                                                <MarkdownField
-                                                                    id={`std-sec-content-${section.id}`}
-                                                                    value={section.content}
-                                                                    onChange={(val) => updateStandardSection(docKey, section.id, 'content', val)}
-                                                                    className="text-sm text-slate-600 leading-relaxed"
-                                                                    isEditMode={isEditMode}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                        {isEditMode && (
+                                            <div className="no-print mt-10 pt-4 border-t border-dashed border-slate-200 flex flex-wrap gap-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addStandardChapter(docKey)}
+                                                    className="text-[11px] text-slate-500 hover:text-slate-800 font-medium"
+                                                >
+                                                    + Add chapter
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addStandardSection(docKey)}
+                                                    className="text-[11px] text-slate-500 hover:text-slate-800 font-medium"
+                                                >
+                                                    + Add section
+                                                </button>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 ) : (
-                                <div className="space-y-8 mt-6">
-                                    {(doc.sections || []).map((section, idx) => (
-                                        <div key={section.id} className="page-break-avoid">
-                                            <div className="font-bold text-slate-800 text-base mb-2 flex items-center gap-2 bg-slate-50 p-2 rounded border-l-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                {isEditMode && (
-                                                    <div className="no-print flex flex-col gap-0.5 shrink-0">
-                                                        <button type="button" aria-label="Move Section Up" title="Move section up" onClick={() => reorderStandardSection(docKey, idx, -1)} disabled={idx===0} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
-                                                        <button type="button" aria-label="Move Section Down" title="Move section down" onClick={() => reorderStandardSection(docKey, idx, 1)} disabled={idx===(doc.sections || []).length-1} className="p-1 text-slate-500 hover:bg-white rounded border border-slate-200 disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
-                                                    </div>
-                                                )}
-                                                <span className="mr-1 font-mono text-sm shrink-0" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx+1}</span>
-                                                <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section Title</label>
-                                                <AutoResizeTextarea 
-                                                    id={`std-sec-title-${section.id}`}
-                                                    value={section.title} 
-                                                    onChange={val => updateStandardSection(docKey, section.id, 'title', val)} 
-                                                    isEditMode={isEditMode} 
-                                                    className={`font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode?'preview-mode-input':''}`} 
-                                                />
-                                                {isEditMode && (
-                                                    <button type="button" aria-label="Delete Section" title="Delete section" onClick={() => removeStandardSection(docKey, section.id)} className="no-print p-1 text-rose-500 hover:bg-rose-50 rounded border border-rose-200 shrink-0"><Icons.Trash /></button>
-                                                )}
-                                            </div>
-                                            <div className="pl-4">
-                                                <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section Content</label>
-                                                <MarkdownField 
-                                                    id={`std-sec-content-${section.id}`}
-                                                    value={section.content} 
-                                                    onChange={val => updateStandardSection(docKey, section.id, 'content', val)} 
-                                                    className="text-sm text-slate-600 leading-relaxed" 
-                                                    isEditMode={isEditMode} 
-                                                />
-                                            </div>
+                                    <div>
+                                        <div className="flex flex-wrap justify-between items-end gap-3 border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                            <h2 className="text-xl font-bold text-slate-900 uppercase">2. Document Sections</h2>
                                         </div>
-                                    ))}
-                                </div>
+                                        {isEditMode && (
+                                            <p className="no-print text-[11px] text-slate-400 mt-4 mb-2 leading-relaxed">
+                                                Hover a section to move or delete it.
+                                            </p>
+                                        )}
+                                        <div className="space-y-8 mt-6">
+                                            {(doc.sections || []).map((section, idx) => (
+                                                <div key={section.id} className="page-break-avoid relative group/sec">
+                                                    {isEditMode && (
+                                                        <div className="no-print absolute -left-11 top-0 flex flex-col gap-0.5 opacity-0 group-hover/sec:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
+                                                            <button type="button" aria-label="Move section up" title="Move section up" onClick={() => reorderStandardSection(docKey, idx, -1)} disabled={idx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                            <button type="button" aria-label="Move section down" title="Move section down" onClick={() => reorderStandardSection(docKey, idx, 1)} disabled={idx === (doc.sections || []).length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                            <button type="button" aria-label="Delete section" title="Delete section" onClick={() => removeStandardSection(docKey, section.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-baseline gap-2 mb-2 min-w-0">
+                                                        <span className={`font-mono text-sm shrink-0 ${isEditMode ? 'text-slate-300' : 'font-bold'}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>2.{idx + 1}</span>
+                                                        <label htmlFor={`std-sec-title-${section.id}`} className="sr-only">Section title</label>
+                                                        <AutoResizeTextarea
+                                                            id={`std-sec-title-${section.id}`}
+                                                            value={section.title}
+                                                            onChange={(val) => updateStandardSection(docKey, section.id, 'title', val)}
+                                                            isEditMode={isEditMode}
+                                                            className={`text-base font-bold text-slate-900 flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                            placeholder="Section title"
+                                                        />
+                                                    </div>
+                                                    <div className="pl-0 md:pl-6">
+                                                        <label htmlFor={`std-sec-content-${section.id}`} className="sr-only">Section content</label>
+                                                        <MarkdownField
+                                                            id={`std-sec-content-${section.id}`}
+                                                            value={section.content}
+                                                            onChange={(val) => updateStandardSection(docKey, section.id, 'content', val)}
+                                                            className="text-sm text-slate-600 leading-relaxed"
+                                                            isEditMode={isEditMode}
+                                                            placeholder="Start writing…"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {isEditMode && (
+                                            <div className="no-print mt-8 pt-4 border-t border-dashed border-slate-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => addStandardSection(docKey)}
+                                                    className="text-[11px] text-slate-500 hover:text-slate-800 font-medium"
+                                                >
+                                                    + Add section
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </td>
                         </tr>

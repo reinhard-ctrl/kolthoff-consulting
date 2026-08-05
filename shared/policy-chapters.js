@@ -12,8 +12,8 @@
     const o = overrides && typeof overrides === 'object' ? overrides : {};
     return {
       id: o.id || makeId('sec'),
-      title: o.title != null ? String(o.title) : 'New Section',
-      content: o.content != null ? String(o.content) : 'Details…',
+      title: o.title != null ? String(o.title) : 'Untitled section',
+      content: o.content != null ? String(o.content) : '',
     };
   }
 
@@ -21,10 +21,10 @@
     const o = overrides && typeof overrides === 'object' ? overrides : {};
     const sections = Array.isArray(o.sections)
       ? o.sections.map((s) => createEmptySection(s))
-      : [createEmptySection({ title: 'New Section', content: 'Details…' })];
+      : [createEmptySection()];
     return {
       id: o.id || makeId('ch'),
-      title: o.title != null ? String(o.title) : 'New Chapter',
+      title: o.title != null ? String(o.title) : 'Untitled chapter',
       sections,
     };
   }
@@ -63,7 +63,7 @@
           sections:
             Array.isArray(ch.sections) && ch.sections.length
               ? ch.sections
-              : [{ title: 'New Section', content: 'Details…' }],
+              : [createEmptySection()],
         }),
       );
     } else if (Array.isArray(raw.sections) && raw.sections.length > 0) {
@@ -79,7 +79,7 @@
         createEmptyChapter({
           id: 'ch-main',
           title: defaultChapterTitle,
-          sections: [{ title: 'New Section', content: 'Details…' }],
+          sections: [createEmptySection()],
         }),
       ];
     }
