@@ -188,6 +188,7 @@
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
     <script src="../../shared/policy-chapters.js?v=20250805-chapters-v1"></script>
+    <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -656,6 +657,36 @@
             );
         };
 
+        const applyMarkdownFormat = (textarea, value, onChange, format) => {
+            if (!textarea) return;
+            const helper = window.MarkdownFormat?.applyMarkdownFormat;
+            if (!helper) return;
+            const start = textarea.selectionStart ?? String(value || '').length;
+            const end = textarea.selectionEnd ?? start;
+            const result = helper(value, start, end, format);
+            onChange(result.value);
+            requestAnimationFrame(() => {
+                if (!textarea) return;
+                textarea.focus();
+                textarea.setSelectionRange(result.selectionStart, result.selectionEnd);
+                textarea.style.height = 'auto';
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            });
+        };
+
+        const MarkdownToolbarBtn = ({ label, title, onClick, children }) => (
+            <button
+                type="button"
+                title={title || label}
+                aria-label={label}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onClick}
+                className="min-w-[1.75rem] h-7 px-1.5 inline-flex items-center justify-center rounded text-[11px] font-bold text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-transparent hover:border-slate-300 transition-colors"
+            >
+                {children || label}
+            </button>
+        );
+
         const MarkdownField = ({ id, value, onChange, placeholder, className, isEditMode }) => {
             const fileRef = useRef();
             const textareaRef = useRef(null);
@@ -681,6 +712,32 @@
                 }
             }, [isEditMode]);
 
+            const runFormat = (format) => {
+                applyMarkdownFormat(textareaRef.current, value, onChange, format);
+            };
+
+            const handleKeyDown = (e) => {
+                const mod = e.metaKey || e.ctrlKey;
+                if (!mod) return;
+                const key = e.key.toLowerCase();
+                if (key === 'b') {
+                    e.preventDefault();
+                    runFormat('bold');
+                } else if (key === 'i') {
+                    e.preventDefault();
+                    runFormat('italic');
+                } else if (key === 'k') {
+                    e.preventDefault();
+                    runFormat('link');
+                } else if (e.shiftKey && key === '8') {
+                    e.preventDefault();
+                    runFormat('bullet');
+                } else if (e.shiftKey && key === '7') {
+                    e.preventDefault();
+                    runFormat('number');
+                }
+            };
+
             const handleFile = (e) => {
                 if(!e.target.files[0]) return;
                 const reader = new FileReader();
@@ -695,11 +752,16 @@
                         canvas.height = img.height * scaleSize;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        onChange(value + `\n\n![Embedded Image](${canvas.toDataURL('image/jpeg', 0.8)})\n\n`);
+                        const ta = textareaRef.current;
+                        const raw = String(value || '');
+                        const pos = ta ? ta.selectionStart : raw.length;
+                        const insert = `\n\n![Embedded Image](${canvas.toDataURL('image/jpeg', 0.8)})\n\n`;
+                        onChange(raw.slice(0, pos) + insert + raw.slice(pos));
                     }
                     img.src = e.target.result;
                 }
                 reader.readAsDataURL(e.target.files[0]);
+                e.target.value = '';
             };
 
             if (!isEditMode) {
@@ -707,25 +769,42 @@
             }
 
             return (
-                <div className="relative group/md rounded border border-transparent hover:border-slate-200 focus-within:border-brandTeal-404 bg-white">
+                <div className="relative group/md rounded border border-slate-200 focus-within:border-brandTeal-500 bg-white no-print-border">
+                    <div className="no-print flex flex-wrap items-center gap-0.5 px-1.5 py-1 border-b border-slate-100 bg-slate-50 rounded-t">
+                        <MarkdownToolbarBtn label="Bold" title="Bold (Ctrl+B)" onClick={() => runFormat('bold')}><span className="font-black">B</span></MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Italic" title="Italic (Ctrl+I)" onClick={() => runFormat('italic')}><span className="italic font-serif">I</span></MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Strikethrough" title="Strikethrough" onClick={() => runFormat('strike')}><span className="line-through">S</span></MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Heading" title="Heading" onClick={() => runFormat('h2')}>H</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Subheading" title="Subheading" onClick={() => runFormat('h3')}>H3</MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Bullet list" title="Bullet list (Ctrl+Shift+8)" onClick={() => runFormat('bullet')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Numbered list" title="Numbered list (Ctrl+Shift+7)" onClick={() => runFormat('number')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="10" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="18" x2="20" y2="18"/><text x="3" y="7.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">1</text><text x="3" y="13.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">2</text><text x="3" y="19.5" fontSize="6" fill="currentColor" stroke="none" fontFamily="sans-serif">3</text></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Quote" title="Quote" onClick={() => runFormat('quote')}>“”</MarkdownToolbarBtn>
+                        <span className="w-px h-4 bg-slate-200 mx-1" aria-hidden="true" />
+                        <MarkdownToolbarBtn label="Link" title="Insert link (Ctrl+K)" onClick={() => runFormat('link')}>
+                            <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Inline code" title="Inline code" onClick={() => runFormat('code')}>&lt;/&gt;</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Divider" title="Horizontal divider" onClick={() => runFormat('hr')}>—</MarkdownToolbarBtn>
+                        <MarkdownToolbarBtn label="Insert image" title="Insert image" onClick={() => fileRef.current && fileRef.current.click()}>
+                            <Icons.Image />
+                        </MarkdownToolbarBtn>
+                    </div>
                     <textarea 
                         id={id}
                         ref={textareaRef} 
                         value={value} 
-                        onChange={e => onChange(e.target.value)} 
-                        placeholder={placeholder} 
+                        onChange={e => onChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder || 'Write here… Use the toolbar for lists, bold, and more.'} 
                         className={`w-full bg-transparent resize-none overflow-hidden focus:outline-none p-2 text-slate-800 ${className}`} 
                         rows={2} 
                     />
-                    <button 
-                        type="button"
-                        onClick={() => fileRef.current.click()} 
-                        title="Insert Image" 
-                        aria-label="Insert Image"
-                        className="absolute bottom-1 right-1 opacity-0 group-hover/md:opacity-100 bg-slate-100 p-1.5 rounded text-slate-500 hover:text-brandTeal-600 shadow-sm transition-all z-10 no-print"
-                    >
-                        <Icons.Image />
-                    </button>
                     <input type="file" ref={fileRef} hidden onChange={handleFile} accept="image/*" />
                 </div>
             );
