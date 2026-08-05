@@ -705,6 +705,13 @@
 
             // App UI View States
             const [activeMode, setActiveMode] = useState('dashboard');
+            // Each SOP is its own document/file — selected by id under SOP Manuals
+            const [activeSopId, setActiveSopId] = useState(() => {
+                const seed = isStandalone
+                    ? (window.STANDALONE_POLICIES?.sops || [])
+                    : DEFAULT_DOCUMENT_DATA.sops;
+                return seed[0]?.id || null;
+            });
             // Force dynamic "Preview Mode" on standalone startup, "Edit Mode" otherwise
             const [isEditMode, setIsEditMode] = useState(!isStandalone);
 
@@ -712,6 +719,13 @@
             const [showSyncModal, setShowSyncModal] = useState(false);
             const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
             const [showBulkResetModal, setShowBulkResetModal] = useState(false);
+
+            const makeSopId = () => `sop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+            const openSopDocument = (sopId) => {
+                setActiveSopId(sopId || null);
+                setActiveMode('sop');
+            };
 
             // 1) Auth Setup - Bypassed in standalone, bound strictly to current browser origin
             useEffect(() => {
@@ -885,6 +899,18 @@
                 return () => unsub();
             }, [activeProfileId, user, isStandalone]);
 
+            // Keep the active SOP file selection valid as the SOP list changes
+            useEffect(() => {
+                const sops = localPolicyData.sops || [];
+                if (!sops.length) {
+                    if (activeSopId) setActiveSopId(null);
+                    return;
+                }
+                if (!activeSopId || !sops.some((s) => s.id === activeSopId)) {
+                    setActiveSopId(sops[0].id);
+                }
+            }, [localPolicyData.sops, activeSopId]);
+
             const inferToastTone = (msg) => {
                 const text = String(msg || '');
                 if (text.includes('🔒') || /locked|Complete Mod 1/i.test(text)) return 'lock';
@@ -1010,7 +1036,7 @@
                         }
 
                         policiesArray.push({
-                            id: sop.id || generateId(),
+                            id: sop.id || makeSopId(),
                             title: sop.title || 'Standard Operating Procedure',
                             content: mdContent.trim(),
                             lastUpdated: sop.docControl?.lastReviewed || defaultDate
@@ -1135,11 +1161,19 @@
             // Individual document template re-initialization
             const handleResetToDefault = () => {
                 if (activeMode === 'sop') {
-                    setLocalPolicyData(prev => ({
-                        ...prev,
-                        sops: JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.sops))
-                    }));
-                    triggerToast("🔄 SOP Manual reinitialized to default template! Remember to save changes.");
+                    const template = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.sops[0]));
+                    const sops = localPolicyData.sops || [];
+                    if (!activeSopId || !sops.some((s) => s.id === activeSopId)) {
+                        const fresh = { ...template, id: makeSopId() };
+                        setLocalPolicyData((prev) => ({ ...prev, sops: [fresh] }));
+                        setActiveSopId(fresh.id);
+                    } else {
+                        setLocalPolicyData((prev) => ({
+                            ...prev,
+                            sops: (prev.sops || []).map((s) => (s.id === activeSopId ? { ...template, id: s.id } : s)),
+                        }));
+                    }
+                    triggerToast('🔄 This SOP file reinitialized to default template! Remember to save changes.');
                 } else if (activeMode === 'handbook') {
                     setLocalPolicyData(prev => ({
                         ...prev,
@@ -1180,6 +1214,7 @@
                     return { ...prev, sops: [...filtered, newSop] };
                 });
 
+                openSopDocument(newSop.id);
                 setShowSyncModal(false);
                 triggerToast(`🔄 Successfully synchronized "${tab.name}" as an SOP (diagram + ${newSop.steps?.length || 0} steps).`);
             };
@@ -1245,9 +1280,41 @@
                 setLocalPolicyData(prev => ({ ...prev, [domain]: pathFn(prev[domain]) }));
             };
 
-            // SOP Handlers
-            const addSOP = () => updateDocState('sops', sops => [...sops, JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.sops[0]))]);
-            const deleteSOP = (id) => updateDocState('sops', sops => sops.filter(s => s.id !== id));
+            // SOP Handlers — each SOP is a separate document/file
+            const addSOP = () => {
+                const template = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.sops[0]));
+                const fresh = {
+                    ...template,
+                    id: makeSopId(),
+                    title: 'New Standard Operating Procedure',
+                    docControl: {
+                        ...(template.docControl || {}),
+                        version: '1.0',
+                        effectiveDate: '',
+                        lastReviewed: '',
+                        owner: template.docControl?.owner || '',
+                    },
+                    steps: (template.steps || []).map((st, idx) => ({
+                        ...st,
+                        id: `step-${Date.now()}-${idx}`,
+                    })),
+                    diagram: { drawioXml: '', svgCache: '', lastDiagramEditAt: null },
+                    link: { source: 'policy-studio', workbookWorkflowField: 'workflowBuilder', lastSyncedAt: null },
+                };
+                updateDocState('sops', (sops) => [...(sops || []), fresh]);
+                openSopDocument(fresh.id);
+            };
+            const deleteSOP = (id) => {
+                const remaining = (localPolicyData.sops || []).filter((s) => s.id !== id);
+                updateDocState('sops', () => remaining);
+                if (activeSopId === id) {
+                    if (remaining[0]) openSopDocument(remaining[0].id);
+                    else {
+                        setActiveSopId(null);
+                        setActiveMode('dashboard');
+                    }
+                }
+            };
             const updateSOP = (id, field, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, [field]: val } : s));
             const updateSopDocControl = (id, field, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, docControl: { ...(s.docControl || { version: '1.0', effectiveDate: '', lastReviewed: '', owner: '' }), [field]: val } } : s));
             const updateSopRaci = (id, role, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, raci: { ...(s.raci || { responsible: '', accountable: '', consulted: '', informed: '' }), [role]: val } } : s));
@@ -1255,6 +1322,15 @@
             const removeStep = (sopId, stepId) => updateDocState('sops', sops => sops.map(s => s.id === sopId ? { ...s, steps: (s.steps || []).filter(st => st.id !== stepId) } : s));
             const updateStep = (sopId, stepId, field, val) => updateDocState('sops', sops => sops.map(s => s.id === sopId ? { ...s, steps: (s.steps || []).map(st => st.id === stepId ? { ...st, [field]: val } : st) } : s));
             const reorderStep = (sopId, sIdx, dir) => updateDocState('sops', sops => sops.map(s => s.id === sopId ? { ...s, steps: moveArrayItem(s.steps || [], sIdx, dir) } : s));
+
+            const activeSop = useMemo(
+                () => (localPolicyData.sops || []).find((s) => s.id === activeSopId) || null,
+                [localPolicyData.sops, activeSopId]
+            );
+            const activeSopIndex = useMemo(() => {
+                if (!activeSopId) return -1;
+                return (localPolicyData.sops || []).findIndex((s) => s.id === activeSopId);
+            }, [localPolicyData.sops, activeSopId]);
 
             // Handbook Handlers
             const updateHandbook = (field, val) => updateDocState('handbook', h => ({ ...h, [field]: val }));
@@ -1371,7 +1447,7 @@
 
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
-                if (activeMode === 'sop') return 'Standard Operating Procedures';
+                if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
                 if (activeMode === 'handbook') return localPolicyData.handbook?.title || 'Employee Handbook';
                 if (activeMode === 'branding') return 'Branding & Identity';
                 if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
@@ -1440,7 +1516,15 @@
             const renderDashboard = () => {
                 if (!activeClient) return <div>Loading Data...</div>;
                 
+                const sopDocs = (localPolicyData.sops || []).map((sop, idx) => ({
+                    id: `sop:${sop.id}`,
+                    sopId: sop.id,
+                    group: 'SOP',
+                    title: sop.title || `Procedure ${idx + 1}`,
+                    obj: sop,
+                }));
                 const docsList = [
+                    ...sopDocs,
                     { id: 'handbook', group: 'HR', title: 'Employee Handbook', obj: localPolicyData.handbook },
                     { id: 'orgChart', group: 'HR', title: 'Org Chart & Reporting Policy', obj: localPolicyData.standardDocs?.orgChart },
                     { id: 'conduct', group: 'Legal', title: 'Code of Conduct', obj: localPolicyData.standardDocs?.conduct },
@@ -1490,15 +1574,15 @@
                             </div>
                             <div className="bg-brandTeal-50 border border-brandTeal-100 rounded-xl p-6 shadow-sm flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-bold text-brandTeal-950 text-lg mb-1">{localPolicyData.sops?.length || 0} Active SOPs</h3>
-                                    <p className="text-sm text-brandTeal-855">Standard Operating Procedures</p>
+                                    <h3 className="font-bold text-brandTeal-950 text-lg mb-1">{localPolicyData.sops?.length || 0} SOP Files</h3>
+                                    <p className="text-sm text-brandTeal-855">Each procedure is a separate document</p>
                                 </div>
                                 <button 
                                     type="button"
-                                    onClick={() => setActiveMode('sop')} 
+                                    onClick={() => openSopDocument(activeSopId || localPolicyData.sops?.[0]?.id)} 
                                     className="text-xs font-bold bg-brandTeal-500 text-white px-4 py-2 rounded hover:bg-brandTeal-600 transition-colors shadow-lg"
                                 >
-                                    Manage SOPs →
+                                    Open SOP Files →
                                 </button>
                             </div>
                         </div>
@@ -1511,7 +1595,7 @@
                                     <button 
                                         key={d.id} 
                                         type="button"
-                                        onClick={() => setActiveMode(d.id)} 
+                                        onClick={() => (d.sopId ? openSopDocument(d.sopId) : setActiveMode(d.id))} 
                                         className="text-left bg-white border border-slate-200 rounded-lg p-5 cursor-pointer hover:shadow-lg hover:border-brandTeal-404 transition-all group animate-fade-in"
                                     >
                                         <div className="flex justify-between items-start mb-3">
@@ -2015,7 +2099,46 @@
 
                                 <div className="mt-4">
                                     <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">Operations</h3>
-                                    <button type="button" aria-pressed={activeMode === 'sop'} onClick={() => setActiveMode('sop')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'sop' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.FileText /> <span className="text-xs ml-2">SOP Manuals</span></button>
+                                    <div className="mb-1">
+                                        <div className="px-2 py-1 flex items-center justify-between gap-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">SOP Manuals</span>
+                                            {isEditMode && (
+                                                <button
+                                                    type="button"
+                                                    onClick={addSOP}
+                                                    className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
+                                                    title="Add a new SOP file"
+                                                >
+                                                    + New
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="space-y-0.5 pl-1">
+                                            {(localPolicyData.sops || []).length === 0 ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setActiveMode('sop'); setActiveSopId(null); }}
+                                                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'sop' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
+                                                >
+                                                    <Icons.FileText /> <span className="text-xs ml-2">No SOP files yet</span>
+                                                </button>
+                                            ) : (
+                                                (localPolicyData.sops || []).map((sop, idx) => (
+                                                    <button
+                                                        key={sop.id}
+                                                        type="button"
+                                                        aria-pressed={activeMode === 'sop' && activeSopId === sop.id}
+                                                        onClick={() => openSopDocument(sop.id)}
+                                                        className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'sop' && activeSopId === sop.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
+                                                        title={sop.title || `Procedure ${idx + 1}`}
+                                                    >
+                                                        <span className="shrink-0 mt-0.5"><Icons.FileText /></span>
+                                                        <span className="text-xs ml-2 leading-snug break-words">{sop.title || `Procedure ${idx + 1}`}</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
                                     <button type="button" aria-pressed={activeMode === 'bcp'} onClick={() => setActiveMode('bcp')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'bcp' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Activity /> <span className="text-xs ml-2">Business Continuity</span></button>
                                     <button type="button" aria-pressed={activeMode === 'sla'} onClick={() => setActiveMode('sla')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'sla' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Service Agreements (SLA)</span></button>
                                 </div>
@@ -2259,7 +2382,7 @@
                                             {activeMode === 'sop' && (
                                                 <>
                                                     <tr className="block print:table-row no-print">
-                                                        <td className="block print:table-cell p-10 pb-0 flex justify-end gap-2">
+                                                        <td className="block print:table-cell p-10 pb-0 flex flex-wrap justify-end gap-2">
                                                             {!isStandalone && (
                                                                 <button 
                                                                     type="button" 
@@ -2271,22 +2394,39 @@
                                                             )}
                                                             {isEditMode && (
                                                                 <button type="button" onClick={addSOP} className="flex items-center text-xs font-bold bg-slate-100 text-slate-700 px-4 py-2 border border-slate-200 rounded hover:bg-slate-200 transition-colors">
-                                                                    <Icons.Plus /> <span className="ml-1">Add Procedure</span>
+                                                                    <Icons.Plus /> <span className="ml-1">New SOP File</span>
+                                                                </button>
+                                                            )}
+                                                            {isEditMode && activeSop && (
+                                                                <button type="button" onClick={() => deleteSOP(activeSop.id)} className="flex items-center text-xs font-bold bg-rose-50 text-rose-700 px-4 py-2 border border-rose-200 rounded hover:bg-rose-100 transition-colors" title="Delete this SOP file">
+                                                                    <Icons.Trash /> <span className="ml-1">Delete File</span>
                                                                 </button>
                                                             )}
                                                         </td>
                                                     </tr>
 
-                                                    {(localPolicyData.sops || []).map((sop, index) => (
-                                                        <tr key={sop.id} className="block print:table-row page-break-before group/sop">
+                                                    {!activeSop ? (
+                                                        <tr className="block print:table-row">
+                                                            <td className="block print:table-cell p-10 align-top">
+                                                                <div className="border border-dashed border-slate-300 rounded-xl p-10 text-center bg-slate-50">
+                                                                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 mb-2">No SOP file selected</h3>
+                                                                    <p className="text-xs text-slate-500 mb-4 max-w-md mx-auto">Each standard operating procedure is its own document. Create a file or sync one from Workflow Studio.</p>
+                                                                    {isEditMode && (
+                                                                        <button type="button" onClick={addSOP} className="inline-flex items-center text-xs font-bold bg-brandTeal-500 text-white px-4 py-2 rounded hover:bg-brandTeal-600 transition-colors">
+                                                                            <Icons.Plus /> <span className="ml-1">New SOP File</span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (() => {
+                                                        const sop = activeSop;
+                                                        const index = activeSopIndex >= 0 ? activeSopIndex : 0;
+                                                        return (
+                                                        <tr key={sop.id} className="block print:table-row group/sop">
                                                             <td className="block print:table-cell p-10 align-top relative space-y-6">
-                                                                {isEditMode && (
-                                                                    <div className="no-print absolute left-2 top-10 opacity-0 group-hover/sop:opacity-100 transition-opacity">
-                                                                        <button type="button" aria-label="Delete SOP" onClick={() => deleteSOP(sop.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded" title="Delete SOP"><Icons.Trash /></button>
-                                                                    </div>
-                                                                )}
                                                                 <div>
-                                                                    <div className="font-bold text-xs uppercase tracking-widest mb-1 print-only" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Procedure {index + 1}</div>
+                                                                    <div className="font-bold text-xs uppercase tracking-widest mb-1" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>SOP File · Procedure {index + 1}</div>
                                                                     <label htmlFor={`sop-title-${sop.id}`} className="sr-only">Procedure Title</label>
                                                                     <AutoResizeTextarea 
                                                                         id={`sop-title-${sop.id}`}
@@ -2487,7 +2627,8 @@
                                                                 </section>
                                                             </td>
                                                         </tr>
-                                                    ))}
+                                                        );
+                                                    })()}
                                                 </>
                                             )}
 
