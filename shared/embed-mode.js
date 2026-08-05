@@ -31,27 +31,44 @@
     html.kolthoff-embed aside[data-analytics-sidebar] {
       display: flex !important;
     }
-    /* Project Planner: never hide tab nav when embed chrome is stripped */
-    html.kolthoff-embed .planner-main-header {
-      display: block !important;
+    /* Screen-only: keep tab/toolbars visible in admin embed (must not override @media print). */
+    @media screen {
+      /* Project Planner: never hide tab nav when embed chrome is stripped */
+      html.kolthoff-embed .planner-main-header {
+        display: block !important;
+      }
+      html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
+        display: flex !important;
+        visibility: visible !important;
+      }
+      /* CRM Pipeline: keep tab nav + share action when embed chrome is stripped */
+      html.kolthoff-embed .crm-main-header {
+        display: block !important;
+      }
+      html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
+      html.kolthoff-embed .crm-main-header .crm-header-share {
+        display: flex !important;
+        visibility: visible !important;
+      }
+      /* Diagnosis report: keep section toolbar (Save now, Print Directory) in admin embed */
+      html.kolthoff-embed [data-diagnosis-section-header] {
+        display: flex !important;
+        flex-direction: column;
+      }
     }
-    html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"] {
-      display: flex !important;
-      visibility: visible !important;
-    }
-    /* CRM Pipeline: keep tab nav + share action when embed chrome is stripped */
-    html.kolthoff-embed .crm-main-header {
-      display: block !important;
-    }
-    html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
-    html.kolthoff-embed .crm-main-header .crm-header-share {
-      display: flex !important;
-      visibility: visible !important;
-    }
-    /* Diagnosis report: keep section toolbar (Save now, Print Directory) in admin embed */
-    html.kolthoff-embed [data-diagnosis-section-header] {
-      display: flex !important;
-      flex-direction: column;
+    /* Print/PDF: hide planner/CRM chrome so invoices and docs do not show app tabs */
+    @media print {
+      html.kolthoff-embed .planner-main-header,
+      html.kolthoff-embed .planner-main-header nav[aria-label="Main Navigation"],
+      html.kolthoff-embed .planner-workspace-toolbar,
+      html.kolthoff-embed .crm-main-header,
+      html.kolthoff-embed .crm-main-header nav[aria-label="Main Navigation"],
+      html.kolthoff-embed .crm-main-header .crm-header-share,
+      html.kolthoff-embed [data-diagnosis-section-header],
+      html.kolthoff-embed .no-print {
+        display: none !important;
+        visibility: hidden !important;
+      }
     }
     html.kolthoff-embed main,
     html.kolthoff-embed .flex.h-screen {
