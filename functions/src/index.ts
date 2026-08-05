@@ -604,13 +604,55 @@ async function fetchGoogleDocPlainText(documentUrl: string): Promise<string> {
   return text;
 }
 
-/** Server-side fetch for Google Docs plain text (avoids browser CORS). */
-export const fetchGoogleDocText = onCall({ invoker: 'public' }, async (request) => {
+/**
+ * Firestore-triggered Google Doc fetch — works when org policy blocks public Cloud Function invoke.
+ * Client writes pending request; this trigger fills `text` or `error`.
+ */
+export const onGoogleDocImportRequest = onDocumentWritten(
+  `artifacts/${ADMIN_TENANT}/public/data/google_doc_import_requests/{requestId}`,
+  async (event) => {
+    const afterSnap = event.data?.after;
+    if (!afterSnap?.exists) return;
+
+    const data = afterSnap.data();
+    if (!data || data.status !== 'pending') return;
+
+    const before = event.data?.before?.exists ? event.data.before.data() : undefined;
+    if (before?.status === 'pending' && before.requestedAt === data.requestedAt) return;
+
+    const ref = afterSnap.ref;
+    try {
+      const text = await fetchGoogleDocPlainText(String(data.documentUrl || ''));
+      await ref.update({
+        status: 'complete',
+        text,
+        completedAt: Date.now(),
+        error: admin.firestore.FieldValue.delete(),
+      });
+    } catch (err) {
+      const message = err instanceof HttpsError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : 'Google Doc fetch failed';
+      console.error('onGoogleDocImportRequest failed', event.params.requestId, err);
+      await ref.update({
+        status: 'error',
+        error: message,
+        failedAt: Date.now(),
+      });
+    }
+  },
+);
+
+/** Optional callable — may be blocked by org policy (allUsers invoker). Prefer Firestore trigger. */
+export const fetchGoogleDocText = onCall(async (request) => {
   const documentUrl = String(request.data?.documentUrl || '').trim();
   const text = await fetchGoogleDocPlainText(documentUrl);
   return { text };
 });
 
+/** Optional Hosting rewrite endpoint — may 403 when org policy blocks public/Hosting invoke. */
 export const fetchGoogleDocTextHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
