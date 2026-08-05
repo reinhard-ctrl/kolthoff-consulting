@@ -106,7 +106,7 @@
     {
       id: 'custom',
       name: 'Custom Addendum',
-      tagline: 'Start from a blank scope and build your own addendum tasks.',
+      tagline: 'Define a custom scope — your own deliverables, hours, and fees.',
       modules: [],
       tasks: { mode: 'none' },
       defaults: {

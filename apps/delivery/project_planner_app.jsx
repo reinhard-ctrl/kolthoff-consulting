@@ -1333,6 +1333,57 @@
         patchActiveAddendum({ tasks: nextTasks });
       }, [activeAddendum, patchActiveAddendum]);
 
+      const setAddendumScopeMode = useCallback((mode) => {
+        if (!activeAddendum) return;
+        const next = H.setAddendumScopeMode(activeAddendum, mode, catalogTasksRef.current);
+        patchActiveAddendum({
+          scopeMode: next.scopeMode,
+          tasks: next.tasks,
+        });
+      }, [activeAddendum, patchActiveAddendum]);
+
+      const addCustomAddendumTask = useCallback(() => {
+        if (!activeAddendum) return;
+        const task = H.createCustomAddendumTask({
+          deliverable: '',
+          description: '',
+          estHours: 4,
+          tier: 'senior',
+        });
+        const customTasks = (activeAddendum.tasks || []).filter((t) => H.isCustomAddendumTask(t));
+        patchActiveAddendum({
+          scopeMode: 'custom',
+          tasks: [...customTasks, task],
+        });
+      }, [activeAddendum, patchActiveAddendum]);
+
+      const updateCustomAddendumTask = useCallback((taskId, fields) => {
+        if (!activeAddendum) return;
+        const nextTasks = (activeAddendum.tasks || []).map((t) => {
+          if (t.id !== taskId) return t;
+          const hours = fields.estHours !== undefined
+            ? Math.max(1, Math.round(Number(fields.estHours) || 1))
+            : t.estHours;
+          return {
+            ...t,
+            ...fields,
+            estHours: hours,
+            deliverable: fields.deliverable !== undefined ? String(fields.deliverable) : t.deliverable,
+            description: fields.description !== undefined ? String(fields.description) : t.description,
+            tier: fields.tier !== undefined ? fields.tier : t.tier,
+            selected: true,
+            isCustom: true,
+          };
+        });
+        patchActiveAddendum({ tasks: nextTasks, scopeMode: 'custom' });
+      }, [activeAddendum, patchActiveAddendum]);
+
+      const removeCustomAddendumTask = useCallback((taskId) => {
+        if (!activeAddendum) return;
+        const nextTasks = (activeAddendum.tasks || []).filter((t) => t.id !== taskId);
+        patchActiveAddendum({ tasks: nextTasks, scopeMode: 'custom' });
+      }, [activeAddendum, patchActiveAddendum]);
+
       const deleteActiveAddendum = useCallback(() => {
         if (!activeAddendum || !H.canDeleteAddendum(activeAddendum)) return;
         const label = activeAddendum.ref || activeAddendum.suffix || 'this addendum';
@@ -3793,6 +3844,10 @@
                 onPatchActive: patchActiveAddendum,
                 onToggleTask: toggleAddendumTask,
                 onUpdateHours: updateAddendumTaskHours,
+                onSetScopeMode: setAddendumScopeMode,
+                onAddCustomTask: addCustomAddendumTask,
+                onUpdateCustomTask: updateCustomAddendumTask,
+                onRemoveCustomTask: removeCustomAddendumTask,
                 onDeleteActive: deleteActiveAddendum,
                 templates: addendumTemplates,
                 H,

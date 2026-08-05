@@ -922,8 +922,18 @@
 
       if (addendum) {
         if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
-        if (!(addendum.tasks || []).filter((t) => t.selected).length) {
-          issues.push('No deliverables selected for this addendum.');
+        const selectedDeliverables = (addendum.tasks || []).filter((t) => t.selected);
+        if (!selectedDeliverables.length) {
+          issues.push(
+            getAddendumScopeMode(addendum) === 'custom'
+              ? 'Add at least one custom deliverable for this addendum.'
+              : 'No deliverables selected for this addendum.',
+          );
+        } else if (
+          getAddendumScopeMode(addendum) === 'custom'
+          && selectedDeliverables.some((t) => !String(t.deliverable || '').trim())
+        ) {
+          issues.push('Name each custom deliverable before printing or invoicing.');
         }
         if (ctx.issueInvoice && !ctx.invoiceDueDate?.trim()) {
           issues.push('Addendum invoice due date is missing.');
@@ -968,8 +978,18 @@
         const addendumParty = resolveAddendumParty(addendum, ctx);
         const partyLabel = getAddendumPartySource(addendum, ctx) === 'sponsor' ? 'Sponsor' : 'Client';
         if (!addendum.title?.trim()) issues.push('Addendum title is missing.');
-        if (!(addendum.tasks || []).filter((t) => t.selected).length) {
-          issues.push('No deliverables selected for this addendum.');
+        const selectedDeliverables = (addendum.tasks || []).filter((t) => t.selected);
+        if (!selectedDeliverables.length) {
+          issues.push(
+            getAddendumScopeMode(addendum) === 'custom'
+              ? 'Add at least one custom deliverable for this addendum.'
+              : 'No deliverables selected for this addendum.',
+          );
+        } else if (
+          getAddendumScopeMode(addendum) === 'custom'
+          && selectedDeliverables.some((t) => !String(t.deliverable || '').trim())
+        ) {
+          issues.push('Name each custom deliverable before printing or invoicing.');
         }
         if (!addendumParty.company?.trim()) issues.push(`${partyLabel} company name is missing.`);
         if (!addendumParty.rep?.trim()) issues.push(`${partyLabel} representative name is missing.`);
@@ -1083,6 +1103,65 @@
     }));
   }
 
+  function isCustomAddendumTask(task) {
+    if (!task) return false;
+    if (task.isCustom === true) return true;
+    return String(task.id || '').startsWith('custom-');
+  }
+
+  function createCustomAddendumTask(fields = {}) {
+    const hours = Math.max(1, Math.round(Number(fields.estHours) || 4));
+    const allowedTiers = ['associate', 'senior', 'principal', 'partner'];
+    const tier = allowedTiers.includes(fields.tier) ? fields.tier : 'senior';
+    return {
+      id: fields.id || `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      category: String(fields.category || 'Custom Scope').trim() || 'Custom Scope',
+      deliverable: String(fields.deliverable ?? '').trim(),
+      description: String(fields.description || ''),
+      estHours: hours,
+      tier,
+      selected: fields.selected !== false,
+      isCustom: true,
+      scopeDetails: {
+        activities: fields.scopeDetails?.activities || '',
+        expectations: fields.scopeDetails?.expectations || '',
+        output: fields.scopeDetails?.output || fields.output || '',
+      },
+    };
+  }
+
+  function getAddendumScopeMode(addendum) {
+    if (addendum?.scopeMode === 'custom' || addendum?.scopeMode === 'catalog') {
+      return addendum.scopeMode;
+    }
+    if (addendum?.templateId === 'custom') return 'custom';
+    const tasks = addendum?.tasks || [];
+    if (tasks.length > 0 && tasks.every(isCustomAddendumTask)) return 'custom';
+    return 'catalog';
+  }
+
+  function setAddendumScopeMode(addendum, mode, catalogTasks = []) {
+    if (!addendum) return addendum;
+    if (mode === 'custom') {
+      const customTasks = (addendum.tasks || []).filter(isCustomAddendumTask);
+      return {
+        ...addendum,
+        scopeMode: 'custom',
+        tasks: customTasks.length
+          ? customTasks
+          : [createCustomAddendumTask({ deliverable: '', description: '', estHours: 4, tier: 'senior' })],
+      };
+    }
+    const selectedCatalogIds = (addendum.tasks || [])
+      .filter((t) => t.selected && !isCustomAddendumTask(t))
+      .map((t) => t.id);
+    return {
+      ...addendum,
+      scopeMode: 'catalog',
+      tasks: cloneTasksForAddendum(catalogTasks, selectedCatalogIds),
+    };
+  }
+
   function createAddendumRecord(options) {
     const {
       parentQuoteId,
@@ -1097,13 +1176,18 @@
     const suffix = nextAddendumSuffix(addenda);
     const ref = buildAddendumRef(parentQuoteId, suffix);
     const defaults = template?.defaults || {};
+    const isCustomScope = template?.tasks?.mode === 'none' || template?.id === 'custom' || templateId === 'custom';
     let selectedIds = [];
-    if (template?.tasks?.mode === 'modules' && global.PlannerHelpers?.resolvePackageSelectedIds) {
-      selectedIds = resolvePackageSelectedIds(template.tasks, catalogTasks);
-    } else if (template?.tasks?.mode === 'include') {
-      selectedIds = template.tasks.include || [];
+    if (!isCustomScope) {
+      if (template?.tasks?.mode === 'modules' && global.PlannerHelpers?.resolvePackageSelectedIds) {
+        selectedIds = resolvePackageSelectedIds(template.tasks, catalogTasks);
+      } else if (template?.tasks?.mode === 'include') {
+        selectedIds = template.tasks.include || [];
+      }
     }
-    const tasks = cloneTasksForAddendum(catalogTasks, selectedIds);
+    const tasks = isCustomScope
+      ? [createCustomAddendumTask({ deliverable: '', description: '', estHours: 4, tier: 'senior' })]
+      : cloneTasksForAddendum(catalogTasks, selectedIds);
     return {
       id: `addendum-${Date.now()}`,
       ref,
@@ -1111,6 +1195,7 @@
       parentQuoteId: parentQuoteId || '',
       title: defaults.title || template?.name || 'Scope Addendum',
       templateId: template?.id || 'custom',
+      scopeMode: isCustomScope ? 'custom' : 'catalog',
       partySource: defaultPartySource === 'sponsor' ? 'sponsor' : 'client',
       status: 'draft',
       createdAt: Date.now(),
@@ -1196,8 +1281,8 @@
 
   function ensureAddendumModules() {
     return Promise.all([
-      loadScriptOnce('../../shared/engagement-addendum-templates.js?v=20250710-precompile-v1'),
-      loadScriptOnce('project_planner_addendum.js?v=20250710-precompile-v1'),
+      loadScriptOnce('../../shared/engagement-addendum-templates.js?v=20250805-custom-scope-v1'),
+      loadScriptOnce('project_planner_addendum.js?v=20250805-custom-scope-v1'),
     ]);
   }
 
@@ -1261,6 +1346,10 @@
     updateAddendumInList,
     removeAddendumFromList,
     canDeleteAddendum,
+    isCustomAddendumTask,
+    createCustomAddendumTask,
+    getAddendumScopeMode,
+    setAddendumScopeMode,
     loadScriptOnce,
     ensureAddendumModules,
     ensurePortalSync,
