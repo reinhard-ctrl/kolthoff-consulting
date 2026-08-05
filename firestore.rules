@@ -143,6 +143,19 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Google Doc import for Policy Studio — Firestore trigger fetches text (no public Cloud Function required)
+    match /artifacts/kolthoff-admin-app/public/data/google_doc_import_requests/{requestId} {
+      allow read: if isStaffMember() && resource.data.requestedBy == request.auth.uid;
+      allow create: if isStaffMember() &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.documentUrl is string &&
+        request.resource.data.documentUrl.size() > 8 &&
+        request.resource.data.requestedBy == request.auth.uid &&
+        request.resource.data.requestedAt is int;
+      allow update: if false;
+      allow delete: if isStaffMember() && resource.data.requestedBy == request.auth.uid;
+    }
+
     // Agency Ops provisioning — Firestore trigger (no public Cloud Function required)
     match /artifacts/kolthoff-admin-app/public/data/agency_ops_provision_requests/{requestId} {
       allow read: if isKolthoffFirmAdmin();

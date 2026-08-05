@@ -1566,7 +1566,72 @@
                 return parsed;
             };
 
+            const fetchGoogleDocTextViaFirestore = (documentUrl) => new Promise((resolve, reject) => {
+                const authUser = window.firebaseAuth?.currentUser;
+                if (!authUser || !window.firebaseDb || !window.doc || !window.setDoc || !window.onSnapshot) {
+                    reject(new Error('Sign in required to fetch a Google Doc URL. Or upload / paste a .txt export instead.'));
+                    return;
+                }
+                const requestId = `gdoc-${authUser.uid.slice(0, 8)}-${Date.now()}`;
+                const ref = window.doc(
+                    window.firebaseDb,
+                    'artifacts',
+                    'kolthoff-admin-app',
+                    'public',
+                    'data',
+                    'google_doc_import_requests',
+                    requestId,
+                );
+                let settled = false;
+                let unsub = () => {};
+                const finish = (fn, value) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    try { unsub(); } catch { /* ignore */ }
+                    fn(value);
+                };
+                const timer = setTimeout(() => {
+                    finish(reject, new Error('Timed out waiting for Google Doc fetch. Use File → Download → Plain text (.txt) and upload instead.'));
+                }, 45000);
+
+                unsub = window.onSnapshot(
+                    ref,
+                    (snap) => {
+                        const data = snap.data();
+                        if (!data) return;
+                        if (data.status === 'complete' && typeof data.text === 'string') {
+                            finish(resolve, data.text);
+                            return;
+                        }
+                        if (data.status === 'error') {
+                            finish(reject, new Error(data.error || 'Google Doc fetch failed'));
+                        }
+                    },
+                    (err) => finish(reject, err),
+                );
+
+                window.setDoc(ref, {
+                    status: 'pending',
+                    documentUrl: String(documentUrl || '').trim(),
+                    requestedBy: authUser.uid,
+                    requestedAt: Date.now(),
+                }).catch((err) => finish(reject, err));
+            });
+
             const fetchGoogleDocText = async (documentUrl) => {
+                // Primary: Firestore trigger (works when org policy blocks public Cloud Function invoke)
+                try {
+                    return await fetchGoogleDocTextViaFirestore(documentUrl);
+                } catch (fsErr) {
+                    const fsMsg = String(fsErr?.message || fsErr || '');
+                    // Fall through to HTTP/callable only for infra/setup issues, not share/access errors
+                    if (/share as anyone|not accessible|valid google docs|timed out|sign in required/i.test(fsMsg)) {
+                        throw fsErr instanceof Error ? fsErr : new Error(fsMsg);
+                    }
+                    console.warn('Firestore Google Doc fetch failed, trying API fallback', fsErr);
+                }
+
                 if (typeof fetch === 'function') {
                     try {
                         const res = await fetch('/api/fetchGoogleDocText', {
@@ -1577,16 +1642,31 @@
                         const payload = await res.json().catch(() => ({}));
                         if (res.ok && payload?.text) return payload.text;
                         if (payload?.error) throw new Error(payload.error);
+                        if (!res.ok) {
+                            throw new Error(
+                                res.status === 403
+                                    ? 'URL fetch API is blocked by cloud permissions. Upload a .txt export instead (Google Docs → File → Download → Plain text).'
+                                    : `URL fetch failed (HTTP ${res.status}). Upload a .txt export instead.`,
+                            );
+                        }
                     } catch (apiErr) {
                         if (apiErr?.message && !/failed to fetch|network/i.test(apiErr.message)) throw apiErr;
                     }
                 }
                 if (window.httpsCallable && window.firebaseFunctions) {
-                    const fn = window.httpsCallable(window.firebaseFunctions, 'fetchGoogleDocText');
-                    const result = await fn({ documentUrl });
-                    if (result.data?.text) return result.data.text;
+                    try {
+                        const fn = window.httpsCallable(window.firebaseFunctions, 'fetchGoogleDocText');
+                        const result = await fn({ documentUrl });
+                        if (result.data?.text) return result.data.text;
+                    } catch (callableErr) {
+                        const msg = callableErr?.message || String(callableErr || '');
+                        if (/cors|permission|unauthenticated|forbidden|403/i.test(msg)) {
+                            throw new Error('URL fetch is blocked by cloud permissions. Upload a .txt export instead (Google Docs → File → Download → Plain text).');
+                        }
+                        throw callableErr instanceof Error ? callableErr : new Error(msg);
+                    }
                 }
-                throw new Error('Could not reach the import service. Download the Doc as .txt / .md and upload it instead.');
+                throw new Error('Could not fetch the Google Doc URL. Download as Plain text (.txt) and upload it instead.');
             };
 
             const handleDocImportFromUrl = async () => {
@@ -1600,7 +1680,7 @@
                     return;
                 }
                 setDocImportBusy(true);
-                setDocImportStatus('Fetching Google Doc…');
+                setDocImportStatus('Fetching Google Doc… (this can take a few seconds)');
                 setDocImportPreview(null);
                 try {
                     const text = await fetchGoogleDocText(url);
@@ -3785,12 +3865,12 @@
                                             type="button"
                                             onClick={handleDocImportFromUrl}
                                             disabled={docImportBusy}
-                                            className="text-[10px] font-bold uppercase bg-brandTeal-500/15 border border-brandTeal-500/30 text-brandTeal-400 px-3 py-2 rounded-lg hover:bg-brandTeal-500/25 disabled:opacity-50"
+                                            className="text-[10px] font-bold uppercase bg-brandTeal-500/15 border border-brandTeal-500/30 text-brandTeal-400 px-3 py-2 rounded-lg hover:bg-brandTeal-500/25 disabled:opacity-50 min-w-[7rem]"
                                         >
-                                            Fetch Doc
+                                            {docImportBusy ? 'Fetching…' : 'Fetch Doc'}
                                         </button>
                                     </div>
-                                    <p className="text-[10px] text-slate-500">Requires <strong className="text-slate-400">Anyone with the link can view</strong>. Private shared-drive-only links need a .txt download instead.</p>
+                                    <p className="text-[10px] text-slate-500">Requires <strong className="text-slate-400">Anyone with the link can view</strong>. If Fetch Doc fails, use upload/paste below (File → Download → Plain text).</p>
                                 </div>
 
                                 <div className="space-y-2">
