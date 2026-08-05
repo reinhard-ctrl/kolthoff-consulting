@@ -558,6 +558,97 @@ export const fetchFeedbackResponsesCsvHttp = onRequest({ invoker: 'private', cor
   }
 });
 
+function extractGoogleDocId(rawUrl: string): string | null {
+  const raw = String(rawUrl || '').trim();
+  if (!raw) return null;
+  const docMatch = raw.match(/\/document\/d\/([a-zA-Z0-9_-]+)/i);
+  if (docMatch) return docMatch[1];
+  const driveMatch = raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  if (driveMatch) return driveMatch[1];
+  const openMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+  if (openMatch && /docs\.google\.com|drive\.google\.com/i.test(raw)) return openMatch[1];
+  return null;
+}
+
+async function fetchGoogleDocPlainText(documentUrl: string): Promise<string> {
+  const raw = String(documentUrl || '').trim();
+  if (!raw) {
+    throw new HttpsError('invalid-argument', 'documentUrl required');
+  }
+
+  const docId = extractGoogleDocId(raw);
+  if (!docId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Paste a valid Google Docs URL (docs.google.com/document/d/… or Drive file link).',
+    );
+  }
+
+  const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+  const res = await fetch(exportUrl, { redirect: 'follow' });
+  if (!res.ok) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Could not fetch Google Doc. Share as Anyone with the link can view, or download as .txt / .md and upload it instead.',
+    );
+  }
+
+  const text = await res.text();
+  const sample = text.trim().slice(0, 256).toLowerCase();
+  if (sample.startsWith('<!doctype html') || sample.startsWith('<html')) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Doc not accessible from the server. Share as Anyone with the link can view, or use File → Download → Plain text (.txt) and upload.',
+    );
+  }
+  return text;
+}
+
+/** Server-side fetch for Google Docs plain text (avoids browser CORS). */
+export const fetchGoogleDocText = onCall({ invoker: 'public' }, async (request) => {
+  const documentUrl = String(request.data?.documentUrl || '').trim();
+  const text = await fetchGoogleDocPlainText(documentUrl);
+  return { text };
+});
+
+export const fetchGoogleDocTextHttp = onRequest({ invoker: 'private', cors: true }, async (req: Request, res: Response) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const body = req.body as { documentUrl?: string } | string | undefined;
+  let documentUrl = '';
+  if (body && typeof body === 'object' && 'documentUrl' in body) {
+    documentUrl = String(body.documentUrl || '');
+  } else if (typeof body === 'string') {
+    try {
+      documentUrl = String(JSON.parse(body).documentUrl || '');
+    } catch {
+      /* ignore */
+    }
+  }
+
+  try {
+    const text = await fetchGoogleDocPlainText(documentUrl);
+    res.json({ text });
+  } catch (err) {
+    if (err instanceof HttpsError) {
+      const status = err.code === 'invalid-argument' ? 400
+        : err.code === 'failed-precondition' ? 412
+          : 500;
+      res.status(status).json({ error: err.message, code: err.code });
+      return;
+    }
+    console.error('fetchGoogleDocTextHttp failed', err);
+    res.status(500).json({ error: 'Internal error', code: 'internal' });
+  }
+});
+
 /** Generate portal access token from client access code */
 export const generatePortalToken = onCall({ invoker: 'public' }, async (request) => {
   const accessCode = (request.data?.accessCode as string) || '';

@@ -18,6 +18,13 @@
         }
       },
       {
+        "source": "/api/fetchGoogleDocText",
+        "function": {
+          "functionId": "fetchGoogleDocTextHttp",
+          "region": "asia-southeast1"
+        }
+      },
+      {
         "source": "/api/prepareClientWorkspace",
         "function": {
           "functionId": "prepareClientWorkspaceHttp",
