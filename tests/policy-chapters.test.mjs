@@ -62,4 +62,9 @@ const emptyCh = PC.createEmptyChapter({ title: 'New Chapter' });
 assert.equal(emptyCh.title, 'New Chapter');
 assert.equal(emptyCh.sections.length, 1);
 
+const blank = PC.createEmptyChapter();
+assert.equal(blank.title, 'Untitled chapter');
+assert.equal(blank.sections[0].title, 'Untitled section');
+assert.equal(blank.sections[0].content, '');
+
 console.log('policy-chapters.test.mjs: all assertions passed');
