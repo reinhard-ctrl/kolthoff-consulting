@@ -1658,111 +1658,191 @@
 
             const renderDashboard = () => {
                 if (!activeClient) return <div>Loading Data...</div>;
-                
-                const sopDocs = (localPolicyData.sops || []).map((sop, idx) => ({
+
+                const statusOf = (obj) => calculateDocStatus(obj?.docControl?.lastReviewed);
+                const openDoc = (d) => {
+                    if (d.sopId) openSopDocument(d.sopId);
+                    else if (d.jobRoleId) openJobRoleDocument(d.jobRoleId);
+                    else setActiveMode(d.id);
+                };
+
+                const sopFiles = (localPolicyData.sops || []).map((sop, idx) => ({
                     id: `sop:${sop.id}`,
                     sopId: sop.id,
-                    group: 'SOP',
                     title: sop.title || `Procedure ${idx + 1}`,
+                    blurb: sop.objective || 'Standard operating procedure',
                     obj: sop,
                 }));
-                const jobRoleDocs = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => ({
+                const jobRoleFiles = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => ({
                     id: `jobRole:${role.id}`,
                     jobRoleId: role.id,
-                    group: 'HR',
                     title: role.title || `Role Profile ${idx + 1}`,
-                    obj: {
-                        docControl: localPolicyData.standardDocs?.jobDescriptions?.docControl,
-                    },
+                    blurb: 'Job role profile',
+                    obj: { docControl: localPolicyData.standardDocs?.jobDescriptions?.docControl },
                 }));
-                const docsList = [
-                    ...sopDocs,
-                    ...jobRoleDocs,
-                    { id: 'handbook', group: 'HR', title: 'Employee Handbook', obj: localPolicyData.handbook },
-                    { id: 'orgChart', group: 'HR', title: 'Org Chart & Reporting Policy', obj: localPolicyData.standardDocs?.orgChart },
-                    { id: 'conduct', group: 'Legal', title: 'Code of Conduct', obj: localPolicyData.standardDocs?.conduct },
-                    { id: 'nda', group: 'Legal', title: 'Non-Disclosure (NDA)', obj: localPolicyData.standardDocs?.nda },
-                    { id: 'dataPrivacy', group: 'IT', title: 'Data Privacy & Sec', obj: localPolicyData.standardDocs?.dataPrivacy },
-                    { id: 'healthSafety', group: 'Ops', title: 'Health & Safety', obj: localPolicyData.standardDocs?.healthSafety },
-                    { id: 'bcp', group: 'Ops', title: 'Business Continuity', obj: localPolicyData.standardDocs?.bcp },
-                    { id: 'sla', group: 'Ops', title: 'Service Levels (SLA)', obj: localPolicyData.standardDocs?.sla },
-                    { id: 'onboarding', group: 'HR', title: 'Onboarding Plan', obj: localPolicyData.standardDocs?.onboarding },
-                    { id: 'performanceReview', group: 'HR', title: 'Performance Appraisal', obj: localPolicyData.standardDocs?.performanceReview },
+
+                const categories = [
+                    {
+                        id: 'operations',
+                        title: 'Operations',
+                        subtitle: 'How work gets done day to day',
+                        items: [
+                            {
+                                id: 'sops-group',
+                                kind: 'group',
+                                title: 'SOP Manuals',
+                                blurb: `${sopFiles.length} procedure file${sopFiles.length === 1 ? '' : 's'}`,
+                                files: sopFiles,
+                                emptyAction: { label: 'Open SOPs', onClick: () => openSopDocument(null) },
+                                addAction: isEditMode ? { label: '+ New SOP', onClick: addSOP } : null,
+                            },
+                            { id: 'bcp', title: 'Business Continuity', blurb: 'Keep running during outages', obj: localPolicyData.standardDocs?.bcp },
+                            { id: 'sla', title: 'Service Agreements (SLA)', blurb: 'Response and uptime targets', obj: localPolicyData.standardDocs?.sla },
+                            { id: 'healthSafety', title: 'Health & Safety', blurb: 'Evacuation, hazards, first aid', obj: localPolicyData.standardDocs?.healthSafety },
+                        ],
+                    },
+                    {
+                        id: 'hr',
+                        title: 'HR & Talent',
+                        subtitle: 'People, roles, and how the team is structured',
+                        items: [
+                            { id: 'handbook', title: 'Employee Handbook', blurb: 'Hours, pay, leave, discipline', obj: localPolicyData.handbook },
+                            { id: 'orgChart', title: 'Org Chart Policy', blurb: 'Reporting lines and roster', obj: localPolicyData.standardDocs?.orgChart },
+                            {
+                                id: 'roles-group',
+                                kind: 'group',
+                                title: 'Job Role Profiles',
+                                blurb: `${jobRoleFiles.length} role file${jobRoleFiles.length === 1 ? '' : 's'}`,
+                                files: jobRoleFiles,
+                                emptyAction: { label: 'Open roles', onClick: () => openJobRoleDocument(null) },
+                                addAction: isEditMode ? { label: '+ New role', onClick: addJobRole } : null,
+                            },
+                            { id: 'onboarding', title: 'Onboarding & 90-Day', blurb: 'New-hire path to productive', obj: localPolicyData.standardDocs?.onboarding },
+                            { id: 'performanceReview', title: 'Performance Reviews', blurb: 'Expectations, feedback, PIP', obj: localPolicyData.standardDocs?.performanceReview },
+                        ],
+                    },
+                    {
+                        id: 'legal',
+                        title: 'Legal & Compliance',
+                        subtitle: 'Rules everyone must follow',
+                        items: [
+                            { id: 'conduct', title: 'Code of Conduct', blurb: 'Respect, ethics, workplace rules', obj: localPolicyData.standardDocs?.conduct },
+                            { id: 'nda', title: 'Non-Disclosure (NDA)', blurb: 'Protect confidential information', obj: localPolicyData.standardDocs?.nda },
+                            { id: 'dataPrivacy', title: 'Data Privacy & IT', blurb: 'Systems, PII, breach reporting', obj: localPolicyData.standardDocs?.dataPrivacy },
+                        ],
+                    },
                 ];
 
-                return (
-                    <section aria-label="Workspace Dashboard" className="p-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 shadow-sm">
-                                <h3 className="font-bold text-slate-800 text-lg mb-1">{activeClient.clientCompany} Workspace</h3>
-                                <p className="text-sm text-slate-500 mb-4">Manage, edit, and export official policy documents for this client.</p>
-                                <div className="flex flex-wrap gap-2">
-                                    <button 
-                                        type="button"
-                                        onClick={() => setActiveMode('branding')} 
-                                        className="text-xs font-bold bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-100 transition-colors"
-                                    >
-                                        Edit Client Branding →
-                                    </button>
-                                    {!isStandalone && (
-                                        <React.Fragment>
-                                            <button 
-                                                type="button"
-                                                onClick={handleExportStandalone} 
-                                                className="text-xs font-bold bg-brandTeal-50 border border-brandTeal-200 text-brandTeal-700 px-3 py-1.5 rounded hover:bg-brandTeal-100 transition-colors flex items-center"
-                                            >
-                                                <Icons.Archive /> Generate Standalone Client Vault
-                                            </button>
-                                            <button 
-                                                type="button"
-                                                onClick={() => setShowBulkResetModal(true)} 
-                                                className="text-xs font-bold bg-rose-50 border border-rose-200 text-rose-700 px-3 py-1.5 rounded hover:bg-rose-100 transition-colors flex items-center"
-                                            >
-                                                <Icons.Reset /> Re-sync All to System Templates
-                                            </button>
-                                        </React.Fragment>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="bg-brandTeal-50 border border-brandTeal-100 rounded-xl p-6 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-bold text-brandTeal-950 text-lg mb-1">{localPolicyData.sops?.length || 0} SOP Files</h3>
-                                    <p className="text-sm text-brandTeal-855">Each procedure is a separate document</p>
-                                </div>
-                                <button 
-                                    type="button"
-                                    onClick={() => openSopDocument(activeSopId || localPolicyData.sops?.[0]?.id)} 
-                                    className="text-xs font-bold bg-brandTeal-500 text-white px-4 py-2 rounded hover:bg-brandTeal-600 transition-colors shadow-lg"
-                                >
-                                    Open SOP Files →
-                                </button>
-                            </div>
-                        </div>
+                const allTracked = [
+                    ...sopFiles.map((f) => f.obj),
+                    localPolicyData.handbook,
+                    ...Object.values(localPolicyData.standardDocs || {}).filter(Boolean),
+                ];
+                const statusCounts = allTracked.reduce(
+                    (acc, obj) => {
+                        const s = statusOf(obj).status;
+                        acc[s] = (acc[s] || 0) + 1;
+                        return acc;
+                    },
+                    { 'Up to Date': 0, Draft: 0, 'Review Due': 0 }
+                );
 
-                        <h3 className="font-bold uppercase tracking-wider text-xs text-slate-500 mb-4 border-b border-slate-200 pb-2">Policy Documents</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {docsList.map(d => {
-                                const st = calculateDocStatus(d.obj?.docControl?.lastReviewed);
-                                return (
-                                    <button 
-                                        key={d.id} 
-                                        type="button"
-                                        onClick={() => {
-                                            if (d.sopId) openSopDocument(d.sopId);
-                                            else if (d.jobRoleId) openJobRoleDocument(d.jobRoleId);
-                                            else setActiveMode(d.id);
-                                        }} 
-                                        className="text-left bg-white border border-slate-200 rounded-lg p-5 cursor-pointer hover:shadow-lg hover:border-brandTeal-404 transition-all group animate-fade-in"
-                                    >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <span className="text-[9px] uppercase font-bold tracking-widest text-slate-404">{d.group}</span>
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.text}`}>{st.status}</span>
-                                        </div>
-                                        <h4 className="font-bold text-slate-800 group-hover:text-brandTeal-600 transition-colors mb-1">{d.title}</h4>
-                                        <p className="text-xs text-slate-500 font-mono">v{d.obj?.docControl?.version || '1.0'} · {d.obj?.docControl?.lastReviewed || 'No Date'}</p>
-                                    </button>
-                                )
-                            })}
+                const renderDocRow = (d) => {
+                    const st = statusOf(d.obj);
+                    return (
+                        <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => openDoc(d)}
+                            className="w-full text-left flex items-start gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors group"
+                        >
+                            <div className="min-w-0 flex-1">
+                                <div className="font-bold text-sm text-slate-800 group-hover:text-brandTeal-700 transition-colors truncate">{d.title}</div>
+                                {d.blurb && <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{d.blurb}</div>}
+                            </div>
+                            <div className="shrink-0 text-right">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${st.bg} ${st.text}`}>{st.status}</span>
+                                <div className="text-[10px] text-slate-400 font-mono mt-1">v{d.obj?.docControl?.version || '1.0'}</div>
+                            </div>
+                        </button>
+                    );
+                };
+
+                return (
+                    <section aria-label="Workspace Dashboard" className="p-8 md:p-10 max-w-5xl">
+                        <header className="mb-8 pb-6 border-b border-slate-200">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Policy pack</p>
+                            <h2 className="font-black text-2xl text-slate-900 uppercase tracking-tight">{activeClient.clientCompany}</h2>
+                            <p className="text-sm text-slate-500 mt-1 max-w-2xl">Open a category, pick a document, edit, then export PDF or publish to Vault.</p>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[11px] font-semibold text-slate-600">
+                                <span><span className="text-emerald-700">{statusCounts['Up to Date'] || 0}</span> up to date</span>
+                                <span className="text-slate-300">·</span>
+                                <span><span className="text-slate-700">{statusCounts.Draft || 0}</span> draft</span>
+                                <span className="text-slate-300">·</span>
+                                <span><span className="text-rose-700">{statusCounts['Review Due'] || 0}</span> review due</span>
+                                <span className="text-slate-300">·</span>
+                                <span>{sopFiles.length} SOPs · {jobRoleFiles.length} roles</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-4">
+                                <button type="button" onClick={() => setActiveMode('branding')} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors">
+                                    Branding
+                                </button>
+                                {!isStandalone && (
+                                    <React.Fragment>
+                                        <button type="button" onClick={handleExportStandalone} className="text-[11px] font-bold uppercase tracking-wider bg-brandTeal-50 border border-brandTeal-200 text-brandTeal-800 px-3 py-1.5 rounded hover:bg-brandTeal-100 transition-colors flex items-center">
+                                            <Icons.Archive /> Client vault file
+                                        </button>
+                                        <button type="button" onClick={() => setShowBulkResetModal(true)} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-rose-200 text-rose-700 px-3 py-1.5 rounded hover:bg-rose-50 transition-colors flex items-center">
+                                            <Icons.Reset /> Reset all templates
+                                        </button>
+                                    </React.Fragment>
+                                )}
+                            </div>
+                        </header>
+
+                        <div className="space-y-10">
+                            {categories.map((cat) => (
+                                <section key={cat.id} aria-labelledby={`dash-cat-${cat.id}`}>
+                                    <div className="mb-3">
+                                        <h3 id={`dash-cat-${cat.id}`} className="text-sm font-black uppercase tracking-wider text-slate-900">{cat.title}</h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">{cat.subtitle}</p>
+                                    </div>
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white divide-y divide-slate-100">
+                                        {cat.items.map((item) => {
+                                            if (item.kind === 'group') {
+                                                return (
+                                                    <div key={item.id} className="bg-white">
+                                                        <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 bg-slate-50 border-b border-slate-100">
+                                                            <div>
+                                                                <div className="text-xs font-bold uppercase tracking-wider text-slate-700">{item.title}</div>
+                                                                <div className="text-[11px] text-slate-500 mt-0.5">{item.blurb}</div>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {item.addAction && (
+                                                                    <button type="button" onClick={item.addAction.onClick} className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 bg-white border border-brandTeal-200 px-2.5 py-1 rounded hover:bg-brandTeal-50">
+                                                                        {item.addAction.label}
+                                                                    </button>
+                                                                )}
+                                                                {item.files?.length === 0 && item.emptyAction && (
+                                                                    <button type="button" onClick={item.emptyAction.onClick} className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-100">
+                                                                        {item.emptyAction.label}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {item.files?.length > 0 ? (
+                                                            <div>{item.files.map(renderDocRow)}</div>
+                                                        ) : (
+                                                            <p className="px-4 py-4 text-xs text-slate-400 italic">No files yet — add one to get started.</p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            }
+                                            return renderDocRow(item);
+                                        })}
+                                    </div>
+                                </section>
+                            ))}
                         </div>
                     </section>
                 );
