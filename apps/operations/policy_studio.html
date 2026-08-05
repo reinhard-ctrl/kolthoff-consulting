@@ -186,6 +186,7 @@
     <script src="../../shared/diagram-editor.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
+    <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -442,6 +443,8 @@
             };
         const migrateJobRoleFromContent = (role) => JR().migrateJobRoleFromContent?.(role) || role;
         const compileJobRoleMarkdown = (role) => JR().compileJobRoleMarkdown?.(role) || `# ${role?.title || 'Job Role Profile'}`;
+        const PDI = () => window.PolicyDocImport || {};
+        const STANDARD_DOCS_WITH_GDOC_IMPORT = ['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'];
 
         const Icons = {
             Print: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
@@ -782,6 +785,14 @@
             const [showSyncModal, setShowSyncModal] = useState(false);
             const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
             const [showBulkResetModal, setShowBulkResetModal] = useState(false);
+            const [showDocImportModal, setShowDocImportModal] = useState(false);
+            const [docImportTargetKey, setDocImportTargetKey] = useState(null);
+            const [docImportUrl, setDocImportUrl] = useState('');
+            const [docImportPaste, setDocImportPaste] = useState('');
+            const [docImportStatus, setDocImportStatus] = useState('');
+            const [docImportBusy, setDocImportBusy] = useState(false);
+            const [docImportPreview, setDocImportPreview] = useState(null);
+            const [docImportUpdateTitle, setDocImportUpdateTitle] = useState(true);
 
             const makeSopId = () => `sop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             const makeJobRoleId = () => `jd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1523,6 +1534,154 @@
             const removeStandardSection = (key, secId) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).filter(s => s.id !== secId) } }));
             const reorderStandardSection = (key, idx, dir) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: moveArrayItem(docs[key]?.sections || [], idx, dir) } }));
 
+            const openDocImportModal = (docKey) => {
+                setDocImportTargetKey(docKey);
+                setDocImportUrl('');
+                setDocImportPaste('');
+                setDocImportStatus('');
+                setDocImportPreview(null);
+                setDocImportUpdateTitle(true);
+                setDocImportBusy(false);
+                setShowDocImportModal(true);
+            };
+
+            const closeDocImportModal = () => {
+                setShowDocImportModal(false);
+                setDocImportBusy(false);
+                setDocImportPreview(null);
+                setDocImportStatus('');
+            };
+
+            const buildDocImportPreview = (rawText) => {
+                const parse = PDI().parsePolicyDocText;
+                if (!parse) throw new Error('Import parser not loaded. Refresh the page and try again.');
+                const parsed = parse(rawText, { idPrefix: `imp-${Date.now().toString(36)}` });
+                if (!String(parsed.introduction || '').trim() && !(parsed.sections || []).length) {
+                    throw new Error('No usable content found in the import.');
+                }
+                setDocImportPreview(parsed);
+                setDocImportStatus(
+                    `Parsed “${parsed.title || 'Untitled'}” · ${(parsed.sections || []).length} section(s). Review and apply.`
+                );
+                return parsed;
+            };
+
+            const fetchGoogleDocText = async (documentUrl) => {
+                if (typeof fetch === 'function') {
+                    try {
+                        const res = await fetch('/api/fetchGoogleDocText', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ documentUrl }),
+                        });
+                        const payload = await res.json().catch(() => ({}));
+                        if (res.ok && payload?.text) return payload.text;
+                        if (payload?.error) throw new Error(payload.error);
+                    } catch (apiErr) {
+                        if (apiErr?.message && !/failed to fetch|network/i.test(apiErr.message)) throw apiErr;
+                    }
+                }
+                if (window.httpsCallable && window.firebaseFunctions) {
+                    const fn = window.httpsCallable(window.firebaseFunctions, 'fetchGoogleDocText');
+                    const result = await fn({ documentUrl });
+                    if (result.data?.text) return result.data.text;
+                }
+                throw new Error('Could not reach the import service. Download the Doc as .txt / .md and upload it instead.');
+            };
+
+            const handleDocImportFromUrl = async () => {
+                const url = String(docImportUrl || '').trim();
+                if (!url) {
+                    setDocImportStatus('Paste a Google Docs link first (must be Anyone with the link can view).');
+                    return;
+                }
+                if (!PDI().extractGoogleDocId?.(url)) {
+                    setDocImportStatus('That does not look like a Google Docs or Drive file URL.');
+                    return;
+                }
+                setDocImportBusy(true);
+                setDocImportStatus('Fetching Google Doc…');
+                setDocImportPreview(null);
+                try {
+                    const text = await fetchGoogleDocText(url);
+                    if (PDI().isGoogleDocHtmlPage?.(text)) {
+                        throw new Error('Doc returned a login page. Share as Anyone with the link can view, or upload a .txt export.');
+                    }
+                    buildDocImportPreview(text);
+                } catch (err) {
+                    setDocImportStatus(err.message || 'Import failed — try File → Download → Plain text (.txt) and upload.');
+                } finally {
+                    setDocImportBusy(false);
+                }
+            };
+
+            const handleDocImportFromPaste = () => {
+                const text = String(docImportPaste || '').trim();
+                if (!text) {
+                    setDocImportStatus('Paste exported Doc text, markdown, or HTML first.');
+                    return;
+                }
+                setDocImportBusy(true);
+                setDocImportPreview(null);
+                try {
+                    buildDocImportPreview(text);
+                } catch (err) {
+                    setDocImportStatus(err.message || 'Could not parse pasted text.');
+                } finally {
+                    setDocImportBusy(false);
+                }
+            };
+
+            const handleDocImportFromFile = (file) => {
+                if (!file) return;
+                const name = String(file.name || '').toLowerCase();
+                if (!/\.(txt|md|markdown|html?|htm)$/i.test(name) && file.type && !/text|html|markdown/i.test(file.type)) {
+                    setDocImportStatus('Upload a .txt, .md, or .html export (from Google Docs: File → Download).');
+                    return;
+                }
+                setDocImportBusy(true);
+                setDocImportStatus(`Reading ${file.name}…`);
+                setDocImportPreview(null);
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        buildDocImportPreview(String(reader.result || ''));
+                    } catch (err) {
+                        setDocImportStatus(err.message || 'Could not parse uploaded file.');
+                    } finally {
+                        setDocImportBusy(false);
+                    }
+                };
+                reader.onerror = () => {
+                    setDocImportStatus('Could not read that file.');
+                    setDocImportBusy(false);
+                };
+                reader.readAsText(file);
+            };
+
+            const applyDocImportPreview = () => {
+                const key = docImportTargetKey;
+                const parsed = docImportPreview;
+                if (!key || !parsed || !STANDARD_DOCS_WITH_GDOC_IMPORT.includes(key)) {
+                    setDocImportStatus('Nothing to apply.');
+                    return;
+                }
+                const apply = PDI().applyParsedToStandardDoc;
+                if (!apply) {
+                    setDocImportStatus('Import helpers not loaded. Refresh and try again.');
+                    return;
+                }
+                updateDocState('standardDocs', (docs) => ({
+                    ...docs,
+                    [key]: apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle }),
+                }));
+                const label = (docImportUpdateTitle && parsed.title)
+                    ? parsed.title
+                    : (localPolicyData.standardDocs?.[key]?.title || key);
+                triggerToast(`📥 Imported into ${label}`);
+                closeDocImportModal();
+            };
+
             // Job Role Profile handlers — each section is a separate structured file
             const addJobRole = () => {
                 const fresh = createEmptyJobRole({
@@ -1920,9 +2079,31 @@
                 const doc = localPolicyData.standardDocs?.[docKey];
                 if (!doc || !activeClient) return null;
                 const sectionsList = [{title: 'Introduction'}, ...(doc.sections || [])];
+                const canImportDoc = isEditMode && STANDARD_DOCS_WITH_GDOC_IMPORT.includes(docKey);
 
                 return (
                     <React.Fragment>
+                        {canImportDoc && (
+                            <tr className="block print:table-row no-print">
+                                <td className="block print:table-cell px-10 pt-6 pb-0 align-top">
+                                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                        <div className="max-w-xl">
+                                            <p className="text-xs font-bold uppercase tracking-wider text-slate-700">Import from Google Doc</p>
+                                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                                Pull a shared-drive draft (Code of Conduct, NDA, etc.) into this policy. Use a Docs link with <strong>Anyone with the link can view</strong>, or upload / paste a .txt / .md export.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => openDocImportModal(docKey)}
+                                            className="text-[10px] font-bold uppercase bg-brandNavy-900 border border-brandNavy-700 text-brandTeal-400 px-3 py-1.5 rounded-lg hover:bg-brandNavy-800 transition-colors flex items-center shrink-0"
+                                        >
+                                            <Icons.Upload /> Import Google Doc
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                         <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
                                 <section aria-label="Document Control" className="bg-slate-50 border border-slate-200 rounded p-4 mb-4">
@@ -3563,6 +3744,127 @@
 
                                 <div className="pt-2 border-t border-brandNavy-800 flex justify-end">
                                     <button onClick={() => setShowSyncModal(false)} className="px-4 py-1.5 bg-brandNavy-900 hover:bg-brandNavy-850 text-xs font-bold uppercase rounded border border-brandNavy-800 text-slate-300">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Google Doc → policy draft import */}
+                    {showDocImportModal && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm no-print" onPointerDown={closeDocImportModal}>
+                            <div
+                                className="w-[560px] max-w-[94vw] max-h-[90vh] overflow-y-auto bg-brandNavy-955 border border-brandNavy-800 border-t-4 border-t-brandTeal-500 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 text-left animate-pop-in text-white font-sans flex flex-col gap-4"
+                                onPointerDown={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex justify-between items-center border-b border-brandNavy-800 pb-3">
+                                    <div className="flex items-center gap-2 text-brandTeal-400">
+                                        <Icons.Upload />
+                                        <h3 className="text-sm font-bold uppercase tracking-widest text-white">Import Google Doc</h3>
+                                    </div>
+                                    <button type="button" onClick={closeDocImportModal} className="text-slate-400 hover:text-white transition-colors cursor-pointer" aria-label="Close"><Icons.Close /></button>
+                                </div>
+
+                                <p className="text-xs text-slate-400 leading-relaxed">
+                                    Replace the introduction and sections of <strong className="text-slate-200">{localPolicyData.standardDocs?.[docImportTargetKey]?.title || 'this policy'}</strong> with content from a Google Doc in your shared drive.
+                                    Document control (version, dates, owner) is kept. Save to Cloud when ready.
+                                </p>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="doc-import-url" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Docs URL</label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <input
+                                            id="doc-import-url"
+                                            type="url"
+                                            value={docImportUrl}
+                                            onChange={(e) => setDocImportUrl(e.target.value)}
+                                            placeholder="https://docs.google.com/document/d/…"
+                                            className="flex-1 bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-brandTeal-500"
+                                            disabled={docImportBusy}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleDocImportFromUrl}
+                                            disabled={docImportBusy}
+                                            className="text-[10px] font-bold uppercase bg-brandTeal-500/15 border border-brandTeal-500/30 text-brandTeal-400 px-3 py-2 rounded-lg hover:bg-brandTeal-500/25 disabled:opacity-50"
+                                        >
+                                            Fetch Doc
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500">Requires <strong className="text-slate-400">Anyone with the link can view</strong>. Private shared-drive-only links need a .txt download instead.</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="doc-import-file" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or upload export (.txt / .md / .html)</label>
+                                    <input
+                                        id="doc-import-file"
+                                        type="file"
+                                        accept=".txt,.md,.markdown,.html,.htm,text/plain,text/markdown,text/html"
+                                        onChange={(e) => handleDocImportFromFile(e.target.files?.[0])}
+                                        disabled={docImportBusy}
+                                        className="block w-full text-[11px] text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-brandNavy-800 file:text-brandTeal-400 hover:file:bg-brandNavy-700"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label htmlFor="doc-import-paste" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or paste text</label>
+                                    <textarea
+                                        id="doc-import-paste"
+                                        value={docImportPaste}
+                                        onChange={(e) => setDocImportPaste(e.target.value)}
+                                        rows={5}
+                                        placeholder="# Code of Conduct&#10;&#10;Introduction…&#10;&#10;## Dress code&#10;…"
+                                        className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-brandTeal-500 font-mono"
+                                        disabled={docImportBusy}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleDocImportFromPaste}
+                                        disabled={docImportBusy}
+                                        className="text-[10px] font-bold uppercase bg-brandNavy-900 border border-brandNavy-700 text-slate-300 px-3 py-1.5 rounded-lg hover:border-brandTeal-500/40 disabled:opacity-50"
+                                    >
+                                        Parse paste
+                                    </button>
+                                </div>
+
+                                {docImportStatus && (
+                                    <p className={`text-[11px] leading-relaxed ${docImportPreview ? 'text-brandTeal-400' : 'text-amber-300/90'}`}>{docImportStatus}</p>
+                                )}
+
+                                {docImportPreview && (
+                                    <div className="rounded-lg border border-brandNavy-700 bg-brandNavy-900/80 p-3 space-y-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview</p>
+                                        <p className="text-xs text-slate-200"><span className="text-slate-500">Title:</span> {docImportPreview.title || '(keep current)'}</p>
+                                        <p className="text-[11px] text-slate-400 line-clamp-3 whitespace-pre-wrap">{docImportPreview.introduction || '(empty introduction)'}</p>
+                                        <ul className="text-[11px] text-slate-400 list-disc pl-4 space-y-0.5">
+                                            {(docImportPreview.sections || []).slice(0, 8).map((s) => (
+                                                <li key={s.id}>{s.title}</li>
+                                            ))}
+                                            {(docImportPreview.sections || []).length > 8 && (
+                                                <li>+{(docImportPreview.sections || []).length - 8} more…</li>
+                                            )}
+                                        </ul>
+                                        <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer pt-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={docImportUpdateTitle}
+                                                onChange={(e) => setDocImportUpdateTitle(e.target.checked)}
+                                                className="rounded border-brandNavy-600"
+                                            />
+                                            Update document title from import
+                                        </label>
+                                    </div>
+                                )}
+
+                                <div className="pt-2 border-t border-brandNavy-800 flex justify-end gap-2">
+                                    <button type="button" onClick={closeDocImportModal} className="px-4 py-1.5 bg-brandNavy-900 hover:bg-brandNavy-850 text-xs font-bold uppercase rounded border border-brandNavy-800 text-slate-300">Cancel</button>
+                                    <button
+                                        type="button"
+                                        onClick={applyDocImportPreview}
+                                        disabled={!docImportPreview || docImportBusy}
+                                        className="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-xs font-bold uppercase rounded text-brandNavy-955 shadow-lg transition-all disabled:opacity-40 disabled:pointer-events-none"
+                                    >
+                                        Apply to draft
+                                    </button>
                                 </div>
                             </div>
                         </div>
