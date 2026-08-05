@@ -1103,6 +1103,120 @@
     }));
   }
 
+  /**
+   * Schedule selected tasks into week ranges for the proposal/addendum Gantt chart.
+   * Mirrors Project Planner roadmap scheduling (phased mods + review buffers + retainers).
+   */
+  function scheduleTasksForGantt(allTasks, options = {}) {
+    const frictionBuffer = options.frictionBuffer ?? 10;
+    const weeklyHours = Math.max(1, Number(options.weeklyHours) || 16);
+    const clientReviewWeeks = Math.max(0, Number(options.clientReviewWeeks) || 0);
+    const selected = (allTasks || []).filter((t) => t.selected);
+    const empty = {
+      items: [],
+      scheduledP1: [],
+      scheduledP2: [],
+      scheduledP3: [],
+      scheduledP4: [],
+      scheduledOther: [],
+      maxWeek: 4,
+      clientReviewWeeks,
+    };
+    if (!selected.length) return empty;
+
+    const bufferMultiplier = 1 + frictionBuffer / 100;
+    let currentWeek = 1;
+
+    const p1Tasks = selected.filter((t) => isModCategory(t, 1));
+    const p2Tasks = selected.filter((t) => isModCategory(t, 2));
+    const p3Tasks = selected.filter((t) => isModCategory(t, 3));
+    const p4Tasks = selected.filter((t) => isModCategory(t, 4));
+    const otherTasks = selected.filter(
+      (t) => !isModCategory(t, 1) && !isModCategory(t, 2) && !isModCategory(t, 3) && !isModCategory(t, 4),
+    );
+    const otherProjectTasks = otherTasks.filter((t) => !t.isMonthlyRetainer);
+    const otherRetainerTasks = otherTasks.filter((t) => t.isMonthlyRetainer);
+
+    const phaseQueue = [];
+    if (p1Tasks.length) phaseQueue.push({ key: 'p1', tasks: p1Tasks });
+    if (p2Tasks.length) phaseQueue.push({ key: 'p2', tasks: p2Tasks });
+    if (p3Tasks.length) phaseQueue.push({ key: 'p3', tasks: p3Tasks });
+    if (otherProjectTasks.length) phaseQueue.push({ key: 'other', tasks: otherProjectTasks });
+
+    const schedulePhase = (tasksList, isLastPhase) => {
+      if (!tasksList.length) return [];
+      let currentCumulativeHours = 0;
+      const scheduled = tasksList.map((task) => {
+        const bufferedHours = Math.round(task.estHours * bufferMultiplier);
+        const taskStartWeek = currentWeek + Math.floor(currentCumulativeHours / weeklyHours);
+        const endHour = currentCumulativeHours + Math.max(1, bufferedHours);
+        const taskEndWeek = currentWeek + Math.floor((endHour - 0.1) / weeklyHours);
+        currentCumulativeHours += bufferedHours;
+        return {
+          ...task,
+          bufferedHours,
+          startWeek: taskStartWeek,
+          endWeek: Math.max(taskStartWeek, taskEndWeek),
+          isRetainer: false,
+        };
+      });
+      const totalWeeksForGroup = Math.ceil(currentCumulativeHours / weeklyHours) || 1;
+      currentWeek += totalWeeksForGroup;
+      if (!isLastPhase) currentWeek += clientReviewWeeks;
+      return scheduled;
+    };
+
+    const scheduledByKey = { p1: [], p2: [], p3: [], other: [] };
+    phaseQueue.forEach((phase, idx) => {
+      scheduledByKey[phase.key] = schedulePhase(phase.tasks, idx === phaseQueue.length - 1);
+    });
+
+    const projectScheduled = [
+      ...scheduledByKey.p1,
+      ...scheduledByKey.p2,
+      ...scheduledByKey.p3,
+      ...scheduledByKey.other,
+    ];
+    const maxProjectEndWeek = projectScheduled.length
+      ? Math.max(...projectScheduled.map((t) => t.endWeek))
+      : 0;
+    const p4StartWeek = maxProjectEndWeek > 0 ? maxProjectEndWeek + 1 : 1;
+
+    const scheduledP4 = p4Tasks.map((task) => ({
+      ...task,
+      bufferedHours: Math.round(task.estHours * bufferMultiplier),
+      startWeek: p4StartWeek,
+      endWeek: task.isMonthlyRetainer ? null : p4StartWeek,
+      isRetainer: !!task.isMonthlyRetainer,
+    }));
+
+    const scheduledOtherRetainers = otherRetainerTasks.map((task) => ({
+      ...task,
+      bufferedHours: Math.round(task.estHours * bufferMultiplier),
+      startWeek: p4StartWeek,
+      endWeek: null,
+      isRetainer: true,
+    }));
+
+    const scheduledOther = [...scheduledByKey.other, ...scheduledOtherRetainers];
+    const items = [...projectScheduled, ...scheduledP4, ...scheduledOtherRetainers];
+    const projectTasks = items.filter((t) => !t.isRetainer);
+    const hasRetainers = items.some((t) => t.isRetainer);
+    const maxProj = projectTasks.length ? Math.max(...projectTasks.map((t) => t.endWeek)) : 4;
+    const maxWeek = hasRetainers ? maxProj + 4 : (projectTasks.length ? maxProj : 4);
+
+    return {
+      items,
+      scheduledP1: scheduledByKey.p1,
+      scheduledP2: scheduledByKey.p2,
+      scheduledP3: scheduledByKey.p3,
+      scheduledP4,
+      scheduledOther,
+      maxWeek,
+      clientReviewWeeks,
+    };
+  }
+
   function isCustomAddendumTask(task) {
     if (!task) return false;
     if (task.isCustom === true) return true;
@@ -1281,8 +1395,8 @@
 
   function ensureAddendumModules() {
     return Promise.all([
-      loadScriptOnce('../../shared/engagement-addendum-templates.js?v=20250805-custom-scope-v1'),
-      loadScriptOnce('project_planner_addendum.js?v=20250805-custom-scope-v1'),
+      loadScriptOnce('../../shared/engagement-addendum-templates.js?v=20250805-addendum-gantt-v1'),
+      loadScriptOnce('project_planner_addendum.js?v=20250805-addendum-gantt-v1'),
     ]);
   }
 
@@ -1350,6 +1464,7 @@
     createCustomAddendumTask,
     getAddendumScopeMode,
     setAddendumScopeMode,
+    scheduleTasksForGantt,
     loadScriptOnce,
     ensureAddendumModules,
     ensurePortalSync,
