@@ -189,6 +189,7 @@
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
     <script src="../../shared/policy-chapters.js?v=20250805-chapters-v1"></script>
     <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
+    <script src="../../shared/google-doc-export.js?v=20250805-gdoc-export-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -2195,6 +2196,102 @@
                 return localPolicyData.standardDocs?.[activeMode]?.title || 'Document';
             };
 
+            const compileActiveDocumentMarkdown = () => {
+                if (activeMode === 'sop') {
+                    const sop = activeSop;
+                    if (!sop) return null;
+                    let md = `# ${sop.title || 'Standard Operating Procedure'}\n\n`;
+                    if (sop.docControl?.owner) md += `**Owner:** ${sop.docControl.owner}`;
+                    if (sop.docControl?.version) md += ` · **Version:** ${sop.docControl.version}`;
+                    if (sop.docControl?.effectiveDate) md += ` · **Effective:** ${sop.docControl.effectiveDate}`;
+                    md += `\n\n`;
+                    if (sop.objective) md += `## Purpose\n${sop.objective}\n\n`;
+                    if (sop.scope) md += `## Applies to\n${sop.scope}\n\n`;
+                    if (sop.prerequisites?.trim()) md += `## Before you start\n${sop.prerequisites}\n\n`;
+                    if (sop.diagram?.svgCache) md += `## Process diagram\n![Process diagram](${sop.diagram.svgCache})\n\n`;
+                    if (sop.steps?.length) {
+                        md += `## Steps\n`;
+                        sop.steps.forEach((step, idx) => {
+                            md += `**${idx + 1}. ${step.action}**\n*Who: ${step.owner || '—'} · Time: ${step.duration || '—'}*\n${step.details || ''}\n\n`;
+                        });
+                    }
+                    if (sop.kpis?.trim()) md += `## Done when\n${sop.kpis}\n\n`;
+                    if (sop.troubleshooting?.trim()) md += `## If something goes wrong\n${sop.troubleshooting}\n\n`;
+                    return md.trim();
+                }
+                if (activeMode === 'handbook') {
+                    const hb = localPolicyData.handbook;
+                    if (!hb) return null;
+                    let md = `# ${hb.title || 'Employee Handbook'}\n\n`;
+                    if (hb.introduction) md += `## Introduction\n${hb.introduction}\n\n`;
+                    if (hb.timekeeping) md += `## Hours & Attendance\n${hb.timekeeping}\n\n`;
+                    if (hb.compensation) md += `## Pay & Benefits\n${hb.compensation}\n\n`;
+                    if (hb.offboarding) md += `## Resignation & Offboarding\n${hb.offboarding}\n\n`;
+                    if (hb.leaves?.length) {
+                        md += `## Leave\n`;
+                        hb.leaves.forEach((l) => { md += `- **${l.name}** (${l.duration}): ${l.condition}\n`; });
+                        md += `\n`;
+                    }
+                    if (hb.discipline?.length) {
+                        md += `## Discipline\n`;
+                        hb.discipline.forEach((d) => { md += `### ${d.level}\n**Action:** ${d.action}\n**Details:** ${d.details}\n\n`; });
+                    }
+                    if (hb.customPolicies?.length) {
+                        md += `## Additional Policies\n`;
+                        hb.customPolicies.forEach((cp) => { md += `### ${cp.title}\n${cp.text}\n\n`; });
+                    }
+                    if (hb.mission) md += `## Mission\n${hb.mission}\n\n`;
+                    if (hb.vision) md += `## Vision\n${hb.vision}\n\n`;
+                    return md.trim();
+                }
+                if (activeMode === 'jobDescriptions') {
+                    if (!activeJobRole) return null;
+                    return compileJobRoleMarkdown(migrateJobRoleFromContent(activeJobRole));
+                }
+                if (activeMode === 'orgChart') {
+                    const orgDoc = localPolicyData.standardDocs?.orgChart;
+                    if (!orgDoc) return null;
+                    if (window.DiagramEditor?.compileOrgChartPolicyMarkdown) {
+                        return window.DiagramEditor.compileOrgChartPolicyMarkdown(orgDoc);
+                    }
+                    return PC().compileStandardPolicyMarkdown?.(orgDoc) || `# ${orgDoc.title || 'Org Chart'}\n\n${orgDoc.introduction || ''}`;
+                }
+                if (localPolicyData.standardDocs?.[activeMode]) {
+                    const doc = localPolicyData.standardDocs[activeMode];
+                    return PC().compileStandardPolicyMarkdown?.(doc) || `# ${doc.title}\n\n${doc.introduction || ''}`;
+                }
+                return null;
+            };
+
+            const handleExportGoogleDoc = () => {
+                if (activeMode === 'dashboard' || activeMode === 'branding') {
+                    triggerToast('Open a policy document first, then export to Google Docs.');
+                    return;
+                }
+                const title = getActiveDocTitle();
+                const md = compileActiveDocumentMarkdown();
+                if (!md || !String(md).trim()) {
+                    triggerToast('Nothing to export in this document yet.');
+                    return;
+                }
+                const exporter = window.GoogleDocExport;
+                if (!exporter?.exportHtmlAsGoogleDoc) {
+                    triggerToast('❌ Google Doc export helper failed to load. Refresh and try again.');
+                    return;
+                }
+                const bodyHtml = renderMarkdown(md);
+                const { filename } = exporter.exportHtmlAsGoogleDoc(title, bodyHtml, {
+                    company: activeClient?.clientCompany || '',
+                    subtitle: 'Exported from Policy Studio',
+                });
+                try {
+                    window.open('https://drive.google.com/drive/u/0/my-drive', '_blank', 'noopener,noreferrer');
+                } catch {
+                    /* ignore popup blockers */
+                }
+                triggerToast(`📄 Downloaded ${filename} — upload to Drive → Open with Google Docs`);
+            };
+
             const activeProfile = useMemo(() => {
                 if (isStandalone) return activeClient;
                 return workbookProfiles.find(p => p.id === activeProfileId);
@@ -2992,6 +3089,14 @@
                                     className={`px-5 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                 >
                                     <Icons.Print /> Export PDF
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => runIfUnlocked(handleExportGoogleDoc)}
+                                    className={`px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-brandTeal-400 border border-brandTeal-500/40 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
+                                    title="Download a Word file you can upload to Google Drive and open with Google Docs"
+                                >
+                                    <Icons.FileText /> Export Google Doc
                                 </button>
                             </div>
                         </div>
