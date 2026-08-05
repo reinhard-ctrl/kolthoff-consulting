@@ -200,6 +200,25 @@ assert.equal(switchedToCustom.scopeMode, 'custom');
 assert.ok(switchedToCustom.tasks.length >= 1);
 assert.ok(switchedToCustom.tasks.every((t) => H.isCustomAddendumTask(t)));
 
+const ganttFromMods = H.scheduleTasksForGantt([
+  { id: 'm1-01', category: 'MOD 1 - Leak Scan', deliverable: 'Scan', estHours: 8, tier: 'senior', selected: true },
+  { id: 'm2-01', category: 'MOD 2 - Process', deliverable: 'Playbook', estHours: 8, tier: 'senior', selected: true },
+], { frictionBuffer: 0, weeklyHours: 8, clientReviewWeeks: 1 });
+assert.ok(ganttFromMods.scheduledP1.length === 1);
+assert.ok(ganttFromMods.scheduledP2.length === 1);
+assert.equal(ganttFromMods.scheduledP1[0].startWeek, 1);
+assert.ok(ganttFromMods.scheduledP2[0].startWeek > ganttFromMods.scheduledP1[0].endWeek);
+assert.ok(ganttFromMods.maxWeek >= ganttFromMods.scheduledP2[0].endWeek);
+
+const ganttCustom = H.scheduleTasksForGantt([
+  { id: 'custom-1', category: 'Custom Scope', deliverable: 'Cutover', estHours: 8, tier: 'principal', selected: true, isCustom: true },
+  { id: 'custom-2', category: 'Custom Scope', deliverable: 'Training', estHours: 8, tier: 'senior', selected: true, isCustom: true },
+], { frictionBuffer: 0, weeklyHours: 8, clientReviewWeeks: 0 });
+assert.equal(ganttCustom.scheduledOther.length, 2);
+assert.equal(ganttCustom.scheduledP1.length, 0);
+assert.equal(ganttCustom.scheduledOther[0].startWeek, 1);
+assert.ok(ganttCustom.maxWeek >= 2);
+
 const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
   ...plannerState,
   addenda: [addendumRecord],

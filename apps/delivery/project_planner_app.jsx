@@ -2250,91 +2250,23 @@
       const handleSelectAllPresets = () => { setPackageCustomized(true); setActivePresets(['mod1', 'mod2', 'mod3', 'mod4']); setTasks(prev => prev.map(t => ({ ...t, selected: true }))); };
       const handleClearAllPresets = () => { setPackageCustomized(true); setActivePresets([]); setTasks(prev => prev.map(t => ({ ...t, selected: false }))); };
 
-      const scheduledTasksAndPhases = useMemo(() => {
-        const selected = tasks.filter(t => t.selected);
-        if (selected.length === 0) return { items: [], scheduledP1: [], scheduledP2: [], scheduledP3: [], scheduledP4: [] };
-        
-        const bufferMultiplier = 1 + (frictionBuffer / 100);
-        let currentWeek = 1;
-        
-        const p1Tasks = selected.filter(t => H.isModCategory(t, 1));
-        const p2Tasks = selected.filter(t => H.isModCategory(t, 2));
-        const p3Tasks = selected.filter(t => H.isModCategory(t, 3));
-        const p4Tasks = selected.filter(t => H.isModCategory(t, 4));
-
-        const activePhases = [];
-        if (p1Tasks.length) activePhases.push(p1Tasks);
-        if (p2Tasks.length) activePhases.push(p2Tasks);
-        if (p3Tasks.length) activePhases.push(p3Tasks);
-
-        const schedulePhase = (tasksList, isLastPhase) => {
-          if (tasksList.length === 0) return [];
-          let currentCumulativeHours = 0;
-          
-          const scheduled = tasksList.map(task => {
-            const bufferedHours = Math.round(task.estHours * bufferMultiplier);
-            const taskStartWeek = currentWeek + Math.floor(currentCumulativeHours / weeklyHours);
-            const endHour = currentCumulativeHours + Math.max(1, bufferedHours);
-            const taskEndWeek = currentWeek + Math.floor((endHour - 0.1) / weeklyHours);
-            
-            currentCumulativeHours += bufferedHours;
-
-            return { 
-              ...task, 
-              bufferedHours, 
-              startWeek: taskStartWeek, 
-              endWeek: Math.max(taskStartWeek, taskEndWeek),
-              isRetainer: false 
-            };
-          });
-
-          const totalWeeksForGroup = Math.ceil(currentCumulativeHours / weeklyHours) || 1;
-          currentWeek += totalWeeksForGroup;
-          
-          if (!isLastPhase) {
-            currentWeek += clientReviewWeeks;
-          }
-          
-          return scheduled;
-        };
-
-        const scheduledP1 = p1Tasks.length ? schedulePhase(p1Tasks, activePhases.indexOf(p1Tasks) === activePhases.length - 1) : [];
-        const scheduledP2 = p2Tasks.length ? schedulePhase(p2Tasks, activePhases.indexOf(p2Tasks) === activePhases.length - 1) : [];
-        const scheduledP3 = p3Tasks.length ? schedulePhase(p3Tasks, activePhases.indexOf(p3Tasks) === activePhases.length - 1) : [];
-
-        // Calculation Correction: Dynamically schedule Module 4 strictly after preceding project scopes complete
-        const maxProjectEndWeek = Math.max(
-          ...scheduledP1.map(t => t.endWeek),
-          ...scheduledP2.map(t => t.endWeek),
-          ...scheduledP3.map(t => t.endWeek),
-          0
-        );
-        const p4StartWeek = maxProjectEndWeek > 0 ? maxProjectEndWeek + 1 : 1;
-
-        const scheduledP4 = p4Tasks.map(task => ({
-          ...task,
-          bufferedHours: Math.round(task.estHours * bufferMultiplier),
-          startWeek: p4StartWeek,
-          endWeek: task.isMonthlyRetainer ? null : p4StartWeek,
-          isRetainer: !!task.isMonthlyRetainer
-        }));
-
-        return {
-          items: [...scheduledP1, ...scheduledP2, ...scheduledP3, ...scheduledP4],
-          scheduledP1, scheduledP2, scheduledP3, scheduledP4
-        };
-      }, [tasks, frictionBuffer, weeklyHours, clientReviewWeeks]);
+      const scheduledTasksAndPhases = useMemo(() => H.scheduleTasksForGantt(tasks, {
+        frictionBuffer,
+        weeklyHours,
+        clientReviewWeeks,
+      }), [tasks, frictionBuffer, weeklyHours, clientReviewWeeks]);
 
       const scheduledTasks = scheduledTasksAndPhases.items;
+      const maxWeek = scheduledTasksAndPhases.maxWeek;
 
-      const maxWeek = useMemo(() => {
-        const projectTasks = scheduledTasks.filter(t => !t.isRetainer);
-        const hasRetainers = scheduledTasks.some(t => t.isRetainer);
-        if (projectTasks.length === 0) return 4;
-        const maxProj = Math.max(...projectTasks.map(t => t.endWeek));
-        // Extend Gantt view bounds by 4 weeks to display ongoing retainer tasks elegantly
-        return hasRetainers ? maxProj + 4 : maxProj;
-      }, [scheduledTasks]);
+      const addendumGanttSchedule = useMemo(() => {
+        if (!activeAddendum) return null;
+        return H.scheduleTasksForGantt(activeAddendum.tasks || [], {
+          frictionBuffer: activeAddendum.frictionBuffer ?? frictionBuffer,
+          weeklyHours,
+          clientReviewWeeks,
+        });
+      }, [activeAddendum, frictionBuffer, weeklyHours, clientReviewWeeks]);
 
       const calculatedTimeline = useMemo(() => {
         const selectedTasks = tasks.filter(t => t.selected);
@@ -3870,6 +3802,9 @@
               includeTax,
               formatCurrency,
               addendumEconomics,
+              addendumGanttSchedule,
+              modPhase,
+              modTitle,
               renderSignaturesBlock,
               renderPrintBrandLogo,
               brand,
