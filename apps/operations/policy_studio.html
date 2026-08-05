@@ -185,6 +185,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
+    <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -368,11 +369,47 @@
                 jobDescriptions: {
                     title: 'Job Role Profiles',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'HR Director' },
-                    introduction: 'One-page role summaries: what the job owns, who it works with, and skills needed.',
+                    introduction: 'One-page role summaries for hiring, onboarding, and performance alignment.',
                     sections: [
-                        { id: 'jd-1', title: 'Operations Manager', content: 'Owns daily workflow, SLA delivery, budget control, and team coaching.\nReports to: Operations Director\nMust-dos: keep SLAs on track; unblock escalations; run weekly ops huddle\nSkills: planning, people leadership, process discipline' },
-                        { id: 'jd-2', title: 'QA / Compliance Specialist', content: 'Audits process quality, finds root causes, and improves controls.\nReports to: Operations Manager\nMust-dos: sample audits; defect logs; corrective actions\nSkills: detail accuracy, systems knowledge, clear documentation' },
-                        { id: 'jd-3', title: 'Customer Success Manager', content: 'Owns account health, retention, and delivery alignment with client goals.\nReports to: Client Success Lead\nMust-dos: QBRs; risk escalation; renewals pipeline\nSkills: communication, negotiation, relationship management' }
+                        {
+                            id: 'jd-1',
+                            title: 'Operations Manager',
+                            department: 'Operations',
+                            reportsTo: 'Operations Director',
+                            purpose: 'Keep daily delivery on SLA and unblock the team.',
+                            responsibilities: '• Run the weekly ops huddle\n• Clear escalations the same day when possible\n• Track SLA performance and remove blockers\n• Coach team members on process standards',
+                            successMeasures: '• SLA at or above target\n• Escalations closed or owned within the day\n• Weekly huddle held without fail',
+                            skillsTools: '• Planning and prioritization\n• People leadership\n• WMS / CRM / ops dashboards',
+                            collaboratesWith: 'Client Success, QA, Finance',
+                            outOfScope: '',
+                            content: ''
+                        },
+                        {
+                            id: 'jd-2',
+                            title: 'QA / Compliance Specialist',
+                            department: 'Operations',
+                            reportsTo: 'Operations Manager',
+                            purpose: 'Protect process quality and close control gaps before they hit the client.',
+                            responsibilities: '• Run sample audits on key workflows\n• Log defects and find root causes\n• Drive corrective actions to done\n• Keep compliance evidence current',
+                            successMeasures: '• Audit plan completed on schedule\n• Critical defects have owners and due dates\n• Recurring issues trend down month over month',
+                            skillsTools: '• Detail accuracy\n• Process documentation\n• Spreadsheet / ticketing tools',
+                            collaboratesWith: 'Operations, HR, IT',
+                            outOfScope: '',
+                            content: ''
+                        },
+                        {
+                            id: 'jd-3',
+                            title: 'Customer Success Manager',
+                            department: 'Client Success',
+                            reportsTo: 'Client Success Lead',
+                            purpose: 'Protect account health, retention, and delivery alignment with client goals.',
+                            responsibilities: '• Own QBR cadence and account plans\n• Escalate delivery risk early\n• Drive renewals pipeline hygiene\n• Translate client goals into clear asks for Operations',
+                            successMeasures: '• Retention / renewal target met\n• At-risk accounts have an active plan\n• QBRs completed on schedule',
+                            skillsTools: '• Communication and negotiation\n• Relationship management\n• CRM',
+                            collaboratesWith: 'Operations, Sales, Leadership',
+                            outOfScope: '',
+                            content: ''
+                        }
                     ]
                 },
                 orgChart: JSON.parse(JSON.stringify(window.DiagramEditor?.DEFAULT_ORG_CHART_POLICY || {
@@ -386,6 +423,25 @@
                 }))
             }
         };
+
+        const JR = () => window.JobRoleProfile || {};
+        const createEmptyJobRole = (overrides) =>
+            JR().createEmptyJobRole?.(overrides) || {
+                id: overrides?.id || `jd-${Date.now()}`,
+                title: overrides?.title || 'New Job Role Profile',
+                department: '',
+                reportsTo: '',
+                purpose: '',
+                responsibilities: '',
+                successMeasures: '',
+                skillsTools: '',
+                collaboratesWith: '',
+                outOfScope: '',
+                content: '',
+                ...(overrides || {}),
+            };
+        const migrateJobRoleFromContent = (role) => JR().migrateJobRoleFromContent?.(role) || role;
+        const compileJobRoleMarkdown = (role) => JR().compileJobRoleMarkdown?.(role) || `# ${role?.title || 'Job Role Profile'}`;
 
         const Icons = {
             Print: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
@@ -877,6 +933,7 @@
                         mergedStandardDocs[key] = window.DiagramEditor.mergeOrgChartPolicy(defaultDoc, loadedDoc);
                         return;
                     }
+                    const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
                     mergedStandardDocs[key] = {
                         ...defaultDoc,
                         ...loadedDoc,
@@ -884,7 +941,9 @@
                             ...defaultDoc.docControl,
                             ...(loadedDoc.docControl || {})
                         },
-                        sections: loadedDoc.sections || defaultDoc.sections
+                        sections: key === 'jobDescriptions'
+                            ? (sectionsSource || []).map((sec) => migrateJobRoleFromContent(sec))
+                            : sectionsSource
                     };
                 });
                 
@@ -1139,12 +1198,11 @@
                                 return;
                             }
                             roles.forEach((role, idx) => {
-                                let mdContent = `# ${role.title || `Role Profile ${idx + 1}`}\n\n`;
-                                mdContent += `${role.content || ''}\n`;
+                                const normalized = migrateJobRoleFromContent(role);
                                 policiesArray.push({
-                                    id: role.id || `doc-jobDescriptions-${idx + 1}`,
-                                    title: role.title || `Role Profile ${idx + 1}`,
-                                    content: mdContent.trim(),
+                                    id: normalized.id || `doc-jobDescriptions-${idx + 1}`,
+                                    title: normalized.title || `Role Profile ${idx + 1}`,
+                                    content: compileJobRoleMarkdown(normalized),
                                     lastUpdated: doc.docControl?.lastReviewed || defaultDate
                                 });
                             });
@@ -1239,8 +1297,10 @@
                     }
                     triggerToast('🔄 This SOP file reinitialized to default template! Remember to save changes.');
                 } else if (activeMode === 'jobDescriptions') {
-                    const templates = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.standardDocs.jobDescriptions.sections || []));
-                    const templateRole = templates[0] || { id: 'jd-1', title: 'New Role Profile', content: 'Role responsibilities and competencies...' };
+                    const templates = (DEFAULT_DOCUMENT_DATA.standardDocs.jobDescriptions.sections || []).map((sec) =>
+                        migrateJobRoleFromContent(JSON.parse(JSON.stringify(sec)))
+                    );
+                    const templateRole = templates[0] || createEmptyJobRole({ title: 'New Job Role Profile' });
                     const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
                     if (!activeJobRoleId || !roles.some((r) => r.id === activeJobRoleId)) {
                         const fresh = { ...templateRole, id: makeJobRoleId() };
@@ -1463,13 +1523,16 @@
             const removeStandardSection = (key, secId) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: (docs[key]?.sections || []).filter(s => s.id !== secId) } }));
             const reorderStandardSection = (key, idx, dir) => updateDocState('standardDocs', docs => ({ ...docs, [key]: { ...docs[key], sections: moveArrayItem(docs[key]?.sections || [], idx, dir) } }));
 
-            // Job Role Profile handlers — each section is a separate file
+            // Job Role Profile handlers — each section is a separate structured file
             const addJobRole = () => {
-                const fresh = {
+                const fresh = createEmptyJobRole({
                     id: makeJobRoleId(),
                     title: 'New Job Role Profile',
-                    content: 'Outline essential responsibilities, reporting lines, and core competencies for this role.',
-                };
+                    purpose: '',
+                    responsibilities: '• ',
+                    successMeasures: '• ',
+                    skillsTools: '• ',
+                });
                 updateDocState('standardDocs', (docs) => ({
                     ...docs,
                     jobDescriptions: {
@@ -1479,6 +1542,7 @@
                 }));
                 openJobRoleDocument(fresh.id);
             };
+            const updateJobRoleField = (roleId, field, val) => updateStandardSection('jobDescriptions', roleId, field, val);
             const deleteJobRole = (roleId) => {
                 const remaining = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).filter((r) => r.id !== roleId);
                 updateDocState('standardDocs', (docs) => ({
@@ -1499,7 +1563,8 @@
 
             const activeJobRole = useMemo(() => {
                 const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
-                return roles.find((r) => r.id === activeJobRoleId) || null;
+                const found = roles.find((r) => r.id === activeJobRoleId) || null;
+                return found ? migrateJobRoleFromContent(found) : null;
             }, [localPolicyData.standardDocs?.jobDescriptions?.sections, activeJobRoleId]);
             const activeJobRoleIndex = useMemo(() => {
                 if (!activeJobRoleId) return -1;
@@ -1673,13 +1738,16 @@
                     blurb: sop.objective || 'Standard operating procedure',
                     obj: sop,
                 }));
-                const jobRoleFiles = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => ({
-                    id: `jobRole:${role.id}`,
-                    jobRoleId: role.id,
-                    title: role.title || `Role Profile ${idx + 1}`,
-                    blurb: 'Job role profile',
-                    obj: { docControl: localPolicyData.standardDocs?.jobDescriptions?.docControl },
-                }));
+                const jobRoleFiles = (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => {
+                    const normalized = migrateJobRoleFromContent(role);
+                    return {
+                        id: `jobRole:${normalized.id}`,
+                        jobRoleId: normalized.id,
+                        title: normalized.title || `Role Profile ${idx + 1}`,
+                        blurb: normalized.purpose || [normalized.department, normalized.reportsTo ? `Reports to ${normalized.reportsTo}` : ''].filter(Boolean).join(' · ') || 'Job role profile',
+                        obj: { docControl: localPolicyData.standardDocs?.jobDescriptions?.docControl },
+                    };
+                });
 
                 const categories = [
                     {
@@ -3245,18 +3313,23 @@
                                                         ) : (
                                                             <React.Fragment>
                                                                 <tr className="block print:table-row">
-                                                                    <td className="block print:table-cell px-10 pt-10 pb-0 align-top space-y-6">
+                                                                    <td className="block print:table-cell px-10 pt-10 pb-0 align-top space-y-5">
                                                                         <div>
                                                                             <div className="font-bold text-xs uppercase tracking-widest mb-1" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Job Role Profile · File {roleIdx + 1}</div>
                                                                             <label htmlFor={`job-role-title-${role.id}`} className="sr-only">Role Title</label>
                                                                             <AutoResizeTextarea
                                                                                 id={`job-role-title-${role.id}`}
                                                                                 value={role.title}
-                                                                                onChange={(val) => updateStandardSection('jobDescriptions', role.id, 'title', val)}
+                                                                                onChange={(val) => updateJobRoleField(role.id, 'title', val)}
                                                                                 isEditMode={isEditMode}
                                                                                 className={`text-2xl font-bold text-slate-900 uppercase print-section-title ${!isEditMode ? 'preview-mode-input' : ''}`}
                                                                                 placeholder="Role Title"
                                                                             />
+                                                                            <div className="mt-2 text-sm text-slate-600 font-medium">
+                                                                                {[role.department, role.reportsTo ? `Reports to ${role.reportsTo}` : '']
+                                                                                    .filter(Boolean)
+                                                                                    .join(' · ') || (isEditMode ? 'Add department and manager below' : '')}
+                                                                            </div>
                                                                         </div>
 
                                                                         <section aria-label="Document Control" className="bg-slate-50 border border-slate-200 rounded p-4">
@@ -3296,38 +3369,97 @@
                                                                                 </div>
                                                                             </div>
                                                                         </section>
+
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                                                            <div>
+                                                                                <label htmlFor={`jd-dept-${role.id}`} className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Department</label>
+                                                                                {isEditMode ? (
+                                                                                    <input id={`jd-dept-${role.id}`} type="text" value={role.department || ''} onChange={(e) => updateJobRoleField(role.id, 'department', e.target.value)} className="w-full bg-white border border-slate-200 p-2 rounded focus:outline-none focus:border-brandTeal-500 text-slate-800" placeholder="e.g. Operations" />
+                                                                                ) : (
+                                                                                    <div className="font-semibold text-slate-800 py-1">{role.department || '—'}</div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div>
+                                                                                <label htmlFor={`jd-reports-${role.id}`} className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Reports to</label>
+                                                                                {isEditMode ? (
+                                                                                    <input id={`jd-reports-${role.id}`} type="text" value={role.reportsTo || ''} onChange={(e) => updateJobRoleField(role.id, 'reportsTo', e.target.value)} className="w-full bg-white border border-slate-200 p-2 rounded focus:outline-none focus:border-brandTeal-500 text-slate-800" placeholder="Manager title" />
+                                                                                ) : (
+                                                                                    <div className="font-semibold text-slate-800 py-1">{role.reportsTo || '—'}</div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
                                                                     </td>
                                                                 </tr>
 
-                                                                <tr className="block print:table-row page-break-avoid no-print">
+                                                                <tr className="block print:table-row page-break-avoid">
                                                                     <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
-                                                                        <h2 className="text-sm font-bold text-slate-500 border-b border-slate-200 pb-2 uppercase mb-3">Shared pack note (edit only)</h2>
-                                                                        <label htmlFor={`jd-intro-${role.id}`} className="sr-only">Shared introduction</label>
-                                                                        <MarkdownField
-                                                                            id={`jd-intro-${role.id}`}
-                                                                            value={pack.introduction || ''}
-                                                                            onChange={(val) => updateStandardDoc('jobDescriptions', 'introduction', val)}
-                                                                            className="text-sm text-slate-700 leading-relaxed"
-                                                                            isEditMode={isEditMode}
-                                                                            placeholder="Optional pack-level note — not repeated on each role PDF..."
-                                                                        />
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Purpose</h2>
+                                                                        <MarkdownField id={`jd-purpose-${role.id}`} value={role.purpose || ''} onChange={(val) => updateJobRoleField(role.id, 'purpose', val)} className="text-sm text-slate-700 leading-relaxed" isEditMode={isEditMode} placeholder="1–2 sentences: why this role exists..." />
                                                                     </td>
                                                                 </tr>
 
                                                                 <tr className="block print:table-row">
-                                                                    <td className="block print:table-cell px-10 pt-8 pb-10 w-full align-top">
-                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Role summary</h2>
-                                                                        <label htmlFor={`jd-content-${role.id}`} className="sr-only">Role Content</label>
-                                                                        <MarkdownField
-                                                                            id={`jd-content-${role.id}`}
-                                                                            value={role.content || ''}
-                                                                            onChange={(val) => updateStandardSection('jobDescriptions', role.id, 'content', val)}
-                                                                            className="text-sm text-slate-600 leading-relaxed"
-                                                                            isEditMode={isEditMode}
-                                                                            placeholder={"Owns…\nReports to…\nMust-dos…\nSkills…"}
-                                                                        />
+                                                                    <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Key responsibilities</h2>
+                                                                        <MarkdownField id={`jd-resp-${role.id}`} value={role.responsibilities || ''} onChange={(val) => updateJobRoleField(role.id, 'responsibilities', val)} className="text-sm text-slate-700 leading-relaxed" isEditMode={isEditMode} placeholder={"• Verb-first responsibility\n• Another must-do"} />
                                                                     </td>
                                                                 </tr>
+
+                                                                <tr className="block print:table-row">
+                                                                    <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Success measures</h2>
+                                                                        <MarkdownField id={`jd-success-${role.id}`} value={role.successMeasures || ''} onChange={(val) => updateJobRoleField(role.id, 'successMeasures', val)} className="text-sm text-slate-700 leading-relaxed" isEditMode={isEditMode} placeholder={"• How we know this role is working\n• Another check"} />
+                                                                    </td>
+                                                                </tr>
+
+                                                                <tr className="block print:table-row">
+                                                                    <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Skills &amp; tools</h2>
+                                                                        <MarkdownField id={`jd-skills-${role.id}`} value={role.skillsTools || ''} onChange={(val) => updateJobRoleField(role.id, 'skillsTools', val)} className="text-sm text-slate-700 leading-relaxed" isEditMode={isEditMode} placeholder={"• Must-have skill\n• Core system / tool"} />
+                                                                    </td>
+                                                                </tr>
+
+                                                                {(isEditMode || (role.collaboratesWith || '').trim() || (role.outOfScope || '').trim()) && (
+                                                                    <tr className="block print:table-row">
+                                                                        <td className="block print:table-cell px-10 pt-8 pb-10 w-full align-top space-y-6">
+                                                                            <details className="border border-slate-200 rounded-xl p-4 bg-slate-50/60" open={isEditMode || undefined}>
+                                                                                <summary className="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer">Optional — Collaborates with / Out of scope</summary>
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                                                    <div>
+                                                                                        <h3 className="text-xs font-bold uppercase text-slate-600 mb-1">Collaborates with</h3>
+                                                                                        <MarkdownField id={`jd-collab-${role.id}`} value={role.collaboratesWith || ''} onChange={(val) => updateJobRoleField(role.id, 'collaboratesWith', val)} className="text-sm text-slate-700" isEditMode={isEditMode} placeholder="Teams this role works with regularly..." />
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <h3 className="text-xs font-bold uppercase text-slate-600 mb-1">Out of scope</h3>
+                                                                                        <MarkdownField id={`jd-oos-${role.id}`} value={role.outOfScope || ''} onChange={(val) => updateJobRoleField(role.id, 'outOfScope', val)} className="text-sm text-slate-700" isEditMode={isEditMode} placeholder="What this role does not own..." />
+                                                                                    </div>
+                                                                                </div>
+                                                                            </details>
+                                                                            {isEditMode && (
+                                                                                <div className="no-print border border-dashed border-slate-200 rounded-xl p-4">
+                                                                                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Legacy freeform note (optional)</h3>
+                                                                                    <MarkdownField id={`jd-content-${role.id}`} value={role.content || ''} onChange={(val) => updateJobRoleField(role.id, 'content', val)} className="text-sm text-slate-500" isEditMode={isEditMode} placeholder="Old freeform content kept for migration only..." />
+                                                                                </div>
+                                                                            )}
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+
+                                                                {isEditMode && (
+                                                                    <tr className="block print:table-row no-print">
+                                                                        <td className="block print:table-cell px-10 pt-4 pb-8 w-full align-top">
+                                                                            <h2 className="text-sm font-bold text-slate-500 border-b border-slate-200 pb-2 uppercase mb-3">Shared pack note (edit only)</h2>
+                                                                            <MarkdownField
+                                                                                id={`jd-intro-${role.id}`}
+                                                                                value={pack.introduction || ''}
+                                                                                onChange={(val) => updateStandardDoc('jobDescriptions', 'introduction', val)}
+                                                                                className="text-sm text-slate-700 leading-relaxed"
+                                                                                isEditMode={isEditMode}
+                                                                                placeholder="Optional pack-level note — not printed on each role PDF..."
+                                                                            />
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
                                                             </React.Fragment>
                                                         )}
                                                     </React.Fragment>
