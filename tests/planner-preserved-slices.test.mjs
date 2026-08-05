@@ -149,6 +149,56 @@ const secondAddendum = H.createAddendumRecord({
 });
 secondAddendum.id = 'addendum-test-a2';
 assert.equal(secondAddendum.suffix, 'A2');
+assert.equal(secondAddendum.scopeMode, 'custom');
+assert.equal(H.getAddendumScopeMode(secondAddendum), 'custom');
+assert.ok(secondAddendum.tasks.length >= 1);
+assert.ok(secondAddendum.tasks.every((t) => H.isCustomAddendumTask(t)));
+
+const customTask = H.createCustomAddendumTask({
+  deliverable: 'Weekend cutover support',
+  description: 'On-site support during go-live weekend.',
+  estHours: 6,
+  tier: 'principal',
+});
+assert.equal(customTask.isCustom, true);
+assert.equal(customTask.selected, true);
+assert.equal(customTask.deliverable, 'Weekend cutover support');
+assert.equal(customTask.estHours, 6);
+assert.equal(customTask.tier, 'principal');
+
+const namedCustomAddendum = {
+  ...secondAddendum,
+  tasks: [customTask],
+  scopeMode: 'custom',
+};
+const customModeValidation = H.validatePrintReadiness('addendum', {
+  clientCompany: 'Acme',
+  clientRep: 'Jane',
+  clientAddress: 'Manila',
+  activeAddendum: namedCustomAddendum,
+});
+assert.equal(customModeValidation.ok, true);
+
+const blankCustomValidation = H.validatePrintReadiness('addendum', {
+  clientCompany: 'Acme',
+  clientRep: 'Jane',
+  clientAddress: 'Manila',
+  activeAddendum: secondAddendum,
+});
+assert.equal(blankCustomValidation.ok, false);
+assert.ok(blankCustomValidation.issues.some((i) => i.includes('Name each custom deliverable')));
+
+const switchedToCatalog = H.setAddendumScopeMode(namedCustomAddendum, 'catalog', [
+  { id: 'm2-01', deliverable: 'Playbook', category: 'MOD 2', selected: false, estHours: 6, tier: 'senior' },
+]);
+assert.equal(switchedToCatalog.scopeMode, 'catalog');
+assert.ok(switchedToCatalog.tasks.some((t) => t.id === 'm2-01'));
+assert.ok(!switchedToCatalog.tasks.some((t) => H.isCustomAddendumTask(t)));
+
+const switchedToCustom = H.setAddendumScopeMode(switchedToCatalog, 'custom', []);
+assert.equal(switchedToCustom.scopeMode, 'custom');
+assert.ok(switchedToCustom.tasks.length >= 1);
+assert.ok(switchedToCustom.tasks.every((t) => H.isCustomAddendumTask(t)));
 
 const payloadWithAddenda = H.buildProfilePayload('client-1', 'Acme Workspace', {
   ...plannerState,

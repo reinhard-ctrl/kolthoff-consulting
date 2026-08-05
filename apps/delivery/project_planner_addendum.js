@@ -4,6 +4,13 @@
 (function (global) {
   const React = global.React;
 
+  const TIER_OPTIONS = [
+    { value: 'associate', label: 'Associate' },
+    { value: 'senior', label: 'Senior' },
+    { value: 'principal', label: 'Principal' },
+    { value: 'partner', label: 'Partner' },
+  ];
+
   function renderAddendumTaskList(props) {
     const {
       addendum,
@@ -14,7 +21,7 @@
       getRateForTier,
     } = props;
     if (!addendum) return null;
-    const tasks = addendum.tasks || [];
+    const tasks = (addendum.tasks || []).filter((t) => !(H?.isCustomAddendumTask?.(t)));
     const selected = tasks.filter((t) => t.selected);
     return React.createElement(
       'div',
@@ -51,7 +58,116 @@
           className: 'w-14 bg-brandNavy-955 border border-brandNavy-700 rounded p-1 text-[10px] text-slate-200 font-mono shrink-0',
         }),
       )),
-      selected.length === 0 && React.createElement('p', { className: 'text-[10px] text-amber-400 font-mono' }, 'Select at least one deliverable for this addendum.'),
+      tasks.length === 0 && React.createElement('p', { className: 'text-[10px] text-slate-500 font-mono' }, 'No catalog deliverables available for this workspace.'),
+      selected.length === 0 && tasks.length > 0 && React.createElement('p', { className: 'text-[10px] text-amber-400 font-mono' }, 'Select at least one deliverable for this addendum.'),
+    );
+  }
+
+  function renderCustomScopeEditor(props) {
+    const {
+      addendum,
+      onAddCustomTask,
+      onUpdateCustomTask,
+      onRemoveCustomTask,
+      formatCurrency,
+      getRateForTier,
+      rates,
+    } = props;
+    if (!addendum) return null;
+    const tasks = (addendum.tasks || []).filter((t) => t.isCustom || String(t.id || '').startsWith('custom-'));
+    return React.createElement(
+      'div',
+      { className: 'space-y-3' },
+      React.createElement('p', { className: 'text-[9px] text-slate-500 leading-relaxed' }, 'Define your own deliverables, hours, and rate tier. These bill separately from the original SOW.'),
+      React.createElement(
+        'div',
+        { className: 'space-y-2 max-h-[360px] overflow-y-auto pr-1' },
+        tasks.map((task) => React.createElement(
+          'div',
+          {
+            key: task.id,
+            className: 'p-2.5 rounded-lg border border-brandTeal-500/30 bg-brandTeal-500/5 space-y-2',
+          },
+          React.createElement(
+            'div',
+            { className: 'flex items-start gap-2' },
+            React.createElement('input', {
+              type: 'text',
+              value: task.deliverable || '',
+              placeholder: 'Deliverable name',
+              onChange: (e) => onUpdateCustomTask(task.id, { deliverable: e.target.value }),
+              className: 'flex-1 min-w-0 bg-brandNavy-955 border border-brandNavy-700 rounded p-1.5 text-[11px] font-bold text-slate-200 focus:outline-none focus:border-brandTeal-500',
+            }),
+            React.createElement(
+              'button',
+              {
+                type: 'button',
+                onClick: () => onRemoveCustomTask(task.id),
+                className: 'px-2 py-1 rounded border border-rose-500/40 text-rose-300 text-[9px] font-mono uppercase font-bold hover:bg-rose-500/10 shrink-0',
+                title: 'Remove deliverable',
+              },
+              'Remove',
+            ),
+          ),
+          React.createElement('textarea', {
+            rows: 2,
+            value: task.description || '',
+            placeholder: 'Description / scope notes',
+            onChange: (e) => onUpdateCustomTask(task.id, { description: e.target.value }),
+            className: 'w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-1.5 text-[10px] text-slate-300 focus:outline-none focus:border-brandTeal-500',
+          }),
+          React.createElement(
+            'div',
+            { className: 'grid grid-cols-3 gap-2' },
+            React.createElement(
+              'label',
+              { className: 'block' },
+              React.createElement('span', { className: 'text-[9px] font-mono uppercase text-slate-500 block mb-0.5' }, 'Hours'),
+              React.createElement('input', {
+                type: 'number',
+                min: 1,
+                value: task.estHours,
+                onChange: (e) => onUpdateCustomTask(task.id, { estHours: e.target.value }),
+                className: 'w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-1.5 text-[10px] text-slate-200 font-mono focus:outline-none focus:border-brandTeal-500',
+              }),
+            ),
+            React.createElement(
+              'label',
+              { className: 'block' },
+              React.createElement('span', { className: 'text-[9px] font-mono uppercase text-slate-500 block mb-0.5' }, 'Tier'),
+              React.createElement(
+                'select',
+                {
+                  value: task.tier || 'senior',
+                  onChange: (e) => onUpdateCustomTask(task.id, { tier: e.target.value }),
+                  className: 'w-full bg-brandNavy-955 border border-brandNavy-700 rounded p-1.5 text-[10px] text-slate-200 focus:outline-none focus:border-brandTeal-500',
+                },
+                TIER_OPTIONS.map((opt) => React.createElement('option', { key: opt.value, value: opt.value }, opt.label)),
+              ),
+            ),
+            React.createElement(
+              'div',
+              { className: 'block' },
+              React.createElement('span', { className: 'text-[9px] font-mono uppercase text-slate-500 block mb-0.5' }, 'Est. fee'),
+              React.createElement(
+                'div',
+                { className: 'w-full bg-brandNavy-950 border border-brandNavy-800 rounded p-1.5 text-[10px] text-brandTeal-300 font-mono' },
+                formatCurrency(Math.round((Number(task.estHours) || 0) * getRateForTier(task.tier, rates))),
+              ),
+            ),
+          ),
+        )),
+      ),
+      tasks.length === 0 && React.createElement('p', { className: 'text-[10px] text-amber-400 font-mono' }, 'Add at least one custom deliverable for this addendum.'),
+      React.createElement(
+        'button',
+        {
+          type: 'button',
+          onClick: onAddCustomTask,
+          className: 'w-full px-3 py-2 rounded-lg border border-brandTeal-500/40 bg-brandTeal-500/10 text-brandTeal-300 hover:bg-brandTeal-500/20 text-[10px] font-mono uppercase font-bold tracking-wider',
+        },
+        '+ Add custom deliverable',
+      ),
     );
   }
 
@@ -65,6 +181,10 @@
       onPatchActive,
       onToggleTask,
       onUpdateHours,
+      onSetScopeMode,
+      onAddCustomTask,
+      onUpdateCustomTask,
+      onRemoveCustomTask,
       templates,
       onDeleteActive,
       H,
@@ -74,6 +194,7 @@
       addendumEconomics,
       contractPartySource,
     } = props;
+    const scopeMode = H?.getAddendumScopeMode?.(activeAddendum) || activeAddendum?.scopeMode || 'catalog';
 
     return React.createElement(
       'div',
@@ -197,17 +318,48 @@
         ),
         React.createElement(
           'fieldset',
-          { className: 'bg-brandNavy-955 border border-brandNavy-700 rounded-xl p-3 space-y-2' },
-          React.createElement('legend', { className: 'text-[10px] font-mono uppercase text-brandTeal-400 font-bold px-1' }, 'Addendum scope (select deliverables)'),
-          renderAddendumTaskList({
-            addendum: activeAddendum,
-            onToggleTask,
-            onUpdateHours,
-            H,
-            formatCurrency,
-            rates,
-            getRateForTier,
-          }),
+          { className: 'bg-brandNavy-955 border border-brandNavy-700 rounded-xl p-3 space-y-3' },
+          React.createElement('legend', { className: 'text-[10px] font-mono uppercase text-brandTeal-400 font-bold px-1' }, 'Addendum scope'),
+          React.createElement(
+            'div',
+            { className: 'flex flex-wrap gap-2' },
+            [
+              { id: 'catalog', label: 'Catalog deliverables' },
+              { id: 'custom', label: 'Custom scope' },
+            ].map((option) => React.createElement(
+              'button',
+              {
+                key: option.id,
+                type: 'button',
+                onClick: () => onSetScopeMode && onSetScopeMode(option.id),
+                className: `px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                  scopeMode === option.id
+                    ? 'bg-brandTeal-500 text-brandNavy-955 border-brandTeal-400'
+                    : 'bg-brandNavy-900 text-slate-400 border-brandNavy-700 hover:border-brandTeal-600'
+                }`,
+              },
+              option.label,
+            )),
+          ),
+          scopeMode === 'custom'
+            ? renderCustomScopeEditor({
+              addendum: activeAddendum,
+              onAddCustomTask,
+              onUpdateCustomTask,
+              onRemoveCustomTask,
+              formatCurrency,
+              getRateForTier,
+              rates,
+            })
+            : renderAddendumTaskList({
+              addendum: activeAddendum,
+              onToggleTask,
+              onUpdateHours,
+              H,
+              formatCurrency,
+              rates,
+              getRateForTier,
+            }),
         ),
         addendumEconomics && React.createElement(
           'div',
@@ -296,16 +448,22 @@
         React.createElement(
           'div',
           { className: 'border-t border-slate-200 pt-5 space-y-3' },
-          React.createElement('h2', { className: 'text-sm font-mono uppercase tracking-wider text-slate-400 font-bold' }, 'Additional deliverables'),
+          React.createElement(
+            'h2',
+            { className: 'text-sm font-mono uppercase tracking-wider text-slate-400 font-bold' },
+            selectedTasks.every((t) => t.isCustom || String(t.id || '').startsWith('custom-'))
+              ? 'Custom scope deliverables'
+              : 'Additional deliverables',
+          ),
           React.createElement(
             'div',
             { className: 'space-y-3' },
             selectedTasks.map((task) => React.createElement(
               'article',
               { key: task.id, className: 'border border-slate-200 rounded-lg p-3 print-avoid-break' },
-              React.createElement('h3', { className: 'text-sm font-bold text-slate-900' }, task.deliverable),
-              React.createElement('p', { className: 'text-[10px] font-mono text-slate-500 mb-1' }, task.category),
-              React.createElement('p', { className: 'text-xs text-slate-700 leading-snug' }, task.description),
+              React.createElement('h3', { className: 'text-sm font-bold text-slate-900' }, task.deliverable || 'Untitled deliverable'),
+              React.createElement('p', { className: 'text-[10px] font-mono text-slate-500 mb-1' }, task.category || (task.isCustom ? 'Custom Scope' : '')),
+              task.description && React.createElement('p', { className: 'text-xs text-slate-700 leading-snug' }, task.description),
               task.scopeDetails?.output && React.createElement('p', { className: 'text-xs text-slate-600 mt-1' }, React.createElement('strong', null, 'Output: '), task.scopeDetails.output),
             )),
           ),
