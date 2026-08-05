@@ -20,7 +20,7 @@
     '</mxGraphModel></diagram></mxfile>';
 
   const DEFAULT_ORG_CHART_POLICY = {
-    title: 'Organizational Structure & Reporting Policy',
+    title: 'Organization Chart & Reporting',
     docControl: {
       version: '1.0',
       effectiveDate: '2026-07-06',
@@ -28,43 +28,19 @@
       owner: 'HR Director',
     },
     introduction:
-      'This policy defines the official reporting structure, decision authority, and organizational relationships for all employees. The organization chart is the authoritative reference for reporting lines, escalation paths, and role accountability. This document is reviewed at least annually or whenever material structural changes occur.',
+      'Official reporting lines for the company. Use the chart and roster below as the source of truth for who reports to whom.',
     sections: [
       {
         id: 'oc-1',
-        title: 'Purpose & Scope',
+        title: 'Reporting & escalation',
         content:
-          'This policy applies to all employees, contractors, and managers. It establishes how reporting relationships operate, how decisions escalate, and how organizational changes are communicated and recorded.',
+          'Everyone has one primary manager (solid line on the chart). Escalate blockers and client risks to your manager; if they are unavailable, go to the next level or the named deputy.',
       },
       {
         id: 'oc-2',
-        title: 'Reporting Structure',
+        title: 'Changing the structure',
         content:
-          'Every employee reports to a direct manager shown on the official organization chart. Solid lines indicate primary reporting relationships. Dotted lines (if shown) indicate matrix or secondary reporting for specific projects or functions.',
-      },
-      {
-        id: 'oc-3',
-        title: 'Decision Authority',
-        content:
-          'Decision authority follows the reporting hierarchy unless explicitly delegated in writing. Managers are accountable for approvals within their span of control. Cross-functional decisions require consultation with affected department heads.',
-      },
-      {
-        id: 'oc-4',
-        title: 'Span of Control & Escalation',
-        content:
-          'When a manager is unavailable, designated deputies or the next level manager assumes interim authority. Employees must escalate blockers, compliance issues, and client-impacting risks through their direct manager unless an emergency protocol applies.',
-      },
-      {
-        id: 'oc-5',
-        title: 'Organizational Change Management',
-        content:
-          'Structural changes are approved by executive leadership, communicated by HR, and reflected in an updated organization chart within five (5) business days of the effective date. Related Role Profiles and SOP ownership must be updated in Policy Studio.',
-      },
-      {
-        id: 'oc-6',
-        title: 'Related Documents',
-        content:
-          'This policy should be read together with the Employee Handbook, Role Alignment Profile Guides, and applicable Standard Operating Procedures. Role-specific duties are defined in Role Profiles; reporting lines are defined here.',
+          'Leadership approves org changes. HR updates this chart within 5 business days of the effective date and aligns Role Profiles and SOP owners in Policy Studio.',
       },
     ],
     diagram: {
@@ -348,22 +324,18 @@
 
   function compileOrgChartPolicyMarkdown(doc) {
     if (!doc) return '';
-    let md = '# ' + (doc.title || 'Organizational Structure & Reporting Policy') + '\n\n';
-    if (doc.introduction) md += '## Introduction\n' + doc.introduction + '\n\n';
+    let md = '# ' + (doc.title || 'Organization Chart & Reporting') + '\n\n';
+    if (doc.introduction) md += '## Overview\n' + doc.introduction + '\n\n';
 
-    (doc.sections || []).forEach((sec, idx) => {
-      md += '## ' + (idx + 1) + '. ' + (sec.title || 'Section') + '\n' + (sec.content || '') + '\n\n';
-    });
-
-    md += '## Official Organization Chart\n';
+    md += '## Organization Chart\n';
     if (doc.diagram?.svgCache) {
       md += '![Organization Chart](' + doc.diagram.svgCache + ')\n\n';
     } else {
-      md += '_Organization chart diagram — see Policy Studio for the current visual._\n\n';
+      md += '_See Policy Studio for the current chart._\n\n';
     }
 
     if (doc.roster && doc.roster.length) {
-      md += '## Roster Summary\n\n';
+      md += '## Roster\n\n';
       md += '| Name | Title | Department | Reports To |\n';
       md += '|------|-------|------------|------------|\n';
       doc.roster.forEach((row) => {
@@ -376,6 +348,10 @@
       });
       md += '\n';
     }
+
+    (doc.sections || []).forEach((sec, idx) => {
+      md += '## ' + (idx + 1) + '. ' + (sec.title || 'Section') + '\n' + (sec.content || '') + '\n\n';
+    });
 
     return md.trim();
   }

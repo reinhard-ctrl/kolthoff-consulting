@@ -183,8 +183,8 @@
     <script src="../../shared/mod-gating.js?v=20250707-mod2-admin-unlock-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250710-org-label-html-v2"></script>
-    <script src="../../shared/sop-sync.js?v=20250707-sop-bpmn-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250805-client-lean-v1"></script>
+    <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
 
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
@@ -236,152 +236,149 @@
         const DEFAULT_DOCUMENT_DATA = {
             sops: [
                 {
-                    id: 'sop-1', title: 'Order Fulfillment & Dispatch Procedure',
+                    id: 'sop-1', title: 'Order Fulfillment & Dispatch',
                     docControl: { version: '1.0', effectiveDate: '2026-06-22', lastReviewed: '2026-06-22', owner: 'Warehouse Operations Manager' },
-                    objective: 'This document defines the strict sequential protocol for picking, double-auditing, packing, and dispatching approved outgoing product shipments. Standardizing these milestones minimizes fulfillment discrepancies, secures accurate inventory logging, and prevents SLA turnaround delays.',
-                    scope: 'This Standard Operating Procedure is universally binding for all Warehousing, Quality Assurance (QA), Fulfillment, and Logistics Administration personnel involved in preparing client packages for shipment.',
-                    prerequisites: '1. Verified administrative access to the Warehouse Management System (WMS).\n2. Standardized protective wrapping, certified bubble rolls, double-wall corrugated cartons, and custom tamper-evident security tape.\n3. Mandatory Personal Protective Equipment (steel-toe safety shoes, puncture-resistant handling gloves, and high-visibility vest) to be worn at all times.',
-                    kpis: '1. Dispatch Accuracy Rate: > 99.8% error-free handovers to external carriage services evaluated monthly.\n2. Pick-and-Pack Lead Time: Under 25 minutes from billing release to palletization.\n3. Security Verification: 100% of outward shipments must receive system seal scans.',
-                    troubleshooting: '1. Discrepancy in Physical Stock: Immediately halt fulfillment on the current carton, tag the carton as "Hold - Stock Verification", and notify the Inventory Control Lead for physical count reconciliation.\n2. Damage on Pick: Transfer the affected unit immediately to the designated quarantine cage, take high-resolution photos, and submit a stock quality deviation report.\n3. Shipping Label Failure: Restart the label terminal spool, verify network connectivity, and refer to IT SOP-12 for manual print queue bypass.',
-                    raci: { responsible: 'Warehouse fulfillment staff & logistics packagers', accountable: 'Lead Warehouse Operations Supervisor', consulted: 'Sales Desk Liaison, QA Specialist, and Shipping Liaison', informed: 'Client Success Manager, Finance Desk, and Procurement Team' },
+                    objective: 'Pick, pack, and hand off approved shipments accurately and on time.',
+                    scope: 'Warehouse, QA, fulfillment, and logistics staff who prepare outgoing packages.',
+                    prerequisites: '• WMS access\n• Packing materials and seal tape\n• Required PPE (safety shoes, gloves, hi-vis vest)',
+                    kpis: '• Dispatch accuracy ≥ 99.8%\n• Pick-and-pack within 25 minutes of release\n• 100% of shipments seal-scanned',
+                    troubleshooting: '• Stock mismatch → Hold carton, notify Inventory Control\n• Damaged unit → Quarantine, photo, quality report\n• Label print failure → Restart printer; escalate to IT if needed',
+                    raci: { responsible: 'Warehouse / packing staff', accountable: 'Warehouse Operations Supervisor', consulted: 'Sales, QA, Shipping', informed: 'Client Success, Finance' },
                     steps: [
-                        { id: 'step-1', action: 'Receive Packing List and Verify Stock Location', owner: 'Warehouse Staff', duration: '10 mins', details: 'Retrieve system-generated packaging manifests from WMS. Conduct barcoded terminal validation at designated storage racks to confirm absolute code alignment before moving stock to packaging queues.' },
-                        { id: 'step-2', action: 'Quality Assurance Inspection and Secure Packaging', owner: 'Warehouse Staff', duration: '15 mins', details: 'Conduct a thorough structural review of packaging seals. Snugly wrap components with certified double-layered cellular sheets. Place into selected carton templates with eco-friendly padding, and seal using heavy-duty, tamper-evident tape.' },
-                        { id: 'step-3', action: 'Freight Manifest Generation and Third-Party Carrier Hand-Off', owner: 'Logistics Coordinator', duration: '10 mins', details: 'Register total physical attributes (weight, volumetric dimensions) into the shipping ledger. Generate standard third-party courier labels, apply directly onto carton faces, obtain carrier signature, and log dispatch codes.' }
+                        { id: 'step-1', action: 'Pull packing list and verify stock', owner: 'Warehouse Staff', duration: '10 mins', details: 'Confirm WMS packing list and barcode location before moving stock to pack.' },
+                        { id: 'step-2', action: 'Inspect and pack', owner: 'Warehouse Staff', duration: '15 mins', details: 'Check item condition, pack with approved materials, and apply tamper-evident seal.' },
+                        { id: 'step-3', action: 'Label and hand off to carrier', owner: 'Logistics Coordinator', duration: '10 mins', details: 'Enter weight/dimensions, print label, capture carrier signature, log dispatch code.' }
                     ],
                     diagram: { drawioXml: '', svgCache: '', lastDiagramEditAt: null },
                     link: { source: 'policy-studio', workbookWorkflowField: 'workflowBuilder', lastSyncedAt: null }
                 }
             ],
             handbook: {
-                title: 'Employee Compliance & Operations Handbook',
+                title: 'Employee Handbook',
                 docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Human Resources' },
-                introduction: 'Welcome to the organization. This handbook serves as the foundational compliance guidelines, operational policies, and working standards designed to empower our workforce and maintain a highly secure, productive, and respectful professional environment. This manual is a binding agreement outlining your professional duties, expectations, standard operating parameters, and welfare support structures provided by management. All employees are strictly required to read, understand, and adhere to these guidelines during their tenure.',
-                mission: 'To drive exceptional operational performance and build resilient organizational processes through standard-setting services, technical expertise, and an unwavering commitment to corporate integrity.',
-                vision: 'To be globally recognized as the gold standard of secure operational consistency and workplace satisfaction, fostering an inclusive ecosystem of innovation and absolute compliance.',
-                timekeeping: 'Standard working hours are structured from 9:00 AM to 6:00 PM, Monday through Friday, with a standard one-hour lunch break daily. All employees must log physical or remote check-ins using biometric terminals or secure digital authorization tokens. A 15-minute grace period is granted to accommodate standard transit delays, after which tardiness records are filed. Unexcused, repetitive, or persistent late arrivals will trigger formal professional reviews and progressive disciplinary actions. Remote staff must maintain active Slack/Teams presence during baseline hours.',
-                compensation: 'Salaries are calculated twice per calendar month and directly credited to nominated bank accounts on the 15th and 30th. If a pay date falls on a weekend or legal holiday, processing occurs on the immediately preceding business day. Any claimed overtime hours, premium weekend shifts, or variable commission indicators must be signed off by direct managers and logged in the accounting system three days before payroll runs. Standard payroll deductions include withholding taxes, SSS, PhilHealth, Pag-IBIG contributions, and any voluntary benefits.',
-                offboarding: 'Employees seeking to terminate their employment must submit a formal written notice at least thirty (30) days in advance of their intended last working day. This transition period is dedicated to executing structured handover training, archiving digital accounts, returning company laptops or assets, and obtaining official clearances. Failure to render the required 30 days or complete clearances may delay final payroll calculations and the release of certificates of employment or clearance certificates.',
+                introduction: 'This handbook explains how we work together — hours, pay, leave, and conduct expectations. Read it carefully; it applies for the full length of your employment.',
+                mission: 'Deliver reliable operations with clear standards and respect for every teammate.',
+                vision: 'A workplace known for consistency, fairness, and continuous improvement.',
+                timekeeping: 'Core hours are 9:00 AM–6:00 PM, Monday–Friday, with a 1-hour lunch break. Clock in via biometric or approved digital check-in. A 15-minute grace period applies; repeated lateness may lead to coaching or discipline. Remote staff stay reachable on company chat during core hours.',
+                compensation: 'Pay is deposited twice monthly (15th and 30th; previous business day if those fall on a weekend/holiday). Overtime and commissions need manager approval three days before payroll. Standard deductions include tax, SSS, PhilHealth, Pag-IBIG, and elected benefits.',
+                offboarding: 'Resign with at least 30 days’ written notice. Use the notice period for handover, account closure, and asset return. Incomplete clearance may delay final pay and COE release.',
                 leaves: [
-                    { id: 'lv-1', name: 'Service Incentive Leave (SIL)', duration: '5 Days Annually', condition: 'Granted under Philippine Labor Code to all employees who have provided one (1) full year of continuous service. Unused SIL balances are fully commutable to cash equivalents at the end of the calendar year.' },
-                    { id: 'lv-2', name: 'Maternity Leave (RA 11210)', duration: '105 Days', condition: 'Fully paid leave available to all eligible female employees for live childbirth, miscarriage, or emergency termination of pregnancy, with an option to extend for an additional thirty (30) days without pay.' },
-                    { id: 'lv-3', name: 'Paternity Leave (RA 8187)', duration: '7 Days', condition: 'Available to all married male employees for the first four (4) deliveries of their legitimate spouse with whom they are cohabiting, designed to support postpartum recovery.' },
-                    { id: 'lv-4', name: 'Solo Parent Leave (RA 8972)', duration: '7 Days', condition: 'Provided to employees recognized as solo parents under law, allowing flexible personal time to fulfill critical parental responsibilities.' },
-                    { id: 'lv-5', name: 'Accrued Sick & Personal Leave (SL/PL)', duration: '15 Days Annually', condition: 'Accrues at a rate of 1.25 days per month of continuous service. Medical certificates from authorized clinics are mandatory for sick leaves extending beyond two (2) consecutive calendar days.' }
+                    { id: 'lv-1', name: 'Service Incentive Leave (SIL)', duration: '5 days / year', condition: 'After 1 year of continuous service. Unused SIL may be converted to cash at year-end.' },
+                    { id: 'lv-2', name: 'Maternity Leave (RA 11210)', duration: '105 days', condition: 'Paid leave for eligible employees; optional 30 unpaid days may follow.' },
+                    { id: 'lv-3', name: 'Paternity Leave (RA 8187)', duration: '7 days', condition: 'Married male employees for the first four deliveries of a cohabiting spouse.' },
+                    { id: 'lv-4', name: 'Solo Parent Leave (RA 8972)', duration: '7 days', condition: 'For employees recognized as solo parents under law.' },
+                    { id: 'lv-5', name: 'Sick / Personal Leave', duration: '15 days / year', condition: 'Accrues 1.25 days per month. Medical certificate required for absences over 2 consecutive days.' }
                 ],
                 discipline: [
-                    { id: 'd-1', level: 'First Offense', action: 'Verbal Counseling & HR Log', details: 'Immediate supervisor conducts a private performance session outlining the documented operational gap. A constructive developmental path is agreed upon, and a formal note is logged in internal HR records.' },
-                    { id: 'd-2', level: 'Second Offense', action: 'Formal Written Warning Letter', details: 'A formal warning memo is drafted and delivered to the employee, detailing the specific infraction, reference to past counseling, corrective action metrics, and clear warnings of further escalation.' },
-                    { id: 'd-3', level: 'Third Offense', action: 'Suspension & Administrative Hearing', details: 'A disciplinary suspension of three (3) to ten (10) working days without pay is instituted. The employee is issued a formal show-cause letter and a structured administrative hearing is scheduled to secure due process.' },
-                    { id: 'd-4', level: 'Fourth Offense', action: 'Contractual Termination', details: 'Following strict adherence to due process laws, termination of employment is executed under the just causes defined by statutory labor codes.' }
+                    { id: 'd-1', level: 'First offense', action: 'Verbal coaching + HR note', details: 'Supervisor explains the gap and agrees next steps. Logged in HR records.' },
+                    { id: 'd-2', level: 'Second offense', action: 'Written warning', details: 'Formal memo with facts, prior coaching, and expected correction.' },
+                    { id: 'd-3', level: 'Third offense', action: 'Suspension + hearing', details: '3–10 unpaid days and a show-cause process with due process.' },
+                    { id: 'd-4', level: 'Fourth offense', action: 'Termination', details: 'Employment may end for just causes after due process.' }
                 ],
-                customPolicies: [
-                    { id: 'cp-1', title: 'Data Security & Non-Disclosure', text: 'All system pricing matrices, proprietary database schemas, source code files, custom integrations, client contact rosters, and strategic marketing formulas constitute highly classified company information. Storing, reproducing, or sharing this data over unauthorized networks or personal drives is strictly prohibited and constitutes grounds for summary dismissal.' },
-                    { id: 'cp-2', title: 'Remote Work & VPN Policy', text: 'Employees authorized for telecommuting roles must work from a private, secure location and utilize corporate laptops. Connecting to company environments over public, unencrypted Wi-Fi hotspots is forbidden; all sessions must navigate through the corporate VPN secured with multi-factor authentication.' }
-                ]
+                customPolicies: []
             },
             standardDocs: {
                 conduct: {
-                    title: 'Code of Conduct & Professional Ethics',
+                    title: 'Code of Conduct',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Compliance Officer' },
-                    introduction: 'This Code of Conduct and Professional Ethics establishes the absolute moral, professional, and ethical benchmarks expected from all company employees. It serves as our universal compass, steering corporate interactions with the highest degree of transparency, reliability, respect, and standard compliance across all our organizational pipelines.',
+                    introduction: 'These rules set the baseline for respectful, honest work with teammates, clients, and partners.',
                     sections: [
-                        { id: 'c-1', title: 'Dress Code & Professional Grooming Standards', content: 'Employees are required to maintain clean, professional hygiene and present a neat appearance. Business-casual attire is mandatory from Mondays to Thursdays (collared shirts, slacks, professional dresses, or blazers). Fridays are designated smart-casual (clean corporate tees, dark jeans, neat sneakers). Highly casual, extreme, or unsafe clothing is strictly prohibited inside operations or warehouse spaces to minimize hazard risks.' },
-                        { id: 'c-2', title: 'Anti-Harassment & Safe Spaces Act (RA 11313) Compliance', content: 'The company maintains a strict zero-tolerance policy against any form of physical, psychological, verbal, or digital harassment, bullying, or discrimination. In strict accordance with the Safe Spaces Act (RA 11313), any behavior of a sexual or demeaning nature that compromises an employee’s dignity or creates a hostile working environment will be immediately investigated. Substantiated violations will result in immediate termination of employment and referral to legal authorities.' },
-                        { id: 'c-3', title: 'Conflict of Interest and Ethical Business Transactions', content: 'Employees must avoid situations where personal or financial interests conflict with objective performance. Participating in external activities with direct corporate competitors, utilizing company materials or information to operate private ventures, or accepting luxury hospitality or expensive gifts from vendors is forbidden without explicit written clearance from the Compliance Officer.' },
-                        { id: 'c-4', title: 'Intellectual Property & Corporate Asset Protection', content: 'All creative outputs, technical codes, design drafts, database schemas, product designs, copy files, and workflow templates generated during the course of employment remain the sole intellectual property of the organization. Employees must exercise extreme care with company-provided hardware and network services. Utilizing company assets, server instances, API access, or standard work hours to conduct private freelancing, contract consulting, or secondary business ventures is strictly prohibited and constitutes grounds for immediate disciplinary termination.' },
-                        { id: 'c-5', title: 'Social Media & Public Relations Guidelines', content: 'Employees are expected to separate personal social media activities from professional duties. Publishing proprietary company data, client details, sensitive internal discussions, pricing grids, or posting discriminatory, defamatory, or derogatory content associated with the company’s brand is strictly prohibited. Only authorized corporate spokespersons are permitted to issue press releases, take media interviews, or comment on company operations to public forums.' },
-                        { id: 'c-6', title: 'Anti-Corruption, Bribery, and Whistleblower Protections', content: 'The company operates under a zero-tolerance policy against any form of bribery, kickbacks, or corruption. No employee shall offer, solicit, receive, or accept any direct or indirect monetary or non-monetary benefit to influence business decisions or secure preferential treatment. To report unethical practices, the company provides a secure, confidential Whistleblower Pathway managed by the Compliance Office. Reprisal, retaliation, or professional isolation against any employee raising a good-faith concern is strictly prohibited.' },
-                        { id: 'c-7', title: 'Substance-Free Workplace and Health Standards', content: 'Maintaining a highly secure, productive, and safe operational space requires a completely drug-free environment. Possessing, distributing, or working under the influence of illegal narcotics, prohibited substances, or unprescribed tranquilizers inside company premises or client workspaces is grounds for immediate disciplinary termination. Random diagnostic evaluations may be administered in compliance with occupational health and safety rules.' }
+                        { id: 'c-1', title: 'Dress & appearance', content: 'Dress neat and work-appropriate. Business casual Mon–Thu; smart casual Fri. Unsafe or extreme clothing is not allowed in operations areas.' },
+                        { id: 'c-2', title: 'Anti-harassment (RA 11313)', content: 'Zero tolerance for harassment, bullying, or discrimination. Report concerns to HR/Compliance. Confirmed violations can lead to termination and legal referral.' },
+                        { id: 'c-3', title: 'Conflicts of interest', content: 'Avoid personal deals that conflict with company duties. Do not take competitor side work, misuse company assets for private ventures, or accept significant vendor gifts without Compliance approval.' },
+                        { id: 'c-4', title: 'Company IP & assets', content: 'Work you create here belongs to the company. Protect devices and systems. Do not use company time, tools, or data for personal freelancing.' },
+                        { id: 'c-5', title: 'Social media', content: 'Keep personal posts separate from work. Do not share client data, pricing, or internal discussions. Only authorized spokespeople speak for the company.' },
+                        { id: 'c-6', title: 'Anti-bribery & whistleblowing', content: 'No bribes or kickbacks. Report concerns through the confidential Compliance channel. Retaliation for good-faith reports is prohibited.' },
+                        { id: 'c-7', title: 'Substance-free workplace', content: 'Do not work under the influence of illegal drugs or misuse of substances. Violations may lead to termination. Testing may follow OSH rules.' }
                     ]
                 },
                 nda: {
-                    title: 'Non-Disclosure & Confidentiality Agreement (NDA)',
+                    title: 'Non-Disclosure Agreement (NDA)',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Legal Counsel' },
-                    introduction: 'This Non-Disclosure and Confidentiality Agreement establishes the strict legal guidelines and security requirements protecting non-public information, proprietary workflows, trade secrets, and strategic corporate systems. Execution of this document is a binding prerequisite for employment, contracting, or partnership engagement.',
+                    introduction: 'This NDA protects non-public company and client information during and after your engagement.',
                     sections: [
-                        { id: 'n-1', title: 'Scope and Definition of Confidential Assets', content: 'Confidential Assets are defined as all non-public, sensitive, or proprietary data, including but not limited to system source codes, user database files, client lists, vendor pricing structures, operational SOPs, strategic expansion schedules, financial statements, trade algorithms, and administrative credentials. This encompasses oral communications, digital media, and physical records.' },
-                        { id: 'n-2', title: 'Obligations of Security and Prohibited Transmissions', content: 'The receiving party agrees to secure all proprietary documents inside encrypted drives or physical lockboxes. No confidential information may be printed, copied, emailed, or disclosed to third parties unless explicit prior written permission is issued by the Board of Directors. Internal sharing is strictly restricted to employees with an immediate, verified need-to-know workflow. Unauthorized duplication or export of assets will lead to immediate contract termination and structural legal litigation.' },
-                        { id: 'n-3', title: 'Agreement Duration, Exclusions and Survival of Restrictions', content: 'The obligations of data protection, secure handling, and confidentiality defined under this NDA shall commence on the first day of asset exposure and shall survive for a period of two (2) years following the official termination of the business, employment, or consulting contract. Exclusions apply only to information that enters the public domain through no fault of the receiving party or is legally demanded by judicial subpoena.' }
+                        { id: 'n-1', title: 'What is confidential', content: 'Non-public data such as code, client lists, pricing, SOPs, financials, credentials, and strategy — whether spoken, written, or digital.' },
+                        { id: 'n-2', title: 'Your obligations', content: 'Keep confidential information secure. Share only with people who need it for work. Do not copy or send it outside approved systems without written approval.' },
+                        { id: 'n-3', title: 'Duration & exclusions', content: 'Obligations start on first access and continue for 2 years after the engagement ends. Exclusions: information already public through no fault of yours, or disclosure required by law.' }
                     ]
                 },
                 dataPrivacy: {
-                    title: 'Data Privacy & IT Security Policy',
+                    title: 'Data Privacy & IT Security',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'IT Director' },
-                    introduction: 'This policy governs our technical, physical, and administrative security frameworks designed to protect network assets and personal data. It guarantees strict, ongoing compliance with the Data Privacy Act of 2012 (Republic Act No. 10173) and international security standards like ISO/IEC 27001.',
+                    introduction: 'This policy protects company systems and personal data under the Data Privacy Act of 2012 (RA 10173).',
                     sections: [
-                        { id: 'dp-1', title: 'Acceptable Use of Corporate IT Equipment and Systems', content: 'All corporate laptops, servers, accounts, storage drives, and email systems are the sole property of the company. These resources must be utilized exclusively for authorized corporate activities. Downloading unapproved software, bypass utilities, peer-to-peer torrent clients, or accessing high-risk entertainment portals is strictly prohibited to prevent cyber threats, malware, and structural data loss.' },
-                        { id: 'dp-2', title: 'Processing PII under RA 10173 and Security Controls', content: 'Pursuant to RA 10173, the collection and processing of Personal Identifiable Information (PII) must adhere to the core principles of Transparency, Legitimacy, and Proportionality. All data collected must be encrypted both at rest (AES-256) and in transit (SSL/TLS) using certified encryption algorithms. Data must be destroyed securely once retention requirements expire. Access is strictly governed by the Principle of Least Privilege.' },
-                        { id: 'dp-3', title: 'Strong Password Policy & Multi-Factor Security (MFA)', content: 'All corporate credentials must be protected with complex passwords of at least 12 characters, combining uppercase and lowercase letters, numeric digits, and special characters. Passwords must be updated every 90 days. Multi-Factor Authentication (MFA) must be enabled on all accounts. Sharing system credentials or caching passwords in unencrypted browsers is a severe policy violation.' },
-                        { id: 'dp-4', title: 'Data Incident & Breach Management Protocols', content: 'In the event of a security breach or suspicious network anomaly, employees must contact the Security Incident Response Team (SIRT) within 1 hour. Under DPA guidelines, if PII is compromised, the National Privacy Commission (NPC) and affected data subjects must be notified within 72 hours of detection. Failing to report an observed hazard will invoke severe progressive disciplinary actions.' }
+                        { id: 'dp-1', title: 'Acceptable use', content: 'Company devices and accounts are for work only. Do not install unapproved software or visit high-risk sites that introduce malware.' },
+                        { id: 'dp-2', title: 'Personal data (RA 10173)', content: 'Collect and use personal data only when needed, with transparency and least privilege. Encrypt data in transit and at rest where required. Delete when retention ends.' },
+                        { id: 'dp-3', title: 'Passwords & MFA', content: 'Use passwords of at least 12 characters. Enable MFA. Never share credentials or store them in plain text.' },
+                        { id: 'dp-4', title: 'Incident reporting', content: 'Report suspected breaches to IT/Security within 1 hour. If personal data is affected, notify per DPA rules (target: NPC and subjects within 72 hours of confirmed incident).' }
                     ]
                 },
                 healthSafety: {
-                    title: 'Health, Safety & Emergency Protocols',
+                    title: 'Health & Safety',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Facilities Manager' },
-                    introduction: 'The safety, physical integrity, and wellness of our workforce are of paramount importance. This document defines the emergency protocols, hazard management plans, and occupational wellness guidelines designed to maintain a completely secure, risk-free work environment in compliance with DOLE Occupational Safety and Health Standards.',
+                    introduction: 'Follow these steps to keep people safe at work, in line with DOLE OSH standards.',
                     sections: [
-                        { id: 'hs-1', title: 'Emergency Evacuation Plans and Assembly Routines', content: 'In the event of fire alarms, earthquakes, or chemical spillages, all employees must remain calm, immediately cease work, secure active terminals, and follow the illuminated exit signs to the nearest safety stairwells. Do not use elevators. Gather at the designated corporate Muster Point on the open grounds and remain in position until roll call is concluded by the Safety Wardens.' },
-                        { id: 'hs-2', title: 'Hazard Classification and Immediate Reporting Duty', content: 'All employees have an active duty to report physical hazards, exposed wiring, slippery surfaces, or malfunctioning heavy equipment to the Safety Committee. Any workplace incident, minor injury, or near-miss must be logged inside the Safety Registry within two (2) hours of occurrence to trigger corrective measures and insurance reviews.' },
-                        { id: 'hs-3', title: 'First Aid Accessibility and Physical Handling Safety', content: 'Fully equipped First Aid kits are located next to safety signage on all floors. Heavy lifting operations inside warehouse sections must adhere to ergonomically sound routines. Mechanical lifts, pallet jacks, or team assists must be utilized for any cargo exceeding 25 kilograms to prevent muscle strain, spinal displacement, or skeletal injury.' },
-                        { id: 'hs-4', title: 'Mental Health and Workplace Well-being Support', content: 'In alignment with RA 11036 (Mental Health Act), the company provides anonymous counseling, stress management modules, and active psychological support programs. Healthy boundaries regarding work-life balance must be preserved, and supervisors are trained to maintain supportive, professional interactions at all levels.' }
+                        { id: 'hs-1', title: 'Evacuation', content: 'On alarm: stay calm, stop work, use stairs (not elevators), and meet at the muster point for roll call.' },
+                        { id: 'hs-2', title: 'Hazard reporting', content: 'Report hazards, injuries, and near-misses to the Safety Committee within 2 hours so fixes can start quickly.' },
+                        { id: 'hs-3', title: 'First aid & lifting', content: 'First aid kits are marked on each floor. Use team lift or equipment for loads over 25 kg.' },
+                        { id: 'hs-4', title: 'Mental health support', content: 'Counseling and stress support are available (RA 11036). Supervisors should keep respectful boundaries on workload and hours.' }
                     ]
                 },
                 bcp: {
-                    title: 'Business Continuity Plan (BCP)',
+                    title: 'Business Continuity Plan',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Operations Director' },
-                    introduction: 'This Business Continuity Plan (BCP) defines the system redundancies, emergency procedures, and operational overrides required to sustain critical services, client support, and data synchronization during severe power outages, structural damage, cyber incidents, or critical system downtimes.',
+                    introduction: 'How we keep critical work running during outages, site closures, or major incidents.',
                     sections: [
-                        { id: 'b-1', title: 'Critical Systems Classification and RTO / RPO Metrics', content: 'Our operations categorize systems into three priority levels. Tier-1 systems (including secure customer portals, real-time sync, and operational routing databases) operate under a Recovery Time Objective (RTO) of four (4) hours and a Recovery Point Objective (RPO) of two (2) hours. Tier-2 applications (such as email systems and ticketing systems) operate under an RTO of 24 hours.' },
-                        { id: 'b-2', title: 'Emergency Telecommuting and Remote Service Continuance', content: 'If corporate headquarters or physical offices are rendered inaccessible due to public health mandates, environmental damage, or transport strikes, operations will immediately activate our remote work framework. Employees will use corporate laptops to access secure, cloud-synced databases over encrypted VPN pipelines to ensure zero interruption in client service.' },
-                        { id: 'b-3', title: 'Incident Command Hierarchy and Emergency Communication Cascades', content: 'During any critical disruption, an Emergency Crisis Team (ECT) led by the COO and IT Director will oversee all recovery phases. A formal communication tree will be used to send out real-time status updates via secure corporate messaging. Public media and direct client notifications must be managed exclusively by the authorized Public Relations spokesperson.' },
-                        { id: 'b-4', title: 'Backup Redundancy and Off-Site Disaster Recovery', content: 'To safeguard transaction records, complete database mirrors are automatically replicated across multi-zone cloud servers hourly. Full physical system backups are archived on secure off-site repositories weekly. Bi-annual simulated disaster drills are executed to audit restore times and certify infrastructure resilience.' }
+                        { id: 'b-1', title: 'Recovery targets (define with client)', content: 'Tier-1 (client-facing / core ops): target restore within 4 hours, data loss ≤ 2 hours. Tier-2 (email/tickets): target restore within 24 hours. Confirm final numbers with the client before go-live.' },
+                        { id: 'b-2', title: 'Remote operations', content: 'If the office is unavailable, switch to approved laptops, VPN, and cloud tools so client work continues.' },
+                        { id: 'b-3', title: 'Incident command', content: 'Crisis lead (Ops + IT) coordinates recovery. Status updates go through company chat. Only authorized spokespeople message clients or media.' },
+                        { id: 'b-4', title: 'Backups & drills', content: 'Databases replicate across zones; weekly off-site backups. Run restore drills at least twice a year.' }
                     ]
                 },
                 sla: {
-                    title: 'Service Level Agreement (SLA)',
+                    title: 'Service Level Agreement',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'Client Success Lead' },
-                    introduction: 'This Service Level Agreement defines the official service quality targets, priority classifications, response speed guarantees, and performance review metrics established to support our clients and maintain operational transparency.',
+                    introduction: 'Default service targets for response, uptime, and reporting. Replace placeholders with the sold contract values.',
                     sections: [
-                        { id: 's-1', title: 'Incident Priority Matrix & Response Time Commitments', content: 'Incidents are structured into three levels: Priority 1 (System Down, core business stopped) requires a response under 15 minutes and resolution within two (2) hours. Priority 2 (Major disruption, workarounds exist) requires a 1-hour response and 6-hour resolution. Priority 3 (Minor ticket, feature query) requires a 4-hour response and 48-hour resolution. Failure to meet these timelines triggers automated escalation paths.' },
-                        { id: 's-2', title: 'System Availability Guarantees and Service Credits', content: 'We guarantee a system availability rate of 99.9% across any billing cycle, excluding pre-announced, scheduled system maintenance windows. If availability drops below this benchmark, clients are entitled to service credits calculated as a set percentage of their monthly service billing: 10% credit for uptime < 99.5%, and 25% credit for uptime < 99.0%.' },
-                        { id: 's-3', title: 'Service Reporting Metrics and Collaborative Reviews', content: 'Service reports detailing system uptime, average ticket response speeds, first-contact resolution rates, and open issues are automatically compiled and delivered to clients monthly. These reports are analyzed during quarterly reviews to resolve recurring problems and optimize system workflows.' }
+                        { id: 's-1', title: 'Priority & response (placeholder)', content: 'P1 System down: respond ≤ 15 min, resolve ≤ 2 hrs. P2 Major impact: respond ≤ 1 hr, resolve ≤ 6 hrs. P3 Minor: respond ≤ 4 hrs, resolve ≤ 48 hrs. Missed targets escalate automatically.' },
+                        { id: 's-2', title: 'Availability & credits (placeholder)', content: 'Target 99.9% monthly uptime excluding announced maintenance. Example credits: 10% if < 99.5%, 25% if < 99.0% — align to the signed MSA.' },
+                        { id: 's-3', title: 'Reporting', content: 'Monthly report: uptime, response times, open issues. Review quarterly with the client.' }
                     ]
                 },
                 onboarding: {
-                    title: 'Onboarding & Training Blueprint',
+                    title: 'Onboarding & 90-Day Plan',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'HR Director' },
-                    introduction: 'This Onboarding and Training Blueprint standardizes the integration, educational phases, and operational training modules designed to help new employees successfully transition into productive, knowledgeable, and compliant team members.',
+                    introduction: 'A simple path to bring new hires up to speed in 90 days.',
                     sections: [
-                        { id: 'o-1', title: 'Day 1 to 7: Foundations and Compliance Onboarding', content: 'The first week is dedicated to standard asset provisioning, credential setup, cultural alignment, and compliance workshops. New hires must complete the Mandatory Data Privacy, Cyber Security, and Safe Spaces Act training modules before any administrative system access is activated.' },
-                        { id: 'o-2', title: 'Day 8 to 30: Functional Tool Mastery and Job Shadowing', content: 'During this phase, new hires focus on mastering specific operational tools, shadowing senior colleagues, and performing initial tasks under close supervision. This ensures they develop high proficiency in our WMS, CRM, and corporate SOPs. Weekly catch-ups with HR monitor adjusting indexes.' },
-                        { id: 'o-3', title: 'Day 31 to 90: Operational Metrics and Independent Performance', content: 'In the third month, the employee transitions to independent work, taking ownership of their core tasks. By Day 60, they are expected to hit 80% of standard workload targets. By Day 90, a formal evaluation is conducted to assess overall performance and determine permanent position confirmation.' }
+                        { id: 'o-1', title: 'Days 1–7: Setup & compliance', content: 'Issue accounts and equipment. Complete Data Privacy, Security, and Safe Spaces training before system access expands.' },
+                        { id: 'o-2', title: 'Days 8–30: Tools & shadowing', content: 'Learn core tools, shadow a buddy, and complete first tasks with review. Weekly HR check-in.' },
+                        { id: 'o-3', title: 'Days 31–90: Independent delivery', content: 'Own core work. Aim for ~80% of role workload by Day 60. Formal review by Day 90 for confirmation.' }
                     ]
                 },
                 performanceReview: {
-                    title: 'Performance Appraisal Framework',
+                    title: 'Performance Reviews',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'HR Business Lead' },
-                    introduction: 'This document defines our performance appraisal framework, designed to encourage continuous improvement, recognize professional achievements, support skill development, and align individual performance with corporate goals.',
+                    introduction: 'How we set expectations, review results, and support improvement.',
                     sections: [
-                        { id: 'pr-1', title: 'Key Performance Indicators (KPIs) and Core Competency Models', content: 'Employee performance is evaluated across four core areas: Productivity & Delivery, Quality of Output, Policy Compliance, and Team Collaboration. Each role has specific, quantifiable metrics that are updated and reviewed semi-annually. Weightings are adjusted depending on leadership tiers.' },
-                        { id: 'pr-2', title: '360-Degree Evaluation Feedback Loops and Reviews', content: 'Appraisals are conducted using a transparent 360-degree feedback system that combines self-appraisals, peer reviews, direct supervisor scores, and client evaluations (where applicable). This approach guarantees a fair, comprehensive, and objective performance review.' },
-                        { id: 'pr-3', title: 'Performance Improvement Plans (PIP) and Remediation Support', content: 'Employees who fall below performance expectations will be enrolled in a supportive, structured Performance Improvement Plan (PIP) lasting 30 to 60 days. The PIP provides clear milestone targets, weekly supervisor check-ins, and dedicated training support to help the employee succeed. Unresolved targets at PIP completion will lead to administrative reviews.' }
+                        { id: 'pr-1', title: 'What we measure', content: 'Reviews cover delivery, quality, policy compliance, and teamwork. Role KPIs are set with the manager and reviewed at least twice a year.' },
+                        { id: 'pr-2', title: 'How feedback works', content: 'Default: self-assessment + manager review. Add peer or client input only when useful for the role.' },
+                        { id: 'pr-3', title: 'Improvement plans (PIP)', content: 'If results fall short, use a 30–60 day PIP with clear targets and weekly check-ins. Unmet targets after the PIP may lead to further HR action.' }
                     ]
                 },
                 jobDescriptions: {
-                    title: 'Role Alignment Profile Guides',
+                    title: 'Job Role Profiles',
                     docControl: { version: '1.0', effectiveDate: '2026-06-23', lastReviewed: '2026-06-23', owner: 'HR Director' },
-                    introduction: 'These Role Profile Guides outline the essential responsibilities, primary duties, reporting lines, and core professional competencies mapped to key positions within the organization.',
+                    introduction: 'One-page role summaries: what the job owns, who it works with, and skills needed.',
                     sections: [
-                        { id: 'jd-1', title: 'Operations Management and Service Delivery Leadership', content: 'Operations Managers are responsible for overseeing daily workflow execution, ensuring strict SLA compliance, managing operational budgets, and leading employee development. They require exceptional analytical, leadership, and project planning skills, along with a certified understanding of agile frameworks.' },
-                        { id: 'jd-2', title: 'Quality Assurance, Risk Management and Compliance Specialists', content: 'QA Specialists are responsible for auditing process compliance, identifying system bottlenecks, conducting root-cause analysis on operational errors, and designing process enhancements. They require deep system expertise, high accuracy, and strong attention to detail.' },
-                        { id: 'jd-3', title: 'Customer Success Managers and Account Leadership', content: 'Customer Success Managers serve as the primary strategic point of contact for clients, managing account health, driving retention, and ensuring service delivery aligns with client business objectives. They require excellent negotiation, communication, and relationship-building skills.' }
+                        { id: 'jd-1', title: 'Operations Manager', content: 'Owns daily workflow, SLA delivery, budget control, and team coaching.\nReports to: Operations Director\nMust-dos: keep SLAs on track; unblock escalations; run weekly ops huddle\nSkills: planning, people leadership, process discipline' },
+                        { id: 'jd-2', title: 'QA / Compliance Specialist', content: 'Audits process quality, finds root causes, and improves controls.\nReports to: Operations Manager\nMust-dos: sample audits; defect logs; corrective actions\nSkills: detail accuracy, systems knowledge, clear documentation' },
+                        { id: 'jd-3', title: 'Customer Success Manager', content: 'Owns account health, retention, and delivery alignment with client goals.\nReports to: Client Success Lead\nMust-dos: QBRs; risk escalation; renewals pipeline\nSkills: communication, negotiation, relationship management' }
                     ]
                 },
                 orgChart: JSON.parse(JSON.stringify(window.DiagramEditor?.DEFAULT_ORG_CHART_POLICY || {
                     title: 'Organizational Structure & Reporting Policy',
                     docControl: { version: '1.0', effectiveDate: '2026-07-06', lastReviewed: '2026-07-06', owner: 'HR Director' },
-                    introduction: 'Official reporting structure and organization chart policy.',
+                    introduction: 'Official reporting lines and escalation paths for the organization.',
                     sections: [],
                     diagram: { drawioXml: '', svgCache: '', layout: 'horizontalTree' },
                     roster: [],
@@ -645,7 +642,9 @@
             );
         };
 
-        const TOC = ({ sections }) => (
+        const TOC = ({ sections }) => {
+            if (!sections || sections.length < 4) return null;
+            return (
             <tr className="hidden print:table-row page-break-avoid">
                 <td className="px-10 pt-10 pb-0 align-top">
                     <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase">Table of Contents</h2>
@@ -658,7 +657,8 @@
                     </ul>
                 </td>
             </tr>
-        );
+            );
+        };
 
         const calculateDocStatus = (dateStr) => {
             if(!dateStr) return { status: 'Draft', bg: 'bg-slate-100', text: 'text-slate-600' };
@@ -1047,17 +1047,29 @@
                 if (localPolicyData.sops) {
                     localPolicyData.sops.forEach(sop => {
                         let mdContent = `# ${sop.title}\n\n`;
-                        if (sop.objective) mdContent += `**Objective:**\n${sop.objective}\n\n`;
-                        if (sop.scope) mdContent += `**Scope:**\n${sop.scope}\n\n`;
-                        if (sop.prerequisites) mdContent += `**Prerequisites:**\n${sop.prerequisites}\n\n`;
-                        if (sop.kpis) mdContent += `**KPIs:**\n${sop.kpis}\n\n`;
-                        if (sop.troubleshooting) mdContent += `**Troubleshooting:**\n${sop.troubleshooting}\n\n`;
-
+                        if (sop.docControl?.owner) mdContent += `**Owner:** ${sop.docControl.owner}`;
+                        if (sop.docControl?.version) mdContent += ` · **Version:** ${sop.docControl.version}`;
+                        if (sop.docControl?.effectiveDate) mdContent += ` · **Effective:** ${sop.docControl.effectiveDate}`;
+                        mdContent += `\n\n`;
+                        if (sop.objective) mdContent += `## Purpose\n${sop.objective}\n\n`;
+                        if (sop.scope) mdContent += `## Applies to\n${sop.scope}\n\n`;
+                        if (sop.prerequisites?.trim()) mdContent += `## Before you start\n${sop.prerequisites}\n\n`;
+                        if (sop.diagram?.svgCache) mdContent += `## Process diagram\n![Process diagram](${sop.diagram.svgCache})\n\n`;
                         if (sop.steps && sop.steps.length > 0) {
-                            mdContent += `### Process Steps\n`;
+                            mdContent += `## Steps\n`;
                             sop.steps.forEach((step, idx) => {
-                                mdContent += `**${idx + 1}. ${step.action}**\n*Owner: ${step.owner} | Duration: ${step.duration}*\n${step.details}\n\n`;
+                                mdContent += `**${idx + 1}. ${step.action}**\n*Who: ${step.owner || '—'} · Time: ${step.duration || '—'}*\n${step.details || ''}\n\n`;
                             });
+                        }
+                        if (sop.kpis?.trim()) mdContent += `## Done when\n${sop.kpis}\n\n`;
+                        if (sop.troubleshooting?.trim()) mdContent += `## If something goes wrong\n${sop.troubleshooting}\n\n`;
+                        if (sop.raci && (sop.raci.responsible || sop.raci.accountable)) {
+                            mdContent += `## Roles (RACI)\n`;
+                            mdContent += `- **Responsible:** ${sop.raci.responsible || '—'}\n`;
+                            mdContent += `- **Accountable:** ${sop.raci.accountable || '—'}\n`;
+                            if (sop.raci.consulted) mdContent += `- **Consulted:** ${sop.raci.consulted}\n`;
+                            if (sop.raci.informed) mdContent += `- **Informed:** ${sop.raci.informed}\n`;
+                            mdContent += `\n`;
                         }
 
                         policiesArray.push({
@@ -1072,14 +1084,12 @@
                 if (localPolicyData.handbook) {
                     let mdContent = `# ${localPolicyData.handbook.title || 'Employee Handbook'}\n\n`;
                     if (localPolicyData.handbook.introduction) mdContent += `## Introduction\n${localPolicyData.handbook.introduction}\n\n`;
-                    if (localPolicyData.handbook.mission) mdContent += `## Mission\n${localPolicyData.handbook.mission}\n\n`;
-                    if (localPolicyData.handbook.vision) mdContent += `## Vision\n${localPolicyData.handbook.vision}\n\n`;
-                    if (localPolicyData.handbook.timekeeping) mdContent += `## Timekeeping & Attendance\n${localPolicyData.handbook.timekeeping}\n\n`;
-                    if (localPolicyData.handbook.compensation) mdContent += `## Compensation & Benefits\n${localPolicyData.handbook.compensation}\n\n`;
+                    if (localPolicyData.handbook.timekeeping) mdContent += `## Hours & Attendance\n${localPolicyData.handbook.timekeeping}\n\n`;
+                    if (localPolicyData.handbook.compensation) mdContent += `## Pay & Benefits\n${localPolicyData.handbook.compensation}\n\n`;
                     if (localPolicyData.handbook.offboarding) mdContent += `## Resignation & Offboarding\n${localPolicyData.handbook.offboarding}\n\n`;
 
                     if (localPolicyData.handbook.leaves && localPolicyData.handbook.leaves.length > 0) {
-                        mdContent += `## Leaves Structure\n`;
+                        mdContent += `## Leave\n`;
                         localPolicyData.handbook.leaves.forEach(l => {
                             mdContent += `- **${l.name}** (${l.duration}): ${l.condition}\n`;
                         });
@@ -1087,18 +1097,21 @@
                     }
 
                     if (localPolicyData.handbook.discipline && localPolicyData.handbook.discipline.length > 0) {
-                        mdContent += `## Discipline Framework\n`;
+                        mdContent += `## Discipline\n`;
                         localPolicyData.handbook.discipline.forEach(d => {
                             mdContent += `### ${d.level}\n**Action:** ${d.action}\n**Details:** ${d.details}\n\n`;
                         });
                     }
 
                     if (localPolicyData.handbook.customPolicies && localPolicyData.handbook.customPolicies.length > 0) {
-                        mdContent += `## Custom Policies\n`;
+                        mdContent += `## Additional Policies\n`;
                         localPolicyData.handbook.customPolicies.forEach(cp => {
                             mdContent += `### ${cp.title}\n${cp.text}\n\n`;
                         });
                     }
+
+                    if (localPolicyData.handbook.mission) mdContent += `## Mission\n${localPolicyData.handbook.mission}\n\n`;
+                    if (localPolicyData.handbook.vision) mdContent += `## Vision\n${localPolicyData.handbook.vision}\n\n`;
 
                     policiesArray.push({
                         id: 'doc-handbook',
@@ -1127,8 +1140,7 @@
                             }
                             roles.forEach((role, idx) => {
                                 let mdContent = `# ${role.title || `Role Profile ${idx + 1}`}\n\n`;
-                                if (doc.introduction) mdContent += `## Guide Purpose\n${doc.introduction}\n\n`;
-                                mdContent += `## Role Responsibilities\n${role.content || ''}\n`;
+                                mdContent += `${role.content || ''}\n`;
                                 policiesArray.push({
                                     id: role.id || `doc-jobDescriptions-${idx + 1}`,
                                     title: role.title || `Role Profile ${idx + 1}`,
@@ -1902,10 +1914,11 @@
 
             const renderSopDiagramSection = (sop) => {
                 const svgCache = sop.diagram?.svgCache;
+                if (!isEditMode && !svgCache) return null;
                 return (
                     <section aria-labelledby={`sop-diagram-heading-${sop.id}`} className="mt-8 page-break-avoid">
-                        <h3 id={`sop-diagram-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold print-section-title" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Process Flow Diagram (BPMN 2.0)</h3>
-                        <p className="text-sm text-slate-600 mt-1 mb-4">Authoritative visual reference for this procedure. Linked to Mod 2 Workflow Builder (<code className="text-xs">workflowBuilder</code>) when synced from workspace.</p>
+                        <h3 id={`sop-diagram-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold print-section-title" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Process diagram</h3>
+                        <p className="text-sm text-slate-600 mt-1 mb-4">Visual flow for this procedure. Sync from Workflow Builder when available.</p>
 
                         {isEditMode && (
                             <div className="no-print mb-6 space-y-4 border border-slate-200 rounded-xl p-4 bg-slate-50">
@@ -1936,10 +1949,10 @@
                         )}
 
                         {svgCache ? (
-                            <img src={svgCache} alt={`${sop.title} BPMN diagram`} className="max-w-full h-auto border border-slate-200 rounded-lg bg-white p-2" />
+                            <img src={svgCache} alt={`${sop.title} process diagram`} className="max-w-full h-auto border border-slate-200 rounded-lg bg-white p-2" />
                         ) : (
-                            <div className="border border-dashed border-slate-300 rounded-lg p-8 text-center text-sm text-slate-500 bg-slate-50">
-                                No diagram exported yet. Switch to Edit Mode, sync from Workflow Builder or draw the BPMN diagram, then click <strong>Apply Diagram</strong>.
+                            <div className="border border-dashed border-slate-300 rounded-lg p-8 text-center text-sm text-slate-500 bg-slate-50 no-print">
+                                No diagram yet. Sync from Workflow Builder or draw one, then click <strong>Apply Diagram</strong>.
                             </div>
                         )}
                     </section>
@@ -2659,86 +2672,55 @@
                                                                     </div>
                                                                 </section>
 
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-                                                                    <section aria-labelledby={`obj-heading-${sop.id}`}>
-                                                                        <h3 id={`obj-heading-${sop.id}`} className="block text-xs uppercase text-slate-550 mb-1 font-bold">Objective</h3>
-                                                                        <label htmlFor={`sop-obj-${sop.id}`} className="sr-only">Objective Details</label>
-                                                                        <MarkdownField 
-                                                                            id={`sop-obj-${sop.id}`}
-                                                                            value={sop.objective} 
-                                                                            onChange={val => updateSOP(sop.id, 'objective', val)} 
-                                                                            isEditMode={isEditMode} 
-                                                                            placeholder="State the goal of this procedure..."
-                                                                        />
-                                                                    </section>
-                                                                    <section aria-labelledby={`scope-heading-${sop.id}`}>
-                                                                        <h3 id={`scope-heading-${sop.id}`} className="block text-xs uppercase text-slate-550 mb-1 font-bold">Scope</h3>
-                                                                        <label htmlFor={`sop-scope-${sop.id}`} className="sr-only">Scope Details</label>
-                                                                        <MarkdownField 
-                                                                            id={`sop-scope-${sop.id}`}
-                                                                            value={sop.scope} 
-                                                                            onChange={val => updateSOP(sop.id, 'scope', val)} 
-                                                                            isEditMode={isEditMode} 
-                                                                            placeholder="Who does this apply to?"
-                                                                        />
-                                                                    </section>
-                                                                </div>
+                                                                <section aria-labelledby={`obj-heading-${sop.id}`}>
+                                                                    <h3 id={`obj-heading-${sop.id}`} className="block text-xs uppercase text-slate-550 mb-1 font-bold">Purpose</h3>
+                                                                    <label htmlFor={`sop-obj-${sop.id}`} className="sr-only">Purpose</label>
+                                                                    <MarkdownField 
+                                                                        id={`sop-obj-${sop.id}`}
+                                                                        value={sop.objective} 
+                                                                        onChange={val => updateSOP(sop.id, 'objective', val)} 
+                                                                        isEditMode={isEditMode} 
+                                                                        placeholder="1–2 sentences: what this procedure achieves..."
+                                                                    />
+                                                                </section>
 
-                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                                                    <div>
-                                                                        <h4 className="font-bold text-xs uppercase text-slate-800 mb-1">Prerequisites</h4>
-                                                                        <MarkdownField id={`sop-prereq-${sop.id}`} value={sop.prerequisites || ''} onChange={val => updateSOP(sop.id, 'prerequisites', val)} placeholder="Standard operational tools, security access etc." isEditMode={isEditMode} />
-                                                                    </div>
-                                                                    <div>
-                                                                        <h4 className="font-bold text-xs uppercase text-slate-800 mb-1">KPI Targets</h4>
-                                                                        <MarkdownField id={`sop-kpis-${sop.id}`} value={sop.kpis || ''} onChange={val => updateSOP(sop.id, 'kpis', val)} placeholder="Quantifiable process targets..." isEditMode={isEditMode} />
-                                                                    </div>
-                                                                    <div>
-                                                                        <h4 className="font-bold text-xs uppercase text-slate-800 mb-1">Troubleshooting</h4>
-                                                                        <MarkdownField id={`sop-trouble-${sop.id}`} value={sop.troubleshooting || ''} onChange={val => updateSOP(sop.id, 'troubleshooting', val)} placeholder="Escalation procedures..." isEditMode={isEditMode} />
-                                                                    </div>
-                                                                </div>
+                                                                <section aria-labelledby={`scope-heading-${sop.id}`}>
+                                                                    <h3 id={`scope-heading-${sop.id}`} className="block text-xs uppercase text-slate-550 mb-1 font-bold">Applies to</h3>
+                                                                    <label htmlFor={`sop-scope-${sop.id}`} className="sr-only">Applies to</label>
+                                                                    <MarkdownField 
+                                                                        id={`sop-scope-${sop.id}`}
+                                                                        value={sop.scope} 
+                                                                        onChange={val => updateSOP(sop.id, 'scope', val)} 
+                                                                        isEditMode={isEditMode} 
+                                                                        placeholder="Who follows this procedure..."
+                                                                    />
+                                                                </section>
 
-                                                                {/* Dynamic RACI Display Block */}
-                                                                <div className="p-4 border border-brandTeal-100 rounded-xl bg-slate-50/50 flex flex-col gap-2 text-xs">
-                                                                    <div className="font-bold text-[10px] uppercase text-slate-500 tracking-wider">RACI Directives</div>
-                                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-slate-700">
-                                                                        <div>
-                                                                            <span className="text-slate-400 block text-[9px] uppercase">Responsible (R)</span>
-                                                                            <AutoResizeTextarea id={`raci-r-${sop.id}`} value={sop.raci?.responsible || 'Unassigned'} onChange={val => updateSopRaci(sop.id, 'responsible', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-slate-400 block text-[9px] uppercase">Accountable (A)</span>
-                                                                            <AutoResizeTextarea id={`raci-a-${sop.id}`} value={sop.raci?.accountable || 'Unassigned'} onChange={val => updateSopRaci(sop.id, 'accountable', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-slate-400 block text-[9px] uppercase">Consulted (C)</span>
-                                                                            <AutoResizeTextarea id={`raci-c-${sop.id}`} value={sop.raci?.consulted || 'Unassigned'} onChange={val => updateSopRaci(sop.id, 'consulted', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-slate-400 block text-[9px] uppercase">Informed (I)</span>
-                                                                            <AutoResizeTextarea id={`raci-i-${sop.id}`} value={sop.raci?.informed || 'Unassigned'} onChange={val => updateSopRaci(sop.id, 'informed', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} />
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+                                                                {(isEditMode || (sop.prerequisites || '').trim()) && (
+                                                                    <section aria-labelledby={`prereq-heading-${sop.id}`}>
+                                                                        <h3 id={`prereq-heading-${sop.id}`} className="block text-xs uppercase text-slate-800 mb-1 font-bold">Before you start</h3>
+                                                                        <MarkdownField id={`sop-prereq-${sop.id}`} value={sop.prerequisites || ''} onChange={val => updateSOP(sop.id, 'prerequisites', val)} placeholder="Tools, access, and materials needed..." isEditMode={isEditMode} />
+                                                                    </section>
+                                                                )}
 
                                                                 {renderSopDiagramSection(sop)}
 
                                                                 <section aria-labelledby={`sop-steps-heading-${sop.id}`} className="mt-8">
-                                                                    <h3 id={`sop-steps-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Step-by-Step Execution</h3>
+                                                                    <h3 id={`sop-steps-heading-${sop.id}`} className="block text-sm uppercase text-slate-800 mb-2 font-bold" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>Steps</h3>
                                                                     <table className="w-full text-left print-table text-sm border-collapse">
                                                                         <thead>
                                                                             <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
                                                                                 <th scope="col" className="p-2 w-10 text-center">#</th>
-                                                                                <th scope="col" className="p-2 w-[35%]">Process Action</th>
-                                                                                <th scope="col" className="p-2 w-[18%]">Owner Role</th>
-                                                                                <th scope="col" className="p-2 w-[12%] text-center font-bold">SLA / Time</th>
-                                                                                <th scope="col" className="p-2 w-[35%]">Fulfillment Guidelines</th>
+                                                                                <th scope="col" className="p-2 w-[32%]">Do this</th>
+                                                                                <th scope="col" className="p-2 w-[16%]">Who</th>
+                                                                                <th scope="col" className="p-2 w-[12%] text-center font-bold">Time</th>
+                                                                                <th scope="col" className="p-2 w-[30%]">Notes</th>
+                                                                                {isEditMode && <th scope="col" className="p-2 w-16 no-print"><span className="sr-only">Actions</span></th>}
                                                                             </tr>
                                                                         </thead>
                                                                         <tbody className="divide-y divide-slate-100 font-semibold">
                                                                             {(sop.steps || []).map((step, sIdx) => (
-                                                                                <tr key={step.id}>
+                                                                                <tr key={step.id} className="group/step">
                                                                                     <td className="p-2 text-center font-bold text-slate-404 pt-3">{sIdx + 1}</td>
                                                                                     <td className="p-2 font-bold text-slate-850">
                                                                                         <label htmlFor={`step-action-${step.id}`} className="sr-only">Action</label>
@@ -2747,7 +2729,7 @@
                                                                                             value={step.action} 
                                                                                             onChange={val => updateStep(sop.id, step.id, 'action', val)} 
                                                                                             isEditMode={isEditMode} 
-                                                                                            placeholder="Main action..."
+                                                                                            placeholder="Action..."
                                                                                         />
                                                                                     </td>
                                                                                     <td className="p-2">
@@ -2773,17 +2755,17 @@
                                                                                         />
                                                                                     </td>
                                                                                     <td className="p-2 text-slate-600">
-                                                                                        <label htmlFor={`step-details-${step.id}`} className="sr-only">Details</label>
+                                                                                        <label htmlFor={`step-details-${step.id}`} className="sr-only">Notes</label>
                                                                                         <MarkdownField 
                                                                                             id={`step-details-${step.id}`}
                                                                                             value={step.details} 
                                                                                             onChange={val => updateStep(sop.id, step.id, 'details', val)} 
                                                                                             isEditMode={isEditMode} 
-                                                                                            placeholder="Additional context..."
+                                                                                            placeholder="Notes..."
                                                                                         />
                                                                                     </td>
                                                                                     {isEditMode && (
-                                                                                        <td className="p-2 text-center no-print opacity-0 group-hover/step:opacity-100 transition-opacity whitespace-nowrap align-middle">
+                                                                                        <td className="p-2 text-center no-print whitespace-nowrap align-middle">
                                                                                             <div className="flex gap-1 justify-center">
                                                                                                 <button type="button" aria-label="Move Step Up" onClick={() => reorderStep(sop.id, sIdx, -1)} className="p-0.5 text-slate-400 hover:text-slate-700" disabled={sIdx===0}><Icons.ArrowUp /></button>
                                                                                                 <button type="button" aria-label="Move Step Down" onClick={() => reorderStep(sop.id, sIdx, 1)} className="p-0.5 text-slate-400 hover:text-slate-700" disabled={sIdx===(sop.steps || []).length-1}><Icons.ArrowDown /></button>
@@ -2808,6 +2790,44 @@
                                                                         </div>
                                                                     )}
                                                                 </section>
+
+                                                                {(isEditMode || (sop.kpis || '').trim()) && (
+                                                                    <section aria-labelledby={`kpis-heading-${sop.id}`} className="mt-6">
+                                                                        <h3 id={`kpis-heading-${sop.id}`} className="block text-xs uppercase text-slate-800 mb-1 font-bold">Done when</h3>
+                                                                        <MarkdownField id={`sop-kpis-${sop.id}`} value={sop.kpis || ''} onChange={val => updateSOP(sop.id, 'kpis', val)} placeholder="Success checks for this procedure..." isEditMode={isEditMode} />
+                                                                    </section>
+                                                                )}
+
+                                                                {(isEditMode || (sop.troubleshooting || '').trim()) && (
+                                                                    <section aria-labelledby={`trouble-heading-${sop.id}`} className="mt-4">
+                                                                        <h3 id={`trouble-heading-${sop.id}`} className="block text-xs uppercase text-slate-800 mb-1 font-bold">If something goes wrong</h3>
+                                                                        <MarkdownField id={`sop-trouble-${sop.id}`} value={sop.troubleshooting || ''} onChange={val => updateSOP(sop.id, 'troubleshooting', val)} placeholder="Issue → action / escalate to..." isEditMode={isEditMode} />
+                                                                    </section>
+                                                                )}
+
+                                                                {(isEditMode || sop.raci?.responsible || sop.raci?.accountable) && (
+                                                                    <details className={`mt-6 p-4 border border-slate-200 rounded-xl bg-slate-50/50 text-xs ${isEditMode ? 'open' : ''}`} open={isEditMode || undefined}>
+                                                                        <summary className="font-bold text-[10px] uppercase text-slate-500 tracking-wider cursor-pointer">Roles (RACI) — optional</summary>
+                                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-slate-700 mt-3">
+                                                                            <div>
+                                                                                <span className="text-slate-400 block text-[9px] uppercase">Responsible (R)</span>
+                                                                                <AutoResizeTextarea id={`raci-r-${sop.id}`} value={sop.raci?.responsible || ''} onChange={val => updateSopRaci(sop.id, 'responsible', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} placeholder="Does the work..." />
+                                                                            </div>
+                                                                            <div>
+                                                                                <span className="text-slate-400 block text-[9px] uppercase">Accountable (A)</span>
+                                                                                <AutoResizeTextarea id={`raci-a-${sop.id}`} value={sop.raci?.accountable || ''} onChange={val => updateSopRaci(sop.id, 'accountable', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} placeholder="Owns the outcome..." />
+                                                                            </div>
+                                                                            <div>
+                                                                                <span className="text-slate-400 block text-[9px] uppercase">Consulted (C)</span>
+                                                                                <AutoResizeTextarea id={`raci-c-${sop.id}`} value={sop.raci?.consulted || ''} onChange={val => updateSopRaci(sop.id, 'consulted', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} placeholder="Optional..." />
+                                                                            </div>
+                                                                            <div>
+                                                                                <span className="text-slate-400 block text-[9px] uppercase">Informed (I)</span>
+                                                                                <AutoResizeTextarea id={`raci-i-${sop.id}`} value={sop.raci?.informed || ''} onChange={val => updateSopRaci(sop.id, 'informed', val)} isEditMode={isEditMode} className={!isEditMode?'preview-mode-input':''} placeholder="Optional..." />
+                                                                            </div>
+                                                                        </div>
+                                                                    </details>
+                                                                )}
                                                             </td>
                                                         </tr>
                                                         );
@@ -2817,7 +2837,14 @@
 
                                             {activeMode === 'handbook' && (() => {
                                                 const hb = localPolicyData.handbook;
-                                                const hbSections = [{title:'Introduction'}, {title:'Company DNA'}, {title:'Operations & Compensation'}, {title:'Leaves Structure'}, {title:'Discipline Framework'}, {title:'Custom Policies'}];
+                                                const hbSections = [
+                                                    {title:'Introduction'},
+                                                    {title:'Hours, Pay & Offboarding'},
+                                                    {title:'Leave'},
+                                                    {title:'Discipline'},
+                                                    ...((hb.customPolicies || []).length || isEditMode ? [{title:'Additional Policies'}] : []),
+                                                    ...((isEditMode || hb.mission || hb.vision) ? [{title:'Mission & Vision'}] : []),
+                                                ];
                                                 return (
                                                 <React.Fragment>
                                                     <tr className="block print:table-row">
@@ -2877,37 +2904,21 @@
                                                         </td>
                                                     </tr>
 
-                                                    <tr className="block print:table-row">
-                                                        <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
-                                                            <h2 id="hb-sec-2" className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>2. Company DNA</h2>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                                                <div>
-                                                                    <label htmlFor="hb-mission" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Mission</label>
-                                                                    <MarkdownField id="hb-mission" value={hb.mission} onChange={val => updateHandbook('mission', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Company Mission..." />
-                                                                </div>
-                                                                <div>
-                                                                    <label htmlFor="hb-vision" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Vision</label>
-                                                                    <MarkdownField id="hb-vision" value={hb.vision} onChange={val => updateHandbook('vision', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Company Vision..." />
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-
                                                     <tr className="block print:table-row page-break-avoid">
                                                         <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
-                                                            <h2 id="hb-sec-3" className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>3. Operations & Compensation</h2>
+                                                            <h2 id="hb-sec-2" className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>2. Hours, Pay &amp; Offboarding</h2>
                                                             <div className="space-y-6 mt-4">
                                                                 <div>
-                                                                    <label htmlFor="hb-timekeeping" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Timekeeping & Attendance</label>
-                                                                    <MarkdownField id="hb-timekeeping" value={hb.timekeeping} onChange={val => updateHandbook('timekeeping', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Working hours, grace periods, overtime policies..." />
+                                                                    <label htmlFor="hb-timekeeping" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Hours &amp; attendance</label>
+                                                                    <MarkdownField id="hb-timekeeping" value={hb.timekeeping} onChange={val => updateHandbook('timekeeping', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Working hours, grace periods..." />
                                                                 </div>
                                                                 <div>
-                                                                    <label htmlFor="hb-compensation" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Compensation & Benefits</label>
-                                                                    <MarkdownField id="hb-compensation" value={hb.compensation} onChange={val => updateHandbook('compensation', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Payroll schedule, standard deductions..." />
+                                                                    <label htmlFor="hb-compensation" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Pay &amp; benefits</label>
+                                                                    <MarkdownField id="hb-compensation" value={hb.compensation} onChange={val => updateHandbook('compensation', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Payroll schedule, deductions..." />
                                                                 </div>
                                                                 <div>
-                                                                    <label htmlFor="hb-offboarding" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Resignation & Offboarding</label>
-                                                                    <MarkdownField id="hb-offboarding" value={hb.offboarding} onChange={val => updateHandbook('offboarding', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Notice periods, clearance, final pay..." />
+                                                                    <label htmlFor="hb-offboarding" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Resignation &amp; offboarding</label>
+                                                                    <MarkdownField id="hb-offboarding" value={hb.offboarding} onChange={val => updateHandbook('offboarding', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Notice, clearance, final pay..." />
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -2916,14 +2927,14 @@
                                                     <tr className="block print:table-row page-break-avoid">
                                                         <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
                                                             <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                                <h2 id="hb-sec-4" className="text-xl font-bold text-slate-900 uppercase">4. DOLE-Compliant Leaves Structure</h2>
+                                                                <h2 id="hb-sec-3" className="text-xl font-bold text-slate-900 uppercase">3. Leave</h2>
                                                                 {isEditMode && (
                                                                     <button type="button" onClick={addLeave} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
                                                                         + Add Leave
                                                                     </button>
                                                                 )}
                                                             </div>
-                                                            <p className="text-sm text-slate-600 mb-4 mt-4">The company strictly adheres to standard Philippine labor leave allocations.</p>
+                                                            <p className="text-sm text-slate-600 mb-4 mt-4">Standard Philippine leave types — adjust to the client’s policies.</p>
                                                             
                                                             <div className="space-y-4">
                                                                 {(hb.leaves || []).map((leave, idx) => (
@@ -2973,7 +2984,7 @@
                                                     <tr className="block print:table-row page-break-before">
                                                         <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
                                                             <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                                <h2 id="hb-sec-5" className="text-xl font-bold text-slate-900 uppercase">5. Progressive Discipline Framework</h2>
+                                                                <h2 id="hb-sec-4" className="text-xl font-bold text-slate-900 uppercase">4. Discipline</h2>
                                                                 {isEditMode && (
                                                                     <button type="button" onClick={addDiscipline} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
                                                                         + Add Stage
@@ -3040,17 +3051,22 @@
                                                         </td>
                                                     </tr>
 
+                                                    {(isEditMode || (hb.customPolicies || []).length > 0) && (
                                                     <tr className="block print:table-row">
                                                         <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
                                                             <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                                                <h2 id="hb-sec-6" className="text-xl font-bold text-slate-900 uppercase">6. Custom Policies</h2>
+                                                                <h2 id="hb-sec-5" className="text-xl font-bold text-slate-900 uppercase">5. Additional Policies</h2>
                                                                 {isEditMode && (
                                                                     <button type="button" onClick={addCustomPolicy} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
                                                                         + Add Policy
                                                                     </button>
                                                                 )}
                                                             </div>
+                                                            <p className="text-[10px] text-slate-500 mt-2 mb-2 no-print">Prefer linking to NDA / Data Privacy docs instead of duplicating them here.</p>
                                                             <div className="space-y-6 mt-4">
+                                                                {(hb.customPolicies || []).length === 0 && isEditMode && (
+                                                                    <p className="text-xs text-slate-400 italic">No additional policies yet.</p>
+                                                                )}
                                                                 {(hb.customPolicies || []).map((policy, idx) => (
                                                                     <section key={policy.id} className="relative group page-break-avoid" aria-labelledby={`cp-heading-${policy.id}`}>
                                                                         {isEditMode && (
@@ -3061,7 +3077,7 @@
                                                                             </div>
                                                                         )}
                                                                         <div className="font-bold text-slate-800 text-base mb-1 flex items-center">
-                                                                            <span className="mr-2" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>6.{idx+1}</span>
+                                                                            <span className="mr-2" style={{ color: activeClient.branding?.primaryColor || '#0f766e' }}>5.{idx+1}</span>
                                                                             <label htmlFor={`cp-title-${policy.id}`} className="sr-only">Policy Title</label>
                                                                             <AutoResizeTextarea 
                                                                                 id={`cp-title-${policy.id}`}
@@ -3084,6 +3100,25 @@
                                                             </div>
                                                         </td>
                                                     </tr>
+                                                    )}
+
+                                                    {(isEditMode || hb.mission || hb.vision) && (
+                                                    <tr className="block print:table-row">
+                                                        <td className="block print:table-cell px-10 pt-10 pb-0 align-top">
+                                                            <h2 id="hb-sec-6" className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase text-slate-500" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Mission &amp; Vision <span className="text-[10px] font-bold normal-case tracking-normal text-slate-400">(optional)</span></h2>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                                <div>
+                                                                    <label htmlFor="hb-mission" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Mission</label>
+                                                                    <MarkdownField id="hb-mission" value={hb.mission} onChange={val => updateHandbook('mission', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Optional..." />
+                                                                </div>
+                                                                <div>
+                                                                    <label htmlFor="hb-vision" className="block text-xs uppercase text-slate-500 mb-1 font-bold">Vision</label>
+                                                                    <MarkdownField id="hb-vision" value={hb.vision} onChange={val => updateHandbook('vision', val)} isEditMode={isEditMode} className="text-sm text-slate-600 leading-relaxed" placeholder="Optional..." />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    )}
                                                 </React.Fragment>
                                                 );
                                             })()}
@@ -3184,24 +3219,24 @@
                                                                     </td>
                                                                 </tr>
 
-                                                                <tr className="block print:table-row page-break-avoid">
+                                                                <tr className="block print:table-row page-break-avoid no-print">
                                                                     <td className="block print:table-cell px-10 pt-8 pb-0 w-full align-top">
-                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Guide Purpose</h2>
-                                                                        <label htmlFor={`jd-intro-${role.id}`} className="sr-only">Guide Purpose</label>
+                                                                        <h2 className="text-sm font-bold text-slate-500 border-b border-slate-200 pb-2 uppercase mb-3">Shared pack note (edit only)</h2>
+                                                                        <label htmlFor={`jd-intro-${role.id}`} className="sr-only">Shared introduction</label>
                                                                         <MarkdownField
                                                                             id={`jd-intro-${role.id}`}
                                                                             value={pack.introduction || ''}
                                                                             onChange={(val) => updateStandardDoc('jobDescriptions', 'introduction', val)}
                                                                             className="text-sm text-slate-700 leading-relaxed"
                                                                             isEditMode={isEditMode}
-                                                                            placeholder="Shared purpose for role profile guides..."
+                                                                            placeholder="Optional pack-level note — not repeated on each role PDF..."
                                                                         />
                                                                     </td>
                                                                 </tr>
 
                                                                 <tr className="block print:table-row">
                                                                     <td className="block print:table-cell px-10 pt-8 pb-10 w-full align-top">
-                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Role Responsibilities & Competencies</h2>
+                                                                        <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 print-section-title uppercase mb-4" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>Role summary</h2>
                                                                         <label htmlFor={`jd-content-${role.id}`} className="sr-only">Role Content</label>
                                                                         <MarkdownField
                                                                             id={`jd-content-${role.id}`}
@@ -3209,7 +3244,7 @@
                                                                             onChange={(val) => updateStandardSection('jobDescriptions', role.id, 'content', val)}
                                                                             className="text-sm text-slate-600 leading-relaxed"
                                                                             isEditMode={isEditMode}
-                                                                            placeholder="Essential responsibilities, reporting lines, and core competencies..."
+                                                                            placeholder={"Owns…\nReports to…\nMust-dos…\nSkills…"}
                                                                         />
                                                                     </td>
                                                                 </tr>
@@ -3223,8 +3258,8 @@
                                                 renderStandardEditor(activeMode)
                                             )}
 
-                                            {/* Final Document Acknowledgment */}
-                                            {activeMode !== 'branding' && activeMode !== 'dashboard' && (
+                                            {/* Final Document Acknowledgment — skip pure reference docs */}
+                                            {activeMode !== 'branding' && activeMode !== 'dashboard' && !['sop', 'orgChart', 'sla', 'jobDescriptions'].includes(activeMode) && (
                                                 <tr className="block print:table-row page-break-avoid">
                                                     <td className="block print:table-cell px-10 pb-10 mt-12 pt-8 border-t border-slate-200 align-top text-sm w-full">
                                                         <div className="grid grid-cols-2 gap-12 w-full">
