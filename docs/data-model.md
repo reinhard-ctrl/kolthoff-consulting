@@ -83,6 +83,7 @@ Published to Vault as `doc-orgChart`. Official org chart for clients comes from 
 | `diagram.svgCache` | string | Exported SVG data URI for PDF/Vault |
 | `diagram.layout` | string | `horizontalTree` \| `verticalTree` |
 | `roster[]` | array | Parsed `{ id, name, title, department, reportsTo }` |
+| `raciMatrix[]` | array | Decision authority rows `{ id, activity, responsible, accountable, consulted, informed }` |
 | `link.lastSyncedAt` | number | When diagram was synced from `workbook_profiles.orgChart` |
 
 ### `workbook_profiles.orgChart` (workspace draft)

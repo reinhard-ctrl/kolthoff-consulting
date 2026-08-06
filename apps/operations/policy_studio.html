@@ -183,7 +183,7 @@
     <script src="../../shared/mod-gating.js?v=20250707-mod2-admin-unlock-v1"></script>
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
-    <script src="../../shared/diagram-editor.js?v=20250805-client-lean-v1"></script>
+    <script src="../../shared/diagram-editor.js?v=20250806-org-raci-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -450,6 +450,7 @@
                     sections: [],
                     diagram: { drawioXml: '', svgCache: '', layout: 'horizontalTree' },
                     roster: [],
+                    raciMatrix: [],
                     link: { source: 'policy-studio', lastSyncedAt: null }
                 }))
             }
@@ -2268,6 +2269,37 @@
                 });
             };
 
+            const updateOrgChartRaciRow = (rowId, field, val) => {
+                updateOrgChartPolicy({
+                    raciMatrix: (localPolicyData.standardDocs?.orgChart?.raciMatrix || []).map((row) =>
+                        row.id === rowId ? { ...row, [field]: val } : row
+                    ),
+                });
+            };
+
+            const addOrgChartRaciRow = () => {
+                const raciMatrix = localPolicyData.standardDocs?.orgChart?.raciMatrix || [];
+                const fresh = window.DiagramEditor?.createEmptyOrgChartRaciRow?.({
+                    activity: 'New decision / activity',
+                }) || {
+                    id: 'raci-' + Date.now(),
+                    activity: 'New decision / activity',
+                    responsible: '',
+                    accountable: '',
+                    consulted: '',
+                    informed: '',
+                };
+                updateOrgChartPolicy({ raciMatrix: [...raciMatrix, fresh] });
+            };
+
+            const removeOrgChartRaciRow = (rowId) => {
+                updateOrgChartPolicy({
+                    raciMatrix: (localPolicyData.standardDocs?.orgChart?.raciMatrix || []).filter(
+                        (row) => row.id !== rowId
+                    ),
+                });
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
@@ -2971,6 +3003,7 @@
                 const doc = localPolicyData.standardDocs?.orgChart;
                 if (!doc || !activeClient) return null;
                 const roster = doc.roster || [];
+                const raciMatrix = doc.raciMatrix || [];
                 const svgCache = doc.diagram?.svgCache;
 
                 return (
@@ -3097,6 +3130,92 @@
                                                         </tr>
                                                     );
                                                 })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </td>
+                        </tr>
+
+                        <tr className="block print:table-row page-break-avoid">
+                            <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
+                                <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                    <h2 className="text-xl font-bold text-slate-900 uppercase">5. RACI Matrix</h2>
+                                    {isEditMode && (
+                                        <button type="button" onClick={addOrgChartRaciRow} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
+                                            + Add Row
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-sm text-slate-600 mt-3 mb-4">
+                                    Decision authority for key activities. <strong>R</strong> does the work, <strong>A</strong> owns the outcome (one person), <strong>C</strong> is consulted, <strong>I</strong> is kept informed.
+                                </p>
+                                {raciMatrix.length === 0 ? (
+                                    <div className="mt-2">
+                                        <p className="text-sm text-slate-500">No RACI rows yet. Add decisions your org needs clear ownership for.</p>
+                                        {isEditMode && (
+                                            <button type="button" onClick={addOrgChartRaciRow} className="no-print mt-3 text-[10px] uppercase font-bold bg-brandTeal-500 text-brandNavy-955 px-3 py-1.5 rounded hover:bg-brandTeal-600">
+                                                + Add First Row
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm mt-2 overflow-x-auto">
+                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[720px]">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                    <th scope="col" className="p-3">Activity / Decision</th>
+                                                    <th scope="col" className="p-3">Responsible (R)</th>
+                                                    <th scope="col" className="p-3">Accountable (A)</th>
+                                                    <th scope="col" className="p-3">Consulted (C)</th>
+                                                    <th scope="col" className="p-3">Informed (I)</th>
+                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {raciMatrix.map((row) => (
+                                                    <tr key={row.id} className="border-b border-slate-200 align-top">
+                                                        <td className="p-3 font-semibold text-slate-800">
+                                                            <label htmlFor={`raci-activity-${row.id}`} className="sr-only">Activity</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`raci-activity-${row.id}`}
+                                                                    value={row.activity || ''}
+                                                                    onChange={(val) => updateOrgChartRaciRow(row.id, 'activity', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="font-semibold text-slate-800"
+                                                                    placeholder="Activity or decision"
+                                                                />
+                                                            ) : (
+                                                                row.activity || '—'
+                                                            )}
+                                                        </td>
+                                                        {['responsible', 'accountable', 'consulted', 'informed'].map((field) => (
+                                                            <td key={field} className="p-3 text-slate-600">
+                                                                <label htmlFor={`raci-${field}-${row.id}`} className="sr-only">{field}</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`raci-${field}-${row.id}`}
+                                                                        value={row[field] || ''}
+                                                                        onChange={(val) => updateOrgChartRaciRow(row.id, field, val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder={field === 'accountable' ? 'One owner' : 'Role or name'}
+                                                                    />
+                                                                ) : (
+                                                                    row[field] || '—'
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                        {isEditMode && (
+                                                            <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                <button type="button" aria-label="Remove RACI row" onClick={() => removeOrgChartRaciRow(row.id)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>

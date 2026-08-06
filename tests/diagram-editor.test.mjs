@@ -140,4 +140,33 @@ const fallback = [{ id: 'x', name: 'Kept', title: 'Lead', department: '', report
 assert.deepEqual(DE.resolveOrgChartMembers('', fallback), fallback);
 assert.equal(DE.resolveOrgChartMembers(objectLabelXml, fallback).length, 2);
 
+assert.ok(Array.isArray(DE.DEFAULT_ORG_CHART_POLICY.raciMatrix));
+assert.ok(DE.DEFAULT_ORG_CHART_POLICY.raciMatrix.length >= 1);
+assert.equal(DE.DEFAULT_ORG_CHART_POLICY.raciMatrix[0].activity, 'Hiring & role changes');
+
+const raciRow = DE.createEmptyOrgChartRaciRow({ activity: 'Approvals', accountable: 'Ops Lead' });
+assert.equal(raciRow.activity, 'Approvals');
+assert.equal(raciRow.accountable, 'Ops Lead');
+assert.equal(raciRow.responsible, '');
+
+const mergedOrg = DE.mergeOrgChartPolicy(DE.DEFAULT_ORG_CHART_POLICY, {
+  title: 'Custom Org',
+  roster: [{ id: 'r1', name: 'Ada', title: 'CEO', department: '', reportsTo: '' }],
+  raciMatrix: [{ id: 'rx', activity: 'Escalations', responsible: 'Owner', accountable: 'Lead', consulted: '', informed: '' }],
+});
+assert.equal(mergedOrg.title, 'Custom Org');
+assert.equal(mergedOrg.raciMatrix.length, 1);
+assert.equal(mergedOrg.raciMatrix[0].activity, 'Escalations');
+
+const legacyMerged = DE.mergeOrgChartPolicy(DE.DEFAULT_ORG_CHART_POLICY, {
+  title: 'Legacy Org',
+  roster: [],
+});
+assert.ok(legacyMerged.raciMatrix.length >= 1, 'legacy docs without raciMatrix get defaults');
+
+const orgMd = DE.compileOrgChartPolicyMarkdown(mergedOrg);
+assert.match(orgMd, /## RACI Matrix/);
+assert.match(orgMd, /Escalations/);
+assert.match(orgMd, /Responsible \(R\)/);
+
 console.log('diagram-editor.test.mjs: all assertions passed');
