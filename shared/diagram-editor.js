@@ -19,6 +19,53 @@
     '<root><mxCell id="0"/><mxCell id="1" parent="0"/></root>' +
     '</mxGraphModel></diagram></mxfile>';
 
+  function createEmptyOrgChartRaciRow(overrides) {
+    const o = overrides && typeof overrides === 'object' ? overrides : {};
+    return {
+      id: o.id || `raci-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      activity: o.activity != null ? String(o.activity) : '',
+      responsible: o.responsible != null ? String(o.responsible) : '',
+      accountable: o.accountable != null ? String(o.accountable) : '',
+      consulted: o.consulted != null ? String(o.consulted) : '',
+      informed: o.informed != null ? String(o.informed) : '',
+    };
+  }
+
+  const DEFAULT_ORG_CHART_RACI_MATRIX = [
+    createEmptyOrgChartRaciRow({
+      id: 'raci-hiring',
+      activity: 'Hiring & role changes',
+      responsible: 'Hiring manager',
+      accountable: 'HR Director',
+      consulted: 'Department lead',
+      informed: 'Leadership',
+    }),
+    createEmptyOrgChartRaciRow({
+      id: 'raci-escalation',
+      activity: 'Client / operational escalations',
+      responsible: 'Assigned owner',
+      accountable: 'Department lead',
+      consulted: 'Cross-functional partners',
+      informed: 'Leadership',
+    }),
+    createEmptyOrgChartRaciRow({
+      id: 'raci-budget',
+      activity: 'Budget & spend approvals',
+      responsible: 'Requestor',
+      accountable: 'Finance / Approver',
+      consulted: 'Department lead',
+      informed: 'Leadership',
+    }),
+    createEmptyOrgChartRaciRow({
+      id: 'raci-org-change',
+      activity: 'Org structure changes',
+      responsible: 'HR',
+      accountable: 'Leadership',
+      consulted: 'Affected managers',
+      informed: 'All staff',
+    }),
+  ];
+
   const DEFAULT_ORG_CHART_POLICY = {
     title: 'Organization Chart & Reporting',
     docControl: {
@@ -50,6 +97,7 @@
       lastDiagramEditAt: null,
     },
     roster: [],
+    raciMatrix: DEFAULT_ORG_CHART_RACI_MATRIX.map((row) => ({ ...row })),
     link: {
       source: 'policy-studio',
       workbookOrgChartField: 'orgChart.drawioXml',
@@ -349,6 +397,21 @@
       md += '\n';
     }
 
+    if (doc.raciMatrix && doc.raciMatrix.length) {
+      md += '## RACI Matrix\n\n';
+      md += '| Activity / Decision | Responsible (R) | Accountable (A) | Consulted (C) | Informed (I) |\n';
+      md += '|---------------------|-----------------|-----------------|---------------|-------------|\n';
+      doc.raciMatrix.forEach((row) => {
+        md +=
+          '| ' +
+          [row.activity, row.responsible, row.accountable, row.consulted, row.informed]
+            .map((v) => String(v || '—').replace(/\|/g, '\\|'))
+            .join(' | ') +
+          ' |\n';
+      });
+      md += '\n';
+    }
+
     (doc.sections || []).forEach((sec, idx) => {
       md += '## ' + (idx + 1) + '. ' + (sec.title || 'Section') + '\n' + (sec.content || '') + '\n\n';
     });
@@ -370,24 +433,9 @@
         drawioXml: loadedDoc.diagram?.drawioXml || base.diagram.drawioXml,
       },
       roster: loadedDoc.roster || base.roster,
-      link: { ...base.link, ...(loadedDoc.link || {}) },
-    };
-  }
-
-  function mergeOrgChartPolicy(defaultDoc, loadedDoc) {
-    const base = JSON.parse(JSON.stringify(defaultDoc));
-    if (!loadedDoc || typeof loadedDoc !== 'object') return base;
-    return {
-      ...base,
-      ...loadedDoc,
-      docControl: { ...base.docControl, ...(loadedDoc.docControl || {}) },
-      sections: loadedDoc.sections?.length ? loadedDoc.sections : base.sections,
-      diagram: {
-        ...base.diagram,
-        ...(loadedDoc.diagram || {}),
-        drawioXml: loadedDoc.diagram?.drawioXml || base.diagram.drawioXml,
-      },
-      roster: loadedDoc.roster || base.roster,
+      raciMatrix: Array.isArray(loadedDoc.raciMatrix)
+        ? loadedDoc.raciMatrix.map((row) => createEmptyOrgChartRaciRow(row))
+        : (base.raciMatrix || []),
       link: { ...base.link, ...(loadedDoc.link || {}) },
     };
   }
@@ -665,6 +713,7 @@
     BLANK_ORG_CHART_XML,
     BLANK_BPMN_XML,
     DEFAULT_ORG_CHART_POLICY,
+    DEFAULT_ORG_CHART_RACI_MATRIX,
     PRESETS,
     getDrawioEmbedUrl,
     getPreset,
@@ -677,6 +726,7 @@
     resolveWorkspaceOrgChartXml,
     compileOrgChartPolicyMarkdown,
     mergeOrgChartPolicy,
+    createEmptyOrgChartRaciRow,
     createEmptyWorkflowPresent,
     normalizeWorkflowPresent,
     getWorkflowViewModel,
