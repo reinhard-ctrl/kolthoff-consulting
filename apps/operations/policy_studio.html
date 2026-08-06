@@ -185,6 +185,7 @@
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
     <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
+    <script src="../../shared/communication-plan.js?v=20250806-comm-plan-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -461,6 +462,14 @@
                     doa: { intro: '', note: '', rows: [] },
                     matrices: [],
                     matrix: [],
+                })),
+                communicationPlan: JSON.parse(JSON.stringify(window.CommunicationPlan?.DEFAULT_COMMUNICATION_PLAN || {
+                    title: 'Communication Plan',
+                    docControl: { version: '1.0', effectiveDate: '2026-07-06', lastReviewed: '2026-07-06', owner: 'COO' },
+                    introduction: 'Meeting cadences and tools for clear internal and external communication.',
+                    sections: [],
+                    tiers: [],
+                    channels: [],
                 }))
             }
         };
@@ -516,7 +525,8 @@
             Upload: () => <svg aria-hidden="true" className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Reset: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>,
             Archive: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>,
-            Sitemap: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/></svg>
+            Sitemap: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/></svg>,
+            Message: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         };
 
         const DrawIoEmbed = ({ preset = 'orgChart', xml, onXmlChange, onSvgExport, height = 520 }) => {
@@ -1070,6 +1080,10 @@
                         mergedStandardDocs[key] = window.RaciPolicy.mergeRaciPolicy(defaultDoc, loadedDoc);
                         return;
                     }
+                    if (key === 'communicationPlan' && window.CommunicationPlan?.mergeCommunicationPlan) {
+                        mergedStandardDocs[key] = window.CommunicationPlan.mergeCommunicationPlan(defaultDoc, loadedDoc);
+                        return;
+                    }
                     const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
                     const chaptersSource = loadedDoc.chapters?.length
                         ? loadedDoc.chapters
@@ -1371,7 +1385,7 @@
 
                 if (localPolicyData.standardDocs) {
                     Object.keys(localPolicyData.standardDocs).forEach(key => {
-                        if (key === 'orgChart' || key === 'raci') return;
+                        if (key === 'orgChart' || key === 'raci' || key === 'communicationPlan') return;
                         const doc = localPolicyData.standardDocs[key];
 
                         // Job Role Profiles: one vault file per role
@@ -1437,6 +1451,16 @@
                         title: raciDoc.title || 'RACI & Decision Authority',
                         content: window.RaciPolicy.compileRaciPolicyMarkdown(raciDoc),
                         lastUpdated: raciDoc.docControl?.lastReviewed || defaultDate
+                    });
+                }
+
+                if (localPolicyData.standardDocs?.communicationPlan && window.CommunicationPlan?.compileCommunicationPlanMarkdown) {
+                    const commDoc = localPolicyData.standardDocs.communicationPlan;
+                    policiesArray.push({
+                        id: 'doc-communicationPlan',
+                        title: commDoc.title || 'Communication Plan',
+                        content: window.CommunicationPlan.compileCommunicationPlanMarkdown(commDoc),
+                        lastUpdated: commDoc.docControl?.lastReviewed || defaultDate
                     });
                 }
 
@@ -2438,6 +2462,82 @@
                 updateRaciDoa({ rows: nextRows.length ? nextRows : [empty] });
             };
 
+            const updateCommunicationPlan = (patch) => updateDocState('standardDocs', (docs) => ({
+                ...docs,
+                communicationPlan: {
+                    ...(docs.communicationPlan || {}),
+                    ...patch,
+                },
+            }));
+
+            const updateCommTier = (rowId, field, val) => {
+                updateCommunicationPlan({
+                    tiers: (localPolicyData.standardDocs?.communicationPlan?.tiers || []).map((row) =>
+                        row.id === rowId ? { ...row, [field]: val } : row
+                    ),
+                });
+            };
+
+            const addCommTier = () => {
+                const fresh = window.CommunicationPlan?.createEmptyTier?.({
+                    tier: 'Tier',
+                    name: 'New meeting',
+                    cadence: '',
+                    duration: '',
+                }) || {
+                    id: 'tier-' + Date.now(),
+                    tier: 'Tier',
+                    name: 'New meeting',
+                    cadence: '',
+                    duration: '',
+                    purpose: '',
+                    attendees: '',
+                    owner: '',
+                    channel: '',
+                };
+                updateCommunicationPlan({
+                    tiers: [...(localPolicyData.standardDocs?.communicationPlan?.tiers || []), fresh],
+                });
+            };
+
+            const removeCommTier = (rowId) => {
+                const next = (localPolicyData.standardDocs?.communicationPlan?.tiers || []).filter((row) => row.id !== rowId);
+                const empty = window.CommunicationPlan?.createEmptyTier?.({ tier: 'Tier', name: 'New meeting' })
+                    || { id: 'tier-' + Date.now(), tier: 'Tier', name: 'New meeting', cadence: '', duration: '', purpose: '', attendees: '', owner: '', channel: '' };
+                updateCommunicationPlan({ tiers: next.length ? next : [empty] });
+            };
+
+            const updateCommChannel = (rowId, field, val) => {
+                updateCommunicationPlan({
+                    channels: (localPolicyData.standardDocs?.communicationPlan?.channels || []).map((row) =>
+                        row.id === rowId ? { ...row, [field]: val } : row
+                    ),
+                });
+            };
+
+            const addCommChannel = () => {
+                const fresh = window.CommunicationPlan?.createEmptyChannel?.({
+                    tool: 'New tool / channel',
+                }) || {
+                    id: 'ch-' + Date.now(),
+                    tool: 'New tool / channel',
+                    purpose: '',
+                    audience: '',
+                    cadenceOrSla: '',
+                    notes: '',
+                };
+                updateCommunicationPlan({
+                    channels: [...(localPolicyData.standardDocs?.communicationPlan?.channels || []), fresh],
+                });
+            };
+
+            const removeCommChannel = (rowId) => {
+                const next = (localPolicyData.standardDocs?.communicationPlan?.channels || []).filter((row) => row.id !== rowId);
+                const empty = window.CommunicationPlan?.createEmptyChannel?.({ tool: 'New tool / channel' })
+                    || { id: 'ch-' + Date.now(), tool: 'New tool / channel', purpose: '', audience: '', cadenceOrSla: '', notes: '' };
+                updateCommunicationPlan({ channels: next.length ? next : [empty] });
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
@@ -2446,6 +2546,7 @@
                 if (activeMode === 'branding') return 'Branding & Identity';
                 if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
                 if (activeMode === 'raci') return localPolicyData.standardDocs?.raci?.title || 'RACI & Decision Authority';
+                if (activeMode === 'communicationPlan') return localPolicyData.standardDocs?.communicationPlan?.title || 'Communication Plan';
                 return localPolicyData.standardDocs?.[activeMode]?.title || 'Document';
             };
 
@@ -2516,6 +2617,14 @@
                         return window.RaciPolicy.compileRaciPolicyMarkdown(raciDoc);
                     }
                     return `# ${raciDoc.title || 'RACI & Decision Authority'}\n\n${raciDoc.introduction || ''}`;
+                }
+                if (activeMode === 'communicationPlan') {
+                    const commDoc = localPolicyData.standardDocs?.communicationPlan;
+                    if (!commDoc) return null;
+                    if (window.CommunicationPlan?.compileCommunicationPlanMarkdown) {
+                        return window.CommunicationPlan.compileCommunicationPlanMarkdown(commDoc);
+                    }
+                    return `# ${commDoc.title || 'Communication Plan'}\n\n${commDoc.introduction || ''}`;
                 }
                 if (localPolicyData.standardDocs?.[activeMode]) {
                     const doc = localPolicyData.standardDocs[activeMode];
@@ -2657,6 +2766,7 @@
                             },
                             { id: 'bcp', title: 'Business Continuity', blurb: 'Keep running during outages', obj: localPolicyData.standardDocs?.bcp },
                             { id: 'sla', title: 'Service Agreements (SLA)', blurb: 'Response and uptime targets', obj: localPolicyData.standardDocs?.sla },
+                            { id: 'communicationPlan', title: 'Communication Plan', blurb: 'Meeting cadences and channels', obj: localPolicyData.standardDocs?.communicationPlan },
                             { id: 'healthSafety', title: 'Health & Safety', blurb: 'Evacuation, hazards, first aid', obj: localPolicyData.standardDocs?.healthSafety },
                         ],
                     },
@@ -3540,6 +3650,194 @@
                 );
             };
 
+            const renderCommunicationPlanEditor = () => {
+                const doc = localPolicyData.standardDocs?.communicationPlan;
+                if (!doc || !activeClient) return null;
+                const tiers = doc.tiers || [];
+                const channels = doc.channels || [];
+                const brand = activeClient.branding?.primaryColor || '#0f766e';
+                const tierFields = [
+                    { key: 'tier', label: 'Tier', placeholder: 'Tier 1', wide: false },
+                    { key: 'name', label: 'Meeting', placeholder: 'Strategy-to-Execution Sync', wide: true },
+                    { key: 'cadence', label: 'Cadence', placeholder: 'Bi-Weekly', wide: false },
+                    { key: 'duration', label: 'Duration', placeholder: '45 mins', wide: false },
+                    { key: 'purpose', label: 'Purpose', placeholder: 'Why this meeting exists', wide: true },
+                    { key: 'attendees', label: 'Attendees', placeholder: 'Who attends', wide: true },
+                    { key: 'owner', label: 'Owner', placeholder: 'Meeting owner', wide: false },
+                    { key: 'channel', label: 'Primary Channel', placeholder: 'Video / Slack / Email', wide: true },
+                ];
+                const channelFields = [
+                    { key: 'tool', label: 'Tool', placeholder: 'Slack / Meet / Email' },
+                    { key: 'purpose', label: 'Purpose', placeholder: 'What it is used for' },
+                    { key: 'audience', label: 'Audience', placeholder: 'Who uses it' },
+                    { key: 'cadenceOrSla', label: 'Cadence / SLA', placeholder: 'Response expectations' },
+                    { key: 'notes', label: 'Notes', placeholder: 'Usage guidance' },
+                ];
+
+                return (
+                    <React.Fragment>
+                        {renderStandardEditor('communicationPlan')}
+
+                        <tr className="block print:table-row">
+                            <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
+                                <div className="page-break-avoid mb-14">
+                                    <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: brand }}>
+                                        <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2 min-w-0">
+                                            <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>1.</span>
+                                            <span>Meeting Cadence Tiers</span>
+                                        </h2>
+                                        {isEditMode && (
+                                            <button type="button" onClick={addCommTier} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0">
+                                                + Add Tier
+                                            </button>
+                                        )}
+                                    </div>
+                                    {isEditMode && (
+                                        <p className="no-print text-[11px] text-slate-400 mb-4 leading-relaxed">
+                                            Define recurring syncs by tier — for example Tier 1 Bi-Weekly Strategy-to-Execution Sync (45 mins), Tier 2 Weekly Operational Sync (30–45 mins).
+                                        </p>
+                                    )}
+                                    <div className="space-y-6">
+                                        {tiers.map((row) => (
+                                            <div key={row.id} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm page-break-avoid">
+                                                <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border-b border-slate-200 px-4 py-2">
+                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                        {isEditMode ? (
+                                                            <>
+                                                                <label htmlFor={`comm-tier-${row.id}`} className="sr-only">Tier</label>
+                                                                <input
+                                                                    id={`comm-tier-${row.id}`}
+                                                                    value={row.tier || ''}
+                                                                    onChange={(e) => updateCommTier(row.id, 'tier', e.target.value)}
+                                                                    className="w-24 text-[11px] font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 rounded px-2 py-1"
+                                                                    placeholder="Tier 1"
+                                                                />
+                                                                <label htmlFor={`comm-name-${row.id}`} className="sr-only">Meeting name</label>
+                                                                <input
+                                                                    id={`comm-name-${row.id}`}
+                                                                    value={row.name || ''}
+                                                                    onChange={(e) => updateCommTier(row.id, 'name', e.target.value)}
+                                                                    className="flex-1 min-w-[160px] text-sm font-bold text-slate-900 bg-white border border-slate-200 rounded px-2 py-1"
+                                                                    placeholder="Meeting name"
+                                                                />
+                                                            </>
+                                                        ) : (
+                                                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                                                                <span style={{ color: brand }}>{row.tier || 'Tier'}</span>
+                                                                {row.name ? ` — ${row.name}` : ''}
+                                                                {(row.cadence || row.duration) ? (
+                                                                    <span className="ml-2 font-semibold normal-case tracking-normal text-slate-500">
+                                                                        ({[row.cadence, row.duration].filter(Boolean).join(' · ')})
+                                                                    </span>
+                                                                ) : null}
+                                                            </h3>
+                                                        )}
+                                                    </div>
+                                                    {isEditMode && (
+                                                        <button type="button" aria-label="Remove cadence tier" onClick={() => removeCommTier(row.id)} className="no-print p-1 text-rose-500 hover:text-rose-700">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {tierFields.filter((f) => f.key !== 'tier' && f.key !== 'name').map((field) => (
+                                                        <div key={field.key} className={field.wide ? 'md:col-span-2' : ''}>
+                                                            <label htmlFor={`comm-${field.key}-${row.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">{field.label}</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`comm-${field.key}-${row.id}`}
+                                                                    value={row[field.key] || ''}
+                                                                    onChange={(val) => updateCommTier(row.id, field.key, val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="text-sm text-slate-700"
+                                                                    placeholder={field.placeholder}
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{row[field.key] || '—'}</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {isEditMode && (
+                                        <div className="no-print mt-3">
+                                            <button type="button" onClick={addCommTier} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                + Add cadence tier
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="page-break-avoid mb-10">
+                                    <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: brand }}>
+                                        <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2 min-w-0">
+                                            <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>2.</span>
+                                            <span>Tools &amp; Channels</span>
+                                        </h2>
+                                        {isEditMode && (
+                                            <button type="button" onClick={addCommChannel} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0">
+                                                + Add Tool
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[800px]">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                    {channelFields.map((field) => (
+                                                        <th key={field.key} scope="col" className="p-3">{field.label}</th>
+                                                    ))}
+                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {channels.map((row) => (
+                                                    <tr key={row.id} className="border-b border-slate-200 align-top">
+                                                        {channelFields.map((field) => (
+                                                            <td key={field.key} className={`p-3 ${field.key === 'tool' ? 'font-semibold text-slate-800' : 'text-slate-600'}`}>
+                                                                <label htmlFor={`comm-ch-${field.key}-${row.id}`} className="sr-only">{field.label}</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`comm-ch-${field.key}-${row.id}`}
+                                                                        value={row[field.key] || ''}
+                                                                        onChange={(val) => updateCommChannel(row.id, field.key, val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className={field.key === 'tool' ? 'font-semibold text-slate-800' : 'text-slate-600'}
+                                                                        placeholder={field.placeholder}
+                                                                    />
+                                                                ) : (
+                                                                    row[field.key] || '—'
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                        {isEditMode && (
+                                                            <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                <button type="button" aria-label="Remove communication tool" onClick={() => removeCommChannel(row.id)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {isEditMode && (
+                                        <div className="no-print mt-3">
+                                            <button type="button" onClick={addCommChannel} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                + Add tool / channel
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    </React.Fragment>
+                );
+            };
+
             return (
                 <div className="flex flex-col h-screen overflow-hidden bg-brandNavy-955 font-sans">
                     
@@ -3747,6 +4045,7 @@
                                     </div>
                                     <button type="button" aria-pressed={activeMode === 'bcp'} onClick={() => setActiveMode('bcp')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'bcp' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Activity /> <span className="text-xs ml-2">Business Continuity</span></button>
                                     <button type="button" aria-pressed={activeMode === 'sla'} onClick={() => setActiveMode('sla')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'sla' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Service Agreements (SLA)</span></button>
+                                    <button type="button" aria-pressed={activeMode === 'communicationPlan'} onClick={() => setActiveMode('communicationPlan')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'communicationPlan' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Message /> <span className="text-xs ml-2">Communication Plan</span></button>
                                 </div>
 
                                 <div className="mt-4">
@@ -4576,6 +4875,7 @@
                                             {/* --- STANDARD DOCS DISPATCHER --- */}
                                             {activeMode === 'orgChart' && renderOrgChartPolicyEditor()}
                                             {activeMode === 'raci' && renderRaciPolicyEditor()}
+                                            {activeMode === 'communicationPlan' && renderCommunicationPlanEditor()}
 
                                             {activeMode === 'jobDescriptions' && (() => {
                                                 const pack = localPolicyData.standardDocs?.jobDescriptions;
