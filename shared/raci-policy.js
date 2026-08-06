@@ -1,7 +1,8 @@
 /**
- * RACI & Decision Authority policy — one or more topic matrices with R/A/C/I rows.
+ * RACI & Decision Authority policy — DOA limits table + topic RACI matrices.
  * Shape: {
  *   title, docControl, introduction, sections[],
+ *   doa: { intro, note, rows: [{ id, role, opexLimit, capexLimit, contractLimit }] },
  *   matrices: [{ id, title, rows: [{ id, activity, responsible, accountable, consulted, informed }] }]
  * }
  * Legacy flat `matrix` / `raciMatrix` arrays are normalized into a single matrices[] group.
@@ -34,6 +35,68 @@
       rows,
     };
   }
+
+  function createEmptyDoaRow(overrides) {
+    const o = overrides && typeof overrides === 'object' ? overrides : {};
+    return {
+      id: o.id || makeId('doa'),
+      role: o.role != null ? String(o.role) : '',
+      opexLimit: o.opexLimit != null ? String(o.opexLimit) : '',
+      capexLimit: o.capexLimit != null ? String(o.capexLimit) : '',
+      contractLimit: o.contractLimit != null ? String(o.contractLimit) : '',
+    };
+  }
+
+  const DEFAULT_DOA = {
+    intro:
+      'The following table defines the monetary thresholds for expenditure authorization, contract sign-offs, and procurement approvals:',
+    note:
+      'Any financial transaction exceeding ₱5,000,000 OPEX or ₱10,000,000 CAPEX requires formal approval by the Board of Directors.',
+    rows: [
+      createEmptyDoaRow({
+        id: 'doa-ceo',
+        role: 'Chief Executive Officer (CEO)',
+        opexLimit: 'Up to ₱5,000,000',
+        capexLimit: 'Up to ₱10,000,000',
+        contractLimit: 'Multi-Year (Up to 3 Years)',
+      }),
+      createEmptyDoaRow({
+        id: 'doa-coo',
+        role: 'Chief Operating Officer (COO)',
+        opexLimit: 'Up to ₱1,000,000',
+        capexLimit: 'Up to ₱2,500,000',
+        contractLimit: 'Annual Contracts',
+      }),
+      createEmptyDoaRow({
+        id: 'doa-cto',
+        role: 'Chief Technology Officer (CTO)',
+        opexLimit: 'Up to ₱1,000,000',
+        capexLimit: 'Up to ₱2,500,000',
+        contractLimit: 'Tech Vendor / SLA Contracts',
+      }),
+      createEmptyDoaRow({
+        id: 'doa-finance',
+        role: 'Finance Manager',
+        opexLimit: 'Up to ₱500,000',
+        capexLimit: 'Up to ₱500,000',
+        contractLimit: 'Standard Operational Vendors',
+      }),
+      createEmptyDoaRow({
+        id: 'doa-heads',
+        role: 'HR / Marketing / Legal Heads',
+        opexLimit: 'Up to ₱250,000',
+        capexLimit: 'Up to ₱250,000',
+        contractLimit: 'Departmental Services',
+      }),
+      createEmptyDoaRow({
+        id: 'doa-ops',
+        role: 'Senior Operations Managers',
+        opexLimit: 'Up to ₱100,000',
+        capexLimit: 'N/A',
+        contractLimit: 'Operational Consumables',
+      }),
+    ],
+  };
 
   const DEFAULT_RACI_MATRICES = [
     createEmptyRaciMatrix({
@@ -130,6 +193,25 @@
     return DEFAULT_RACI_MATRICES.map((mx) => createEmptyRaciMatrix(mx));
   }
 
+  function normalizeDoa(rawDoa, fallback) {
+    const base = fallback && typeof fallback === 'object' ? fallback : DEFAULT_DOA;
+    if (!rawDoa || typeof rawDoa !== 'object') {
+      return {
+        intro: base.intro || '',
+        note: base.note || '',
+        rows: (base.rows || []).map((r) => createEmptyDoaRow(r)),
+      };
+    }
+    const rows = Array.isArray(rawDoa.rows) && rawDoa.rows.length
+      ? rawDoa.rows.map((r) => createEmptyDoaRow(r))
+      : (base.rows || []).map((r) => createEmptyDoaRow(r));
+    return {
+      intro: rawDoa.intro != null ? String(rawDoa.intro) : (base.intro || ''),
+      note: rawDoa.note != null ? String(rawDoa.note) : (base.note || ''),
+      rows,
+    };
+  }
+
   const DEFAULT_RACI_POLICY = {
     title: 'RACI & Decision Authority',
     docControl: {
@@ -139,15 +221,20 @@
       owner: 'HR Director',
     },
     introduction:
-      'This policy defines who is Responsible, Accountable, Consulted, and Informed for key company decisions and activities. Group matrices by topic or category so ownership stays clear.',
+      'This policy defines financial delegation of authority (DOA) limits and who is Responsible, Accountable, Consulted, and Informed for key company decisions. Use it with the Org Chart and Role Profiles so ownership and spending rights stay clear.',
     sections: [
       {
         id: 'raci-howto',
-        title: 'How to read this matrix',
+        title: 'How to read the RACI matrix',
         content:
           '**Responsible (R)** — does the work.\n**Accountable (A)** — owns the outcome (one person).\n**Consulted (C)** — gives input before the decision.\n**Informed (I)** — is told after the decision.\n\nAdd a matrix per topic (People, Operations, Finance, etc.) and update rows when roles or decision rights change.',
       },
     ],
+    doa: {
+      intro: DEFAULT_DOA.intro,
+      note: DEFAULT_DOA.note,
+      rows: DEFAULT_DOA.rows.map((r) => createEmptyDoaRow(r)),
+    },
     matrices: DEFAULT_RACI_MATRICES.map((mx) => createEmptyRaciMatrix(mx)),
     // Flat mirror for older readers / simple consumers
     matrix: flattenMatrices(DEFAULT_RACI_MATRICES),
@@ -157,7 +244,12 @@
     const base = JSON.parse(JSON.stringify(defaultDoc || DEFAULT_RACI_POLICY));
     if (!loadedDoc || typeof loadedDoc !== 'object') {
       const matrices = normalizeMatrices(base);
-      return { ...base, matrices, matrix: flattenMatrices(matrices) };
+      return {
+        ...base,
+        doa: normalizeDoa(base.doa, DEFAULT_DOA),
+        matrices,
+        matrix: flattenMatrices(matrices),
+      };
     }
 
     // Prefer loaded matrices/flat rows over defaults so legacy single-matrix docs migrate cleanly.
@@ -185,6 +277,7 @@
       ...loadedClean,
       docControl: { ...base.docControl, ...(loadedDoc.docControl || {}) },
       sections: loadedDoc.sections?.length ? loadedDoc.sections : base.sections,
+      doa: normalizeDoa(loadedDoc.doa, base.doa || DEFAULT_DOA),
       matrices,
       matrix: flattenMatrices(matrices),
     };
@@ -197,9 +290,28 @@
       md += `## Introduction\n${normalized.introduction}\n\n`;
     }
 
+    const doa = normalized.doa || DEFAULT_DOA;
+    md += '## 1. Financial Delegation of Authority (DOA) Limits\n\n';
+    if (doa.intro) md += `${doa.intro}\n\n`;
+    if (doa.rows && doa.rows.length) {
+      md += '| Role / Title | Operational Expenses (OPEX) Single Approval Limit | Capital Expenses (CAPEX) Single Approval Limit | Contract Signing Duration Limit |\n';
+      md += '|--------------|---------------------------------------------------|------------------------------------------------|----------------------------------|\n';
+      doa.rows.forEach((row) => {
+        md +=
+          '| ' +
+          [row.role, row.opexLimit, row.capexLimit, row.contractLimit]
+            .map((v) => String(v || '—').replace(/\|/g, '\\|'))
+            .join(' | ') +
+          ' |\n';
+      });
+      md += '\n';
+    }
+    if (doa.note) md += `**Note:** ${doa.note}\n\n`;
+
+    md += '## 2. Authorization and Decision Matrix (RACI)\n\n';
     (normalized.matrices || []).forEach((mx, idx) => {
       const heading = mx.title || `Topic ${idx + 1}`;
-      md += `## ${idx + 1}. ${heading}\n\n`;
+      md += `### 2.${idx + 1} ${heading}\n\n`;
       md += '| Activity / Decision | Responsible (R) | Accountable (A) | Consulted (C) | Informed (I) |\n';
       md += '|---------------------|-----------------|-----------------|---------------|-------------|\n';
       (mx.rows || []).forEach((row) => {
@@ -213,8 +325,8 @@
       md += '\n';
     });
 
-    (normalized.sections || []).forEach((sec, idx) => {
-      md += `## ${sec.title || `Section ${idx + 1}`}\n${sec.content || ''}\n\n`;
+    (normalized.sections || []).forEach((sec) => {
+      md += `## ${sec.title || 'Section'}\n${sec.content || ''}\n\n`;
     });
 
     return md.trim();
@@ -223,8 +335,11 @@
   const api = {
     createEmptyRaciRow,
     createEmptyRaciMatrix,
+    createEmptyDoaRow,
     flattenMatrices,
     normalizeMatrices,
+    normalizeDoa,
+    DEFAULT_DOA,
     DEFAULT_RACI_MATRICES,
     DEFAULT_RACI_POLICY,
     mergeRaciPolicy,
