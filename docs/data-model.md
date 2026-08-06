@@ -101,6 +101,21 @@ Published to Vault as `doc-raci`. Separate from Org Chart; owns financial DOA li
 
 Compiled markdown order: (1) Financial DOA Limits table, (2) Authorization and Decision Matrix (RACI) by topic. Legacy flat `matrix` / `orgChart.raciMatrix` is normalized into a single `matrices[]` topic group on load. Missing `doa` is filled from defaults on merge.
 
+### `standardDocs.communicationPlan` (Communication Plan Policy)
+
+Published to Vault as `doc-communicationPlan`. Defines meeting cadence tiers and approved tools/channels.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `title` | string | e.g. Communication Plan |
+| `docControl` | object | version, effectiveDate, lastReviewed, owner |
+| `introduction` | string | Policy narrative |
+| `sections[]` | array | Guidance / norms |
+| `tiers[]` | array | Cadence tiers `{ id, tier, name, cadence, duration, purpose, attendees, owner, channel }` |
+| `channels[]` | array | Tools `{ id, tool, purpose, audience, cadenceOrSla, notes }` |
+
+Compiled markdown order: (1) Meeting Cadence Tiers, (2) Tools & Channels, then `sections[]`. Missing tiers/channels are filled from defaults on merge.
+
 ### `workbook_profiles.orgChart` (workspace draft)
 
 | Field | Type | Notes |
