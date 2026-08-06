@@ -16,6 +16,8 @@ const RP = win.RaciPolicy;
 assert.ok(RP);
 
 assert.equal(RP.DEFAULT_RACI_POLICY.title, 'RACI & Decision Authority');
+assert.ok(RP.DEFAULT_RACI_POLICY.matrices.length >= 2);
+assert.equal(RP.DEFAULT_RACI_POLICY.matrices[0].title, 'People & HR');
 assert.ok(RP.DEFAULT_RACI_POLICY.matrix.length >= 1);
 
 const row = RP.createEmptyRaciRow({ activity: 'Approvals', accountable: 'Ops Lead' });
@@ -23,22 +25,37 @@ assert.equal(row.activity, 'Approvals');
 assert.equal(row.accountable, 'Ops Lead');
 assert.equal(row.responsible, '');
 
+const mx = RP.createEmptyRaciMatrix({ title: 'Security', rows: [{ activity: 'Access reviews', accountable: 'IT' }] });
+assert.equal(mx.title, 'Security');
+assert.equal(mx.rows[0].activity, 'Access reviews');
+
 const merged = RP.mergeRaciPolicy(RP.DEFAULT_RACI_POLICY, {
   title: 'Custom RACI',
-  matrix: [{ id: 'rx', activity: 'Escalations', responsible: 'Owner', accountable: 'Lead' }],
+  matrices: [
+    { id: 'm1', title: 'Delivery', rows: [{ id: 'rx', activity: 'Escalations', responsible: 'Owner', accountable: 'Lead' }] },
+  ],
 });
 assert.equal(merged.title, 'Custom RACI');
+assert.equal(merged.matrices.length, 1);
+assert.equal(merged.matrices[0].title, 'Delivery');
 assert.equal(merged.matrix.length, 1);
-assert.equal(merged.matrix[0].consulted, '');
+assert.equal(merged.matrix[0].activity, 'Escalations');
 
-const fromLegacy = RP.mergeRaciPolicy(RP.DEFAULT_RACI_POLICY, {
-  raciMatrix: [{ id: 'legacy', activity: 'Legacy row', responsible: 'R', accountable: 'A' }],
+const fromFlat = RP.mergeRaciPolicy(RP.DEFAULT_RACI_POLICY, {
+  matrix: [{ id: 'legacy', activity: 'Legacy row', responsible: 'R', accountable: 'A' }],
 });
-assert.equal(fromLegacy.matrix[0].activity, 'Legacy row');
+assert.equal(fromFlat.matrices.length, 1);
+assert.equal(fromFlat.matrices[0].title, 'General');
+assert.equal(fromFlat.matrices[0].rows[0].activity, 'Legacy row');
+
+const fromOrgLegacy = RP.mergeRaciPolicy(RP.DEFAULT_RACI_POLICY, {
+  raciMatrix: [{ id: 'org', activity: 'Org legacy', responsible: 'R', accountable: 'A' }],
+});
+assert.equal(fromOrgLegacy.matrices[0].rows[0].activity, 'Org legacy');
 
 const md = RP.compileRaciPolicyMarkdown(merged);
 assert.match(md, /^# Custom RACI/m);
-assert.match(md, /## RACI Matrix/);
+assert.match(md, /## 1\. Delivery/);
 assert.match(md, /Escalations/);
 assert.match(md, /Responsible \(R\)/);
 
