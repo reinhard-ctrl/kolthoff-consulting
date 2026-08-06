@@ -184,7 +184,7 @@
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
-    <script src="../../shared/raci-policy.js?v=20250806-raci-policy-v1"></script>
+    <script src="../../shared/raci-policy.js?v=20250806-raci-groups-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -458,6 +458,7 @@
                     docControl: { version: '1.0', effectiveDate: '2026-07-06', lastReviewed: '2026-07-06', owner: 'HR Director' },
                     introduction: 'Who is Responsible, Accountable, Consulted, and Informed for key decisions.',
                     sections: [],
+                    matrices: [],
                     matrix: [],
                 }))
             }
@@ -1101,8 +1102,9 @@
                 // Migrate legacy orgChart.raciMatrix → standardDocs.raci (one-time on load)
                 const legacyOrgRaci = loadedData.standardDocs?.orgChart?.raciMatrix;
                 const raciDoc = mergedStandardDocs.raci;
-                const raciHasCustom = Array.isArray(loadedData.standardDocs?.raci?.matrix)
-                    && loadedData.standardDocs.raci.matrix.length > 0;
+                const loadedRaci = loadedData.standardDocs?.raci || {};
+                const raciHasCustom = (Array.isArray(loadedRaci.matrices) && loadedRaci.matrices.length > 0)
+                    || (Array.isArray(loadedRaci.matrix) && loadedRaci.matrix.length > 0);
                 if (Array.isArray(legacyOrgRaci) && legacyOrgRaci.length && !raciHasCustom && window.RaciPolicy?.mergeRaciPolicy) {
                     mergedStandardDocs.raci = window.RaciPolicy.mergeRaciPolicy(raciDoc || {}, {
                         ...(raciDoc || {}),
@@ -2306,24 +2308,59 @@
                 });
             };
 
-            const updateRaciPolicy = (patch) => updateDocState('standardDocs', (docs) => ({
-                ...docs,
-                raci: {
+            const updateRaciPolicy = (patch) => updateDocState('standardDocs', (docs) => {
+                const next = {
                     ...(docs.raci || {}),
                     ...patch,
-                },
-            }));
+                };
+                // Keep flat matrix mirror in sync when matrices change
+                if (Array.isArray(patch.matrices) && window.RaciPolicy?.flattenMatrices) {
+                    next.matrix = window.RaciPolicy.flattenMatrices(patch.matrices);
+                }
+                return { ...docs, raci: next };
+            });
 
-            const updateRaciRow = (rowId, field, val) => {
+            const addRaciMatrix = () => {
+                const matrices = localPolicyData.standardDocs?.raci?.matrices || [];
+                const fresh = window.RaciPolicy?.createEmptyRaciMatrix?.({
+                    title: 'New topic',
+                    rows: [{ activity: 'New decision / activity' }],
+                }) || {
+                    id: 'mx-' + Date.now(),
+                    title: 'New topic',
+                    rows: [{ id: 'raci-' + Date.now(), activity: 'New decision / activity', responsible: '', accountable: '', consulted: '', informed: '' }],
+                };
+                updateRaciPolicy({ matrices: [...matrices, fresh] });
+            };
+
+            const updateRaciMatrixTitle = (matrixId, title) => {
                 updateRaciPolicy({
-                    matrix: (localPolicyData.standardDocs?.raci?.matrix || []).map((row) =>
-                        row.id === rowId ? { ...row, [field]: val } : row
+                    matrices: (localPolicyData.standardDocs?.raci?.matrices || []).map((mx) =>
+                        mx.id === matrixId ? { ...mx, title } : mx
                     ),
                 });
             };
 
-            const addRaciRow = () => {
-                const matrix = localPolicyData.standardDocs?.raci?.matrix || [];
+            const removeRaciMatrix = (matrixId) => {
+                const matrices = (localPolicyData.standardDocs?.raci?.matrices || []).filter((mx) => mx.id !== matrixId);
+                const fallback = window.RaciPolicy?.createEmptyRaciMatrix?.({ title: 'General' })
+                    || { id: 'mx-main', title: 'General', rows: [{ id: 'raci-' + Date.now(), activity: 'New decision / activity', responsible: '', accountable: '', consulted: '', informed: '' }] };
+                updateRaciPolicy({ matrices: matrices.length ? matrices : [fallback] });
+            };
+
+            const updateRaciRow = (matrixId, rowId, field, val) => {
+                updateRaciPolicy({
+                    matrices: (localPolicyData.standardDocs?.raci?.matrices || []).map((mx) => {
+                        if (mx.id !== matrixId) return mx;
+                        return {
+                            ...mx,
+                            rows: (mx.rows || []).map((row) => (row.id === rowId ? { ...row, [field]: val } : row)),
+                        };
+                    }),
+                });
+            };
+
+            const addRaciRow = (matrixId) => {
                 const fresh = window.RaciPolicy?.createEmptyRaciRow?.({
                     activity: 'New decision / activity',
                 }) || {
@@ -2334,12 +2371,22 @@
                     consulted: '',
                     informed: '',
                 };
-                updateRaciPolicy({ matrix: [...matrix, fresh] });
+                updateRaciPolicy({
+                    matrices: (localPolicyData.standardDocs?.raci?.matrices || []).map((mx) =>
+                        mx.id === matrixId ? { ...mx, rows: [...(mx.rows || []), fresh] } : mx
+                    ),
+                });
             };
 
-            const removeRaciRow = (rowId) => {
+            const removeRaciRow = (matrixId, rowId) => {
                 updateRaciPolicy({
-                    matrix: (localPolicyData.standardDocs?.raci?.matrix || []).filter((row) => row.id !== rowId),
+                    matrices: (localPolicyData.standardDocs?.raci?.matrices || []).map((mx) => {
+                        if (mx.id !== matrixId) return mx;
+                        const nextRows = (mx.rows || []).filter((row) => row.id !== rowId);
+                        const empty = window.RaciPolicy?.createEmptyRaciRow?.({ activity: 'New decision / activity' })
+                            || { id: 'raci-' + Date.now(), activity: 'New decision / activity', responsible: '', accountable: '', consulted: '', informed: '' };
+                        return { ...mx, rows: nextRows.length ? nextRows : [empty] };
+                    }),
                 });
             };
 
@@ -2572,7 +2619,7 @@
                         items: [
                             { id: 'handbook', title: 'Employee Handbook', blurb: 'Hours, pay, leave, discipline', obj: localPolicyData.handbook },
                             { id: 'orgChart', title: 'Org Chart Policy', blurb: 'Reporting lines and roster', obj: localPolicyData.standardDocs?.orgChart },
-                            { id: 'raci', title: 'RACI Policy', blurb: 'Decision authority matrix', obj: localPolicyData.standardDocs?.raci },
+                            { id: 'raci', title: 'RACI Policy', blurb: 'Decision matrices by topic', obj: localPolicyData.standardDocs?.raci },
                             {
                                 id: 'roles-group',
                                 kind: 'group',
@@ -3195,93 +3242,128 @@
             const renderRaciPolicyEditor = () => {
                 const doc = localPolicyData.standardDocs?.raci;
                 if (!doc || !activeClient) return null;
-                const matrix = doc.matrix || [];
+                const matrices = doc.matrices || [];
 
                 return (
                     <React.Fragment>
                         {renderStandardEditor('raci')}
 
-                        <tr className="block print:table-row page-break-avoid">
+                        <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <div className="flex justify-between items-end border-b-2 pb-2 print-section-title" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
-                                    <h2 className="text-xl font-bold text-slate-900 uppercase">RACI Matrix</h2>
-                                    {isEditMode && (
-                                        <button type="button" onClick={addRaciRow} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
-                                            + Add Row
-                                        </button>
-                                    )}
-                                </div>
-                                <p className="text-sm text-slate-600 mt-3 mb-4">
-                                    Decision authority for key activities. <strong>R</strong> does the work, <strong>A</strong> owns the outcome (one person), <strong>C</strong> is consulted, <strong>I</strong> is kept informed.
-                                </p>
-                                {matrix.length === 0 ? (
-                                    <div className="mt-2">
-                                        <p className="text-sm text-slate-500">No RACI rows yet. Add decisions your org needs clear ownership for.</p>
-                                        {isEditMode && (
-                                            <button type="button" onClick={addRaciRow} className="no-print mt-3 text-[10px] uppercase font-bold bg-brandTeal-500 text-brandNavy-955 px-3 py-1.5 rounded hover:bg-brandTeal-600">
-                                                + Add First Row
-                                            </button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm mt-2 overflow-x-auto">
-                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[720px]">
-                                            <thead>
-                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
-                                                    <th scope="col" className="p-3">Activity / Decision</th>
-                                                    <th scope="col" className="p-3">Responsible (R)</th>
-                                                    <th scope="col" className="p-3">Accountable (A)</th>
-                                                    <th scope="col" className="p-3">Consulted (C)</th>
-                                                    <th scope="col" className="p-3">Informed (I)</th>
-                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {matrix.map((row) => (
-                                                    <tr key={row.id} className="border-b border-slate-200 align-top">
-                                                        <td className="p-3 font-semibold text-slate-800">
-                                                            <label htmlFor={`raci-activity-${row.id}`} className="sr-only">Activity</label>
-                                                            {isEditMode ? (
-                                                                <AutoResizeTextarea
-                                                                    id={`raci-activity-${row.id}`}
-                                                                    value={row.activity || ''}
-                                                                    onChange={(val) => updateRaciRow(row.id, 'activity', val)}
-                                                                    isEditMode={isEditMode}
-                                                                    className="font-semibold text-slate-800"
-                                                                    placeholder="Activity or decision"
-                                                                />
-                                                            ) : (
-                                                                row.activity || '—'
-                                                            )}
-                                                        </td>
-                                                        {['responsible', 'accountable', 'consulted', 'informed'].map((field) => (
-                                                            <td key={field} className="p-3 text-slate-600">
-                                                                <label htmlFor={`raci-${field}-${row.id}`} className="sr-only">{field}</label>
-                                                                {isEditMode ? (
-                                                                    <AutoResizeTextarea
-                                                                        id={`raci-${field}-${row.id}`}
-                                                                        value={row[field] || ''}
-                                                                        onChange={(val) => updateRaciRow(row.id, field, val)}
-                                                                        isEditMode={isEditMode}
-                                                                        className="text-slate-600"
-                                                                        placeholder={field === 'accountable' ? 'One owner' : 'Role or name'}
-                                                                    />
-                                                                ) : (
-                                                                    row[field] || '—'
+                                {isEditMode && (
+                                    <p className="no-print text-[11px] text-slate-400 mb-6 leading-relaxed">
+                                        Group decision authority by topic or category. Add a matrix per area (People, Operations, Finance, etc.).
+                                    </p>
+                                )}
+                                <div className="space-y-12">
+                                    {matrices.map((mx, mxIdx) => (
+                                        <div key={mx.id} className="page-break-avoid">
+                                            <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                                <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                                    <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>{mxIdx + 1}.</span>
+                                                    <label htmlFor={`raci-mx-title-${mx.id}`} className="sr-only">Matrix topic</label>
+                                                    <AutoResizeTextarea
+                                                        id={`raci-mx-title-${mx.id}`}
+                                                        value={mx.title || ''}
+                                                        onChange={(val) => updateRaciMatrixTitle(mx.id, val)}
+                                                        isEditMode={isEditMode}
+                                                        className={`text-xl font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                        placeholder="Topic / category"
+                                                    />
+                                                </div>
+                                                {isEditMode && (
+                                                    <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                        <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
+                                                            + Add Row
+                                                        </button>
+                                                        <button type="button" aria-label="Delete matrix" title="Delete this topic matrix" onClick={() => removeRaciMatrix(mx.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-sm text-slate-600 mb-4">
+                                                <strong>R</strong> does the work · <strong>A</strong> owns the outcome (one person) · <strong>C</strong> consulted · <strong>I</strong> informed
+                                            </p>
+                                            <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                                <table className="w-full text-left print-table text-sm border-collapse min-w-[720px]">
+                                                    <thead>
+                                                        <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                            <th scope="col" className="p-3">Activity / Decision</th>
+                                                            <th scope="col" className="p-3">Responsible (R)</th>
+                                                            <th scope="col" className="p-3">Accountable (A)</th>
+                                                            <th scope="col" className="p-3">Consulted (C)</th>
+                                                            <th scope="col" className="p-3">Informed (I)</th>
+                                                            {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(mx.rows || []).map((row) => (
+                                                            <tr key={row.id} className="border-b border-slate-200 align-top">
+                                                                <td className="p-3 font-semibold text-slate-800">
+                                                                    <label htmlFor={`raci-activity-${row.id}`} className="sr-only">Activity</label>
+                                                                    {isEditMode ? (
+                                                                        <AutoResizeTextarea
+                                                                            id={`raci-activity-${row.id}`}
+                                                                            value={row.activity || ''}
+                                                                            onChange={(val) => updateRaciRow(mx.id, row.id, 'activity', val)}
+                                                                            isEditMode={isEditMode}
+                                                                            className="font-semibold text-slate-800"
+                                                                            placeholder="Activity or decision"
+                                                                        />
+                                                                    ) : (
+                                                                        row.activity || '—'
+                                                                    )}
+                                                                </td>
+                                                                {['responsible', 'accountable', 'consulted', 'informed'].map((field) => (
+                                                                    <td key={field} className="p-3 text-slate-600">
+                                                                        <label htmlFor={`raci-${field}-${row.id}`} className="sr-only">{field}</label>
+                                                                        {isEditMode ? (
+                                                                            <AutoResizeTextarea
+                                                                                id={`raci-${field}-${row.id}`}
+                                                                                value={row[field] || ''}
+                                                                                onChange={(val) => updateRaciRow(mx.id, row.id, field, val)}
+                                                                                isEditMode={isEditMode}
+                                                                                className="text-slate-600"
+                                                                                placeholder={field === 'accountable' ? 'One owner' : 'Role or name'}
+                                                                            />
+                                                                        ) : (
+                                                                            row[field] || '—'
+                                                                        )}
+                                                                    </td>
+                                                                ))}
+                                                                {isEditMode && (
+                                                                    <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                        <button type="button" aria-label="Remove RACI row" onClick={() => removeRaciRow(mx.id, row.id)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                            <Icons.Trash />
+                                                                        </button>
+                                                                    </td>
                                                                 )}
-                                                            </td>
+                                                            </tr>
                                                         ))}
-                                                        {isEditMode && (
-                                                            <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
-                                                                <button type="button" aria-label="Remove RACI row" onClick={() => removeRaciRow(row.id)} className="p-1 text-rose-500 hover:text-rose-700">
-                                                                    <Icons.Trash />
-                                                                </button>
-                                                            </td>
-                                                        )}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {isEditMode && (
+                                                <div className="no-print mt-3">
+                                                    <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                        + Add row
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {isEditMode && (
+                                    <div className="no-print mt-10 pt-4 border-t border-dashed border-slate-200">
+                                        <button
+                                            type="button"
+                                            onClick={addRaciMatrix}
+                                            className="text-[11px] text-slate-500 hover:text-slate-800 font-medium"
+                                        >
+                                            + Add matrix (topic / category)
+                                        </button>
                                     </div>
                                 )}
                             </td>

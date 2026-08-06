@@ -1,6 +1,10 @@
 /**
- * RACI & Decision Authority policy — matrix of activities with R/A/C/I owners.
- * Shape: { title, docControl, introduction, sections[], matrix: [{ id, activity, responsible, accountable, consulted, informed }] }
+ * RACI & Decision Authority policy — one or more topic matrices with R/A/C/I rows.
+ * Shape: {
+ *   title, docControl, introduction, sections[],
+ *   matrices: [{ id, title, rows: [{ id, activity, responsible, accountable, consulted, informed }] }]
+ * }
+ * Legacy flat `matrix` / `raciMatrix` arrays are normalized into a single matrices[] group.
  */
 (function (global) {
   function makeId(prefix) {
@@ -19,40 +23,112 @@
     };
   }
 
-  const DEFAULT_RACI_MATRIX = [
-    createEmptyRaciRow({
-      id: 'raci-hiring',
-      activity: 'Hiring & role changes',
-      responsible: 'Hiring manager',
-      accountable: 'HR Director',
-      consulted: 'Department lead',
-      informed: 'Leadership',
+  function createEmptyRaciMatrix(overrides) {
+    const o = overrides && typeof overrides === 'object' ? overrides : {};
+    const rows = Array.isArray(o.rows)
+      ? o.rows.map((r) => createEmptyRaciRow(r))
+      : [createEmptyRaciRow({ activity: 'New decision / activity' })];
+    return {
+      id: o.id || makeId('mx'),
+      title: o.title != null ? String(o.title) : 'Untitled topic',
+      rows,
+    };
+  }
+
+  const DEFAULT_RACI_MATRICES = [
+    createEmptyRaciMatrix({
+      id: 'mx-people',
+      title: 'People & HR',
+      rows: [
+        createEmptyRaciRow({
+          id: 'raci-hiring',
+          activity: 'Hiring & role changes',
+          responsible: 'Hiring manager',
+          accountable: 'HR Director',
+          consulted: 'Department lead',
+          informed: 'Leadership',
+        }),
+        createEmptyRaciRow({
+          id: 'raci-org-change',
+          activity: 'Org structure changes',
+          responsible: 'HR',
+          accountable: 'Leadership',
+          consulted: 'Affected managers',
+          informed: 'All staff',
+        }),
+      ],
     }),
-    createEmptyRaciRow({
-      id: 'raci-escalation',
-      activity: 'Client / operational escalations',
-      responsible: 'Assigned owner',
-      accountable: 'Department lead',
-      consulted: 'Cross-functional partners',
-      informed: 'Leadership',
+    createEmptyRaciMatrix({
+      id: 'mx-ops',
+      title: 'Operations',
+      rows: [
+        createEmptyRaciRow({
+          id: 'raci-escalation',
+          activity: 'Client / operational escalations',
+          responsible: 'Assigned owner',
+          accountable: 'Department lead',
+          consulted: 'Cross-functional partners',
+          informed: 'Leadership',
+        }),
+      ],
     }),
-    createEmptyRaciRow({
-      id: 'raci-budget',
-      activity: 'Budget & spend approvals',
-      responsible: 'Requestor',
-      accountable: 'Finance / Approver',
-      consulted: 'Department lead',
-      informed: 'Leadership',
-    }),
-    createEmptyRaciRow({
-      id: 'raci-org-change',
-      activity: 'Org structure changes',
-      responsible: 'HR',
-      accountable: 'Leadership',
-      consulted: 'Affected managers',
-      informed: 'All staff',
+    createEmptyRaciMatrix({
+      id: 'mx-finance',
+      title: 'Finance',
+      rows: [
+        createEmptyRaciRow({
+          id: 'raci-budget',
+          activity: 'Budget & spend approvals',
+          responsible: 'Requestor',
+          accountable: 'Finance / Approver',
+          consulted: 'Department lead',
+          informed: 'Leadership',
+        }),
+      ],
     }),
   ];
+
+  /** Flatten all matrix rows (compat helper / flat mirror). */
+  function flattenMatrices(matrices) {
+    const out = [];
+    (matrices || []).forEach((mx) => {
+      (mx.rows || []).forEach((row) => out.push({ ...row }));
+    });
+    return out;
+  }
+
+  /**
+   * Normalize to matrices[]. Accepts:
+   * - matrices[] (preferred)
+   * - flat matrix[] / raciMatrix[] (legacy single group)
+   */
+  function normalizeMatrices(raw) {
+    const doc = raw && typeof raw === 'object' ? raw : {};
+    if (Array.isArray(doc.matrices) && doc.matrices.length > 0) {
+      return doc.matrices.map((mx) =>
+        createEmptyRaciMatrix({
+          id: mx.id,
+          title: mx.title || 'Untitled topic',
+          rows: Array.isArray(mx.rows) && mx.rows.length
+            ? mx.rows
+            : [{ activity: 'New decision / activity' }],
+        }),
+      );
+    }
+    const flat = Array.isArray(doc.matrix) && doc.matrix.length
+      ? doc.matrix
+      : (Array.isArray(doc.raciMatrix) && doc.raciMatrix.length ? doc.raciMatrix : null);
+    if (flat) {
+      return [
+        createEmptyRaciMatrix({
+          id: doc._legacyMatrixId || 'mx-main',
+          title: doc._legacyMatrixTitle || 'General',
+          rows: flat,
+        }),
+      ];
+    }
+    return DEFAULT_RACI_MATRICES.map((mx) => createEmptyRaciMatrix(mx));
+  }
 
   const DEFAULT_RACI_POLICY = {
     title: 'RACI & Decision Authority',
@@ -63,35 +139,54 @@
       owner: 'HR Director',
     },
     introduction:
-      'This policy defines who is Responsible, Accountable, Consulted, and Informed for key company decisions and activities. Use it with the Org Chart and Role Profiles so ownership stays clear.',
+      'This policy defines who is Responsible, Accountable, Consulted, and Informed for key company decisions and activities. Group matrices by topic or category so ownership stays clear.',
     sections: [
       {
         id: 'raci-howto',
         title: 'How to read this matrix',
         content:
-          '**Responsible (R)** — does the work.\n**Accountable (A)** — owns the outcome (one person).\n**Consulted (C)** — gives input before the decision.\n**Informed (I)** — is told after the decision.\n\nUpdate this matrix when roles or decision rights change.',
+          '**Responsible (R)** — does the work.\n**Accountable (A)** — owns the outcome (one person).\n**Consulted (C)** — gives input before the decision.\n**Informed (I)** — is told after the decision.\n\nAdd a matrix per topic (People, Operations, Finance, etc.) and update rows when roles or decision rights change.',
       },
     ],
-    matrix: DEFAULT_RACI_MATRIX.map((row) => ({ ...row })),
+    matrices: DEFAULT_RACI_MATRICES.map((mx) => createEmptyRaciMatrix(mx)),
+    // Flat mirror for older readers / simple consumers
+    matrix: flattenMatrices(DEFAULT_RACI_MATRICES),
   };
 
   function mergeRaciPolicy(defaultDoc, loadedDoc) {
     const base = JSON.parse(JSON.stringify(defaultDoc || DEFAULT_RACI_POLICY));
-    if (!loadedDoc || typeof loadedDoc !== 'object') return base;
+    if (!loadedDoc || typeof loadedDoc !== 'object') {
+      const matrices = normalizeMatrices(base);
+      return { ...base, matrices, matrix: flattenMatrices(matrices) };
+    }
 
-    // Prefer explicit matrix; also accept legacy orgChart.raciMatrix shape if passed as matrix
-    const loadedMatrix = Array.isArray(loadedDoc.matrix)
-      ? loadedDoc.matrix
-      : (Array.isArray(loadedDoc.raciMatrix) ? loadedDoc.raciMatrix : null);
+    // Prefer loaded matrices/flat rows over defaults so legacy single-matrix docs migrate cleanly.
+    let matricesSource;
+    if (Array.isArray(loadedDoc.matrices) && loadedDoc.matrices.length) {
+      matricesSource = { matrices: loadedDoc.matrices };
+    } else if (Array.isArray(loadedDoc.matrix) && loadedDoc.matrix.length) {
+      matricesSource = {
+        matrix: loadedDoc.matrix,
+        _legacyMatrixTitle: loadedDoc._legacyMatrixTitle || 'General',
+      };
+    } else if (Array.isArray(loadedDoc.raciMatrix) && loadedDoc.raciMatrix.length) {
+      matricesSource = {
+        raciMatrix: loadedDoc.raciMatrix,
+        _legacyMatrixTitle: 'General',
+      };
+    } else {
+      matricesSource = { matrices: base.matrices };
+    }
 
+    const matrices = normalizeMatrices(matricesSource);
+    const { raciMatrix: _legacyOrg, ...loadedClean } = loadedDoc;
     return {
       ...base,
-      ...loadedDoc,
+      ...loadedClean,
       docControl: { ...base.docControl, ...(loadedDoc.docControl || {}) },
       sections: loadedDoc.sections?.length ? loadedDoc.sections : base.sections,
-      matrix: loadedMatrix
-        ? loadedMatrix.map((row) => createEmptyRaciRow(row))
-        : (base.matrix || []),
+      matrices,
+      matrix: flattenMatrices(matrices),
     };
   }
 
@@ -102,11 +197,12 @@
       md += `## Introduction\n${normalized.introduction}\n\n`;
     }
 
-    if (normalized.matrix && normalized.matrix.length) {
-      md += '## RACI Matrix\n\n';
+    (normalized.matrices || []).forEach((mx, idx) => {
+      const heading = mx.title || `Topic ${idx + 1}`;
+      md += `## ${idx + 1}. ${heading}\n\n`;
       md += '| Activity / Decision | Responsible (R) | Accountable (A) | Consulted (C) | Informed (I) |\n';
       md += '|---------------------|-----------------|-----------------|---------------|-------------|\n';
-      normalized.matrix.forEach((row) => {
+      (mx.rows || []).forEach((row) => {
         md +=
           '| ' +
           [row.activity, row.responsible, row.accountable, row.consulted, row.informed]
@@ -115,10 +211,10 @@
           ' |\n';
       });
       md += '\n';
-    }
+    });
 
     (normalized.sections || []).forEach((sec, idx) => {
-      md += `## ${idx + 1}. ${sec.title || 'Section'}\n${sec.content || ''}\n\n`;
+      md += `## ${sec.title || `Section ${idx + 1}`}\n${sec.content || ''}\n\n`;
     });
 
     return md.trim();
@@ -126,7 +222,10 @@
 
   const api = {
     createEmptyRaciRow,
-    DEFAULT_RACI_MATRIX,
+    createEmptyRaciMatrix,
+    flattenMatrices,
+    normalizeMatrices,
+    DEFAULT_RACI_MATRICES,
     DEFAULT_RACI_POLICY,
     mergeRaciPolicy,
     compileRaciPolicyMarkdown,

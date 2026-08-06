@@ -95,9 +95,10 @@ Published to Vault as `doc-raci`. Separate from Org Chart; owns the decision-aut
 | `docControl` | object | version, effectiveDate, lastReviewed, owner |
 | `introduction` | string | Policy narrative |
 | `sections[]` | array | Guidance / definitions |
-| `matrix[]` | array | Rows `{ id, activity, responsible, accountable, consulted, informed }` |
+| `matrices[]` | array | Topic groups `{ id, title, rows: [{ id, activity, responsible, accountable, consulted, informed }] }` |
+| `matrix[]` | array | Flat mirror of all rows (compat / older readers) |
 
-Legacy `standardDocs.orgChart.raciMatrix` is migrated into `standardDocs.raci.matrix` on load when the RACI policy has no matrix yet.
+Legacy flat `matrix` / `orgChart.raciMatrix` is normalized into a single `matrices[]` topic group on load.
 
 ### `workbook_profiles.orgChart` (workspace draft)
 
