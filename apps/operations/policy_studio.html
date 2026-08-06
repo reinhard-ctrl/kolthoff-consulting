@@ -184,7 +184,7 @@
     <script src="../../shared/portal-sync.js?v=20250701-phase3-v1"></script>
     <script src="../../shared/workflow-tabs.js?v=20250706-diagnosis-slice-v1"></script>
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
-    <script src="../../shared/raci-policy.js?v=20250806-raci-groups-v1"></script>
+    <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -458,6 +458,7 @@
                     docControl: { version: '1.0', effectiveDate: '2026-07-06', lastReviewed: '2026-07-06', owner: 'HR Director' },
                     introduction: 'Who is Responsible, Accountable, Consulted, and Informed for key decisions.',
                     sections: [],
+                    doa: { intro: '', note: '', rows: [] },
                     matrices: [],
                     matrix: [],
                 }))
@@ -2390,6 +2391,53 @@
                 });
             };
 
+            const getRaciDoa = () => {
+                const raw = localPolicyData.standardDocs?.raci?.doa;
+                if (window.RaciPolicy?.normalizeDoa) {
+                    return window.RaciPolicy.normalizeDoa(raw, window.RaciPolicy.DEFAULT_DOA);
+                }
+                return raw && typeof raw === 'object'
+                    ? { intro: raw.intro || '', note: raw.note || '', rows: Array.isArray(raw.rows) ? raw.rows : [] }
+                    : { intro: '', note: '', rows: [] };
+            };
+
+            const updateRaciDoa = (patch) => {
+                const current = getRaciDoa();
+                updateRaciPolicy({ doa: { ...current, ...patch } });
+            };
+
+            const updateDoaRow = (rowId, field, val) => {
+                const doa = getRaciDoa();
+                updateRaciDoa({
+                    rows: (doa.rows || []).map((row) => (row.id === rowId ? { ...row, [field]: val } : row)),
+                });
+            };
+
+            const addDoaRow = () => {
+                const doa = getRaciDoa();
+                const fresh = window.RaciPolicy?.createEmptyDoaRow?.({
+                    role: 'New role / title',
+                    opexLimit: '',
+                    capexLimit: '',
+                    contractLimit: '',
+                }) || {
+                    id: 'doa-' + Date.now(),
+                    role: 'New role / title',
+                    opexLimit: '',
+                    capexLimit: '',
+                    contractLimit: '',
+                };
+                updateRaciDoa({ rows: [...(doa.rows || []), fresh] });
+            };
+
+            const removeDoaRow = (rowId) => {
+                const doa = getRaciDoa();
+                const nextRows = (doa.rows || []).filter((row) => row.id !== rowId);
+                const empty = window.RaciPolicy?.createEmptyDoaRow?.({ role: 'New role / title' })
+                    || { id: 'doa-' + Date.now(), role: 'New role / title', opexLimit: '', capexLimit: '', contractLimit: '' };
+                updateRaciDoa({ rows: nextRows.length ? nextRows : [empty] });
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
@@ -3243,6 +3291,8 @@
                 const doc = localPolicyData.standardDocs?.raci;
                 if (!doc || !activeClient) return null;
                 const matrices = doc.matrices || [];
+                const doa = getRaciDoa();
+                const brand = activeClient.branding?.primaryColor || '#0f766e';
 
                 return (
                     <React.Fragment>
@@ -3250,6 +3300,124 @@
 
                         <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
+                                <div className="page-break-avoid mb-14">
+                                    <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: brand }}>
+                                        <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2 min-w-0">
+                                            <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>1.</span>
+                                            <span>Financial Delegation of Authority (DOA) Limits</span>
+                                        </h2>
+                                        {isEditMode && (
+                                            <button type="button" onClick={addDoaRow} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0">
+                                                + Add Row
+                                            </button>
+                                        )}
+                                    </div>
+                                    {isEditMode ? (
+                                        <label htmlFor="raci-doa-intro" className="block mb-4">
+                                            <span className="sr-only">DOA intro</span>
+                                            <AutoResizeTextarea
+                                                id="raci-doa-intro"
+                                                value={doa.intro || ''}
+                                                onChange={(val) => updateRaciDoa({ intro: val })}
+                                                isEditMode={isEditMode}
+                                                className="text-sm text-slate-600 leading-relaxed"
+                                                placeholder="Describe monetary thresholds for expenditure authorization…"
+                                            />
+                                        </label>
+                                    ) : (
+                                        doa.intro ? <p className="text-sm text-slate-600 mb-4 leading-relaxed">{doa.intro}</p> : null
+                                    )}
+                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm overflow-x-auto">
+                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[800px]">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                    <th scope="col" className="p-3">Role / Title</th>
+                                                    <th scope="col" className="p-3">Operational Expenses (OPEX) Single Approval Limit</th>
+                                                    <th scope="col" className="p-3">Capital Expenses (CAPEX) Single Approval Limit</th>
+                                                    <th scope="col" className="p-3">Contract Signing Duration Limit</th>
+                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(doa.rows || []).map((row) => (
+                                                    <tr key={row.id} className="border-b border-slate-200 align-top">
+                                                        <td className="p-3 font-semibold text-slate-800">
+                                                            <label htmlFor={`doa-role-${row.id}`} className="sr-only">Role</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`doa-role-${row.id}`}
+                                                                    value={row.role || ''}
+                                                                    onChange={(val) => updateDoaRow(row.id, 'role', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="font-semibold text-slate-800"
+                                                                    placeholder="Role / title"
+                                                                />
+                                                            ) : (
+                                                                row.role || '—'
+                                                            )}
+                                                        </td>
+                                                        {['opexLimit', 'capexLimit', 'contractLimit'].map((field) => (
+                                                            <td key={field} className="p-3 text-slate-600">
+                                                                <label htmlFor={`doa-${field}-${row.id}`} className="sr-only">{field}</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`doa-${field}-${row.id}`}
+                                                                        value={row[field] || ''}
+                                                                        onChange={(val) => updateDoaRow(row.id, field, val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder={field === 'contractLimit' ? 'e.g. Annual Contracts' : 'e.g. Up to ₱500,000'}
+                                                                    />
+                                                                ) : (
+                                                                    row[field] || '—'
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                        {isEditMode && (
+                                                            <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                <button type="button" aria-label="Remove DOA row" onClick={() => removeDoaRow(row.id)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {isEditMode && (
+                                        <div className="no-print mt-3">
+                                            <button type="button" onClick={addDoaRow} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                + Add DOA row
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="mt-4 text-sm text-slate-700 leading-relaxed">
+                                        <strong className="text-slate-900">Note:</strong>{' '}
+                                        {isEditMode ? (
+                                            <label htmlFor="raci-doa-note" className="inline">
+                                                <span className="sr-only">DOA board note</span>
+                                                <AutoResizeTextarea
+                                                    id="raci-doa-note"
+                                                    value={doa.note || ''}
+                                                    onChange={(val) => updateRaciDoa({ note: val })}
+                                                    isEditMode={isEditMode}
+                                                    className="text-sm text-slate-700 leading-relaxed mt-1"
+                                                    placeholder="Board approval threshold note…"
+                                                />
+                                            </label>
+                                        ) : (
+                                            doa.note || '—'
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="border-b-2 pb-2 print-section-title mb-6" style={{ borderColor: brand }}>
+                                    <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2">
+                                        <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>2.</span>
+                                        <span>Authorization and Decision Matrix (RACI)</span>
+                                    </h2>
+                                </div>
                                 {isEditMode && (
                                     <p className="no-print text-[11px] text-slate-400 mb-6 leading-relaxed">
                                         Group decision authority by topic or category. Add a matrix per area (People, Operations, Finance, etc.).
@@ -3258,16 +3426,16 @@
                                 <div className="space-y-12">
                                     {matrices.map((mx, mxIdx) => (
                                         <div key={mx.id} className="page-break-avoid">
-                                            <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: activeClient.branding?.primaryColor || '#0f766e' }}>
+                                            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2 mb-3">
                                                 <div className="flex items-baseline gap-2 flex-1 min-w-0">
-                                                    <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: activeClient.branding?.primaryColor || '#0f766e' }}>{mxIdx + 1}.</span>
+                                                    <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: brand }}>2.{mxIdx + 1}</span>
                                                     <label htmlFor={`raci-mx-title-${mx.id}`} className="sr-only">Matrix topic</label>
                                                     <AutoResizeTextarea
                                                         id={`raci-mx-title-${mx.id}`}
                                                         value={mx.title || ''}
                                                         onChange={(val) => updateRaciMatrixTitle(mx.id, val)}
                                                         isEditMode={isEditMode}
-                                                        className={`text-xl font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                        className={`text-lg font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
                                                         placeholder="Topic / category"
                                                     />
                                                 </div>

@@ -87,7 +87,7 @@ Published to Vault as `doc-orgChart`. Official org chart for clients comes from 
 
 ### `standardDocs.raci` (RACI & Decision Authority Policy)
 
-Published to Vault as `doc-raci`. Separate from Org Chart; owns the decision-authority matrix.
+Published to Vault as `doc-raci`. Separate from Org Chart; owns financial DOA limits and the decision-authority matrix.
 
 | Field | Type | Notes |
 |-------|------|--------|
@@ -95,10 +95,11 @@ Published to Vault as `doc-raci`. Separate from Org Chart; owns the decision-aut
 | `docControl` | object | version, effectiveDate, lastReviewed, owner |
 | `introduction` | string | Policy narrative |
 | `sections[]` | array | Guidance / definitions |
+| `doa` | object | Financial Delegation of Authority: `{ intro, note, rows: [{ id, role, opexLimit, capexLimit, contractLimit }] }` |
 | `matrices[]` | array | Topic groups `{ id, title, rows: [{ id, activity, responsible, accountable, consulted, informed }] }` |
-| `matrix[]` | array | Flat mirror of all rows (compat / older readers) |
+| `matrix[]` | array | Flat mirror of all RACI rows (compat / older readers) |
 
-Legacy flat `matrix` / `orgChart.raciMatrix` is normalized into a single `matrices[]` topic group on load.
+Compiled markdown order: (1) Financial DOA Limits table, (2) Authorization and Decision Matrix (RACI) by topic. Legacy flat `matrix` / `orgChart.raciMatrix` is normalized into a single `matrices[]` topic group on load. Missing `doa` is filled from defaults on merge.
 
 ### `workbook_profiles.orgChart` (workspace draft)
 
