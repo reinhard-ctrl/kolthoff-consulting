@@ -83,8 +83,21 @@ Published to Vault as `doc-orgChart`. Official org chart for clients comes from 
 | `diagram.svgCache` | string | Exported SVG data URI for PDF/Vault |
 | `diagram.layout` | string | `horizontalTree` \| `verticalTree` |
 | `roster[]` | array | Parsed `{ id, name, title, department, reportsTo }` |
-| `raciMatrix[]` | array | Decision authority rows `{ id, activity, responsible, accountable, consulted, informed }` |
 | `link.lastSyncedAt` | number | When diagram was synced from `workbook_profiles.orgChart` |
+
+### `standardDocs.raci` (RACI & Decision Authority Policy)
+
+Published to Vault as `doc-raci`. Separate from Org Chart; owns the decision-authority matrix.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `title` | string | e.g. RACI & Decision Authority |
+| `docControl` | object | version, effectiveDate, lastReviewed, owner |
+| `introduction` | string | Policy narrative |
+| `sections[]` | array | Guidance / definitions |
+| `matrix[]` | array | Rows `{ id, activity, responsible, accountable, consulted, informed }` |
+
+Legacy `standardDocs.orgChart.raciMatrix` is migrated into `standardDocs.raci.matrix` on load when the RACI policy has no matrix yet.
 
 ### `workbook_profiles.orgChart` (workspace draft)
 
