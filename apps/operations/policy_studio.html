@@ -2716,8 +2716,8 @@
                     };
                     window.addEventListener('afterprint', restore);
                     window.print();
-                    // Fallback if afterprint never fires (some embedded webviews)
-                    setTimeout(restore, 2500);
+                    // Only restore via afterprint — a short timeout can flip back to Edit Mode
+                    // while the print dialog is still open and re-clip section content.
                 };
                 if (restoreEditMode) {
                     setIsEditMode(false);
