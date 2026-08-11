@@ -116,6 +116,21 @@ Published to Vault as `doc-communicationPlan`. Defines meeting cadence tiers and
 
 Compiled markdown order: (1) Meeting Cadence Tiers, (2) Tools & Channels, then `sections[]`. Missing tiers/channels are filled from defaults on merge.
 
+### `standardDocs.managerialRoles` (Managerial Role Descriptions Policy)
+
+Published to Vault as `doc-managerialRoles`. Formal managerial / executive role pack by division (reference: HR-JD style managerial JD documents).
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `title` | string | e.g. Managerial Role Descriptions & Executive Specifications |
+| `documentRef` | string | e.g. HR-JD-2026-001 |
+| `docControl` | object | version, effectiveDate, lastReviewed, owner, approvedBy |
+| `introduction` | string | Policy narrative |
+| `sections[]` | array | Optional guidance sections |
+| `divisions[]` | array | `{ id, number, title, roles: [{ id, number, title, incumbent, reportsTo, directReports, summary, accountable, responsible, consulted, informed, specialAuthority, approvalLimits, responsibilities }] }` |
+
+Compiled markdown groups roles under numbered divisions. Missing `divisions` are filled from defaults on merge.
+
 ### `workbook_profiles.orgChart` (workspace draft)
 
 | Field | Type | Notes |

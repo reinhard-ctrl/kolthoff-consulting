@@ -218,6 +218,7 @@
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
     <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
     <script src="../../shared/communication-plan.js?v=20250806-comm-plan-v1"></script>
+    <script src="../../shared/managerial-roles.js?v=20250811-mgr-roles-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -502,6 +503,14 @@
                     sections: [],
                     tiers: [],
                     channels: [],
+                })),
+                managerialRoles: JSON.parse(JSON.stringify(window.ManagerialRoles?.DEFAULT_MANAGERIAL_ROLES || {
+                    title: 'Managerial Role Descriptions & Executive Specifications',
+                    documentRef: 'HR-JD-2026-001',
+                    docControl: { version: '1.0', effectiveDate: '2026-08-11', lastReviewed: '2026-08-11', owner: 'HR Manager', approvedBy: 'Board of Directors & Chief Executive Officer' },
+                    introduction: 'Managerial role descriptions by division with reporting lines, RACI rights, and key responsibilities.',
+                    sections: [],
+                    divisions: [],
                 }))
             }
         };
@@ -1116,6 +1125,10 @@
                         mergedStandardDocs[key] = window.CommunicationPlan.mergeCommunicationPlan(defaultDoc, loadedDoc);
                         return;
                     }
+                    if (key === 'managerialRoles' && window.ManagerialRoles?.mergeManagerialRoles) {
+                        mergedStandardDocs[key] = window.ManagerialRoles.mergeManagerialRoles(defaultDoc, loadedDoc);
+                        return;
+                    }
                     const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
                     const chaptersSource = loadedDoc.chapters?.length
                         ? loadedDoc.chapters
@@ -1417,7 +1430,7 @@
 
                 if (localPolicyData.standardDocs) {
                     Object.keys(localPolicyData.standardDocs).forEach(key => {
-                        if (key === 'orgChart' || key === 'raci' || key === 'communicationPlan') return;
+                        if (key === 'orgChart' || key === 'raci' || key === 'communicationPlan' || key === 'managerialRoles') return;
                         const doc = localPolicyData.standardDocs[key];
 
                         // Job Role Profiles: one vault file per role
@@ -1493,6 +1506,16 @@
                         title: commDoc.title || 'Communication Plan',
                         content: window.CommunicationPlan.compileCommunicationPlanMarkdown(commDoc),
                         lastUpdated: commDoc.docControl?.lastReviewed || defaultDate
+                    });
+                }
+
+                if (localPolicyData.standardDocs?.managerialRoles && window.ManagerialRoles?.compileManagerialRolesMarkdown) {
+                    const mgrDoc = localPolicyData.standardDocs.managerialRoles;
+                    policiesArray.push({
+                        id: 'doc-managerialRoles',
+                        title: mgrDoc.title || 'Managerial Role Descriptions & Executive Specifications',
+                        content: window.ManagerialRoles.compileManagerialRolesMarkdown(mgrDoc),
+                        lastUpdated: mgrDoc.docControl?.lastReviewed || defaultDate
                     });
                 }
 
@@ -2570,6 +2593,96 @@
                 updateCommunicationPlan({ channels: next.length ? next : [empty] });
             };
 
+            const updateManagerialRoles = (patch) => updateDocState('standardDocs', (docs) => ({
+                ...docs,
+                managerialRoles: {
+                    ...(docs.managerialRoles || {}),
+                    ...patch,
+                },
+            }));
+
+            const updateMgrDivision = (divisionId, field, val) => {
+                updateManagerialRoles({
+                    divisions: (localPolicyData.standardDocs?.managerialRoles?.divisions || []).map((div) =>
+                        div.id === divisionId ? { ...div, [field]: val } : div
+                    ),
+                });
+            };
+
+            const addMgrDivision = () => {
+                const divisions = localPolicyData.standardDocs?.managerialRoles?.divisions || [];
+                const fresh = window.ManagerialRoles?.createEmptyDivision?.({
+                    number: String(divisions.length + 1),
+                    title: 'New division',
+                    roles: [{ title: 'New managerial role', number: `${divisions.length + 1}.1` }],
+                }) || {
+                    id: 'div-' + Date.now(),
+                    number: String(divisions.length + 1),
+                    title: 'New division',
+                    roles: [{ id: 'mgr-' + Date.now(), number: `${divisions.length + 1}.1`, title: 'New managerial role', incumbent: '', reportsTo: '', directReports: '', summary: '', accountable: '', responsible: '', consulted: '', informed: '', specialAuthority: '', approvalLimits: '', responsibilities: '' }],
+                };
+                updateManagerialRoles({ divisions: [...divisions, fresh] });
+            };
+
+            const removeMgrDivision = (divisionId) => {
+                const next = (localPolicyData.standardDocs?.managerialRoles?.divisions || []).filter((div) => div.id !== divisionId);
+                const empty = window.ManagerialRoles?.createEmptyDivision?.({ number: '1', title: 'New division' })
+                    || { id: 'div-' + Date.now(), number: '1', title: 'New division', roles: [{ id: 'mgr-' + Date.now(), number: '1.1', title: 'New managerial role', incumbent: '', reportsTo: '', directReports: '', summary: '', accountable: '', responsible: '', consulted: '', informed: '', specialAuthority: '', approvalLimits: '', responsibilities: '' }] };
+                updateManagerialRoles({ divisions: next.length ? next : [empty] });
+            };
+
+            const updateMgrRole = (divisionId, roleId, field, val) => {
+                updateManagerialRoles({
+                    divisions: (localPolicyData.standardDocs?.managerialRoles?.divisions || []).map((div) => {
+                        if (div.id !== divisionId) return div;
+                        return {
+                            ...div,
+                            roles: (div.roles || []).map((role) => (role.id === roleId ? { ...role, [field]: val } : role)),
+                        };
+                    }),
+                });
+            };
+
+            const addMgrRole = (divisionId) => {
+                const divisions = localPolicyData.standardDocs?.managerialRoles?.divisions || [];
+                const div = divisions.find((d) => d.id === divisionId);
+                const nextNum = `${div?.number || ''}.${(div?.roles || []).length + 1}`.replace(/^\./, '');
+                const fresh = window.ManagerialRoles?.createEmptyRole?.({
+                    number: nextNum,
+                    title: 'New managerial role',
+                }) || {
+                    id: 'mgr-' + Date.now(),
+                    number: nextNum,
+                    title: 'New managerial role',
+                    incumbent: '',
+                    reportsTo: '',
+                    directReports: '',
+                    summary: '',
+                    accountable: '',
+                    responsible: '',
+                    consulted: '',
+                    informed: '',
+                    specialAuthority: '',
+                    approvalLimits: '',
+                    responsibilities: '',
+                };
+                updateManagerialRoles({
+                    divisions: divisions.map((d) => (d.id === divisionId ? { ...d, roles: [...(d.roles || []), fresh] } : d)),
+                });
+            };
+
+            const removeMgrRole = (divisionId, roleId) => {
+                updateManagerialRoles({
+                    divisions: (localPolicyData.standardDocs?.managerialRoles?.divisions || []).map((div) => {
+                        if (div.id !== divisionId) return div;
+                        const nextRoles = (div.roles || []).filter((role) => role.id !== roleId);
+                        const empty = window.ManagerialRoles?.createEmptyRole?.({ title: 'New managerial role' })
+                            || { id: 'mgr-' + Date.now(), number: '', title: 'New managerial role', incumbent: '', reportsTo: '', directReports: '', summary: '', accountable: '', responsible: '', consulted: '', informed: '', specialAuthority: '', approvalLimits: '', responsibilities: '' };
+                        return { ...div, roles: nextRoles.length ? nextRoles : [empty] };
+                    }),
+                });
+            };
+
             const getActiveDocTitle = () => {
                 if (activeMode === 'dashboard') return 'Workspace Dashboard';
                 if (activeMode === 'sop') return activeSop?.title || 'Standard Operating Procedure';
@@ -2579,6 +2692,7 @@
                 if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
                 if (activeMode === 'raci') return localPolicyData.standardDocs?.raci?.title || 'RACI & Decision Authority';
                 if (activeMode === 'communicationPlan') return localPolicyData.standardDocs?.communicationPlan?.title || 'Communication Plan';
+                if (activeMode === 'managerialRoles') return localPolicyData.standardDocs?.managerialRoles?.title || 'Managerial Role Descriptions & Executive Specifications';
                 return localPolicyData.standardDocs?.[activeMode]?.title || 'Document';
             };
 
@@ -2657,6 +2771,14 @@
                         return window.CommunicationPlan.compileCommunicationPlanMarkdown(commDoc);
                     }
                     return `# ${commDoc.title || 'Communication Plan'}\n\n${commDoc.introduction || ''}`;
+                }
+                if (activeMode === 'managerialRoles') {
+                    const mgrDoc = localPolicyData.standardDocs?.managerialRoles;
+                    if (!mgrDoc) return null;
+                    if (window.ManagerialRoles?.compileManagerialRolesMarkdown) {
+                        return window.ManagerialRoles.compileManagerialRolesMarkdown(mgrDoc);
+                    }
+                    return `# ${mgrDoc.title || 'Managerial Role Descriptions'}\n\n${mgrDoc.introduction || ''}`;
                 }
                 if (localPolicyData.standardDocs?.[activeMode]) {
                     const doc = localPolicyData.standardDocs[activeMode];
@@ -2843,6 +2965,7 @@
                             { id: 'handbook', title: 'Employee Handbook', blurb: 'Hours, pay, leave, discipline', obj: localPolicyData.handbook },
                             { id: 'orgChart', title: 'Org Chart Policy', blurb: 'Reporting lines and roster', obj: localPolicyData.standardDocs?.orgChart },
                             { id: 'raci', title: 'RACI Policy', blurb: 'Decision matrices by topic', obj: localPolicyData.standardDocs?.raci },
+                            { id: 'managerialRoles', title: 'Managerial Role Descriptions', blurb: 'Executive specs by division', obj: localPolicyData.standardDocs?.managerialRoles },
                             {
                                 id: 'roles-group',
                                 kind: 'group',
@@ -3913,6 +4036,298 @@
                 );
             };
 
+            const renderManagerialRolesEditor = () => {
+                const doc = localPolicyData.standardDocs?.managerialRoles;
+                if (!doc || !activeClient) return null;
+                const divisions = doc.divisions || [];
+                const brand = activeClient.branding?.primaryColor || '#0f766e';
+                const roleMetaFields = [
+                    { key: 'incumbent', label: 'Incumbent / Status', placeholder: 'Name or To Be Hired (TBH)' },
+                    { key: 'reportsTo', label: 'Reports To', placeholder: 'Reporting manager / board' },
+                    { key: 'directReports', label: 'Direct Reports', placeholder: 'Roles that report to this position' },
+                ];
+                const raciFields = [
+                    { key: 'accountable', label: 'Accountable (A)', placeholder: 'Decisions this role owns' },
+                    { key: 'responsible', label: 'Responsible (R)', placeholder: 'Work this role executes' },
+                    { key: 'consulted', label: 'Consulted (C)', placeholder: 'Optional' },
+                    { key: 'informed', label: 'Informed (I)', placeholder: 'Optional' },
+                ];
+
+                return (
+                    <React.Fragment>
+                        {renderStandardEditor('managerialRoles')}
+
+                        <tr className="block print:table-row">
+                            <td className="block print:table-cell px-10 pt-6 pb-0 w-full align-top">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                                    <div>
+                                        <label htmlFor="mgr-doc-ref" className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Document Reference</label>
+                                        {isEditMode ? (
+                                            <input
+                                                id="mgr-doc-ref"
+                                                value={doc.documentRef || ''}
+                                                onChange={(e) => updateManagerialRoles({ documentRef: e.target.value })}
+                                                className="w-full text-sm text-slate-800 bg-white border border-slate-200 rounded px-3 py-2"
+                                                placeholder="e.g. HR-JD-2026-001"
+                                            />
+                                        ) : (
+                                            <p className="text-sm text-slate-800">{doc.documentRef || '—'}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="mgr-approved-by" className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Approved By</label>
+                                        {isEditMode ? (
+                                            <input
+                                                id="mgr-approved-by"
+                                                value={doc.docControl?.approvedBy || ''}
+                                                onChange={(e) => updateManagerialRoles({
+                                                    docControl: { ...(doc.docControl || {}), approvedBy: e.target.value },
+                                                })}
+                                                className="w-full text-sm text-slate-800 bg-white border border-slate-200 rounded px-3 py-2"
+                                                placeholder="Board / CEO"
+                                            />
+                                        ) : (
+                                            <p className="text-sm text-slate-800">{doc.docControl?.approvedBy || '—'}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                {isEditMode && (
+                                    <p className="no-print text-[11px] text-slate-400 mt-4 mb-2 leading-relaxed">
+                                        Organize executive and managerial roles by division. Each role includes reporting lines, RACI governance rights, approval limits, and key responsibilities.
+                                    </p>
+                                )}
+                            </td>
+                        </tr>
+
+                        {divisions.map((div) => (
+                            <React.Fragment key={div.id}>
+                                <tr className="block print:table-row">
+                                    <td className="block print:table-cell px-10 pt-10 pb-2 w-full align-top">
+                                        <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title" style={{ borderColor: brand }}>
+                                            <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                                {isEditMode ? (
+                                                    <>
+                                                        <label htmlFor={`mgr-div-num-${div.id}`} className="sr-only">Division number</label>
+                                                        <input
+                                                            id={`mgr-div-num-${div.id}`}
+                                                            value={div.number || ''}
+                                                            onChange={(e) => updateMgrDivision(div.id, 'number', e.target.value)}
+                                                            className="w-14 text-sm font-mono font-bold text-slate-700 bg-white border border-slate-200 rounded px-2 py-1"
+                                                            placeholder="#"
+                                                        />
+                                                        <label htmlFor={`mgr-div-title-${div.id}`} className="sr-only">Division title</label>
+                                                        <input
+                                                            id={`mgr-div-title-${div.id}`}
+                                                            value={div.title || ''}
+                                                            onChange={(e) => updateMgrDivision(div.id, 'title', e.target.value)}
+                                                            className="flex-1 min-w-[180px] text-xl font-bold text-slate-900 uppercase bg-white border border-slate-200 rounded px-2 py-1"
+                                                            placeholder="Division title"
+                                                        />
+                                                    </>
+                                                ) : (
+                                                    <h2 className="text-xl font-bold text-slate-900 uppercase">
+                                                        <span style={{ color: brand }}>{div.number ? `${div.number}. ` : ''}</span>
+                                                        {div.title || 'Division'}
+                                                    </h2>
+                                                )}
+                                            </div>
+                                            {isEditMode && (
+                                                <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                    <button type="button" onClick={() => addMgrRole(div.id)} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
+                                                        + Add Role
+                                                    </button>
+                                                    <button type="button" aria-label="Delete division" title="Delete this division" onClick={() => removeMgrDivision(div.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200">
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                {(div.roles || []).map((role) => (
+                                    <tr key={role.id} className="block print:table-row">
+                                        <td className="block print:table-cell px-10 pt-6 pb-8 w-full align-top">
+                                            <div className="border border-slate-200 rounded-lg bg-white shadow-sm print:shadow-none overflow-hidden">
+                                                <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border-b border-slate-200 px-4 py-3">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        {isEditMode ? (
+                                                            <>
+                                                                <label htmlFor={`mgr-role-num-${role.id}`} className="sr-only">Role number</label>
+                                                                <input
+                                                                    id={`mgr-role-num-${role.id}`}
+                                                                    value={role.number || ''}
+                                                                    onChange={(e) => updateMgrRole(div.id, role.id, 'number', e.target.value)}
+                                                                    className="w-16 text-[11px] font-mono font-bold text-slate-600 bg-white border border-slate-200 rounded px-2 py-1"
+                                                                    placeholder="1.1"
+                                                                />
+                                                                <label htmlFor={`mgr-role-title-${role.id}`} className="sr-only">Role title</label>
+                                                                <input
+                                                                    id={`mgr-role-title-${role.id}`}
+                                                                    value={role.title || ''}
+                                                                    onChange={(e) => updateMgrRole(div.id, role.id, 'title', e.target.value)}
+                                                                    className="flex-1 min-w-[160px] text-sm font-bold text-slate-900 bg-white border border-slate-200 rounded px-2 py-1"
+                                                                    placeholder="Role title"
+                                                                />
+                                                            </>
+                                                        ) : (
+                                                            <h3 className="text-base font-bold text-slate-900 uppercase tracking-wide">
+                                                                <span style={{ color: brand }}>{role.number ? `${role.number} ` : ''}</span>
+                                                                {role.title || 'Role'}
+                                                            </h3>
+                                                        )}
+                                                    </div>
+                                                    {isEditMode && (
+                                                        <button type="button" aria-label="Remove managerial role" onClick={() => removeMgrRole(div.id, role.id)} className="no-print p-1 text-rose-500 hover:text-rose-700">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="p-4 space-y-5">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        {roleMetaFields.map((field) => (
+                                                            <div key={field.key} className={field.key === 'directReports' ? 'md:col-span-3' : ''}>
+                                                                <label htmlFor={`mgr-${field.key}-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">{field.label}</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`mgr-${field.key}-${role.id}`}
+                                                                        value={role[field.key] || ''}
+                                                                        onChange={(val) => updateMgrRole(div.id, role.id, field.key, val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-sm text-slate-700"
+                                                                        placeholder={field.placeholder}
+                                                                    />
+                                                                ) : (
+                                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{role[field.key] || '—'}</p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div>
+                                                        <label htmlFor={`mgr-summary-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Role Summary</label>
+                                                        {isEditMode ? (
+                                                            <AutoResizeTextarea
+                                                                id={`mgr-summary-${role.id}`}
+                                                                value={role.summary || ''}
+                                                                onChange={(val) => updateMgrRole(div.id, role.id, 'summary', val)}
+                                                                isEditMode={isEditMode}
+                                                                className="text-sm text-slate-700 leading-relaxed"
+                                                                placeholder="Purpose and scope of the role…"
+                                                            />
+                                                        ) : (
+                                                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{role.summary || '—'}</p>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-2">Primary Accountabilities &amp; Governance Rights (RACI)</p>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {raciFields.map((field) => (
+                                                                <div key={field.key}>
+                                                                    <label htmlFor={`mgr-${field.key}-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">{field.label}</label>
+                                                                    {isEditMode ? (
+                                                                        <AutoResizeTextarea
+                                                                            id={`mgr-${field.key}-${role.id}`}
+                                                                            value={role[field.key] || ''}
+                                                                            onChange={(val) => updateMgrRole(div.id, role.id, field.key, val)}
+                                                                            isEditMode={isEditMode}
+                                                                            className="text-sm text-slate-700"
+                                                                            placeholder={field.placeholder}
+                                                                        />
+                                                                    ) : (
+                                                                        (role[field.key] ? <p className="text-sm text-slate-700 whitespace-pre-wrap">{role[field.key]}</p> : null)
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {(isEditMode || role.specialAuthority) && (
+                                                        <div>
+                                                            <label htmlFor={`mgr-authority-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Special Authority</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`mgr-authority-${role.id}`}
+                                                                    value={role.specialAuthority || ''}
+                                                                    onChange={(val) => updateMgrRole(div.id, role.id, 'specialAuthority', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="text-sm text-slate-700"
+                                                                    placeholder="Veto rights, emergency authority, etc."
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{role.specialAuthority}</p>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {(isEditMode || role.approvalLimits) && (
+                                                        <div>
+                                                            <label htmlFor={`mgr-limits-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Approval Limits</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`mgr-limits-${role.id}`}
+                                                                    value={role.approvalLimits || ''}
+                                                                    onChange={(val) => updateMgrRole(div.id, role.id, 'approvalLimits', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="text-sm text-slate-700"
+                                                                    placeholder="e.g. OPEX up to ₱10,000"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{role.approvalLimits}</p>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div>
+                                                        <label htmlFor={`mgr-resp-${role.id}`} className="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Key Responsibilities</label>
+                                                        {isEditMode ? (
+                                                            <AutoResizeTextarea
+                                                                id={`mgr-resp-${role.id}`}
+                                                                value={role.responsibilities || ''}
+                                                                onChange={(val) => updateMgrRole(div.id, role.id, 'responsibilities', val)}
+                                                                isEditMode={isEditMode}
+                                                                className="text-sm text-slate-700 leading-relaxed"
+                                                                placeholder="1. …&#10;2. …"
+                                                            />
+                                                        ) : (
+                                                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{role.responsibilities || '—'}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+
+                                {isEditMode && (
+                                    <tr className="block print:table-row no-print">
+                                        <td className="block print:table-cell px-10 pb-2 w-full align-top">
+                                            <button type="button" onClick={() => addMgrRole(div.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                + Add role in this division
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        ))}
+
+                        {isEditMode && (
+                            <tr className="block print:table-row no-print">
+                                <td className="block print:table-cell px-10 pt-6 pb-4 w-full align-top">
+                                    <div className="pt-4 border-t border-dashed border-slate-200">
+                                        <button type="button" onClick={addMgrDivision} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                            + Add division
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
+                    </React.Fragment>
+                );
+            };
+
             return (
                 <div className="flex flex-col h-screen overflow-hidden bg-brandNavy-955 font-sans">
                     
@@ -4128,6 +4543,7 @@
                                     <button type="button" aria-pressed={activeMode === 'handbook'} onClick={() => setActiveMode('handbook')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'handbook' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.BookOpen /> <span className="text-xs ml-2">Employee Handbook</span></button>
                                     <button type="button" aria-pressed={activeMode === 'orgChart'} onClick={() => setActiveMode('orgChart')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'orgChart' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Sitemap /> <span className="text-xs ml-2">Org Chart Policy</span></button>
                                     <button type="button" aria-pressed={activeMode === 'raci'} onClick={() => setActiveMode('raci')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'raci' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Users /> <span className="text-xs ml-2">RACI Policy</span></button>
+                                    <button type="button" aria-pressed={activeMode === 'managerialRoles'} onClick={() => setActiveMode('managerialRoles')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'managerialRoles' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Briefcase /> <span className="text-xs ml-2">Managerial Roles</span></button>
                                     <div className="mb-1 mt-1">
                                         <div className="px-2 py-1 flex items-center justify-between gap-2">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Job Role Profiles</span>
@@ -4951,6 +5367,7 @@
                                             {activeMode === 'orgChart' && renderOrgChartPolicyEditor()}
                                             {activeMode === 'raci' && renderRaciPolicyEditor()}
                                             {activeMode === 'communicationPlan' && renderCommunicationPlanEditor()}
+                                            {activeMode === 'managerialRoles' && renderManagerialRolesEditor()}
 
                                             {activeMode === 'jobDescriptions' && (() => {
                                                 const pack = localPolicyData.standardDocs?.jobDescriptions;
