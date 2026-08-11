@@ -95,7 +95,9 @@
             .no-print { display: none !important; }
             .print-only { display: block !important; }
 
-            /* Ensure editable elements print fully and display their expanded values completely */
+            /* Ensure editable elements print fully and display their expanded values completely.
+               Do NOT force height:auto on textareas — that collapses rows={1} fields to one line
+               and clips multi-line section content in Edit Mode PDF export. */
             input, textarea { 
                 border: none !important; 
                 background: transparent !important; 
@@ -105,21 +107,39 @@
                 box-shadow: none !important; 
                 pointer-events: none !important; 
                 padding: 0 !important; 
-                height: auto !important;
                 overflow: visible !important;
-                display: inline-block !important;
+                display: block !important;
                 width: 100% !important;
                 color: #000000 !important;
+                white-space: pre-wrap !important;
+                word-break: break-word !important;
+            }
+            input {
+                height: auto !important;
+            }
+            textarea {
+                min-height: 0 !important;
+            }
+
+            /* Scroll/clip wrappers must not hide table or section content across pages */
+            .overflow-hidden,
+            .overflow-x-auto,
+            .overflow-y-auto,
+            .overflow-auto {
+                overflow: visible !important;
             }
             
             table { 
                 page-break-inside: auto; 
+                break-inside: auto;
                 border-collapse: separate; 
                 border-spacing: 0; 
                 width: 100% !important; 
             }
 
-            tr { 
+            /* Keep data rows together, but allow outer layout <tr> sections to paginate.
+               A blanket tr{break-inside:avoid} clips tall RACI/DOA blocks off the page. */
+            .print-table tr { 
                 page-break-inside: avoid !important; 
                 break-inside: avoid !important;
                 page-break-after: auto; 
@@ -127,6 +147,18 @@
 
             thead { display: table-header-group !important; }
             tfoot { display: table-footer-group !important; }
+
+            .print-table {
+                min-width: 0 !important;
+                table-layout: fixed !important;
+                font-size: 10px !important;
+            }
+            .print-table th,
+            .print-table td {
+                word-wrap: break-word !important;
+                overflow-wrap: anywhere !important;
+                white-space: normal !important;
+            }
             
             .print-section-title { 
                 border-bottom-width: 2px !important; 
@@ -2662,6 +2694,39 @@
                 triggerToast(`📄 Downloaded ${filename} — upload to Drive → Open with Google Docs`);
             };
 
+            const expandTextareasForPrint = () => {
+                document.querySelectorAll('textarea').forEach((ta) => {
+                    ta.style.height = 'auto';
+                    ta.style.height = `${Math.max(ta.scrollHeight, 24)}px`;
+                });
+            };
+
+            const handleExportPdf = () => {
+                // Preview mode renders fields as full-height divs so multi-line RACI/DOA
+                // sections are not clipped by collapsed textarea boxes in the print dialog.
+                const restoreEditMode = isEditMode;
+                const runPrint = () => {
+                    expandTextareasForPrint();
+                    let restored = false;
+                    const restore = () => {
+                        if (restored) return;
+                        restored = true;
+                        window.removeEventListener('afterprint', restore);
+                        if (restoreEditMode) setIsEditMode(true);
+                    };
+                    window.addEventListener('afterprint', restore);
+                    window.print();
+                    // Only restore via afterprint — a short timeout can flip back to Edit Mode
+                    // while the print dialog is still open and re-clip section content.
+                };
+                if (restoreEditMode) {
+                    setIsEditMode(false);
+                    setTimeout(runPrint, 80);
+                } else {
+                    runPrint();
+                }
+            };
+
             const activeProfile = useMemo(() => {
                 if (isStandalone) return activeClient;
                 return workbookProfiles.find(p => p.id === activeProfileId);
@@ -3408,9 +3473,10 @@
                     <React.Fragment>
                         {renderStandardEditor('raci')}
 
+                        {/* Separate layout rows so DOA + matrices can paginate in PDF (avoid one giant unbreakable tr). */}
                         <tr className="block print:table-row">
                             <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
-                                <div className="page-break-avoid mb-14">
+                                <div className="mb-4">
                                     <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 pb-2 print-section-title mb-3" style={{ borderColor: brand }}>
                                         <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2 min-w-0">
                                             <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>1.</span>
@@ -3437,8 +3503,8 @@
                                     ) : (
                                         doa.intro ? <p className="text-sm text-slate-600 mb-4 leading-relaxed">{doa.intro}</p> : null
                                     )}
-                                    <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm overflow-x-auto">
-                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[800px]">
+                                    <div className="border border-slate-200 rounded bg-white shadow-sm print:shadow-none print:border-slate-300">
+                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[800px] print:min-w-0">
                                             <thead>
                                                 <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
                                                     <th scope="col" className="p-3">Role / Title</th>
@@ -3521,7 +3587,11 @@
                                         )}
                                     </div>
                                 </div>
+                            </td>
+                        </tr>
 
+                        <tr className="block print:table-row">
+                            <td className="block print:table-cell px-10 pt-10 pb-0 w-full align-top">
                                 <div className="border-b-2 pb-2 print-section-title mb-6" style={{ borderColor: brand }}>
                                     <h2 className="text-xl font-bold text-slate-900 uppercase flex items-baseline gap-2">
                                         <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>2.</span>
@@ -3533,108 +3603,113 @@
                                         Group decision authority by topic or category. Add a matrix per area (People, Operations, Finance, etc.).
                                     </p>
                                 )}
-                                <div className="space-y-12">
-                                    {matrices.map((mx, mxIdx) => (
-                                        <div key={mx.id} className="page-break-avoid">
-                                            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2 mb-3">
-                                                <div className="flex items-baseline gap-2 flex-1 min-w-0">
-                                                    <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: brand }}>2.{mxIdx + 1}</span>
-                                                    <label htmlFor={`raci-mx-title-${mx.id}`} className="sr-only">Matrix topic</label>
-                                                    <AutoResizeTextarea
-                                                        id={`raci-mx-title-${mx.id}`}
-                                                        value={mx.title || ''}
-                                                        onChange={(val) => updateRaciMatrixTitle(mx.id, val)}
-                                                        isEditMode={isEditMode}
-                                                        className={`text-lg font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
-                                                        placeholder="Topic / category"
-                                                    />
-                                                </div>
-                                                {isEditMode && (
-                                                    <div className="no-print flex flex-wrap gap-2 shrink-0">
-                                                        <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
-                                                            + Add Row
-                                                        </button>
-                                                        <button type="button" aria-label="Delete matrix" title="Delete this topic matrix" onClick={() => removeRaciMatrix(mx.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200">
-                                                            <Icons.Trash />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-slate-600 mb-4">
-                                                <strong>R</strong> does the work · <strong>A</strong> owns the outcome (one person) · <strong>C</strong> consulted · <strong>I</strong> informed
-                                            </p>
-                                            <div className="border border-slate-200 rounded overflow-hidden bg-white shadow-sm overflow-x-auto">
-                                                <table className="w-full text-left print-table text-sm border-collapse min-w-[720px]">
-                                                    <thead>
-                                                        <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
-                                                            <th scope="col" className="p-3">Activity / Decision</th>
-                                                            <th scope="col" className="p-3">Responsible (R)</th>
-                                                            <th scope="col" className="p-3">Accountable (A)</th>
-                                                            <th scope="col" className="p-3">Consulted (C)</th>
-                                                            <th scope="col" className="p-3">Informed (I)</th>
-                                                            {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {(mx.rows || []).map((row) => (
-                                                            <tr key={row.id} className="border-b border-slate-200 align-top">
-                                                                <td className="p-3 font-semibold text-slate-800">
-                                                                    <label htmlFor={`raci-activity-${row.id}`} className="sr-only">Activity</label>
-                                                                    {isEditMode ? (
-                                                                        <AutoResizeTextarea
-                                                                            id={`raci-activity-${row.id}`}
-                                                                            value={row.activity || ''}
-                                                                            onChange={(val) => updateRaciRow(mx.id, row.id, 'activity', val)}
-                                                                            isEditMode={isEditMode}
-                                                                            className="font-semibold text-slate-800"
-                                                                            placeholder="Activity or decision"
-                                                                        />
-                                                                    ) : (
-                                                                        row.activity || '—'
-                                                                    )}
-                                                                </td>
-                                                                {['responsible', 'accountable', 'consulted', 'informed'].map((field) => (
-                                                                    <td key={field} className="p-3 text-slate-600">
-                                                                        <label htmlFor={`raci-${field}-${row.id}`} className="sr-only">{field}</label>
-                                                                        {isEditMode ? (
-                                                                            <AutoResizeTextarea
-                                                                                id={`raci-${field}-${row.id}`}
-                                                                                value={row[field] || ''}
-                                                                                onChange={(val) => updateRaciRow(mx.id, row.id, field, val)}
-                                                                                isEditMode={isEditMode}
-                                                                                className="text-slate-600"
-                                                                                placeholder={field === 'accountable' ? 'One owner' : 'Role or name'}
-                                                                            />
-                                                                        ) : (
-                                                                            row[field] || '—'
-                                                                        )}
-                                                                    </td>
-                                                                ))}
-                                                                {isEditMode && (
-                                                                    <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
-                                                                        <button type="button" aria-label="Remove RACI row" onClick={() => removeRaciRow(mx.id, row.id)} className="p-1 text-rose-500 hover:text-rose-700">
-                                                                            <Icons.Trash />
-                                                                        </button>
-                                                                    </td>
-                                                                )}
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            {isEditMode && (
-                                                <div className="no-print mt-3">
-                                                    <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
-                                                        + Add row
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                            </td>
+                        </tr>
 
-                                {isEditMode && (
-                                    <div className="no-print mt-10 pt-4 border-t border-dashed border-slate-200">
+                        {matrices.map((mx, mxIdx) => (
+                            <tr key={mx.id} className="block print:table-row">
+                                <td className="block print:table-cell px-10 pt-6 pb-4 w-full align-top">
+                                    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-2 mb-3 print-section-title">
+                                        <div className="flex items-baseline gap-2 flex-1 min-w-0">
+                                            <span className={`font-mono text-sm font-bold shrink-0 ${isEditMode ? 'text-slate-300' : ''}`} style={isEditMode ? undefined : { color: brand }}>2.{mxIdx + 1}</span>
+                                            <label htmlFor={`raci-mx-title-${mx.id}`} className="sr-only">Matrix topic</label>
+                                            <AutoResizeTextarea
+                                                id={`raci-mx-title-${mx.id}`}
+                                                value={mx.title || ''}
+                                                onChange={(val) => updateRaciMatrixTitle(mx.id, val)}
+                                                isEditMode={isEditMode}
+                                                className={`text-lg font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                placeholder="Topic / category"
+                                            />
+                                        </div>
+                                        {isEditMode && (
+                                            <div className="no-print flex flex-wrap gap-2 shrink-0">
+                                                <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200">
+                                                    + Add Row
+                                                </button>
+                                                <button type="button" aria-label="Delete matrix" title="Delete this topic matrix" onClick={() => removeRaciMatrix(mx.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded border border-rose-200">
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-slate-600 mb-4">
+                                        <strong>R</strong> does the work · <strong>A</strong> owns the outcome (one person) · <strong>C</strong> consulted · <strong>I</strong> informed
+                                    </p>
+                                    <div className="border border-slate-200 rounded bg-white shadow-sm print:shadow-none print:border-slate-300">
+                                        <table className="w-full text-left print-table text-sm border-collapse min-w-[720px] print:min-w-0">
+                                            <thead>
+                                                <tr className="bg-slate-100 text-slate-600 border-b-2 border-slate-300 text-[10px] uppercase tracking-wider">
+                                                    <th scope="col" className="p-3">Activity / Decision</th>
+                                                    <th scope="col" className="p-3">Responsible (R)</th>
+                                                    <th scope="col" className="p-3">Accountable (A)</th>
+                                                    <th scope="col" className="p-3">Consulted (C)</th>
+                                                    <th scope="col" className="p-3">Informed (I)</th>
+                                                    {isEditMode && <th scope="col" className="p-3 w-16 no-print"><span className="sr-only">Actions</span></th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(mx.rows || []).map((row) => (
+                                                    <tr key={row.id} className="border-b border-slate-200 align-top">
+                                                        <td className="p-3 font-semibold text-slate-800">
+                                                            <label htmlFor={`raci-activity-${row.id}`} className="sr-only">Activity</label>
+                                                            {isEditMode ? (
+                                                                <AutoResizeTextarea
+                                                                    id={`raci-activity-${row.id}`}
+                                                                    value={row.activity || ''}
+                                                                    onChange={(val) => updateRaciRow(mx.id, row.id, 'activity', val)}
+                                                                    isEditMode={isEditMode}
+                                                                    className="font-semibold text-slate-800"
+                                                                    placeholder="Activity or decision"
+                                                                />
+                                                            ) : (
+                                                                row.activity || '—'
+                                                            )}
+                                                        </td>
+                                                        {['responsible', 'accountable', 'consulted', 'informed'].map((field) => (
+                                                            <td key={field} className="p-3 text-slate-600">
+                                                                <label htmlFor={`raci-${field}-${row.id}`} className="sr-only">{field}</label>
+                                                                {isEditMode ? (
+                                                                    <AutoResizeTextarea
+                                                                        id={`raci-${field}-${row.id}`}
+                                                                        value={row[field] || ''}
+                                                                        onChange={(val) => updateRaciRow(mx.id, row.id, field, val)}
+                                                                        isEditMode={isEditMode}
+                                                                        className="text-slate-600"
+                                                                        placeholder={field === 'accountable' ? 'One owner' : 'Role or name'}
+                                                                    />
+                                                                ) : (
+                                                                    row[field] || '—'
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                        {isEditMode && (
+                                                            <td className="p-3 text-center no-print whitespace-nowrap bg-slate-50 align-middle">
+                                                                <button type="button" aria-label="Remove RACI row" onClick={() => removeRaciRow(mx.id, row.id)} className="p-1 text-rose-500 hover:text-rose-700">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </td>
+                                                        )}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {isEditMode && (
+                                        <div className="no-print mt-3">
+                                            <button type="button" onClick={() => addRaciRow(mx.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                                + Add row
+                                            </button>
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+
+                        {isEditMode && (
+                            <tr className="block print:table-row no-print">
+                                <td className="block print:table-cell px-10 pt-4 pb-0 w-full align-top">
+                                    <div className="mt-6 pt-4 border-t border-dashed border-slate-200">
                                         <button
                                             type="button"
                                             onClick={addRaciMatrix}
@@ -3643,9 +3718,9 @@
                                             + Add matrix (topic / category)
                                         </button>
                                     </div>
-                                )}
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                        )}
                     </React.Fragment>
                 );
             };
@@ -3914,7 +3989,7 @@
                                 </button>
                                 <button 
                                     type="button"
-                                    onClick={() => runIfUnlocked(() => window.print())} 
+                                    onClick={() => runIfUnlocked(handleExportPdf)} 
                                     className={`px-5 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                 >
                                     <Icons.Print /> Export PDF
