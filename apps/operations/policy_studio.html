@@ -5240,7 +5240,14 @@
 
                             <nav aria-label="Main Navigation">
                                 <button type="button" aria-pressed={activeMode === 'dashboard'} onClick={() => setActiveMode('dashboard')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'dashboard' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Dashboard /> <span className="text-xs ml-2">Workspace Dashboard</span></button>
-                                <button type="button" aria-pressed={activeMode === 'branding'} onClick={() => setActiveMode('branding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all mt-1 ${activeMode === 'branding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Settings /> <span className="text-xs ml-2">Client Branding</span></button>
+                                {!isMaintainer && (
+                                    <button type="button" aria-pressed={activeMode === 'branding'} onClick={() => setActiveMode('branding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all mt-1 ${activeMode === 'branding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Settings /> <span className="text-xs ml-2">Client Branding</span></button>
+                                )}
+                                {isMaintainer && (
+                                    <p className="mt-2 px-2 text-[9px] text-slate-500 leading-relaxed">
+                                        Maintainer mode: Save draft → Publish approved → Export snapshot. Switch to Consultant in the header for advanced tools.
+                                    </p>
+                                )}
 
                                 {isEditMode && (
                                     <div className="mt-3 px-1 flex gap-1">
