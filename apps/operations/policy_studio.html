@@ -1112,6 +1112,23 @@
             // Force dynamic "Preview Mode" on standalone startup, "Edit Mode" otherwise
             const [isEditMode, setIsEditMode] = useState(!isStandalone);
 
+            // Consultant = full tooling; Maintainer = client-safe create / organize / store loop
+            const [studioRole, setStudioRole] = useState(() => {
+                try {
+                    const q = new URLSearchParams(window.location.search || '').get('role');
+                    if (q === 'maintainer' || q === 'consultant') return q;
+                    const stored = window.localStorage?.getItem('policyStudioRole');
+                    if (stored === 'maintainer' || stored === 'consultant') return stored;
+                } catch (_e) { /* ignore */ }
+                return isStandalone ? 'maintainer' : 'consultant';
+            });
+            const isMaintainer = studioRole === 'maintainer';
+            const setStudioRolePersist = (role) => {
+                const next = role === 'maintainer' ? 'maintainer' : 'consultant';
+                setStudioRole(next);
+                try { window.localStorage?.setItem('policyStudioRole', next); } catch (_e) { /* ignore */ }
+            };
+
             // Synchronizer/Reset Dialog States
             const [showSyncModal, setShowSyncModal] = useState(false);
             const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
@@ -3496,6 +3513,48 @@
                     { 'Up to Date': 0, Draft: 0, 'Review Due': 0 }
                 );
 
+                const reviewQueue = [];
+                sopFiles.forEach((f) => {
+                    const st = statusOf(f.obj).status;
+                    if (st === 'Review Due' || st === 'Draft') {
+                        reviewQueue.push({
+                            id: f.id,
+                            title: f.title,
+                            status: st,
+                            owner: f.obj?.docControl?.owner || 'Unassigned',
+                            open: () => openSopDocument(f.sopId),
+                        });
+                    }
+                });
+                jobRoleFiles.forEach((f) => {
+                    const st = statusOf(f.obj).status;
+                    if (st === 'Review Due' || st === 'Draft') {
+                        reviewQueue.push({
+                            id: f.id,
+                            title: f.title,
+                            status: st,
+                            owner: f.obj?.docControl?.owner || localPolicyData.standardDocs?.jobDescriptions?.docControl?.owner || 'Unassigned',
+                            open: () => openJobRoleDocument(f.jobRoleId),
+                        });
+                    }
+                });
+                categories.flatMap((c) => c.items).filter((i) => i.kind === 'doc').forEach((item) => {
+                    const st = statusOf(item.obj).status;
+                    if (st === 'Review Due' || st === 'Draft') {
+                        reviewQueue.push({
+                            id: item.id,
+                            title: item.title,
+                            status: st,
+                            owner: item.obj?.docControl?.owner || 'Unassigned',
+                            open: () => openNavItem(item),
+                        });
+                    }
+                });
+                reviewQueue.sort((a, b) => {
+                    if (a.status !== b.status) return a.status === 'Review Due' ? -1 : 1;
+                    return String(a.owner).localeCompare(String(b.owner)) || String(a.title).localeCompare(String(b.title));
+                });
+
                 const renderFileRow = (d) => {
                     const st = statusOf(d.obj);
                     return (
@@ -3555,11 +3614,15 @@
 
                 return (
                     <section aria-label="Workspace Dashboard" className="p-8 md:p-10 max-w-5xl">
-                        <header className="mb-8 pb-6 border-b border-slate-200">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Policy pack</p>
+                        <header className="mb-6 pb-6 border-b border-slate-200">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                                Policy pack{isMaintainer ? ' · Maintainer' : ''}
+                            </p>
                             <h2 className="font-black text-2xl text-slate-900 uppercase tracking-tight">{activeClient.clientCompany}</h2>
                             <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-                                Browse by category in the sidebar or open a draft below. Removed policies stay removed after you save.
+                                {isMaintainer
+                                    ? 'Create and organize policies below, then store with Save draft → Publish approved → Export snapshot.'
+                                    : 'Browse by category in the sidebar or open a draft below. Removed policies stay removed after you save.'}
                             </p>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[11px] font-semibold text-slate-600">
                                 <span><span className="text-emerald-700">{statusCounts['Up to Date'] || 0}</span> up to date</span>
@@ -3589,21 +3652,68 @@
                                         Manage categories
                                     </button>
                                 )}
-                                <button type="button" onClick={() => setActiveMode('branding')} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors">
-                                    Branding
-                                </button>
-                                {!isStandalone && (
-                                    <React.Fragment>
-                                        <button type="button" onClick={handleExportStandalone} className="text-[11px] font-bold uppercase tracking-wider bg-brandTeal-50 border border-brandTeal-200 text-brandTeal-800 px-3 py-1.5 rounded hover:bg-brandTeal-100 transition-colors flex items-center">
-                                            <Icons.Archive /> Client vault file
-                                        </button>
-                                        <button type="button" onClick={() => setShowBulkResetModal(true)} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-rose-200 text-rose-700 px-3 py-1.5 rounded hover:bg-rose-50 transition-colors flex items-center">
-                                            <Icons.Reset /> Reset templates
-                                        </button>
-                                    </React.Fragment>
+                                {!isMaintainer && (
+                                    <button type="button" onClick={() => setActiveMode('branding')} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors">
+                                        Branding
+                                    </button>
+                                )}
+                                {!isStandalone && !isMaintainer && (
+                                    <button type="button" onClick={() => setShowBulkResetModal(true)} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-rose-200 text-rose-700 px-3 py-1.5 rounded hover:bg-rose-50 transition-colors flex items-center">
+                                        <Icons.Reset /> Reset templates
+                                    </button>
                                 )}
                             </div>
                         </header>
+
+                        <section aria-label="How to store this pack" className="mb-8 border border-slate-200 rounded-xl bg-slate-50/80 p-4 md:p-5">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-2">Create · Organize · Store</h3>
+                            <ol className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] text-slate-600">
+                                <li className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
+                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 mb-1">1. Save draft</span>
+                                    Working source of truth in the cloud. Edit freely; nothing is “approved” yet.
+                                </li>
+                                <li className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
+                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 mb-1">2. Publish approved</span>
+                                    Push the current pack into Workspace Vault for the wider team.
+                                </li>
+                                <li className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
+                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 mb-1">3. Export snapshot</span>
+                                    Offline HTML for board/audit handoff — not for day-to-day editing.
+                                </li>
+                            </ol>
+                            <p className="text-[10px] text-slate-500 mt-3 leading-relaxed">
+                                Cadence: update owners monthly · prune unused drafts quarterly · on org change update Org Chart → Managerial Roles → Job Roles → affected SOPs.
+                            </p>
+                        </section>
+
+                        {reviewQueue.length > 0 && (
+                            <section aria-label="Review queue" className="mb-8">
+                                <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+                                    <div>
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-900">Needs attention</h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">Drafts and reviews due, grouped for owners</p>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-400">{reviewQueue.length} item{reviewQueue.length === 1 ? '' : 's'}</span>
+                                </div>
+                                <div className="border border-rose-100 rounded-xl overflow-hidden bg-white">
+                                    {reviewQueue.slice(0, 12).map((row) => (
+                                        <button
+                                            key={row.id}
+                                            type="button"
+                                            onClick={row.open}
+                                            className="w-full text-left flex flex-wrap items-center gap-3 px-4 py-2.5 border-b border-slate-100 last:border-b-0 hover:bg-rose-50/40 transition-colors"
+                                        >
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${row.status === 'Review Due' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>{row.status}</span>
+                                            <span className="text-sm font-semibold text-slate-800 flex-1 min-w-[10rem] truncate">{row.title}</span>
+                                            <span className="text-[11px] text-slate-500 shrink-0">{row.owner}</span>
+                                        </button>
+                                    ))}
+                                    {reviewQueue.length > 12 && (
+                                        <p className="px-4 py-2 text-[11px] text-slate-400">+ {reviewQueue.length - 12} more — open policies from categories below</p>
+                                    )}
+                                </div>
+                            </section>
+                        )}
 
                         <div className="space-y-8">
                             {categories.map((cat) => (
@@ -3674,7 +3784,7 @@
                         { title: 'Introduction', kind: 'intro', number: '' },
                         ...(doc.sections || []).map((s, i) => ({ ...s, kind: 'section', number: `${i + 1}.` })),
                     ]);
-                const canImportDoc = isEditMode && STANDARD_DOCS_WITH_GDOC_IMPORT.includes(docKey);
+                const canImportDoc = isEditMode && !isMaintainer && STANDARD_DOCS_WITH_GDOC_IMPORT.includes(docKey);
 
                 return (
                     <React.Fragment>
@@ -4963,13 +5073,38 @@
                                 <span className="font-sans font-extrabold tracking-wider text-sm uppercase text-white leading-none">KOLTHOFF <span className="text-brandTeal-500">POLICY STUDIO</span></span>
                             </div>
                             
-                            <div className="flex items-center gap-4 ml-auto">
-                                <button 
-                                    onClick={() => runIfUnlocked(handleSaveToCloud)} 
-                                    disabled={isSaving || (authError && !isStandalone)} 
-                                    className={`px-5 py-1.5 rounded flex items-center shadow-lg transition-all text-[10px] uppercase tracking-wider font-bold ${authError && !isStandalone ? 'bg-brandNavy-800 text-slate-500 cursor-not-allowed border border-brandNavy-700' : mod2Locked ? 'bg-brandNavy-800 text-slate-500 border border-brandAmber-500/30 hover:border-brandAmber-400/50' : 'bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955'}`}
+                            <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
+                                {!isStandalone && (
+                                    <div className="flex items-center rounded-lg border border-brandNavy-700 bg-brandNavy-900 p-0.5 mr-1" role="group" aria-label="Studio role">
+                                        <button
+                                            type="button"
+                                            aria-pressed={!isMaintainer}
+                                            onClick={() => setStudioRolePersist('consultant')}
+                                            className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded ${!isMaintainer ? 'bg-brandTeal-500/20 text-brandTeal-300' : 'text-slate-500 hover:text-slate-300'}`}
+                                            title="Full consultant tooling"
+                                        >
+                                            Consultant
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-pressed={isMaintainer}
+                                            onClick={() => setStudioRolePersist('maintainer')}
+                                            className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded ${isMaintainer ? 'bg-brandTeal-500/20 text-brandTeal-300' : 'text-slate-500 hover:text-slate-300'}`}
+                                            title="Client-safe create, organize, and store"
+                                        >
+                                            Maintainer
+                                        </button>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={() => runIfUnlocked(handleSaveToCloud)}
+                                    disabled={isSaving || (authError && !isStandalone)}
+                                    title={isStandalone ? 'Save changes in this browser session' : '1. Save working draft to cloud (source of truth)'}
+                                    className={`px-4 py-1.5 rounded flex items-center shadow-lg transition-all text-[10px] uppercase tracking-wider font-bold ${authError && !isStandalone ? 'bg-brandNavy-800 text-slate-500 cursor-not-allowed border border-brandNavy-700' : mod2Locked ? 'bg-brandNavy-800 text-slate-500 border border-brandAmber-500/30 hover:border-brandAmber-400/50' : 'bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955'}`}
                                 >
-                                    {isSaving ? "Saving..." : (isStandalone ? "💾 Save Locally" : "💾 Save to Cloud")}
+                                    {isSaving ? 'Saving…' : (isStandalone ? 'Save locally' : '1. Save draft')}
                                 </button>
 
                                 {!isStandalone && (
@@ -4977,52 +5112,62 @@
                                         type="button"
                                         onClick={() => runIfUnlocked(handlePublishToVault)}
                                         disabled={isPublishing || authError || !isAuthed}
-                                        className={`px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-50 text-brandTeal-400 border font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'border-brandAmber-500/30 opacity-70' : 'border-brandTeal-500/40'}`}
+                                        title="2. Publish approved policies to Workspace Vault"
+                                        className={`px-4 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 disabled:opacity-50 text-brandTeal-400 border font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'border-brandAmber-500/30 opacity-70' : 'border-brandTeal-500/40'}`}
                                     >
-                                        {isPublishing ? 'Publishing...' : '📋 Publish to Vault'}
+                                        {isPublishing ? 'Publishing…' : '2. Publish approved'}
                                     </button>
                                 )}
-                                
-                                <button 
-                                    type="button"
-                                    onClick={() => runIfUnlocked(handleExportJSON)} 
-                                    className={`px-5 py-1.5 bg-brandAmber-500 hover:bg-brandAmber-600 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
-                                >
-                                    <Icons.Download /> Export JSON
-                                </button>
 
                                 {!isStandalone && (
-                                    <button 
+                                    <button
                                         type="button"
-                                        onClick={() => runIfUnlocked(handleExportStandalone)} 
+                                        onClick={() => runIfUnlocked(handleExportStandalone)}
                                         disabled={isSaving}
-                                        className={`px-5 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
+                                        title="3. Download offline HTML snapshot for the client (not day-to-day editing)"
+                                        className={`px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-white font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
                                     >
-                                        <Icons.Archive /> Export Client Vault File
+                                        <Icons.Archive /> 3. Export snapshot
                                     </button>
                                 )}
-                                <button 
-                                    type="button"
-                                    onClick={() => runIfUnlocked(() => setIsEditMode(!isEditMode))} 
-                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center border transition-all ${isEditMode ? 'bg-brandNavy-900 border-brandNavy-700 text-slate-300 hover:text-white' : 'bg-brandTeal-600/20 border-brandTeal-500 text-brandTeal-404'} ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/30' : ''}`}
-                                >
-                                    {isEditMode ? <><Icons.Eye /> <span className="ml-1">Preview Mode</span></> : <><Icons.Edit /> <span className="ml-1">Edit Mode</span></>}
-                                </button>
-                                <button 
-                                    type="button"
-                                    onClick={() => runIfUnlocked(handleExportPdf)} 
-                                    className={`px-5 py-1.5 bg-brandTeal-500 hover:bg-brandTeal-404 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
-                                >
-                                    <Icons.Print /> Export PDF
-                                </button>
+
                                 <button
                                     type="button"
-                                    onClick={() => runIfUnlocked(handleExportGoogleDoc)}
-                                    className={`px-5 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-brandTeal-400 border border-brandTeal-500/40 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
-                                    title="Download a Word file you can upload to Google Drive and open with Google Docs"
+                                    onClick={() => runIfUnlocked(() => setIsEditMode(!isEditMode))}
+                                    className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center border transition-all ${isEditMode ? 'bg-brandNavy-900 border-brandNavy-700 text-slate-300 hover:text-white' : 'bg-brandTeal-600/20 border-brandTeal-500 text-brandTeal-404'} ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/30' : ''}`}
                                 >
-                                    <Icons.FileText /> Export Google Doc
+                                    {isEditMode ? <><Icons.Eye /> <span className="ml-1">Preview</span></> : <><Icons.Edit /> <span className="ml-1">Edit</span></>}
                                 </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => runIfUnlocked(handleExportPdf)}
+                                    title="Print / PDF of the open document"
+                                    className={`px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-slate-200 border border-brandNavy-700 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
+                                >
+                                    <Icons.Print /> PDF
+                                </button>
+
+                                {!isMaintainer && (
+                                    <React.Fragment>
+                                        <button
+                                            type="button"
+                                            onClick={() => runIfUnlocked(handleExportJSON)}
+                                            title="Consultant: raw vault JSON import"
+                                            className={`px-3 py-1.5 bg-brandAmber-500 hover:bg-brandAmber-600 text-brandNavy-955 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
+                                        >
+                                            <Icons.Download /> JSON
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => runIfUnlocked(handleExportGoogleDoc)}
+                                            className={`px-3 py-1.5 bg-brandNavy-800 hover:bg-brandNavy-700 text-brandTeal-400 border border-brandTeal-500/40 font-bold rounded text-[10px] uppercase tracking-wider flex items-center shadow-lg transition-all ${mod2Locked ? 'opacity-70 ring-1 ring-brandAmber-400/40' : ''}`}
+                                            title="Consultant: Word file for Google Docs"
+                                        >
+                                            <Icons.FileText /> Google Doc
+                                        </button>
+                                    </React.Fragment>
+                                )}
                             </div>
                         </div>
                     </header>
