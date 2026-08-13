@@ -87,6 +87,18 @@ Controls which drafts appear in the Policy Studio dashboard and sidebar. Deletin
 
 **Recommended default categories:** Operations (SOPs, BCP, Health & Safety), Client Delivery (SLA, Communication Plan), People (Handbook, Job Role Profiles, Onboarding, Performance Reviews), Governance (Org Chart, RACI, Managerial Role Descriptions), Compliance (Conduct, NDA, Data Privacy).
 
+### Chaptered policy sections (`standardDocs.*.chapters`)
+
+Prose policies (Conduct, NDA, BCP, SLA, etc.) use chapters with typed sections:
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `kind` | string | `text` (default) or `table` |
+| `content` | string | Markdown body when `kind === 'text'` |
+| `table` | object | `{ headers: string[], rows: string[][] }` when `kind === 'table'` |
+
+Table sections are first-class outline items (same numbering as prose sections). Compiled markdown emits a GFM pipe table under the section heading.
+
 ### `standardDocs.orgChart` (Org Chart & Reporting Policy)
 
 Published to Vault as `doc-orgChart`. Official org chart for clients comes from Policy Studio (workspace org chart is draft/source).
