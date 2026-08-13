@@ -1546,7 +1546,7 @@
                 setIsSaving(false);
             };
 
-            // Escape JSON embedded in <script> so content like </script> cannot break the portal.
+            // Escape JSON embedded in a script tag so a literal closing-script sequence cannot break the portal.
             const escapeJsonForInlineScript = (value) =>
                 JSON.stringify(value, null, 2)
                     .replace(/</g, '\\u003c')
@@ -1554,8 +1554,13 @@
                     .replace(/\u2029/g, '\\u2029');
 
             // Downloaded portals cannot resolve ../../shared/*.js — inline those scripts into the HTML.
+            // NOTE: Never write a raw closing-script tag in this file's Babel block; HTML parsers end the
+            // outer <script> early even inside JS strings/comments. Use '<\\/script>' or split strings.
             const bundleSharedScriptsIntoHtml = async (htmlText) => {
-                const re = /<script\s+src="(\.\.\/\.\.\/shared\/[^"]+)"[^>]*>\s*<\/script>/gi;
+                const re = new RegExp(
+                    '<script\\s+src="(\\.\\./\\.\\./shared/[^"]+)"[^>]*>\\s*<\\/script>',
+                    'gi'
+                );
                 const found = [];
                 let match;
                 while ((match = re.exec(htmlText)) !== null) {
@@ -1570,6 +1575,7 @@
 
                 let out = '';
                 let cursor = 0;
+                const closeTag = '<' + '/script>';
                 for (const item of found) {
                     out += htmlText.slice(cursor, item.index);
                     const absoluteUrl = new URL(item.src, window.location.href).href;
@@ -1580,7 +1586,7 @@
                     let code = await res.text();
                     code = code.replace(/<\/script/gi, '<\\/script');
                     const label = item.src.split('?')[0];
-                    out += `<script>\n// Bundled for standalone export: ${label}\n${code}\n</script>`;
+                    out += '<script>\n// Bundled for standalone export: ' + label + '\n' + code + '\n' + closeTag;
                     cursor = item.end;
                 }
                 out += htmlText.slice(cursor);
