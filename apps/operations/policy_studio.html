@@ -236,7 +236,7 @@
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
-    <script src="../../shared/policy-chapters.js?v=20250813-table-sec-v1"></script>
+    <script src="../../shared/policy-chapters.js?v=20250813-table-fs-v2"></script>
     <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
     <script src="../../shared/google-doc-export.js?v=20250805-gdoc-export-v1"></script>
 
@@ -910,7 +910,14 @@
             const PCLocal = () => window.PolicyChapters || {};
             const table = PCLocal().normalizeTable
                 ? PCLocal().normalizeTable(section?.table)
-                : { headers: section?.table?.headers || ['Column 1'], rows: section?.table?.rows || [['']] };
+                : {
+                    headers: section?.table?.headers || ['Column 1'],
+                    rows: [{ id: 'tr-0', cells: [''] }],
+                };
+            const cellsOf = (row) =>
+                PCLocal().rowCells
+                    ? PCLocal().rowCells(row, table.headers.length)
+                    : (row?.cells || []);
 
             const patch = (mutator) => {
                 const next = mutator(table);
@@ -929,13 +936,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {table.rows.map((row, rIdx) => (
-                                    <tr key={rIdx}>
-                                        {table.headers.map((_, cIdx) => (
-                                            <td key={cIdx} className="border border-slate-200 px-3 py-2 text-slate-700 align-top whitespace-pre-wrap">{row[cIdx] || '—'}</td>
-                                        ))}
-                                    </tr>
-                                ))}
+                                {table.rows.map((row, rIdx) => {
+                                    const cells = cellsOf(row);
+                                    return (
+                                        <tr key={row.id || rIdx}>
+                                            {table.headers.map((_, cIdx) => (
+                                                <td key={cIdx} className="border border-slate-200 px-3 py-2 text-slate-700 align-top whitespace-pre-wrap">{cells[cIdx] || '—'}</td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -982,34 +992,37 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {table.rows.map((row, rIdx) => (
-                                    <tr key={rIdx}>
-                                        {table.headers.map((_, cIdx) => (
-                                            <td key={cIdx}>
-                                                <textarea
-                                                    aria-label={`Row ${rIdx + 1} column ${cIdx + 1}`}
-                                                    rows={2}
-                                                    value={row[cIdx] || ''}
-                                                    onChange={(e) => patch((t) => PCLocal().setTableCell(t, rIdx, cIdx, e.target.value))}
-                                                    placeholder="…"
-                                                />
+                                {table.rows.map((row, rIdx) => {
+                                    const cells = cellsOf(row);
+                                    return (
+                                        <tr key={row.id || rIdx}>
+                                            {table.headers.map((_, cIdx) => (
+                                                <td key={cIdx}>
+                                                    <textarea
+                                                        aria-label={`Row ${rIdx + 1} column ${cIdx + 1}`}
+                                                        rows={2}
+                                                        value={cells[cIdx] || ''}
+                                                        onChange={(e) => patch((t) => PCLocal().setTableCell(t, rIdx, cIdx, e.target.value))}
+                                                        placeholder="…"
+                                                    />
+                                                </td>
+                                            ))}
+                                            <td className="policy-table-row-actions align-middle">
+                                                {table.rows.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        title="Remove row"
+                                                        aria-label={`Remove row ${rIdx + 1}`}
+                                                        onClick={() => patch((t) => PCLocal().removeTableRow(t, rIdx))}
+                                                        className="no-print p-1 text-rose-400 hover:text-rose-600"
+                                                    >
+                                                        <Icons.Trash />
+                                                    </button>
+                                                )}
                                             </td>
-                                        ))}
-                                        <td className="policy-table-row-actions align-middle">
-                                            {table.rows.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    title="Remove row"
-                                                    aria-label={`Remove row ${rIdx + 1}`}
-                                                    onClick={() => patch((t) => PCLocal().removeTableRow(t, rIdx))}
-                                                    className="no-print p-1 text-rose-400 hover:text-rose-600"
-                                                >
-                                                    <Icons.Trash />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
