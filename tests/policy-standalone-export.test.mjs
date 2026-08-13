@@ -29,7 +29,7 @@ assert.deepEqual(found, [
 const withBreak = escapeJsonForInlineScript({
   content: 'See </script><script>alert(1)</script>',
 });
-assert.match(withBreak, /\\u003c\\\/script/);
+assert.match(withBreak, /\\u003c\/script>/);
 assert.doesNotMatch(withBreak, /<\/script>/i);
 
 console.log('policy-standalone-export.test.mjs: all assertions passed');
