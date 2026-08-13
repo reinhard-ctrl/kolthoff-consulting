@@ -93,12 +93,19 @@ const tableSec = PC.createEmptySection({
   title: 'SLA targets',
   table: {
     headers: ['Metric', 'Target'],
+    // Legacy nested arrays must migrate to Firestore-safe { id, cells } rows
     rows: [['Uptime', '99.9%'], ['Response', '4h']],
   },
 });
 assert.equal(tableSec.kind, 'table');
 assert.equal(tableSec.table.headers.length, 2);
 assert.equal(tableSec.table.rows.length, 2);
+assert.ok(tableSec.table.rows[0].id);
+assert.equal(tableSec.table.rows[0].cells[0], 'Uptime');
+assert.equal(tableSec.table.rows[0].cells[1], '99.9%');
+// Must not keep nested arrays (Firestore rejects array-of-arrays)
+assert.equal(Array.isArray(tableSec.table.rows[0]), false);
+assert.equal(typeof tableSec.table.rows[0], 'object');
 
 const withTable = PC.normalizeStandardPolicyDoc({
   title: 'SLA',
@@ -115,7 +122,7 @@ const withTable = PC.normalizeStandardPolicyDoc({
   ],
 });
 assert.equal(withTable.sections[1].kind, 'table');
-assert.equal(withTable.sections[1].table.rows[0][1], '99.9%');
+assert.equal(withTable.sections[1].table.rows[0].cells[1], '99.9%');
 
 const tableMd = PC.compileStandardPolicyMarkdown(withTable);
 assert.match(tableMd, /### 1\.2 SLA targets/);
@@ -123,6 +130,8 @@ assert.match(tableMd, /\| Metric \| Target \|/);
 assert.match(tableMd, /\| Uptime \| 99\.9% \|/);
 
 let grid = PC.normalizeTable({ headers: ['A', 'B'], rows: [['1', '2']] });
+assert.equal(grid.rows[0].cells[0], '1');
+assert.equal(grid.rows[0].cells[1], '2');
 grid = PC.addTableRow(grid);
 assert.equal(grid.rows.length, 2);
 grid = PC.addTableColumn(grid);
@@ -130,7 +139,7 @@ assert.equal(grid.headers.length, 3);
 grid = PC.setTableCell(grid, -1, 2, 'C');
 assert.equal(grid.headers[2], 'C');
 grid = PC.setTableCell(grid, 1, 2, 'x');
-assert.equal(grid.rows[1][2], 'x');
+assert.equal(grid.rows[1].cells[2], 'x');
 grid = PC.removeTableColumn(grid, 1);
 assert.equal(grid.headers.join(','), 'A,C');
 grid = PC.removeTableRow(grid, 0);

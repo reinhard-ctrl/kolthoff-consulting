@@ -95,7 +95,7 @@ Prose policies (Conduct, NDA, BCP, SLA, etc.) use chapters with typed sections:
 |-------|------|--------|
 | `kind` | string | `text` (default) or `table` |
 | `content` | string | Markdown body when `kind === 'text'` |
-| `table` | object | `{ headers: string[], rows: string[][] }` when `kind === 'table'` |
+| `table` | object | `{ headers: string[], rows: [{ id, cells: string[] }] }` when `kind === 'table'` (Firestore-safe; no nested arrays) |
 
 Table sections are first-class outline items (same numbering as prose sections). Compiled markdown emits a GFM pipe table under the section heading.
 

@@ -8,7 +8,7 @@
  *       id, title,
  *       kind: 'text' | 'table',
  *       content,                 // prose (kind === 'text')
- *       table: { headers[], rows[][] }  // structured grid (kind === 'table')
+ *       table: { headers[], rows: [{ id, cells[] }] }  // Firestore-safe (no nested arrays)
  *     }]
  *   }]
  * }
@@ -19,6 +19,32 @@
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
+  /** Read cell values from a row in either Firestore-safe or legacy nested-array form. */
+  function rowCells(row, width) {
+    const w = Math.max(1, Number(width) || 1);
+    if (Array.isArray(row)) {
+      return Array.from({ length: w }, (_, i) => (row[i] == null ? '' : String(row[i])));
+    }
+    if (row && typeof row === 'object') {
+      const cells = Array.isArray(row.cells) ? row.cells : [];
+      return Array.from({ length: w }, (_, i) => (cells[i] == null ? '' : String(cells[i])));
+    }
+    return Array.from({ length: w }, () => '');
+  }
+
+  function createTableRow(cells, id) {
+    const list = Array.isArray(cells) ? cells.map((c) => (c == null ? '' : String(c))) : [];
+    return {
+      id: id != null && String(id) ? String(id) : makeId('tr'),
+      cells: list,
+    };
+  }
+
+  /**
+   * Normalize table to Firestore-safe shape:
+   * { headers: string[], rows: [{ id, cells: string[] }] }
+   * Accepts legacy nested arrays (string[][]) and migrates them.
+   */
   function normalizeTable(raw, options) {
     const opts = options && typeof options === 'object' ? options : {};
     const colCount = Math.max(1, Number(opts.colCount) || 3);
@@ -33,19 +59,16 @@
     const width = headers.length;
     let rows = Array.isArray(src.rows)
       ? src.rows.map((row) => {
-          const cells = Array.isArray(row) ? row : [];
-          return Array.from({ length: width }, (_, i) =>
-            cells[i] == null ? '' : String(cells[i])
-          );
+          const id =
+            row && typeof row === 'object' && !Array.isArray(row) && row.id != null
+              ? String(row.id)
+              : makeId('tr');
+          return createTableRow(rowCells(row, width), id);
         })
       : [];
     if (!rows.length) {
       rows = Array.from({ length: rowCount }, () =>
-        Array.from({ length: width }, () => '')
-      );
-    } else {
-      rows = rows.map((row) =>
-        Array.from({ length: width }, (_, i) => (row[i] == null ? '' : String(row[i])))
+        createTableRow(Array.from({ length: width }, () => ''))
       );
     }
     return { headers, rows };
@@ -119,9 +142,10 @@
     const rows = normalized.rows;
     const headerLine = `| ${headers.map(escapeMdCell).join(' | ')} |`;
     const sepLine = `| ${headers.map(() => '---').join(' | ')} |`;
-    const body = rows.map(
-      (row) => `| ${headers.map((_, i) => escapeMdCell(row[i])).join(' | ')} |`
-    );
+    const body = rows.map((row) => {
+      const cells = rowCells(row, headers.length);
+      return `| ${headers.map((_, i) => escapeMdCell(cells[i])).join(' | ')} |`;
+    });
     return [headerLine, sepLine, ...body].join('\n');
   }
 
@@ -235,18 +259,27 @@
     const next = normalizeTable(table);
     if (rowIndex === -1) {
       if (colIndex < 0 || colIndex >= next.headers.length) return next;
+      next.headers = next.headers.slice();
       next.headers[colIndex] = value == null ? '' : String(value);
       return next;
     }
     if (rowIndex < 0 || rowIndex >= next.rows.length) return next;
     if (colIndex < 0 || colIndex >= next.headers.length) return next;
-    next.rows[rowIndex][colIndex] = value == null ? '' : String(value);
+    next.rows = next.rows.map((row, i) => {
+      if (i !== rowIndex) return row;
+      const cells = rowCells(row, next.headers.length);
+      cells[colIndex] = value == null ? '' : String(value);
+      return createTableRow(cells, row.id);
+    });
     return next;
   }
 
   function addTableRow(table) {
     const next = normalizeTable(table);
-    next.rows = [...next.rows, Array.from({ length: next.headers.length }, () => '')];
+    next.rows = [
+      ...next.rows,
+      createTableRow(Array.from({ length: next.headers.length }, () => '')),
+    ];
     return next;
   }
 
@@ -262,7 +295,9 @@
     const next = normalizeTable(table);
     const n = next.headers.length + 1;
     next.headers = [...next.headers, `Column ${n}`];
-    next.rows = next.rows.map((row) => [...row, '']);
+    next.rows = next.rows.map((row) =>
+      createTableRow([...rowCells(row, next.headers.length - 1), ''], row.id)
+    );
     return next;
   }
 
@@ -271,7 +306,10 @@
     if (next.headers.length <= 1) return next;
     if (colIndex < 0 || colIndex >= next.headers.length) return next;
     next.headers = next.headers.filter((_, i) => i !== colIndex);
-    next.rows = next.rows.map((row) => row.filter((_, i) => i !== colIndex));
+    next.rows = next.rows.map((row) => {
+      const cells = rowCells(row, next.headers.length + 1).filter((_, i) => i !== colIndex);
+      return createTableRow(cells, row.id);
+    });
     return next;
   }
 
@@ -279,6 +317,8 @@
     createEmptySection,
     createEmptyChapter,
     createEmptyTable,
+    createTableRow,
+    rowCells,
     normalizeTable,
     flattenChapters,
     normalizeStandardPolicyDoc,
