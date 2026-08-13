@@ -1398,6 +1398,13 @@
                 return () => unsub();
             }, [activeProfileId, user, isStandalone]);
 
+            // Standalone export: normalize the injected snapshot once shared helpers are available
+            // so the catalog-driven dashboard/sidebar populate correctly.
+            useEffect(() => {
+                if (!isStandalone || !window.STANDALONE_POLICIES) return;
+                setLocalPolicyData(mergePolicyData(window.STANDALONE_POLICIES));
+            }, [isStandalone]);
+
             // Keep the active SOP file selection valid as the SOP list changes
             useEffect(() => {
                 const sops = localPolicyData.sops || [];
@@ -1522,6 +1529,47 @@
                 setIsSaving(false);
             };
 
+            // Escape JSON embedded in <script> so content like </script> cannot break the portal.
+            const escapeJsonForInlineScript = (value) =>
+                JSON.stringify(value, null, 2)
+                    .replace(/</g, '\\u003c')
+                    .replace(/\u2028/g, '\\u2028')
+                    .replace(/\u2029/g, '\\u2029');
+
+            // Downloaded portals cannot resolve ../../shared/*.js — inline those scripts into the HTML.
+            const bundleSharedScriptsIntoHtml = async (htmlText) => {
+                const re = /<script\s+src="(\.\.\/\.\.\/shared\/[^"]+)"[^>]*>\s*<\/script>/gi;
+                const found = [];
+                let match;
+                while ((match = re.exec(htmlText)) !== null) {
+                    found.push({
+                        full: match[0],
+                        src: match[1],
+                        index: match.index,
+                        end: match.index + match[0].length,
+                    });
+                }
+                if (!found.length) return htmlText;
+
+                let out = '';
+                let cursor = 0;
+                for (const item of found) {
+                    out += htmlText.slice(cursor, item.index);
+                    const absoluteUrl = new URL(item.src, window.location.href).href;
+                    const res = await fetch(absoluteUrl);
+                    if (!res.ok) {
+                        throw new Error(`Could not bundle ${item.src.split('?')[0]} (${res.status})`);
+                    }
+                    let code = await res.text();
+                    code = code.replace(/<\/script/gi, '<\\/script');
+                    const label = item.src.split('?')[0];
+                    out += `<script>\n// Bundled for standalone export: ${label}\n${code}\n</script>`;
+                    cursor = item.end;
+                }
+                out += htmlText.slice(cursor);
+                return out;
+            };
+
             // --- EXPORT CLIENT STANDALONE HUD ENGINE (FETCH CLONING DESIGN) ---
             const handleExportStandalone = async () => {
                 if (isStandalone) return;
@@ -1529,11 +1577,15 @@
                 try {
                     // Pull current HTML source file
                     const response = await fetch(window.location.href);
+                    if (!response.ok) throw new Error(`Could not read Policy Studio source (${response.status})`);
                     let htmlText = await response.text();
-                    
+
+                    // Inline shared modules so the downloaded file works without the repo path
+                    htmlText = await bundleSharedScriptsIntoHtml(htmlText);
+
                     // Bundle current snapshot variables safely
-                    const brandingJSON = JSON.stringify(activeClient, null, 2);
-                    const policyDataJSON = JSON.stringify(localPolicyData, null, 2);
+                    const brandingJSON = escapeJsonForInlineScript(activeClient);
+                    const policyDataJSON = escapeJsonForInlineScript(localPolicyData);
 
                     const dataPayload = `
     <!-- INJECTED OFFLINE DATA BLOCKS -->
@@ -1542,10 +1594,10 @@
         window.STANDALONE_POLICIES = ${policyDataJSON};
     <\/script>
                     `;
-                    
+
                     // Inject static data blocks into head tag of cloned build
                     htmlText = htmlText.replace('<head>', '<head>' + dataPayload);
-                    
+
                     // Build standalone HTML blob
                     const blob = new Blob([htmlText], { type: 'text/html' });
                     const url = URL.createObjectURL(blob);
@@ -1556,11 +1608,13 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                    
+
                     triggerToast("📦 Standalone Client Portal Generated!");
                 } catch (e) {
                     console.error("Compile failure:", e);
-                    triggerToast("❌ Error compiling standalone portal.");
+                    const detail = String(e?.message || e || '').trim();
+                    const short = detail.length > 140 ? `${detail.slice(0, 137)}…` : detail;
+                    triggerToast(short ? `❌ Export failed: ${short}` : "❌ Error compiling standalone portal.");
                 }
                 setIsSaving(false);
             };
@@ -2018,14 +2072,41 @@
                 }));
             };
 
-            const getNavModel = () =>
-                PCat().resolveNavModel
-                    ? PCat().resolveNavModel(getPolicyCatalog(), {
+            const getNavModel = () => {
+                if (PCat().resolveNavModel) {
+                    return PCat().resolveNavModel(getPolicyCatalog(), {
                         handbook: localPolicyData.handbook,
                         sops: localPolicyData.sops,
                         standardDocs: localPolicyData.standardDocs,
-                    })
-                    : [];
+                    });
+                }
+                // Fallback if policy-catalog.js failed to load (broken standalone export, etc.)
+                const removed = new Set(localPolicyData.policyCatalog?.removedDefaults || []);
+                const items = [];
+                if (!removed.has('sops')) {
+                    items.push({ key: 'sops', id: 'sops-group', kind: 'group', groupType: 'sops', title: 'SOP Manuals', blurb: 'Step-by-step procedures' });
+                }
+                if (!removed.has('handbook') && localPolicyData.handbook) {
+                    items.push({ key: 'handbook', id: 'handbook', kind: 'doc', title: 'Employee Handbook', blurb: '', mode: 'handbook', obj: localPolicyData.handbook });
+                }
+                Object.keys(localPolicyData.standardDocs || {}).forEach((key) => {
+                    if (removed.has(key) || key === 'jobDescriptions') return;
+                    const doc = localPolicyData.standardDocs[key];
+                    items.push({
+                        key,
+                        id: key,
+                        kind: 'doc',
+                        title: doc?.title || key,
+                        blurb: '',
+                        mode: key,
+                        obj: doc,
+                    });
+                });
+                if (!removed.has('jobDescriptions') && localPolicyData.standardDocs?.jobDescriptions) {
+                    items.push({ key: 'jobDescriptions', id: 'roles-group', kind: 'group', groupType: 'jobs', title: 'Job Role Profiles', blurb: '' });
+                }
+                return items.length ? [{ id: 'all', title: 'Policies', subtitle: '', items, builtin: false }] : [];
+            };
 
             const removePolicyDraft = (key) => {
                 if (!key || key === 'dashboard' || key === 'branding') return;
