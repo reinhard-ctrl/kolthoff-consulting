@@ -85,6 +85,59 @@ assert.equal(emptyCh.sections.length, 1);
 const blank = PC.createEmptyChapter();
 assert.equal(blank.title, 'Untitled chapter');
 assert.equal(blank.sections[0].title, 'Untitled section');
+assert.equal(blank.sections[0].kind, 'text');
 assert.equal(blank.sections[0].content, '');
+
+const tableSec = PC.createEmptySection({
+  kind: 'table',
+  title: 'SLA targets',
+  table: {
+    headers: ['Metric', 'Target'],
+    rows: [['Uptime', '99.9%'], ['Response', '4h']],
+  },
+});
+assert.equal(tableSec.kind, 'table');
+assert.equal(tableSec.table.headers.length, 2);
+assert.equal(tableSec.table.rows.length, 2);
+
+const withTable = PC.normalizeStandardPolicyDoc({
+  title: 'SLA',
+  introduction: 'Targets',
+  chapters: [
+    {
+      id: 'ch-1',
+      title: 'Service levels',
+      sections: [
+        { id: 's-text', title: 'Scope', content: 'Applies to all clients.' },
+        tableSec,
+      ],
+    },
+  ],
+});
+assert.equal(withTable.sections[1].kind, 'table');
+assert.equal(withTable.sections[1].table.rows[0][1], '99.9%');
+
+const tableMd = PC.compileStandardPolicyMarkdown(withTable);
+assert.match(tableMd, /### 1\.2 SLA targets/);
+assert.match(tableMd, /\| Metric \| Target \|/);
+assert.match(tableMd, /\| Uptime \| 99\.9% \|/);
+
+let grid = PC.normalizeTable({ headers: ['A', 'B'], rows: [['1', '2']] });
+grid = PC.addTableRow(grid);
+assert.equal(grid.rows.length, 2);
+grid = PC.addTableColumn(grid);
+assert.equal(grid.headers.length, 3);
+grid = PC.setTableCell(grid, -1, 2, 'C');
+assert.equal(grid.headers[2], 'C');
+grid = PC.setTableCell(grid, 1, 2, 'x');
+assert.equal(grid.rows[1][2], 'x');
+grid = PC.removeTableColumn(grid, 1);
+assert.equal(grid.headers.join(','), 'A,C');
+grid = PC.removeTableRow(grid, 0);
+assert.equal(grid.rows.length, 1);
+
+const tocTable = PC.tocEntries(withTable);
+assert.equal(tocTable[3].kind, 'table');
+assert.equal(tocTable[3].title, 'SLA targets');
 
 console.log('policy-chapters.test.mjs: all assertions passed');

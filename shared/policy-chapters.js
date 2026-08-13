@@ -1,6 +1,17 @@
 /**
  * Standard policy document chapters — Code of Conduct, NDA, etc.
- * Shape: { introduction, chapters: [{ id, title, sections: [{ id, title, content }] }] }
+ * Shape: {
+ *   introduction,
+ *   chapters: [{
+ *     id, title,
+ *     sections: [{
+ *       id, title,
+ *       kind: 'text' | 'table',
+ *       content,                 // prose (kind === 'text')
+ *       table: { headers[], rows[][] }  // structured grid (kind === 'table')
+ *     }]
+ *   }]
+ * }
  * Legacy flat `sections` are migrated into a single chapter on normalize.
  */
 (function (global) {
@@ -8,13 +19,60 @@
     return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
+  function normalizeTable(raw, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const colCount = Math.max(1, Number(opts.colCount) || 3);
+    const rowCount = Math.max(1, Number(opts.rowCount) || 3);
+    const src = raw && typeof raw === 'object' ? raw : {};
+    let headers = Array.isArray(src.headers)
+      ? src.headers.map((h) => (h == null ? '' : String(h)))
+      : [];
+    if (!headers.length) {
+      headers = Array.from({ length: colCount }, (_, i) => `Column ${i + 1}`);
+    }
+    const width = headers.length;
+    let rows = Array.isArray(src.rows)
+      ? src.rows.map((row) => {
+          const cells = Array.isArray(row) ? row : [];
+          return Array.from({ length: width }, (_, i) =>
+            cells[i] == null ? '' : String(cells[i])
+          );
+        })
+      : [];
+    if (!rows.length) {
+      rows = Array.from({ length: rowCount }, () =>
+        Array.from({ length: width }, () => '')
+      );
+    } else {
+      rows = rows.map((row) =>
+        Array.from({ length: width }, (_, i) => (row[i] == null ? '' : String(row[i])))
+      );
+    }
+    return { headers, rows };
+  }
+
+  function createEmptyTable(overrides) {
+    return normalizeTable(overrides && overrides.table ? overrides.table : overrides, overrides);
+  }
+
   function createEmptySection(overrides) {
     const o = overrides && typeof overrides === 'object' ? overrides : {};
-    return {
+    const kind = o.kind === 'table' ? 'table' : 'text';
+    const section = {
       id: o.id || makeId('sec'),
-      title: o.title != null ? String(o.title) : 'Untitled section',
-      content: o.content != null ? String(o.content) : '',
+      title:
+        o.title != null
+          ? String(o.title)
+          : kind === 'table'
+            ? 'Untitled table'
+            : 'Untitled section',
+      kind,
+      content: kind === 'table' ? '' : o.content != null ? String(o.content) : '',
     };
+    if (kind === 'table') {
+      section.table = createEmptyTable(o.table ? { table: o.table } : o);
+    }
+    return section;
   }
 
   function createEmptyChapter(overrides) {
@@ -33,14 +91,45 @@
     const out = [];
     (chapters || []).forEach((ch) => {
       (ch.sections || []).forEach((sec) => {
-        out.push({
+        const kind = sec.kind === 'table' ? 'table' : 'text';
+        const entry = {
           id: sec.id,
           title: sec.title,
-          content: sec.content,
-        });
+          kind,
+          content: kind === 'table' ? '' : sec.content,
+        };
+        if (kind === 'table') {
+          entry.table = normalizeTable(sec.table);
+        }
+        out.push(entry);
       });
     });
     return out;
+  }
+
+  function escapeMdCell(value) {
+    return String(value == null ? '' : value)
+      .replace(/\|/g, '\\|')
+      .replace(/\r?\n/g, ' ');
+  }
+
+  function tableToMarkdown(table) {
+    const normalized = normalizeTable(table);
+    const headers = normalized.headers;
+    const rows = normalized.rows;
+    const headerLine = `| ${headers.map(escapeMdCell).join(' | ')} |`;
+    const sepLine = `| ${headers.map(() => '---').join(' | ')} |`;
+    const body = rows.map(
+      (row) => `| ${headers.map((_, i) => escapeMdCell(row[i])).join(' | ')} |`
+    );
+    return [headerLine, sepLine, ...body].join('\n');
+  }
+
+  function sectionBodyMarkdown(sec) {
+    if (sec && sec.kind === 'table') {
+      return tableToMarkdown(sec.table);
+    }
+    return sec && sec.content != null ? String(sec.content) : '';
   }
 
   /**
@@ -64,7 +153,7 @@
             Array.isArray(ch.sections) && ch.sections.length
               ? ch.sections
               : [createEmptySection()],
-        }),
+        })
       );
     } else if (Array.isArray(raw.sections) && raw.sections.length > 0) {
       chapters = [
@@ -100,7 +189,7 @@
     (normalized.chapters || []).forEach((ch, chIdx) => {
       md += `## ${chIdx + 1}. ${ch.title || `Chapter ${chIdx + 1}`}\n\n`;
       (ch.sections || []).forEach((sec, secIdx) => {
-        md += `### ${chIdx + 1}.${secIdx + 1} ${sec.title || `Section ${secIdx + 1}`}\n${sec.content || ''}\n\n`;
+        md += `### ${chIdx + 1}.${secIdx + 1} ${sec.title || `Section ${secIdx + 1}`}\n${sectionBodyMarkdown(sec)}\n\n`;
       });
     });
     return md.trim();
@@ -119,7 +208,7 @@
       (ch.sections || []).forEach((sec, secIdx) => {
         entries.push({
           title: sec.title || 'Section',
-          kind: 'section',
+          kind: sec.kind === 'table' ? 'table' : 'section',
           number: `${chapterNo}.${secIdx + 1}`,
         });
       });
@@ -134,7 +223,7 @@
     (raw.sections || []).forEach((sec, idx) => {
       entries.push({
         title: sec.title || 'Section',
-        kind: 'section',
+        kind: sec.kind === 'table' ? 'table' : 'section',
         number: `${idx + 1}.`,
         id: sec.id,
       });
@@ -142,14 +231,67 @@
     return entries;
   }
 
+  function setTableCell(table, rowIndex, colIndex, value) {
+    const next = normalizeTable(table);
+    if (rowIndex === -1) {
+      if (colIndex < 0 || colIndex >= next.headers.length) return next;
+      next.headers[colIndex] = value == null ? '' : String(value);
+      return next;
+    }
+    if (rowIndex < 0 || rowIndex >= next.rows.length) return next;
+    if (colIndex < 0 || colIndex >= next.headers.length) return next;
+    next.rows[rowIndex][colIndex] = value == null ? '' : String(value);
+    return next;
+  }
+
+  function addTableRow(table) {
+    const next = normalizeTable(table);
+    next.rows = [...next.rows, Array.from({ length: next.headers.length }, () => '')];
+    return next;
+  }
+
+  function removeTableRow(table, rowIndex) {
+    const next = normalizeTable(table);
+    if (next.rows.length <= 1) return next;
+    if (rowIndex < 0 || rowIndex >= next.rows.length) return next;
+    next.rows = next.rows.filter((_, i) => i !== rowIndex);
+    return next;
+  }
+
+  function addTableColumn(table) {
+    const next = normalizeTable(table);
+    const n = next.headers.length + 1;
+    next.headers = [...next.headers, `Column ${n}`];
+    next.rows = next.rows.map((row) => [...row, '']);
+    return next;
+  }
+
+  function removeTableColumn(table, colIndex) {
+    const next = normalizeTable(table);
+    if (next.headers.length <= 1) return next;
+    if (colIndex < 0 || colIndex >= next.headers.length) return next;
+    next.headers = next.headers.filter((_, i) => i !== colIndex);
+    next.rows = next.rows.map((row) => row.filter((_, i) => i !== colIndex));
+    return next;
+  }
+
   const api = {
     createEmptySection,
     createEmptyChapter,
+    createEmptyTable,
+    normalizeTable,
     flattenChapters,
     normalizeStandardPolicyDoc,
     compileStandardPolicyMarkdown,
+    tableToMarkdown,
+    sectionBodyMarkdown,
     tocEntries,
     tocEntriesFlat,
+    setTableCell,
+    addTableRow,
+    removeTableRow,
+    addTableColumn,
+    removeTableColumn,
   };
 
   global.PolicyChapters = api;
