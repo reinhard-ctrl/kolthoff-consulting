@@ -101,9 +101,11 @@ assert.equal(tableSec.kind, 'table');
 assert.equal(tableSec.table.headers.length, 2);
 assert.equal(tableSec.table.rows.length, 2);
 assert.ok(tableSec.table.rows[0].id);
-assert.deepEqual(tableSec.table.rows[0].cells, ['Uptime', '99.9%']);
+assert.equal(tableSec.table.rows[0].cells[0], 'Uptime');
+assert.equal(tableSec.table.rows[0].cells[1], '99.9%');
 // Must not keep nested arrays (Firestore rejects array-of-arrays)
 assert.equal(Array.isArray(tableSec.table.rows[0]), false);
+assert.equal(typeof tableSec.table.rows[0], 'object');
 
 const withTable = PC.normalizeStandardPolicyDoc({
   title: 'SLA',
@@ -128,7 +130,8 @@ assert.match(tableMd, /\| Metric \| Target \|/);
 assert.match(tableMd, /\| Uptime \| 99\.9% \|/);
 
 let grid = PC.normalizeTable({ headers: ['A', 'B'], rows: [['1', '2']] });
-assert.deepEqual(grid.rows[0].cells, ['1', '2']);
+assert.equal(grid.rows[0].cells[0], '1');
+assert.equal(grid.rows[0].cells[1], '2');
 grid = PC.addTableRow(grid);
 assert.equal(grid.rows.length, 2);
 grid = PC.addTableColumn(grid);
