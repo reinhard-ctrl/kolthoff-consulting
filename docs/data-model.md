@@ -67,7 +67,25 @@ Standard pack shape:
 |-------|--------|
 | `sops[]` | SOP manuals (steps, RACI, doc control) |
 | `handbook` | Employee handbook |
-| `standardDocs` | Fixed policy templates — see keys below |
+| `standardDocs` | Policy templates (built-in keys + custom drafts) — see keys below |
+| `policyCatalog` | Nav enablement, categories, and tombstones — see below |
+
+### `policyCatalog` (pack library / navigation)
+
+Controls which drafts appear in the Policy Studio dashboard and sidebar. Deleting a built-in policy adds its key to `removedDefaults` so it does **not** reseed on reload. Custom drafts live in `customDocs` with bodies under `standardDocs[customKey]`.
+
+| Field | Type | Notes |
+|-------|------|--------|
+| `version` | number | Currently `1` |
+| `removedDefaults` | string[] | Built-in keys tombstoned (e.g. `nda`, `sops`) |
+| `removedCategories` | string[] | Built-in category ids removed from the pack |
+| `customDocs` | array | `{ key, title, blurb, categoryId, kind }` — `kind` is `chapters` or `sections` |
+| `customCategories` | array | `{ id, title, subtitle }` |
+| `categoryOrder` | string[] | Display order of category ids |
+| `categoryAssignments` | object | `{ [docKey]: categoryId }` overrides |
+| `collapsedCategories` | string[] | Optional UI collapse hints |
+
+**Recommended default categories:** Operations (SOPs, BCP, Health & Safety), Client Delivery (SLA, Communication Plan), People (Handbook, Job Role Profiles, Onboarding, Performance Reviews), Governance (Org Chart, RACI, Managerial Role Descriptions), Compliance (Conduct, NDA, Data Privacy).
 
 ### `standardDocs.orgChart` (Org Chart & Reporting Policy)
 
