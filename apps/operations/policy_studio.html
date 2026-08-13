@@ -219,6 +219,7 @@
     <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
     <script src="../../shared/communication-plan.js?v=20250806-comm-plan-v1"></script>
     <script src="../../shared/managerial-roles.js?v=20250811-mgr-roles-v1"></script>
+    <script src="../../shared/policy-catalog.js?v=20250813-catalog-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -512,7 +513,19 @@
                     sections: [],
                     divisions: [],
                 }))
-            }
+            },
+            policyCatalog: JSON.parse(JSON.stringify(
+                (window.PolicyCatalog?.DEFAULT_POLICY_CATALOG?.() || {
+                    version: 1,
+                    removedDefaults: [],
+                    removedCategories: [],
+                    customDocs: [],
+                    customCategories: [],
+                    categoryOrder: ['operations', 'client-delivery', 'people', 'governance', 'compliance'],
+                    categoryAssignments: {},
+                    collapsedCategories: [],
+                })
+            ))
         };
 
         const JR = () => window.JobRoleProfile || {};
@@ -535,8 +548,15 @@
         const compileJobRoleMarkdown = (role) => JR().compileJobRoleMarkdown?.(role) || `# ${role?.title || 'Job Role Profile'}`;
         const PDI = () => window.PolicyDocImport || {};
         const PC = () => window.PolicyChapters || {};
+        const PCat = () => window.PolicyCatalog || {};
         const STANDARD_DOCS_WITH_GDOC_IMPORT = ['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'];
         const STANDARD_DOCS_WITH_CHAPTERS = STANDARD_DOCS_WITH_GDOC_IMPORT;
+        const docUsesChapters = (key, catalog) => {
+            if (STANDARD_DOCS_WITH_CHAPTERS.includes(key)) return true;
+            const custom = (catalog?.customDocs || []).find((d) => d.key === key);
+            return Boolean(custom && custom.kind === 'chapters');
+        };
+        const docAllowsGdocImport = (key) => STANDARD_DOCS_WITH_GDOC_IMPORT.includes(key);
 
         const Icons = {
             Print: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
@@ -567,7 +587,8 @@
             Reset: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>,
             Archive: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>,
             Sitemap: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M10 6.5h4M6.5 10v4M17.5 10v4M10 17.5h4"/></svg>,
-            Message: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Message: () => <svg aria-hidden="true" className="w-4 h-4 mr-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+            Chevron: ({ open }) => <svg aria-hidden="true" className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         };
 
         const DrawIoEmbed = ({ preset = 'orgChart', xml, onXmlChange, onSvgExport, height = 520 }) => {
@@ -959,6 +980,13 @@
             const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
             const [showBulkResetModal, setShowBulkResetModal] = useState(false);
             const [showDocImportModal, setShowDocImportModal] = useState(false);
+            const [showCatalogModal, setShowCatalogModal] = useState(false);
+            const [catalogModalTab, setCatalogModalTab] = useState('add'); // add | categories | library
+            const [newPolicyTitle, setNewPolicyTitle] = useState('');
+            const [newPolicyCategoryId, setNewPolicyCategoryId] = useState('operations');
+            const [newCategoryTitle, setNewCategoryTitle] = useState('');
+            const [newCategorySubtitle, setNewCategorySubtitle] = useState('');
+            const [expandedNavCategories, setExpandedNavCategories] = useState({});
             const [docImportTargetKey, setDocImportTargetKey] = useState(null);
             const [docImportUrl, setDocImportUrl] = useState('');
             const [docImportPaste, setDocImportPaste] = useState('');
@@ -1087,16 +1115,23 @@
                 }
             }, [activeProfileId, workbookProfiles, isStandalone]);
 
-            // Smart Data Merger to safeguard against ReferenceErrors or blank canvases
+            // Smart Data Merger — respects policyCatalog tombstones so deleted drafts stay gone.
             const mergePolicyData = (loadedData) => {
                 const defaultData = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA));
                 if (!loadedData) return defaultData;
-                
+
+                const policyCatalog = PCat().mergePolicyCatalog
+                    ? PCat().mergePolicyCatalog(defaultData.policyCatalog, loadedData.policyCatalog)
+                    : (loadedData.policyCatalog || defaultData.policyCatalog);
+                const removedDefaults = new Set(policyCatalog?.removedDefaults || []);
+
                 const sopTemplate = defaultData.sops[0];
-                const mergedSops = (loadedData.sops?.length ? loadedData.sops : defaultData.sops).map((loaded) =>
+                // Empty array means intentionally empty — do not resurrect default SOP.
+                const sopSource = Array.isArray(loadedData.sops) ? loadedData.sops : defaultData.sops;
+                const mergedSops = sopSource.map((loaded) =>
                     window.SopSync?.mergeSopDocument?.(sopTemplate, loaded) || loaded
                 );
-                
+
                 const mergedHandbook = {
                     ...defaultData.handbook,
                     ...(loadedData.handbook || {}),
@@ -1104,59 +1139,84 @@
                         ...defaultData.handbook.docControl,
                         ...(loadedData.handbook?.docControl || {})
                     },
-                    leaves: loadedData.handbook?.leaves || defaultData.handbook.leaves,
-                    discipline: loadedData.handbook?.discipline || defaultData.handbook.discipline,
-                    customPolicies: loadedData.customPolicies || loadedData.handbook?.customPolicies || defaultData.handbook.customPolicies
+                    leaves: Array.isArray(loadedData.handbook?.leaves)
+                        ? loadedData.handbook.leaves
+                        : defaultData.handbook.leaves,
+                    discipline: Array.isArray(loadedData.handbook?.discipline)
+                        ? loadedData.handbook.discipline
+                        : defaultData.handbook.discipline,
+                    customPolicies: Array.isArray(loadedData.handbook?.customPolicies)
+                        ? loadedData.handbook.customPolicies
+                        : (loadedData.customPolicies || defaultData.handbook.customPolicies)
                 };
-                
-                const mergedStandardDocs = {};
-                Object.keys(defaultData.standardDocs).forEach(key => {
-                    const defaultDoc = defaultData.standardDocs[key];
-                    const loadedDoc = loadedData.standardDocs?.[key] || {};
+
+                const mergeOneStandardDoc = (key, defaultDoc, loadedDoc) => {
+                    const loaded = loadedDoc && typeof loadedDoc === 'object' ? loadedDoc : {};
                     if (key === 'orgChart' && window.DiagramEditor?.mergeOrgChartPolicy) {
-                        mergedStandardDocs[key] = window.DiagramEditor.mergeOrgChartPolicy(defaultDoc, loadedDoc);
-                        return;
+                        return window.DiagramEditor.mergeOrgChartPolicy(defaultDoc, loaded);
                     }
                     if (key === 'raci' && window.RaciPolicy?.mergeRaciPolicy) {
-                        mergedStandardDocs[key] = window.RaciPolicy.mergeRaciPolicy(defaultDoc, loadedDoc);
-                        return;
+                        return window.RaciPolicy.mergeRaciPolicy(defaultDoc, loaded);
                     }
                     if (key === 'communicationPlan' && window.CommunicationPlan?.mergeCommunicationPlan) {
-                        mergedStandardDocs[key] = window.CommunicationPlan.mergeCommunicationPlan(defaultDoc, loadedDoc);
-                        return;
+                        return window.CommunicationPlan.mergeCommunicationPlan(defaultDoc, loaded);
                     }
                     if (key === 'managerialRoles' && window.ManagerialRoles?.mergeManagerialRoles) {
-                        mergedStandardDocs[key] = window.ManagerialRoles.mergeManagerialRoles(defaultDoc, loadedDoc);
-                        return;
+                        return window.ManagerialRoles.mergeManagerialRoles(defaultDoc, loaded);
                     }
-                    const sectionsSource = loadedDoc.sections?.length ? loadedDoc.sections : defaultDoc.sections;
-                    const chaptersSource = loadedDoc.chapters?.length
-                        ? loadedDoc.chapters
-                        : (defaultDoc.chapters?.length ? defaultDoc.chapters : null);
+                    // Prefer loaded sections when the array exists (including empty).
+                    const sectionsSource = Array.isArray(loaded.sections)
+                        ? loaded.sections
+                        : (defaultDoc?.sections || []);
+                    const chaptersSource = Array.isArray(loaded.chapters)
+                        ? loaded.chapters
+                        : (Array.isArray(defaultDoc?.chapters) ? defaultDoc.chapters : null);
                     let mergedDoc = {
-                        ...defaultDoc,
-                        ...loadedDoc,
+                        ...(defaultDoc || {}),
+                        ...loaded,
                         docControl: {
-                            ...defaultDoc.docControl,
-                            ...(loadedDoc.docControl || {})
+                            ...((defaultDoc && defaultDoc.docControl) || {}),
+                            ...(loaded.docControl || {})
                         },
                         sections: key === 'jobDescriptions'
                             ? (sectionsSource || []).map((sec) => migrateJobRoleFromContent(sec))
                             : sectionsSource,
                     };
-                    // Never write `chapters: undefined` — Firestore rejects it and cloud save fails.
                     delete mergedDoc.chapters;
                     if (Array.isArray(chaptersSource) && chaptersSource.length) {
                         mergedDoc.chapters = chaptersSource;
                     }
-                    if (STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc) {
-                        // Prefer loaded chapters; else rebuild from loaded/default sections
-                        if (!loadedDoc.chapters?.length && (loadedDoc.sections?.length || mergedDoc.sections?.length)) {
+                    if (docUsesChapters(key, policyCatalog) && PC().normalizeStandardPolicyDoc) {
+                        if (!loaded.chapters?.length && (loaded.sections?.length || mergedDoc.sections?.length)) {
                             delete mergedDoc.chapters;
                         }
                         mergedDoc = PC().normalizeStandardPolicyDoc(mergedDoc);
                     }
-                    mergedStandardDocs[key] = mergedDoc;
+                    return mergedDoc;
+                };
+
+                const mergedStandardDocs = {};
+                Object.keys(defaultData.standardDocs).forEach((key) => {
+                    if (removedDefaults.has(key)) return;
+                    mergedStandardDocs[key] = mergeOneStandardDoc(
+                        key,
+                        defaultData.standardDocs[key],
+                        loadedData.standardDocs?.[key]
+                    );
+                });
+
+                // Custom drafts from catalog
+                (policyCatalog.customDocs || []).forEach((custom) => {
+                    const key = custom.key;
+                    if (!key || mergedStandardDocs[key]) return;
+                    const fallback = PCat().createEmptyCustomPolicyDoc
+                        ? PCat().createEmptyCustomPolicyDoc({ title: custom.title, kind: custom.kind })
+                        : { title: custom.title || 'Custom Policy', docControl: {}, introduction: '', sections: [] };
+                    mergedStandardDocs[key] = mergeOneStandardDoc(
+                        key,
+                        fallback,
+                        loadedData.standardDocs?.[key]
+                    );
                 });
 
                 // Migrate legacy orgChart.raciMatrix → standardDocs.raci (one-time on load)
@@ -1165,7 +1225,7 @@
                 const loadedRaci = loadedData.standardDocs?.raci || {};
                 const raciHasCustom = (Array.isArray(loadedRaci.matrices) && loadedRaci.matrices.length > 0)
                     || (Array.isArray(loadedRaci.matrix) && loadedRaci.matrix.length > 0);
-                if (Array.isArray(legacyOrgRaci) && legacyOrgRaci.length && !raciHasCustom && window.RaciPolicy?.mergeRaciPolicy) {
+                if (!removedDefaults.has('raci') && Array.isArray(legacyOrgRaci) && legacyOrgRaci.length && !raciHasCustom && window.RaciPolicy?.mergeRaciPolicy) {
                     mergedStandardDocs.raci = window.RaciPolicy.mergeRaciPolicy(raciDoc || {}, {
                         ...(raciDoc || {}),
                         matrix: legacyOrgRaci,
@@ -1175,11 +1235,12 @@
                     const { raciMatrix: _drop, ...orgClean } = mergedStandardDocs.orgChart;
                     mergedStandardDocs.orgChart = orgClean;
                 }
-                
+
                 return {
                     sops: mergedSops,
                     handbook: mergedHandbook,
-                    standardDocs: mergedStandardDocs
+                    standardDocs: mergedStandardDocs,
+                    policyCatalog,
                 };
             };
 
@@ -1223,6 +1284,26 @@
                     setActiveJobRoleId(roles[0].id);
                 }
             }, [localPolicyData.standardDocs?.jobDescriptions?.sections, activeJobRoleId]);
+
+            // If the open draft was removed from the catalog, return to the dashboard.
+            useEffect(() => {
+                if (!activeMode || activeMode === 'dashboard' || activeMode === 'branding') return;
+                const catalog = PCat().mergePolicyCatalog
+                    ? PCat().mergePolicyCatalog(DEFAULT_DOCUMENT_DATA.policyCatalog, localPolicyData.policyCatalog)
+                    : (localPolicyData.policyCatalog || DEFAULT_DOCUMENT_DATA.policyCatalog);
+                const removed = new Set(catalog?.removedDefaults || []);
+                const modeKey = activeMode === 'sop' ? 'sops' : activeMode;
+                if (removed.has(modeKey)) {
+                    setActiveMode('dashboard');
+                    return;
+                }
+                const customKeys = new Set((catalog?.customDocs || []).map((d) => d.key));
+                const builtin = new Set(PCat().BUILTIN_KEYS || []);
+                const special = new Set(['sop', 'handbook', 'jobDescriptions']);
+                if (!builtin.has(modeKey) && !special.has(activeMode) && !customKeys.has(activeMode) && !localPolicyData.standardDocs?.[activeMode]) {
+                    setActiveMode('dashboard');
+                }
+            }, [activeMode, localPolicyData.policyCatalog, localPolicyData.standardDocs]);
 
             const inferToastTone = (msg) => {
                 const text = String(msg || '');
@@ -1350,8 +1431,12 @@
             const compilePoliciesForVault = () => {
                 const policiesArray = [];
                 const defaultDate = new Date().toISOString().split('T')[0];
+                const catalog = PCat().mergePolicyCatalog
+                    ? PCat().mergePolicyCatalog(DEFAULT_DOCUMENT_DATA.policyCatalog, localPolicyData.policyCatalog)
+                    : (localPolicyData.policyCatalog || DEFAULT_DOCUMENT_DATA.policyCatalog);
+                const removedDefaults = new Set(catalog?.removedDefaults || []);
 
-                if (localPolicyData.sops) {
+                if (!removedDefaults.has('sops') && localPolicyData.sops) {
                     localPolicyData.sops.forEach(sop => {
                         let mdContent = `# ${sop.title}\n\n`;
                         if (sop.docControl?.owner) mdContent += `**Owner:** ${sop.docControl.owner}`;
@@ -1388,7 +1473,7 @@
                     });
                 }
 
-                if (localPolicyData.handbook) {
+                if (!removedDefaults.has('handbook') && localPolicyData.handbook) {
                     let mdContent = `# ${localPolicyData.handbook.title || 'Employee Handbook'}\n\n`;
                     if (localPolicyData.handbook.introduction) mdContent += `## Introduction\n${localPolicyData.handbook.introduction}\n\n`;
                     if (localPolicyData.handbook.timekeeping) mdContent += `## Hours & Attendance\n${localPolicyData.handbook.timekeeping}\n\n`;
@@ -1431,6 +1516,7 @@
                 if (localPolicyData.standardDocs) {
                     Object.keys(localPolicyData.standardDocs).forEach(key => {
                         if (key === 'orgChart' || key === 'raci' || key === 'communicationPlan' || key === 'managerialRoles') return;
+                        if (removedDefaults.has(key)) return;
                         const doc = localPolicyData.standardDocs[key];
 
                         // Job Role Profiles: one vault file per role
@@ -1479,7 +1565,7 @@
                     });
                 }
 
-                if (localPolicyData.standardDocs?.orgChart && window.DiagramEditor?.compileOrgChartPolicyMarkdown) {
+                if (!removedDefaults.has('orgChart') && localPolicyData.standardDocs?.orgChart && window.DiagramEditor?.compileOrgChartPolicyMarkdown) {
                     const orgDoc = localPolicyData.standardDocs.orgChart;
                     policiesArray.push({
                         id: 'doc-orgChart',
@@ -1489,7 +1575,7 @@
                     });
                 }
 
-                if (localPolicyData.standardDocs?.raci && window.RaciPolicy?.compileRaciPolicyMarkdown) {
+                if (!removedDefaults.has('raci') && localPolicyData.standardDocs?.raci && window.RaciPolicy?.compileRaciPolicyMarkdown) {
                     const raciDoc = localPolicyData.standardDocs.raci;
                     policiesArray.push({
                         id: 'doc-raci',
@@ -1499,7 +1585,7 @@
                     });
                 }
 
-                if (localPolicyData.standardDocs?.communicationPlan && window.CommunicationPlan?.compileCommunicationPlanMarkdown) {
+                if (!removedDefaults.has('communicationPlan') && localPolicyData.standardDocs?.communicationPlan && window.CommunicationPlan?.compileCommunicationPlanMarkdown) {
                     const commDoc = localPolicyData.standardDocs.communicationPlan;
                     policiesArray.push({
                         id: 'doc-communicationPlan',
@@ -1509,7 +1595,7 @@
                     });
                 }
 
-                if (localPolicyData.standardDocs?.managerialRoles && window.ManagerialRoles?.compileManagerialRolesMarkdown) {
+                if (!removedDefaults.has('managerialRoles') && localPolicyData.standardDocs?.managerialRoles && window.ManagerialRoles?.compileManagerialRolesMarkdown) {
                     const mgrDoc = localPolicyData.standardDocs.managerialRoles;
                     policiesArray.push({
                         id: 'doc-managerialRoles',
@@ -1622,11 +1708,20 @@
                     }));
                     triggerToast("🔄 Employee Handbook reinitialized to default template! Remember to save changes.");
                 } else if (localPolicyData.standardDocs?.[activeMode]) {
+                    const customMeta = (getPolicyCatalog().customDocs || []).find((d) => d.key === activeMode);
+                    const template = DEFAULT_DOCUMENT_DATA.standardDocs[activeMode]
+                        ? JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.standardDocs[activeMode]))
+                        : (PCat().createEmptyCustomPolicyDoc
+                            ? PCat().createEmptyCustomPolicyDoc({
+                                title: customMeta?.title || localPolicyData.standardDocs[activeMode]?.title || 'New Policy Draft',
+                                kind: customMeta?.kind || 'chapters',
+                            })
+                            : { title: 'New Policy Draft', docControl: {}, introduction: '', sections: [] });
                     setLocalPolicyData(prev => ({
                         ...prev,
                         standardDocs: {
                             ...prev.standardDocs,
-                            [activeMode]: JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA.standardDocs[activeMode]))
+                            [activeMode]: template
                         }
                     }));
                     triggerToast(`🔄 ${getActiveDocTitle()} reinitialized to default template! Remember to save changes.`);
@@ -1636,8 +1731,22 @@
 
             // Global workspace migration to latest compliance templates
             const handleBulkResetToDefault = () => {
-                setLocalPolicyData(JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA)));
-                triggerToast("🔄 All documents upgraded to latest templates! Remember to click 'Save to Cloud' to commit.");
+                const prevCatalog = localPolicyData.policyCatalog;
+                const customBodies = {};
+                (prevCatalog?.customDocs || []).forEach((d) => {
+                    if (localPolicyData.standardDocs?.[d.key]) {
+                        customBodies[d.key] = localPolicyData.standardDocs[d.key];
+                    }
+                });
+                const fresh = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA));
+                // Preserve catalog tombstones/customs so deleted drafts do not reappear.
+                setLocalPolicyData(mergePolicyData({
+                    sops: (prevCatalog?.removedDefaults || []).includes('sops') ? [] : fresh.sops,
+                    handbook: fresh.handbook,
+                    standardDocs: { ...fresh.standardDocs, ...customBodies },
+                    policyCatalog: prevCatalog || fresh.policyCatalog,
+                }));
+                triggerToast("🔄 Active templates refreshed. Removed drafts stay removed — save to commit.");
                 setShowBulkResetModal(false);
             };
 
@@ -1756,6 +1865,184 @@
                     }
                 }
             };
+
+            const getPolicyCatalog = () =>
+                PCat().mergePolicyCatalog
+                    ? PCat().mergePolicyCatalog(
+                        DEFAULT_DOCUMENT_DATA.policyCatalog,
+                        localPolicyData.policyCatalog
+                    )
+                    : (localPolicyData.policyCatalog || DEFAULT_DOCUMENT_DATA.policyCatalog);
+
+            const updatePolicyCatalog = (nextCatalog) => {
+                setLocalPolicyData((prev) => ({
+                    ...prev,
+                    policyCatalog: nextCatalog,
+                }));
+            };
+
+            const getNavModel = () =>
+                PCat().resolveNavModel
+                    ? PCat().resolveNavModel(getPolicyCatalog(), {
+                        handbook: localPolicyData.handbook,
+                        sops: localPolicyData.sops,
+                        standardDocs: localPolicyData.standardDocs,
+                    })
+                    : [];
+
+            const removePolicyDraft = (key) => {
+                if (!key || key === 'dashboard' || key === 'branding') return;
+                const catalog = getPolicyCatalog();
+                const isCustom = (catalog.customDocs || []).some((d) => d.key === key);
+                let nextCatalog = catalog;
+                if (isCustom) {
+                    nextCatalog = PCat().removeCustomDoc(catalog, key);
+                } else if (PCat().BUILTIN_KEYS?.includes(key)) {
+                    nextCatalog = PCat().removeDefaultDoc(catalog, key);
+                } else {
+                    return;
+                }
+
+                setLocalPolicyData((prev) => {
+                    const next = { ...prev, policyCatalog: nextCatalog };
+                    if (key === 'handbook') {
+                        // Keep handbook body for safety; catalog hides it from nav.
+                        return next;
+                    }
+                    if (key === 'sops') {
+                        next.sops = [];
+                        return next;
+                    }
+                    if (key === 'jobDescriptions') {
+                        next.standardDocs = {
+                            ...(prev.standardDocs || {}),
+                            jobDescriptions: {
+                                ...(prev.standardDocs?.jobDescriptions || {}),
+                                sections: [],
+                            },
+                        };
+                        return next;
+                    }
+                    if (prev.standardDocs?.[key]) {
+                        const { [key]: _drop, ...rest } = prev.standardDocs;
+                        next.standardDocs = rest;
+                    }
+                    return next;
+                });
+
+                if (activeMode === key || (key === 'sops' && activeMode === 'sop') || (key === 'jobDescriptions' && activeMode === 'jobDescriptions')) {
+                    setActiveMode('dashboard');
+                    setActiveSopId(null);
+                    setActiveJobRoleId(null);
+                }
+                triggerToast(`Removed “${PCat().getDocDef?.(key)?.title || key}” from this pack. Save to keep it gone.`);
+            };
+
+            const restorePolicyFromLibrary = (key) => {
+                const catalog = PCat().restoreDefaultDoc(getPolicyCatalog(), key);
+                const templatePack = JSON.parse(JSON.stringify(DEFAULT_DOCUMENT_DATA));
+                setLocalPolicyData((prev) => {
+                    const next = { ...prev, policyCatalog: catalog };
+                    if (key === 'handbook') {
+                        next.handbook = templatePack.handbook;
+                    } else if (key === 'sops') {
+                        next.sops = templatePack.sops;
+                    } else if (templatePack.standardDocs?.[key]) {
+                        next.standardDocs = {
+                            ...(prev.standardDocs || {}),
+                            [key]: templatePack.standardDocs[key],
+                        };
+                    }
+                    return next;
+                });
+                triggerToast(`Restored “${PCat().getDocDef?.(key)?.title || key}” from the library.`);
+            };
+
+            const addBlankPolicyDraft = () => {
+                const title = (newPolicyTitle || '').trim() || 'New Policy Draft';
+                const { catalog, doc } = PCat().addCustomDoc(getPolicyCatalog(), {
+                    title,
+                    categoryId: newPolicyCategoryId || 'operations',
+                    kind: 'chapters',
+                });
+                const body = PCat().createEmptyCustomPolicyDoc({ title, kind: 'chapters' });
+                setLocalPolicyData((prev) => ({
+                    ...prev,
+                    policyCatalog: catalog,
+                    standardDocs: {
+                        ...(prev.standardDocs || {}),
+                        [doc.key]: body,
+                    },
+                }));
+                setNewPolicyTitle('');
+                setShowCatalogModal(false);
+                setActiveMode(doc.key);
+                triggerToast(`Added draft “${title}”.`);
+            };
+
+            const addCatalogCategory = () => {
+                const title = (newCategoryTitle || '').trim() || 'New Category';
+                const { catalog } = PCat().addCategory(getPolicyCatalog(), {
+                    title,
+                    subtitle: (newCategorySubtitle || '').trim(),
+                });
+                updatePolicyCatalog(catalog);
+                setNewCategoryTitle('');
+                setNewCategorySubtitle('');
+                triggerToast(`Added category “${title}”.`);
+            };
+
+            const removeCatalogCategory = (categoryId) => {
+                updatePolicyCatalog(PCat().removeCategory(getPolicyCatalog(), categoryId));
+                triggerToast('Category removed. Policies were moved to another category.');
+            };
+
+            const toggleNavCategory = (categoryId) => {
+                setExpandedNavCategories((prev) => ({
+                    ...prev,
+                    [categoryId]: !(prev[categoryId] ?? true),
+                }));
+            };
+            const usesChaptersForKey = (key) => docUsesChapters(key, getPolicyCatalog());
+            const openNavItem = (item) => {
+                if (!item) return;
+                if (item.groupType === 'sops') {
+                    openSopDocument(null);
+                    return;
+                }
+                if (item.groupType === 'jobs') {
+                    openJobRoleDocument(null);
+                    return;
+                }
+                if (item.mode) setActiveMode(item.mode);
+                else if (item.key) setActiveMode(item.key);
+                else if (item.id) setActiveMode(item.id);
+            };
+            const navIconForKey = (key) => {
+                const map = {
+                    sops: Icons.FileText,
+                    bcp: Icons.Activity,
+                    healthSafety: Icons.HardHat,
+                    sla: Icons.Target,
+                    communicationPlan: Icons.Message,
+                    handbook: Icons.BookOpen,
+                    jobDescriptions: Icons.Briefcase,
+                    onboarding: Icons.Users,
+                    performanceReview: Icons.Target,
+                    orgChart: Icons.Sitemap,
+                    raci: Icons.Users,
+                    managerialRoles: Icons.Briefcase,
+                    conduct: Icons.Shield,
+                    nda: Icons.Lock,
+                    dataPrivacy: Icons.Database,
+                };
+                return map[key] || Icons.FileText;
+            };
+            const isCatalogProseMode = (mode) => {
+                const prose = ['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'];
+                if (prose.includes(mode)) return true;
+                return (getPolicyCatalog().customDocs || []).some((d) => d.key === mode);
+            };
             const updateSOP = (id, field, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, [field]: val } : s));
             const updateSopDocControl = (id, field, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, docControl: { ...(s.docControl || { version: '1.0', effectiveDate: '', lastReviewed: '', owner: '' }), [field]: val } } : s));
             const updateSopRaci = (id, role, val) => updateDocState('sops', sops => sops.map(s => s.id === id ? { ...s, raci: { ...(s.raci || { responsible: '', accountable: '', consulted: '', informed: '' }), [role]: val } } : s));
@@ -1803,18 +2090,18 @@
 
             const patchStandardPolicyDoc = (key, mutator) => updateDocState('standardDocs', (docs) => {
                 const current = docs[key] || {};
-                const base = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
+                const base = usesChaptersForKey(key) && PC().normalizeStandardPolicyDoc
                     ? PC().normalizeStandardPolicyDoc(current)
                     : current;
                 const next = mutator(base);
-                const normalized = STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc
+                const normalized = usesChaptersForKey(key) && PC().normalizeStandardPolicyDoc
                     ? PC().normalizeStandardPolicyDoc(next)
                     : next;
                 return { ...docs, [key]: normalized };
             });
 
             const updateStandardSection = (key, secId, field, val) => {
-                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                if (!usesChaptersForKey(key)) {
                     return updateDocState('standardDocs', docs => ({
                         ...docs,
                         [key]: {
@@ -1865,7 +2152,7 @@
             }));
 
             const addStandardSection = (key, chapterId) => {
-                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                if (!usesChaptersForKey(key)) {
                     return updateDocState('standardDocs', docs => ({
                         ...docs,
                         [key]: {
@@ -1895,7 +2182,7 @@
 
             const removeStandardSection = (key, chapterId, secId) => {
                 // Legacy flat-section callers pass (key, secId) only
-                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                if (!usesChaptersForKey(key)) {
                     const legacySecId = secId == null ? chapterId : secId;
                     return updateDocState('standardDocs', docs => ({
                         ...docs,
@@ -1921,7 +2208,7 @@
             };
 
             const reorderStandardSection = (key, chapterIdOrIdx, idxOrDir, maybeDir) => {
-                if (!STANDARD_DOCS_WITH_CHAPTERS.includes(key)) {
+                if (!usesChaptersForKey(key)) {
                     // Legacy: (key, idx, dir)
                     const idx = chapterIdOrIdx;
                     const dir = idxOrDir;
@@ -2245,7 +2532,7 @@
                 updateDocState('standardDocs', (docs) => {
                     const applied = apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle });
                     let withChapters = applied;
-                    if (STANDARD_DOCS_WITH_CHAPTERS.includes(key) && PC().normalizeStandardPolicyDoc) {
+                    if (usesChaptersForKey(key) && PC().normalizeStandardPolicyDoc) {
                         const rebuilt = { ...applied, sections: applied.sections || [] };
                         delete rebuilt.chapters; // force rebuild from imported sections (never undefined)
                         withChapters = PC().normalizeStandardPolicyDoc(rebuilt);
@@ -2925,11 +3212,6 @@
                 if (!activeClient) return <div>Loading Data...</div>;
 
                 const statusOf = (obj) => calculateDocStatus(obj?.docControl?.lastReviewed);
-                const openDoc = (d) => {
-                    if (d.sopId) openSopDocument(d.sopId);
-                    else if (d.jobRoleId) openJobRoleDocument(d.jobRoleId);
-                    else setActiveMode(d.id);
-                };
 
                 const sopFiles = (localPolicyData.sops || []).map((sop, idx) => ({
                     id: `sop:${sop.id}`,
@@ -2949,65 +3231,14 @@
                     };
                 });
 
-                const categories = [
-                    {
-                        id: 'operations',
-                        title: 'Operations',
-                        subtitle: 'How work gets done day to day',
-                        items: [
-                            {
-                                id: 'sops-group',
-                                kind: 'group',
-                                title: 'SOP Manuals',
-                                blurb: `${sopFiles.length} procedure file${sopFiles.length === 1 ? '' : 's'}`,
-                                files: sopFiles,
-                                emptyAction: { label: 'Open SOPs', onClick: () => openSopDocument(null) },
-                                addAction: isEditMode ? { label: '+ New SOP', onClick: addSOP } : null,
-                            },
-                            { id: 'bcp', title: 'Business Continuity', blurb: 'Keep running during outages', obj: localPolicyData.standardDocs?.bcp },
-                            { id: 'sla', title: 'Service Agreements (SLA)', blurb: 'Response and uptime targets', obj: localPolicyData.standardDocs?.sla },
-                            { id: 'communicationPlan', title: 'Communication Plan', blurb: 'Meeting cadences and channels', obj: localPolicyData.standardDocs?.communicationPlan },
-                            { id: 'healthSafety', title: 'Health & Safety', blurb: 'Evacuation, hazards, first aid', obj: localPolicyData.standardDocs?.healthSafety },
-                        ],
-                    },
-                    {
-                        id: 'hr',
-                        title: 'HR & Talent',
-                        subtitle: 'People, roles, and how the team is structured',
-                        items: [
-                            { id: 'handbook', title: 'Employee Handbook', blurb: 'Hours, pay, leave, discipline', obj: localPolicyData.handbook },
-                            { id: 'orgChart', title: 'Org Chart Policy', blurb: 'Reporting lines and roster', obj: localPolicyData.standardDocs?.orgChart },
-                            { id: 'raci', title: 'RACI Policy', blurb: 'Decision matrices by topic', obj: localPolicyData.standardDocs?.raci },
-                            { id: 'managerialRoles', title: 'Managerial Role Descriptions', blurb: 'Executive specs by division', obj: localPolicyData.standardDocs?.managerialRoles },
-                            {
-                                id: 'roles-group',
-                                kind: 'group',
-                                title: 'Job Role Profiles',
-                                blurb: `${jobRoleFiles.length} role file${jobRoleFiles.length === 1 ? '' : 's'}`,
-                                files: jobRoleFiles,
-                                emptyAction: { label: 'Open roles', onClick: () => openJobRoleDocument(null) },
-                                addAction: isEditMode ? { label: '+ New role', onClick: addJobRole } : null,
-                            },
-                            { id: 'onboarding', title: 'Onboarding & 90-Day', blurb: 'New-hire path to productive', obj: localPolicyData.standardDocs?.onboarding },
-                            { id: 'performanceReview', title: 'Performance Reviews', blurb: 'Expectations, feedback, PIP', obj: localPolicyData.standardDocs?.performanceReview },
-                        ],
-                    },
-                    {
-                        id: 'legal',
-                        title: 'Legal & Compliance',
-                        subtitle: 'Rules everyone must follow',
-                        items: [
-                            { id: 'conduct', title: 'Code of Conduct', blurb: 'Respect, ethics, workplace rules', obj: localPolicyData.standardDocs?.conduct },
-                            { id: 'nda', title: 'Non-Disclosure (NDA)', blurb: 'Protect confidential information', obj: localPolicyData.standardDocs?.nda },
-                            { id: 'dataPrivacy', title: 'Data Privacy & IT', blurb: 'Systems, PII, breach reporting', obj: localPolicyData.standardDocs?.dataPrivacy },
-                        ],
-                    },
-                ];
-
+                const categories = getNavModel();
                 const allTracked = [
                     ...sopFiles.map((f) => f.obj),
-                    localPolicyData.handbook,
-                    ...Object.values(localPolicyData.standardDocs || {}).filter(Boolean),
+                    ...jobRoleFiles.map((f) => f.obj),
+                    ...categories.flatMap((c) => c.items)
+                        .filter((i) => i.kind === 'doc')
+                        .map((i) => i.obj)
+                        .filter(Boolean),
                 ];
                 const statusCounts = allTracked.reduce(
                     (acc, obj) => {
@@ -3018,24 +3249,60 @@
                     { 'Up to Date': 0, Draft: 0, 'Review Due': 0 }
                 );
 
-                const renderDocRow = (d) => {
+                const renderFileRow = (d) => {
                     const st = statusOf(d.obj);
                     return (
-                        <button
-                            key={d.id}
-                            type="button"
-                            onClick={() => openDoc(d)}
-                            className="w-full text-left flex items-start gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors group"
-                        >
-                            <div className="min-w-0 flex-1">
-                                <div className="font-bold text-sm text-slate-800 group-hover:text-brandTeal-700 transition-colors truncate">{d.title}</div>
-                                {d.blurb && <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{d.blurb}</div>}
-                            </div>
-                            <div className="shrink-0 text-right">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${st.bg} ${st.text}`}>{st.status}</span>
-                                <div className="text-[10px] text-slate-400 font-mono mt-1">v{d.obj?.docControl?.version || '1.0'}</div>
-                            </div>
-                        </button>
+                        <div key={d.id} className="flex items-stretch border-b border-slate-100 last:border-b-0 group">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (d.sopId) openSopDocument(d.sopId);
+                                    else if (d.jobRoleId) openJobRoleDocument(d.jobRoleId);
+                                }}
+                                className="min-w-0 flex-1 text-left flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-sm text-slate-800 group-hover:text-brandTeal-700 transition-colors truncate">{d.title}</div>
+                                    {d.blurb && <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{d.blurb}</div>}
+                                </div>
+                                <div className="shrink-0 text-right">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${st.bg} ${st.text}`}>{st.status}</span>
+                                </div>
+                            </button>
+                        </div>
+                    );
+                };
+
+                const renderDocRow = (item) => {
+                    const st = statusOf(item.obj);
+                    return (
+                        <div key={item.id} className="flex items-stretch border-b border-slate-100 last:border-b-0 group/row">
+                            <button
+                                type="button"
+                                onClick={() => openNavItem(item)}
+                                className="min-w-0 flex-1 text-left flex items-start gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
+                            >
+                                <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-sm text-slate-800 group-hover/row:text-brandTeal-700 transition-colors truncate">{item.title}</div>
+                                    {item.blurb && <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{item.blurb}</div>}
+                                </div>
+                                <div className="shrink-0 text-right">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${st.bg} ${st.text}`}>{st.status}</span>
+                                    <div className="text-[10px] text-slate-400 font-mono mt-1">v{item.obj?.docControl?.version || '1.0'}</div>
+                                </div>
+                            </button>
+                            {isEditMode && (
+                                <button
+                                    type="button"
+                                    title="Remove from this pack"
+                                    aria-label={`Remove ${item.title}`}
+                                    onClick={() => removePolicyDraft(item.key)}
+                                    className="no-print shrink-0 px-3 text-rose-500 hover:bg-rose-50 border-l border-slate-100"
+                                >
+                                    <Icons.Trash />
+                                </button>
+                            )}
+                        </div>
                     );
                 };
 
@@ -3044,7 +3311,9 @@
                         <header className="mb-8 pb-6 border-b border-slate-200">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Policy pack</p>
                             <h2 className="font-black text-2xl text-slate-900 uppercase tracking-tight">{activeClient.clientCompany}</h2>
-                            <p className="text-sm text-slate-500 mt-1 max-w-2xl">Open a category, pick a document, edit, then export PDF or publish to Vault.</p>
+                            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+                                Browse by category in the sidebar or open a draft below. Removed policies stay removed after you save.
+                            </p>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[11px] font-semibold text-slate-600">
                                 <span><span className="text-emerald-700">{statusCounts['Up to Date'] || 0}</span> up to date</span>
                                 <span className="text-slate-300">·</span>
@@ -3052,9 +3321,27 @@
                                 <span className="text-slate-300">·</span>
                                 <span><span className="text-rose-700">{statusCounts['Review Due'] || 0}</span> review due</span>
                                 <span className="text-slate-300">·</span>
-                                <span>{sopFiles.length} SOPs · {jobRoleFiles.length} roles</span>
+                                <span>{sopFiles.length} SOPs · {jobRoleFiles.length} roles · {categories.length} categories</span>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-4">
+                                {isEditMode && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setCatalogModalTab('add'); setShowCatalogModal(true); }}
+                                        className="text-[11px] font-bold uppercase tracking-wider bg-brandTeal-600 text-white px-3 py-1.5 rounded hover:bg-brandTeal-500 transition-colors"
+                                    >
+                                        + Add policy
+                                    </button>
+                                )}
+                                {isEditMode && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setCatalogModalTab('categories'); setShowCatalogModal(true); }}
+                                        className="text-[11px] font-bold uppercase tracking-wider bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors"
+                                    >
+                                        Manage categories
+                                    </button>
+                                )}
                                 <button type="button" onClick={() => setActiveMode('branding')} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors">
                                     Branding
                                 </button>
@@ -3064,53 +3351,60 @@
                                             <Icons.Archive /> Client vault file
                                         </button>
                                         <button type="button" onClick={() => setShowBulkResetModal(true)} className="text-[11px] font-bold uppercase tracking-wider bg-white border border-rose-200 text-rose-700 px-3 py-1.5 rounded hover:bg-rose-50 transition-colors flex items-center">
-                                            <Icons.Reset /> Reset all templates
+                                            <Icons.Reset /> Reset templates
                                         </button>
                                     </React.Fragment>
                                 )}
                             </div>
                         </header>
 
-                        <div className="space-y-10">
+                        <div className="space-y-8">
                             {categories.map((cat) => (
                                 <section key={cat.id} aria-labelledby={`dash-cat-${cat.id}`}>
-                                    <div className="mb-3">
-                                        <h3 id={`dash-cat-${cat.id}`} className="text-sm font-black uppercase tracking-wider text-slate-900">{cat.title}</h3>
-                                        <p className="text-xs text-slate-500 mt-0.5">{cat.subtitle}</p>
+                                    <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+                                        <div>
+                                            <h3 id={`dash-cat-${cat.id}`} className="text-sm font-black uppercase tracking-wider text-slate-900">{cat.title}</h3>
+                                            {cat.subtitle && <p className="text-xs text-slate-500 mt-0.5">{cat.subtitle}</p>}
+                                        </div>
+                                        <span className="text-[10px] font-mono text-slate-400">{cat.items.length} item{cat.items.length === 1 ? '' : 's'}</span>
                                     </div>
-                                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white divide-y divide-slate-100">
-                                        {cat.items.map((item) => {
-                                            if (item.kind === 'group') {
-                                                return (
-                                                    <div key={item.id} className="bg-white">
-                                                        <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2 bg-slate-50 border-b border-slate-100">
-                                                            <div>
-                                                                <div className="text-xs font-bold uppercase tracking-wider text-slate-700">{item.title}</div>
-                                                                <div className="text-[11px] text-slate-500 mt-0.5">{item.blurb}</div>
+                                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                                        {cat.items.length === 0 ? (
+                                            <p className="px-4 py-4 text-xs text-slate-400 italic">No policies in this category yet.</p>
+                                        ) : (
+                                            cat.items.map((item) => {
+                                                if (item.kind === 'group') {
+                                                    const files = item.groupType === 'sops' ? sopFiles : jobRoleFiles;
+                                                    return (
+                                                        <div key={item.id} className="border-b border-slate-100 last:border-b-0">
+                                                            <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                                                                <button type="button" onClick={() => openNavItem(item)} className="text-left min-w-0">
+                                                                    <div className="text-xs font-bold uppercase tracking-wider text-slate-800 hover:text-brandTeal-700">{item.title}</div>
+                                                                    <div className="text-[11px] text-slate-500 mt-0.5">{files.length} file{files.length === 1 ? '' : 's'} · {item.blurb}</div>
+                                                                </button>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {isEditMode && item.groupType === 'sops' && (
+                                                                        <button type="button" onClick={addSOP} className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 bg-brandTeal-50 border border-brandTeal-200 px-2.5 py-1 rounded hover:bg-brandTeal-100">+ New SOP</button>
+                                                                    )}
+                                                                    {isEditMode && item.groupType === 'jobs' && (
+                                                                        <button type="button" onClick={addJobRole} className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 bg-brandTeal-50 border border-brandTeal-200 px-2.5 py-1 rounded hover:bg-brandTeal-100">+ New role</button>
+                                                                    )}
+                                                                    {isEditMode && (
+                                                                        <button type="button" onClick={() => removePolicyDraft(item.key)} className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-white border border-rose-200 px-2.5 py-1 rounded hover:bg-rose-50">Remove</button>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {item.addAction && (
-                                                                    <button type="button" onClick={item.addAction.onClick} className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-700 bg-white border border-brandTeal-200 px-2.5 py-1 rounded hover:bg-brandTeal-50">
-                                                                        {item.addAction.label}
-                                                                    </button>
-                                                                )}
-                                                                {item.files?.length === 0 && item.emptyAction && (
-                                                                    <button type="button" onClick={item.emptyAction.onClick} className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-100">
-                                                                        {item.emptyAction.label}
-                                                                    </button>
-                                                                )}
-                                                            </div>
+                                                            {files.length > 0 ? (
+                                                                <div className="border-t border-slate-100 bg-slate-50/40">{files.map(renderFileRow)}</div>
+                                                            ) : (
+                                                                <p className="px-4 py-3 text-xs text-slate-400 italic border-t border-slate-100">No files yet — add one to get started.</p>
+                                                            )}
                                                         </div>
-                                                        {item.files?.length > 0 ? (
-                                                            <div>{item.files.map(renderDocRow)}</div>
-                                                        ) : (
-                                                            <p className="px-4 py-4 text-xs text-slate-400 italic">No files yet — add one to get started.</p>
-                                                        )}
-                                                    </div>
-                                                );
-                                            }
-                                            return renderDocRow(item);
-                                        })}
+                                                    );
+                                                }
+                                                return renderDocRow(item);
+                                            })
+                                        )}
                                     </div>
                                 </section>
                             ))}
@@ -3122,7 +3416,7 @@
             const renderStandardEditor = (docKey) => {
                 const rawDoc = localPolicyData.standardDocs?.[docKey];
                 if (!rawDoc || !activeClient) return null;
-                const usesChapters = STANDARD_DOCS_WITH_CHAPTERS.includes(docKey);
+                const usesChapters = usesChaptersForKey(docKey);
                 const doc = usesChapters && PC().normalizeStandardPolicyDoc
                     ? PC().normalizeStandardPolicyDoc(rawDoc)
                     : rawDoc;
@@ -4529,112 +4823,112 @@
 
                             <nav aria-label="Main Navigation">
                                 <button type="button" aria-pressed={activeMode === 'dashboard'} onClick={() => setActiveMode('dashboard')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'dashboard' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Dashboard /> <span className="text-xs ml-2">Workspace Dashboard</span></button>
-                                <button type="button" aria-pressed={activeMode === 'branding'} onClick={() => setActiveMode('branding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all mt-2 ${activeMode === 'branding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Settings /> <span className="text-xs ml-2">Client Branding Details</span></button>
+                                <button type="button" aria-pressed={activeMode === 'branding'} onClick={() => setActiveMode('branding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all mt-1 ${activeMode === 'branding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Settings /> <span className="text-xs ml-2">Client Branding</span></button>
 
-                                <div className="mt-4">
-                                    <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">Operations</h3>
-                                    <div className="mb-1">
-                                        <div className="px-2 py-1 flex items-center justify-between gap-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">SOP Manuals</span>
-                                            {isEditMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={addSOP}
-                                                    className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
-                                                    title="Add a new SOP file"
-                                                >
-                                                    + New
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="space-y-0.5 pl-1">
-                                            {(localPolicyData.sops || []).length === 0 ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setActiveMode('sop'); setActiveSopId(null); }}
-                                                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'sop' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
-                                                >
-                                                    <Icons.FileText /> <span className="text-xs ml-2">No SOP files yet</span>
-                                                </button>
-                                            ) : (
-                                                (localPolicyData.sops || []).map((sop, idx) => (
-                                                    <button
-                                                        key={sop.id}
-                                                        type="button"
-                                                        aria-pressed={activeMode === 'sop' && activeSopId === sop.id}
-                                                        onClick={() => openSopDocument(sop.id)}
-                                                        className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'sop' && activeSopId === sop.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
-                                                        title={sop.title || `Procedure ${idx + 1}`}
-                                                    >
-                                                        <span className="shrink-0 mt-0.5"><Icons.FileText /></span>
-                                                        <span className="text-xs ml-2 leading-snug break-words">{sop.title || `Procedure ${idx + 1}`}</span>
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
+                                {isEditMode && (
+                                    <div className="mt-3 px-1 flex gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setCatalogModalTab('add'); setShowCatalogModal(true); }}
+                                            className="flex-1 text-[9px] font-bold uppercase tracking-wider text-brandTeal-300 bg-brandTeal-500/10 border border-brandTeal-500/30 px-2 py-1.5 rounded hover:bg-brandTeal-500/20"
+                                        >
+                                            + Policy
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setCatalogModalTab('categories'); setShowCatalogModal(true); }}
+                                            className="flex-1 text-[9px] font-bold uppercase tracking-wider text-slate-300 bg-brandNavy-900 border border-brandNavy-700 px-2 py-1.5 rounded hover:bg-brandNavy-850"
+                                        >
+                                            Categories
+                                        </button>
                                     </div>
-                                    <button type="button" aria-pressed={activeMode === 'bcp'} onClick={() => setActiveMode('bcp')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'bcp' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Activity /> <span className="text-xs ml-2">Business Continuity</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'sla'} onClick={() => setActiveMode('sla')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'sla' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Service Agreements (SLA)</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'communicationPlan'} onClick={() => setActiveMode('communicationPlan')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'communicationPlan' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Message /> <span className="text-xs ml-2">Communication Plan</span></button>
-                                </div>
+                                )}
 
-                                <div className="mt-4">
-                                    <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">HR & Talent</h3>
-                                    <button type="button" aria-pressed={activeMode === 'handbook'} onClick={() => setActiveMode('handbook')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'handbook' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.BookOpen /> <span className="text-xs ml-2">Employee Handbook</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'orgChart'} onClick={() => setActiveMode('orgChart')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'orgChart' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Sitemap /> <span className="text-xs ml-2">Org Chart Policy</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'raci'} onClick={() => setActiveMode('raci')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'raci' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Users /> <span className="text-xs ml-2">RACI Policy</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'managerialRoles'} onClick={() => setActiveMode('managerialRoles')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'managerialRoles' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Briefcase /> <span className="text-xs ml-2">Managerial Role Descriptions</span></button>
-                                    <div className="mb-1 mt-1">
-                                        <div className="px-2 py-1 flex items-center justify-between gap-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Job Role Profiles</span>
-                                            {isEditMode && (
-                                                <button
-                                                    type="button"
-                                                    onClick={addJobRole}
-                                                    className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300"
-                                                    title="Add a new job role profile file"
-                                                >
-                                                    + New
-                                                </button>
+                                {getNavModel().map((cat) => {
+                                    const expanded = expandedNavCategories[cat.id] ?? !cat.collapsed;
+                                    return (
+                                        <div key={cat.id} className="mt-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleNavCategory(cat.id)}
+                                                className="w-full flex items-center gap-1.5 px-2 mb-1.5 text-left group"
+                                                aria-expanded={expanded}
+                                            >
+                                                <span className="text-slate-500 group-hover:text-slate-300"><Icons.Chevron open={expanded} /></span>
+                                                <span className="text-[10px] font-mono text-slate-500 group-hover:text-slate-300 font-bold uppercase tracking-widest">{cat.title}</span>
+                                                <span className="ml-auto text-[9px] font-mono text-slate-600">{cat.items.length}</span>
+                                            </button>
+                                            {expanded && (
+                                                <div className="space-y-0.5">
+                                                    {cat.items.map((item) => {
+                                                        const Icon = navIconForKey(item.key);
+                                                        if (item.kind === 'group' && item.groupType === 'sops') {
+                                                            const sops = localPolicyData.sops || [];
+                                                            return (
+                                                                <div key={item.id} className="mb-1">
+                                                                    <div className="px-2 py-1 flex items-center justify-between gap-2">
+                                                                        <button type="button" onClick={() => openNavItem(item)} className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-brandTeal-400">
+                                                                            {item.title}
+                                                                        </button>
+                                                                        {isEditMode && (
+                                                                            <button type="button" onClick={addSOP} className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300" title="Add a new SOP file">+ New</button>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="space-y-0.5 pl-1">
+                                                                        {sops.length === 0 ? (
+                                                                            <button type="button" onClick={() => openSopDocument(null)} className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'sop' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}>
+                                                                                <Icons.FileText /> <span className="text-xs ml-2">No SOP files yet</span>
+                                                                            </button>
+                                                                        ) : sops.map((sop, idx) => (
+                                                                            <button key={sop.id} type="button" aria-pressed={activeMode === 'sop' && activeSopId === sop.id} onClick={() => openSopDocument(sop.id)} className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'sop' && activeSopId === sop.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`} title={sop.title || `Procedure ${idx + 1}`}>
+                                                                                <span className="shrink-0 mt-0.5"><Icons.FileText /></span>
+                                                                                <span className="text-xs ml-2 leading-snug break-words">{sop.title || `Procedure ${idx + 1}`}</span>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        if (item.kind === 'group' && item.groupType === 'jobs') {
+                                                            const roles = localPolicyData.standardDocs?.jobDescriptions?.sections || [];
+                                                            return (
+                                                                <div key={item.id} className="mb-1">
+                                                                    <div className="px-2 py-1 flex items-center justify-between gap-2">
+                                                                        <button type="button" onClick={() => openNavItem(item)} className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-brandTeal-400">
+                                                                            {item.title}
+                                                                        </button>
+                                                                        {isEditMode && (
+                                                                            <button type="button" onClick={addJobRole} className="text-[9px] font-bold uppercase tracking-wider text-brandTeal-400 hover:text-brandTeal-300" title="Add a new job role profile file">+ New</button>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="space-y-0.5 pl-1">
+                                                                        {roles.length === 0 ? (
+                                                                            <button type="button" onClick={() => openJobRoleDocument(null)} className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'jobDescriptions' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}>
+                                                                                <Icons.Briefcase /> <span className="text-xs ml-2">No role files yet</span>
+                                                                            </button>
+                                                                        ) : roles.map((role, idx) => (
+                                                                            <button key={role.id} type="button" aria-pressed={activeMode === 'jobDescriptions' && activeJobRoleId === role.id} onClick={() => openJobRoleDocument(role.id)} className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'jobDescriptions' && activeJobRoleId === role.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`} title={role.title || `Role Profile ${idx + 1}`}>
+                                                                                <span className="shrink-0 mt-0.5"><Icons.Briefcase /></span>
+                                                                                <span className="text-xs ml-2 leading-snug break-words">{role.title || `Role Profile ${idx + 1}`}</span>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        const mode = item.mode || item.key;
+                                                        const active = activeMode === mode;
+                                                        return (
+                                                            <button key={item.id} type="button" aria-pressed={active} onClick={() => openNavItem(item)} className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${active ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}>
+                                                                <Icon /> <span className="text-xs ml-2 truncate">{item.title}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             )}
                                         </div>
-                                        <div className="space-y-0.5 pl-1">
-                                            {(localPolicyData.standardDocs?.jobDescriptions?.sections || []).length === 0 ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setActiveMode('jobDescriptions'); setActiveJobRoleId(null); }}
-                                                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center transition-all ${activeMode === 'jobDescriptions' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
-                                                >
-                                                    <Icons.Briefcase /> <span className="text-xs ml-2">No role files yet</span>
-                                                </button>
-                                            ) : (
-                                                (localPolicyData.standardDocs?.jobDescriptions?.sections || []).map((role, idx) => (
-                                                    <button
-                                                        key={role.id}
-                                                        type="button"
-                                                        aria-pressed={activeMode === 'jobDescriptions' && activeJobRoleId === role.id}
-                                                        onClick={() => openJobRoleDocument(role.id)}
-                                                        className={`w-full text-left px-3 py-2 rounded-lg flex items-start transition-all ${activeMode === 'jobDescriptions' && activeJobRoleId === role.id ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}
-                                                        title={role.title || `Role Profile ${idx + 1}`}
-                                                    >
-                                                        <span className="shrink-0 mt-0.5"><Icons.Briefcase /></span>
-                                                        <span className="text-xs ml-2 leading-snug break-words">{role.title || `Role Profile ${idx + 1}`}</span>
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                    <button type="button" aria-pressed={activeMode === 'onboarding'} onClick={() => setActiveMode('onboarding')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'onboarding' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Users /> <span className="text-xs ml-2">Onboarding & 90-Day</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'performanceReview'} onClick={() => setActiveMode('performanceReview')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'performanceReview' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Target /> <span className="text-xs ml-2">Performance Reviews</span></button>
-                                </div>
-
-                                <div className="mt-4">
-                                    <h3 className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest mb-2 px-2">Legal & Compliance</h3>
-                                    <button type="button" aria-pressed={activeMode === 'conduct'} onClick={() => setActiveMode('conduct')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'conduct' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Shield /> <span className="text-xs ml-2">Code of Conduct</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'nda'} onClick={() => setActiveMode('nda')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'nda' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Lock /> <span className="text-xs ml-2">Non-Disclosure (NDA)</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'dataPrivacy'} onClick={() => setActiveMode('dataPrivacy')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'dataPrivacy' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.Database /> <span className="text-xs ml-2">Data Privacy & IT</span></button>
-                                    <button type="button" aria-pressed={activeMode === 'healthSafety'} onClick={() => setActiveMode('healthSafety')} className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center transition-all ${activeMode === 'healthSafety' ? 'bg-brandNavy-800 border border-brandTeal-500 text-white font-bold' : 'hover:bg-brandNavy-900 text-slate-400 border border-transparent'}`}><Icons.HardHat /> <span className="text-xs ml-2">Health & Safety</span></button>
-                                </div>
+                                    );
+                                })}
                             </nav>
                         </aside>
 
@@ -5601,7 +5895,7 @@
                                                 );
                                             })()}
 
-                                            {['conduct', 'nda', 'dataPrivacy', 'healthSafety', 'bcp', 'sla', 'onboarding', 'performanceReview'].includes(activeMode) && (
+                                            {isCatalogProseMode(activeMode) && (
                                                 renderStandardEditor(activeMode)
                                             )}
 
@@ -5823,6 +6117,128 @@
                             </div>
                         </div>
                     )}
+
+
+                    {/* Policy catalog: add drafts, manage categories, restore library */}
+                    {showCatalogModal && (() => {
+                        const catalog = getPolicyCatalog();
+                        const categories = PCat().listCategories ? PCat().listCategories(catalog) : [];
+                        const library = PCat().listRemovableLibrary ? PCat().listRemovableLibrary(catalog) : [];
+                        return (
+                            <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm no-print" onPointerDown={() => setShowCatalogModal(false)}>
+                                <div
+                                    className="w-[560px] max-w-[94vw] max-h-[90vh] overflow-y-auto bg-brandNavy-955 border border-brandNavy-800 border-t-4 border-t-brandTeal-500 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-6 text-left animate-pop-in text-white font-sans flex flex-col gap-4"
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex justify-between items-center border-b border-brandNavy-800 pb-3">
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Policy pack library</h3>
+                                            <p className="text-[11px] text-slate-400 mt-1">Add drafts, shape categories, or restore removed defaults.</p>
+                                        </div>
+                                        <button type="button" onClick={() => setShowCatalogModal(false)} className="text-slate-400 hover:text-white transition-colors" aria-label="Close"><Icons.Close /></button>
+                                    </div>
+
+                                    <div className="flex gap-1 p-1 bg-brandNavy-900 rounded-lg border border-brandNavy-800">
+                                        {[
+                                            { id: 'add', label: 'Add policy' },
+                                            { id: 'categories', label: 'Categories' },
+                                            { id: 'library', label: 'Restore' },
+                                        ].map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                type="button"
+                                                onClick={() => setCatalogModalTab(tab.id)}
+                                                className={`flex-1 text-[10px] font-bold uppercase tracking-wider px-2 py-2 rounded ${catalogModalTab === tab.id ? 'bg-brandTeal-500/20 text-brandTeal-300 border border-brandTeal-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'}`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {catalogModalTab === 'add' && (
+                                        <div className="space-y-3">
+                                            <p className="text-xs text-slate-400 leading-relaxed">
+                                                Create a blank chaptered draft. It stays in this pack until you remove it — deleted built-ins do not come back on reload.
+                                            </p>
+                                            <div>
+                                                <label htmlFor="new-policy-title" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Title</label>
+                                                <input id="new-policy-title" type="text" value={newPolicyTitle} onChange={(e) => setNewPolicyTitle(e.target.value)} placeholder="e.g. Vendor Management Policy" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-brandTeal-500" />
+                                            </div>
+                                            <div>
+                                                <label htmlFor="new-policy-category" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Category</label>
+                                                <select id="new-policy-category" value={newPolicyCategoryId} onChange={(e) => setNewPolicyCategoryId(e.target.value)} className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-brandTeal-500">
+                                                    {categories.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="pt-2 flex justify-end gap-2 border-t border-brandNavy-800">
+                                                <button type="button" onClick={() => setShowCatalogModal(false)} className="px-4 py-1.5 bg-brandNavy-900 hover:bg-brandNavy-850 text-xs font-bold uppercase rounded border border-brandNavy-800 text-slate-300">Cancel</button>
+                                                <button type="button" onClick={addBlankPolicyDraft} className="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-xs font-bold uppercase rounded text-white">Add draft</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {catalogModalTab === 'categories' && (
+                                        <div className="space-y-4">
+                                            <p className="text-xs text-slate-400 leading-relaxed">
+                                                Recommended defaults: <strong className="text-slate-200">Operations</strong>, <strong className="text-slate-200">Client Delivery</strong>, <strong className="text-slate-200">People</strong>, <strong className="text-slate-200">Governance</strong>, <strong className="text-slate-200">Compliance</strong>.
+                                            </p>
+                                            <ul className="space-y-2 max-h-56 overflow-y-auto">
+                                                {categories.map((c) => (
+                                                    <li key={c.id} className="flex items-start justify-between gap-2 p-3 rounded-lg bg-brandNavy-900 border border-brandNavy-800">
+                                                        <div className="min-w-0">
+                                                            <div className="text-xs font-bold text-slate-100">{c.title}{c.builtin ? '' : ' · custom'}</div>
+                                                            {c.subtitle && <div className="text-[11px] text-slate-500 mt-0.5">{c.subtitle}</div>}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 shrink-0">
+                                                            <button type="button" title="Move up" onClick={() => updatePolicyCatalog(PCat().moveCategory(catalog, c.id, -1))} className="p-1.5 text-slate-400 hover:text-white"><Icons.ArrowUp /></button>
+                                                            <button type="button" title="Move down" onClick={() => updatePolicyCatalog(PCat().moveCategory(catalog, c.id, 1))} className="p-1.5 text-slate-400 hover:text-white"><Icons.ArrowDown /></button>
+                                                            <button type="button" title="Remove category" onClick={() => removeCatalogCategory(c.id)} className="p-1.5 text-rose-400 hover:text-rose-300"><Icons.Trash /></button>
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <div>
+                                                    <label htmlFor="new-cat-title" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">New category</label>
+                                                    <input id="new-cat-title" type="text" value={newCategoryTitle} onChange={(e) => setNewCategoryTitle(e.target.value)} placeholder="e.g. Finance" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-brandTeal-500" />
+                                                </div>
+                                                <div>
+                                                    <label htmlFor="new-cat-sub" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Subtitle</label>
+                                                    <input id="new-cat-sub" type="text" value={newCategorySubtitle} onChange={(e) => setNewCategorySubtitle(e.target.value)} placeholder="Optional" className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-brandTeal-500" />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end gap-2 border-t border-brandNavy-800 pt-3">
+                                                <button type="button" onClick={addCatalogCategory} className="px-4 py-1.5 bg-brandTeal-600 hover:bg-brandTeal-500 text-xs font-bold uppercase rounded text-white">Add category</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {catalogModalTab === 'library' && (
+                                        <div className="space-y-3">
+                                            <p className="text-xs text-slate-400 leading-relaxed">
+                                                Restore a built-in policy you removed earlier. Custom drafts are not listed here.
+                                            </p>
+                                            {library.length === 0 ? (
+                                                <p className="text-xs text-slate-500 italic py-4">No removed defaults — your pack still includes the full library set.</p>
+                                            ) : (
+                                                <ul className="space-y-2">
+                                                    {library.map((d) => (
+                                                        <li key={d.key} className="flex items-center justify-between gap-2 p-3 rounded-lg bg-brandNavy-900 border border-brandNavy-800">
+                                                            <div>
+                                                                <div className="text-xs font-bold text-slate-100">{d.title}</div>
+                                                                <div className="text-[11px] text-slate-500">{d.blurb}</div>
+                                                            </div>
+                                                            <button type="button" onClick={() => restorePolicyFromLibrary(d.key)} className="text-[10px] font-bold uppercase tracking-wider text-brandTeal-300 border border-brandTeal-500/40 px-2.5 py-1.5 rounded hover:bg-brandTeal-500/15">Restore</button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Reset Document Template Confirmation Modal */}
                     {showResetConfirmModal && (
