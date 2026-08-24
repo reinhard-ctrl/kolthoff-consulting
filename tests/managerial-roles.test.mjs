@@ -55,16 +55,29 @@ assert.ok(fromEmpty.divisions.length >= 6);
 
 const md = MR.compileManagerialRolesMarkdown(merged);
 assert.match(md, /^# Custom Managerial Roles/m);
+assert.match(md, /## Role Index/);
 assert.match(md, /## 1\. Leadership/);
 assert.match(md, /### 1\.1 Managing Director/);
 assert.match(md, /Role Summary/);
 assert.match(md, /Leads the firm/);
 
+const items = MR.splitFieldItems('Alpha; Beta; Gamma');
+assert.equal(items.join('|'), 'Alpha|Beta|Gamma');
+assert.match(MR.formatItemsAsMarkdownList('Alpha; Beta'), /- Alpha\n- Beta/);
+assert.match(MR.formatNumberedMarkdownList('1. First\n2. Second'), /1\. First\n2\. Second/);
+
+const index = MR.buildRoleIndex(merged);
+assert.equal(index.length, 1);
+assert.equal(index[0].roleTitle, 'Managing Director');
+
 const defaultMd = MR.compileManagerialRolesMarkdown(MR.DEFAULT_MANAGERIAL_ROLES);
 assert.match(defaultMd, /HR-JD-2026-001/);
+assert.match(defaultMd, /## Role Index/);
 assert.match(defaultMd, /Chief Executive Officer \(CEO\)/);
 assert.match(defaultMd, /Head of Legal, Regulatory & Compliance/);
 assert.match(defaultMd, /Finance Manager/);
 assert.match(defaultMd, /Marketing Manager/);
+assert.match(defaultMd, /#### Governance Rights \(RACI\)/);
+assert.match(defaultMd, /- Corporate Strategy/);
 
 console.log('managerial-roles.test.mjs: all assertions passed');

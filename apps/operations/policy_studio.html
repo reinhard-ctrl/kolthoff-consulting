@@ -80,6 +80,22 @@
 
         .preview-mode-input { border: none !important; appearance: none; background: transparent !important; padding: 0 !important; margin: 0 !important; outline: none; pointer-events: none; }
 
+        /* Managerial role client briefs — screen preview spacing */
+        .mgr-role-brief {
+            margin-bottom: 1.5rem;
+        }
+        .mgr-role-index {
+            margin-bottom: 1rem;
+        }
+        .mgr-raci-grid {
+            display: grid;
+        }
+        .mgr-role-callout {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 2px;
+        }
+
         @media print {
             /* Reset absolute/constrained heights on all parent elements to allow natural multi-page pagination */
             html, body, #root, #root > div, .max-w-\[1400px\], main {
@@ -213,6 +229,52 @@
                 content: "Page " counter(page); 
             }
 
+            /* Managerial role briefs — client PDF layout (one role per page) */
+            .mgr-role-index {
+                page-break-after: always !important;
+                break-after: page !important;
+            }
+            .mgr-role-brief {
+                page-break-before: always !important;
+                break-before: page !important;
+                page-break-inside: auto !important;
+                break-inside: auto !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+            .mgr-role-brief.mgr-role-brief-first {
+                page-break-before: auto !important;
+                break-before: auto !important;
+            }
+            .mgr-role-brief-band {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .mgr-role-callout {
+                border: 1px solid #cbd5e1 !important;
+                background: #f8fafc !important;
+                border-radius: 0 !important;
+            }
+            .mgr-raci-grid {
+                border-collapse: collapse !important;
+            }
+            .mgr-raci-cell {
+                border: 1px solid #cbd5e1 !important;
+                vertical-align: top !important;
+                background: #ffffff !important;
+            }
+            .mgr-role-brief ul,
+            .mgr-role-brief ol {
+                margin: 0.25rem 0 0 1.1rem !important;
+                padding: 0 !important;
+            }
+            .mgr-role-brief li {
+                margin: 0.15rem 0 !important;
+                line-height: 1.35 !important;
+            }
+
             @page { 
                 size: letter; 
                 margin: 20mm 15mm; 
@@ -231,7 +293,7 @@
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
     <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
     <script src="../../shared/communication-plan.js?v=20250806-comm-plan-v1"></script>
-    <script src="../../shared/managerial-roles.js?v=20250811-mgr-roles-v1"></script>
+    <script src="../../shared/managerial-roles.js?v=20250823-mgr-print-v1"></script>
     <script src="../../shared/policy-catalog.js?v=20250813-catalog-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
@@ -4764,6 +4826,12 @@
                     { key: 'consulted', letter: 'C', label: 'Consulted', hint: 'Asked before decisions' },
                     { key: 'informed', letter: 'I', label: 'Informed', hint: 'Told after decisions' },
                 ];
+                const splitItems = window.ManagerialRoles?.splitFieldItems
+                    || ((raw) => {
+                        const s = String(raw || '').trim();
+                        if (!s) return [];
+                        return s.split(/\n+|(?:;\s*)+/).map((p) => p.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+                    });
 
                 const fieldLabel = (text) => (
                     <span className="block text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-1">{text}</span>
@@ -4801,6 +4869,210 @@
                     )
                 );
 
+                const itemList = (raw, ordered = false) => {
+                    const items = splitItems(raw);
+                    if (!items.length) return <p className="text-sm text-slate-400">—</p>;
+                    const Tag = ordered ? 'ol' : 'ul';
+                    return (
+                        <Tag className={`${ordered ? 'list-decimal' : 'list-disc'} pl-4 text-[13px] text-slate-800 leading-snug space-y-1`}>
+                            {items.map((item, i) => <li key={`${i}-${item.slice(0, 24)}`}>{item}</li>)}
+                        </Tag>
+                    );
+                };
+
+                const bandLabel = (text) => (
+                    <h4 className="text-[10px] uppercase tracking-[0.14em] font-bold text-slate-500 mb-2 border-b border-slate-200 pb-1">{text}</h4>
+                );
+
+                // Preview / PDF: client role briefs (edit UI stays for data entry only)
+                if (!isEditMode) {
+                    const roleIndex = window.ManagerialRoles?.buildRoleIndex?.(doc)
+                        || divisions.flatMap((div, divIdx) => (div.roles || []).map((role, roleIdx) => ({
+                            divisionNumber: div.number || String(divIdx + 1),
+                            divisionTitle: div.title || 'Division',
+                            roleNumber: role.number || `${div.number || divIdx + 1}.${roleIdx + 1}`,
+                            roleTitle: role.title || 'Role',
+                            incumbent: role.incumbent || '—',
+                        })));
+                    let roleOrdinal = 0;
+
+                    return (
+                        <React.Fragment>
+                            {renderStandardEditor('managerialRoles')}
+
+                            <tr className="block print:table-row page-break-avoid">
+                                <td className="block print:table-cell px-10 pt-6 pb-2 w-full align-top">
+                                    <div className="flex flex-wrap gap-8 border-b border-slate-200 pb-3 text-sm">
+                                        <div>
+                                            {fieldLabel('Reference ID')}
+                                            <div className="font-semibold text-slate-900">{doc.documentRef || '—'}</div>
+                                        </div>
+                                        <div>
+                                            {fieldLabel('Approved By')}
+                                            <div className="font-semibold text-slate-900">{doc.docControl?.approvedBy || '—'}</div>
+                                        </div>
+                                        {doc.docControl?.version && (
+                                            <div>
+                                                {fieldLabel('Version')}
+                                                <div className="font-semibold text-slate-900">{doc.docControl.version}</div>
+                                            </div>
+                                        )}
+                                        {doc.docControl?.effectiveDate && (
+                                            <div>
+                                                {fieldLabel('Effective Date')}
+                                                <div className="font-semibold text-slate-900">{doc.docControl.effectiveDate}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            {roleIndex.length > 0 && (
+                                <tr className="block print:table-row">
+                                    <td className="block print:table-cell px-10 pt-8 pb-6 w-full align-top">
+                                        <div className="mgr-role-index">
+                                            <h2 className="text-xl font-bold text-slate-900 border-b-2 pb-2 mb-4 print-section-title uppercase" style={{ borderColor: brand }}>
+                                                Role Index
+                                            </h2>
+                                            <p className="text-sm text-slate-600 mb-5 leading-relaxed max-w-3xl">
+                                                Quick directory of managerial roles by division. Full specifications follow — one role brief per page in PDF export.
+                                            </p>
+                                            {(() => {
+                                                let lastDiv = null;
+                                                return roleIndex.map((row, idx) => {
+                                                    const divKey = `${row.divisionNumber}|${row.divisionTitle}`;
+                                                    const showDiv = divKey !== lastDiv;
+                                                    lastDiv = divKey;
+                                                    return (
+                                                        <div key={`idx-${idx}-${row.roleNumber}`}>
+                                                            {showDiv && (
+                                                                <h3 className="text-sm font-bold uppercase tracking-wide mt-4 mb-2" style={{ color: brand }}>
+                                                                    {row.divisionNumber}. {row.divisionTitle}
+                                                                </h3>
+                                                            )}
+                                                            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1.5 border-b border-slate-100 text-[13px]">
+                                                                <span className="font-mono text-xs font-bold text-slate-500 w-10 shrink-0">{row.roleNumber}</span>
+                                                                <span className="font-semibold text-slate-900 flex-1 min-w-[12rem]">{row.roleTitle}</span>
+                                                                <span className="text-slate-600">{row.incumbent}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+
+                            {divisions.map((div, divIdx) => (
+                                <React.Fragment key={div.id}>
+                                    {(div.roles || []).map((role, roleIdx) => {
+                                        const ordinal = roleOrdinal++;
+                                        const isFirst = ordinal === 0;
+                                        const roleNumber = role.number || `${div.number || divIdx + 1}.${roleIdx + 1}`;
+                                        const hasRaci = raciCells.some((c) => String(role[c.key] || '').trim());
+                                        const hasAuthority = String(role.specialAuthority || '').trim() || String(role.approvalLimits || '').trim();
+                                        return (
+                                            <tr key={role.id} className="block print:table-row">
+                                                <td className="block print:table-cell px-10 pt-6 pb-8 w-full align-top">
+                                                    <article
+                                                        aria-label={`${role.title || 'Managerial role'} brief`}
+                                                        className={`mgr-role-brief ${isFirst ? 'mgr-role-brief-first' : ''} border border-slate-200 bg-white`}
+                                                    >
+                                                        <header className="mgr-role-brief-band px-5 py-4 border-b border-slate-200" style={{ borderTop: `3px solid ${brand}` }}>
+                                                            <p className="text-[10px] uppercase tracking-[0.16em] font-bold mb-1" style={{ color: brand }}>
+                                                                {div.number || divIdx + 1}. {div.title || 'Division'}
+                                                            </p>
+                                                            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                                                <span className="font-mono text-sm font-bold" style={{ color: brand }}>{roleNumber}</span>
+                                                                <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{role.title || 'Role'}</h3>
+                                                            </div>
+                                                            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-[13px]">
+                                                                <div>
+                                                                    <dt className="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-0.5">Incumbent</dt>
+                                                                    <dd className="font-semibold text-slate-900">{role.incumbent || '—'}</dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-0.5">Reports To</dt>
+                                                                    <dd className="font-semibold text-slate-900">{role.reportsTo || '—'}</dd>
+                                                                </div>
+                                                                <div>
+                                                                    <dt className="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-0.5">Direct Reports</dt>
+                                                                    <dd className="text-slate-800 leading-snug">{itemList(role.directReports)}</dd>
+                                                                </div>
+                                                            </dl>
+                                                        </header>
+
+                                                        <div className="px-5 py-4 space-y-5">
+                                                            {String(role.summary || '').trim() && (
+                                                                <section className="mgr-role-brief-band" aria-label="Role summary">
+                                                                    {bandLabel('1 · Mandate')}
+                                                                    <p className="text-[14px] text-slate-800 leading-relaxed">{role.summary}</p>
+                                                                </section>
+                                                            )}
+
+                                                            {hasRaci && (
+                                                                <section className="mgr-role-brief-band" aria-label="Governance rights">
+                                                                    {bandLabel('2 · Governance Rights (RACI)')}
+                                                                    <p className="text-[11px] text-slate-500 mb-3">A owns the outcome · R executes · C is consulted · I is informed</p>
+                                                                    <div className="mgr-raci-grid grid grid-cols-1 sm:grid-cols-2 border border-slate-200">
+                                                                        {raciCells.map((cell) => {
+                                                                            const items = splitItems(role[cell.key]);
+                                                                            if (!items.length) return null;
+                                                                            return (
+                                                                                <div key={cell.key} className="mgr-raci-cell px-3 py-2.5">
+                                                                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                                                                        <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white" style={{ backgroundColor: brand }}>{cell.letter}</span>
+                                                                                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-600">{cell.label}</span>
+                                                                                    </div>
+                                                                                    <ul className="list-disc pl-4 text-[12.5px] text-slate-800 leading-snug space-y-1">
+                                                                                        {items.map((item, i) => <li key={`${cell.key}-${i}`}>{item}</li>)}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </section>
+                                                            )}
+
+                                                            {hasAuthority && (
+                                                                <section className="mgr-role-brief-band" aria-label="Authority and limits">
+                                                                    {bandLabel('3 · Authority & Limits')}
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                        {String(role.specialAuthority || '').trim() && (
+                                                                            <div className="mgr-role-callout px-3 py-2.5">
+                                                                                <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-1.5">Special Authority</p>
+                                                                                {itemList(role.specialAuthority)}
+                                                                            </div>
+                                                                        )}
+                                                                        {String(role.approvalLimits || '').trim() && (
+                                                                            <div className="mgr-role-callout px-3 py-2.5">
+                                                                                <p className="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-1.5">Approval Limits</p>
+                                                                                {itemList(role.approvalLimits)}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </section>
+                                                            )}
+
+                                                            {String(role.responsibilities || '').trim() && (
+                                                                <section className="mgr-role-brief-band" aria-label="Key responsibilities">
+                                                                    {bandLabel('4 · Key Responsibilities')}
+                                                                    {itemList(role.responsibilities, true)}
+                                                                </section>
+                                                            )}
+                                                        </div>
+                                                    </article>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </React.Fragment>
+                            ))}
+                        </React.Fragment>
+                    );
+                }
+
                 return (
                     <React.Fragment>
                         {renderStandardEditor('managerialRoles')}
@@ -4821,11 +5093,9 @@
                                             'Board / CEO'
                                         )}
                                     </div>
-                                    {isEditMode && (
-                                        <p className="no-print text-[10px] text-slate-400 max-w-sm leading-relaxed pb-1">
-                                            Each role uses the same compact sheet so you can scan incumbents, reporting, RACI, and limits side by side as you scroll.
-                                        </p>
-                                    )}
+                                    <p className="no-print text-[10px] text-slate-400 max-w-sm leading-relaxed pb-1">
+                                        Edit here; switch to Preview / Print PDF for the client-ready one-role-per-page brief layout.
+                                    </p>
                                 </div>
                             </td>
                         </tr>
@@ -4835,13 +5105,11 @@
                                 <tr className="block print:table-row">
                                     <td className="block print:table-cell px-10 pt-8 pb-3 w-full align-top">
                                         <div className="relative group/mgr-div flex flex-wrap items-end justify-between gap-3">
-                                            {isEditMode && (
-                                                <div className="no-print absolute -left-11 top-0 flex flex-col gap-0.5 opacity-0 group-hover/mgr-div:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
-                                                    <button type="button" aria-label="Move division up" title="Move division up" onClick={() => reorderMgrDivision(divIdx, -1)} disabled={divIdx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
-                                                    <button type="button" aria-label="Move division down" title="Move division down" onClick={() => reorderMgrDivision(divIdx, 1)} disabled={divIdx === divisions.length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
-                                                    <button type="button" aria-label="Delete division" title="Delete division" onClick={() => removeMgrDivision(div.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                </div>
-                                            )}
+                                            <div className="no-print absolute -left-11 top-0 flex flex-col gap-0.5 opacity-0 group-hover/mgr-div:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
+                                                <button type="button" aria-label="Move division up" title="Move division up" onClick={() => reorderMgrDivision(divIdx, -1)} disabled={divIdx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                <button type="button" aria-label="Move division down" title="Move division down" onClick={() => reorderMgrDivision(divIdx, 1)} disabled={divIdx === divisions.length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                <button type="button" aria-label="Delete division" title="Delete division" onClick={() => removeMgrDivision(div.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
+                                            </div>
                                             <div className="flex items-baseline gap-2 flex-1 min-w-0 border-b-2 pb-1.5" style={{ borderColor: brand }}>
                                                 <span className="font-mono text-sm font-bold shrink-0" style={{ color: brand }}>{div.number || (divIdx + 1)}.</span>
                                                 <label htmlFor={`mgr-div-title-${div.id}`} className="sr-only">Division title</label>
@@ -4850,45 +5118,38 @@
                                                     value={div.title || ''}
                                                     onChange={(val) => updateMgrDivision(div.id, 'title', val)}
                                                     isEditMode={isEditMode}
-                                                    className={`text-lg font-bold text-slate-900 uppercase flex-1 min-w-0 ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                    className="text-lg font-bold text-slate-900 uppercase flex-1 min-w-0"
                                                     placeholder="Division title"
                                                 />
-                                                {isEditMode && (
-                                                    <input
-                                                        id={`mgr-div-num-${div.id}`}
-                                                        value={div.number || ''}
-                                                        onChange={(e) => updateMgrDivision(div.id, 'number', e.target.value)}
-                                                        className="no-print w-12 text-[11px] font-mono font-bold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-1 shrink-0"
-                                                        placeholder="#"
-                                                        title="Division number"
-                                                    />
-                                                )}
+                                                <input
+                                                    id={`mgr-div-num-${div.id}`}
+                                                    value={div.number || ''}
+                                                    onChange={(e) => updateMgrDivision(div.id, 'number', e.target.value)}
+                                                    className="no-print w-12 text-[11px] font-mono font-bold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-1 shrink-0"
+                                                    placeholder="#"
+                                                    title="Division number"
+                                                />
                                             </div>
-                                            {isEditMode && (
-                                                <button type="button" onClick={() => addMgrRole(div.id)} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0">
-                                                    + Add Role
-                                                </button>
-                                            )}
+                                            <button type="button" onClick={() => addMgrRole(div.id)} className="no-print text-[10px] uppercase font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded hover:bg-slate-200 shrink-0">
+                                                + Add Role
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
 
                                 {(div.roles || []).map((role, roleIdx) => (
-                                    <tr key={role.id} className="block print:table-row page-break-avoid">
+                                    <tr key={role.id} className="block print:table-row">
                                         <td className="block print:table-cell px-10 pt-3 pb-3 w-full align-top">
                                             <article
                                                 aria-label={`${role.title || 'Managerial role'} specification`}
                                                 className="relative group/mgr-role border border-slate-200 rounded-lg overflow-hidden bg-white"
                                             >
-                                                {isEditMode && (
-                                                    <div className="no-print absolute -left-11 top-2 flex flex-col gap-0.5 opacity-0 group-hover/mgr-role:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
-                                                        <button type="button" aria-label="Move role up" title="Move role up" onClick={() => reorderMgrRole(div.id, roleIdx, -1)} disabled={roleIdx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
-                                                        <button type="button" aria-label="Move role down" title="Move role down" onClick={() => reorderMgrRole(div.id, roleIdx, 1)} disabled={roleIdx === (div.roles || []).length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
-                                                        <button type="button" aria-label="Delete role" title="Delete role" onClick={() => removeMgrRole(div.id, role.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
-                                                    </div>
-                                                )}
+                                                <div className="no-print absolute -left-11 top-2 flex flex-col gap-0.5 opacity-0 group-hover/mgr-role:opacity-100 focus-within:opacity-100 transition-opacity z-10 bg-white border border-slate-200 shadow-sm p-0.5 rounded">
+                                                    <button type="button" aria-label="Move role up" title="Move role up" onClick={() => reorderMgrRole(div.id, roleIdx, -1)} disabled={roleIdx === 0} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowUp /></button>
+                                                    <button type="button" aria-label="Move role down" title="Move role down" onClick={() => reorderMgrRole(div.id, roleIdx, 1)} disabled={roleIdx === (div.roles || []).length - 1} className="p-1 text-slate-500 hover:bg-slate-50 rounded disabled:opacity-30 disabled:pointer-events-none"><Icons.ArrowDown /></button>
+                                                    <button type="button" aria-label="Delete role" title="Delete role" onClick={() => removeMgrRole(div.id, role.id)} className="p-1 text-rose-500 hover:bg-rose-50 rounded"><Icons.Trash /></button>
+                                                </div>
 
-                                                {/* Role identity strip — same columns for every role */}
                                                 <header className="px-4 py-3 border-b border-slate-200" style={{ background: `linear-gradient(90deg, ${brand}12, transparent)` }}>
                                                     <div className="flex flex-wrap items-start gap-3">
                                                         <div className="flex items-start gap-2 flex-1 min-w-[14rem]">
@@ -4902,20 +5163,18 @@
                                                                     value={role.title || ''}
                                                                     onChange={(val) => updateMgrRole(div.id, role.id, 'title', val)}
                                                                     isEditMode={isEditMode}
-                                                                    className={`text-base font-bold text-slate-900 uppercase w-full ${!isEditMode ? 'preview-mode-input' : ''}`}
+                                                                    className="text-base font-bold text-slate-900 uppercase w-full"
                                                                     placeholder="Role title"
                                                                 />
                                                             </div>
-                                                            {isEditMode && (
-                                                                <input
-                                                                    id={`mgr-role-num-${role.id}`}
-                                                                    value={role.number || ''}
-                                                                    onChange={(e) => updateMgrRole(div.id, role.id, 'number', e.target.value)}
-                                                                    className="no-print w-14 text-[11px] font-mono font-bold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-1 shrink-0 mt-0.5"
-                                                                    placeholder="1.1"
-                                                                    title="Role number"
-                                                                />
-                                                            )}
+                                                            <input
+                                                                id={`mgr-role-num-${role.id}`}
+                                                                value={role.number || ''}
+                                                                onChange={(e) => updateMgrRole(div.id, role.id, 'number', e.target.value)}
+                                                                className="no-print w-14 text-[11px] font-mono font-bold text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-1 shrink-0 mt-0.5"
+                                                                placeholder="1.1"
+                                                                title="Role number"
+                                                            />
                                                         </div>
                                                     </div>
                                                     <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -4962,7 +5221,6 @@
                                                         />
                                                     </section>
 
-                                                    {/* Comparable RACI grid — same 2×2 for every role */}
                                                     <section aria-label="RACI rights">
                                                         <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1.5">
                                                             {fieldLabel('RACI Rights')}
@@ -5025,27 +5283,23 @@
                                     </tr>
                                 ))}
 
-                                {isEditMode && (
-                                    <tr className="block print:table-row no-print">
-                                        <td className="block print:table-cell px-10 pb-1 w-full align-top">
-                                            <button type="button" onClick={() => addMgrRole(div.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
-                                                + Add role in this division
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )}
+                                <tr className="block print:table-row no-print">
+                                    <td className="block print:table-cell px-10 pb-1 w-full align-top">
+                                        <button type="button" onClick={() => addMgrRole(div.id)} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+                                            + Add role in this division
+                                        </button>
+                                    </td>
+                                </tr>
                             </React.Fragment>
                         ))}
 
-                        {isEditMode && (
-                            <tr className="block print:table-row no-print">
-                                <td className="block print:table-cell px-10 pt-4 pb-4 w-full align-top">
-                                    <button type="button" onClick={addMgrDivision} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium border-t border-dashed border-slate-200 pt-4 w-full text-left">
-                                        + Add division
-                                    </button>
-                                </td>
-                            </tr>
-                        )}
+                        <tr className="block print:table-row no-print">
+                            <td className="block print:table-cell px-10 pt-4 pb-4 w-full align-top">
+                                <button type="button" onClick={addMgrDivision} className="text-[11px] text-slate-500 hover:text-slate-800 font-medium border-t border-dashed border-slate-200 pt-4 w-full text-left">
+                                    + Add division
+                                </button>
+                            </td>
+                        </tr>
                     </React.Fragment>
                 );
             };
