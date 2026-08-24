@@ -348,6 +348,50 @@
     return String(v || '—').replace(/\|/g, '\\|');
   }
 
+  /**
+   * Split dense field text (semicolon / newline / numbered lists) into scannable items.
+   * Used by client PDF briefs and markdown export so RACI is not one wall of prose.
+   */
+  function splitFieldItems(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return [];
+    const parts = s
+      .split(/\n+|(?:;\s*)+/)
+      .map((part) => String(part || '').replace(/^\d+[\.\)]\s*/, '').trim())
+      .filter(Boolean);
+    return parts.length ? parts : [s];
+  }
+
+  function formatItemsAsMarkdownList(raw) {
+    const items = splitFieldItems(raw);
+    if (!items.length) return '';
+    return items.map((item) => `- ${item}`).join('\n');
+  }
+
+  function formatNumberedMarkdownList(raw) {
+    const items = splitFieldItems(raw);
+    if (!items.length) return '';
+    return items.map((item, i) => `${i + 1}. ${item}`).join('\n');
+  }
+
+  function buildRoleIndex(normalized) {
+    const rows = [];
+    (normalized.divisions || []).forEach((div, divIdx) => {
+      const divNumber = div.number || String(divIdx + 1);
+      const divTitle = div.title || 'Division';
+      (div.roles || []).forEach((role, roleIdx) => {
+        rows.push({
+          divisionNumber: divNumber,
+          divisionTitle: divTitle,
+          roleNumber: role.number || `${divNumber}.${roleIdx + 1}`,
+          roleTitle: role.title || 'Role',
+          incumbent: role.incumbent || '—',
+        });
+      });
+    });
+    return rows;
+  }
+
   function compileManagerialRolesMarkdown(doc) {
     const normalized = mergeManagerialRoles(DEFAULT_MANAGERIAL_ROLES, doc);
     let md = `# ${normalized.title || 'Managerial Role Descriptions & Executive Specifications'}\n\n`;
@@ -361,6 +405,21 @@
     if (meta.length) md += `${meta.join(' · ')}\n\n`;
     if (normalized.introduction) md += `## Introduction\n${normalized.introduction}\n\n`;
 
+    const index = buildRoleIndex(normalized);
+    if (index.length) {
+      md += `## Role Index\n\n`;
+      let lastDiv = null;
+      index.forEach((row) => {
+        const divKey = `${row.divisionNumber}|${row.divisionTitle}`;
+        if (divKey !== lastDiv) {
+          md += `### ${row.divisionNumber}. ${row.divisionTitle}\n\n`;
+          lastDiv = divKey;
+        }
+        md += `- **${row.roleNumber} ${row.roleTitle}** — ${row.incumbent}\n`;
+      });
+      md += '\n';
+    }
+
     (normalized.divisions || []).forEach((div) => {
       md += `## ${div.number ? `${div.number}. ` : ''}${div.title || 'Division'}\n\n`;
       (div.roles || []).forEach((role) => {
@@ -369,16 +428,33 @@
         md += `| Incumbent / Status | ${cell(role.incumbent)} |\n`;
         md += `| Reports To | ${cell(role.reportsTo)} |\n`;
         md += `| Direct Reports | ${cell(role.directReports)} |\n\n`;
-        if (role.summary) md += `**Role Summary**\n\n${role.summary}\n\n`;
-        md += '**Primary Accountabilities & Governance Rights (RACI)**\n\n';
-        if (role.accountable) md += `- **Accountable (A):** ${role.accountable}\n`;
-        if (role.responsible) md += `- **Responsible (R):** ${role.responsible}\n`;
-        if (role.consulted) md += `- **Consulted (C):** ${role.consulted}\n`;
-        if (role.informed) md += `- **Informed (I):** ${role.informed}\n`;
-        md += '\n';
-        if (role.specialAuthority) md += `**Special Authority**\n\n${role.specialAuthority}\n\n`;
-        if (role.approvalLimits) md += `**Approval Limits**\n\n${role.approvalLimits}\n\n`;
-        if (role.responsibilities) md += `**Key Responsibilities**\n\n${role.responsibilities}\n\n`;
+        if (role.summary) md += `#### Role Summary\n\n${role.summary}\n\n`;
+
+        const raciBlocks = [
+          { key: 'accountable', label: 'Accountable (A)' },
+          { key: 'responsible', label: 'Responsible (R)' },
+          { key: 'consulted', label: 'Consulted (C)' },
+          { key: 'informed', label: 'Informed (I)' },
+        ];
+        const hasRaci = raciBlocks.some((b) => String(role[b.key] || '').trim());
+        if (hasRaci) {
+          md += '#### Governance Rights (RACI)\n\n';
+          raciBlocks.forEach((b) => {
+            const list = formatItemsAsMarkdownList(role[b.key]);
+            if (!list) return;
+            md += `**${b.label}**\n\n${list}\n\n`;
+          });
+        }
+
+        if (role.specialAuthority) {
+          md += `#### Special Authority\n\n${formatItemsAsMarkdownList(role.specialAuthority) || role.specialAuthority}\n\n`;
+        }
+        if (role.approvalLimits) {
+          md += `#### Approval Limits\n\n${formatItemsAsMarkdownList(role.approvalLimits) || role.approvalLimits}\n\n`;
+        }
+        if (role.responsibilities) {
+          md += `#### Key Responsibilities\n\n${formatNumberedMarkdownList(role.responsibilities) || role.responsibilities}\n\n`;
+        }
       });
     });
 
@@ -396,6 +472,10 @@
     DEFAULT_DIVISIONS,
     DEFAULT_MANAGERIAL_ROLES,
     mergeManagerialRoles,
+    splitFieldItems,
+    formatItemsAsMarkdownList,
+    formatNumberedMarkdownList,
+    buildRoleIndex,
     compileManagerialRolesMarkdown,
   };
 
