@@ -18,7 +18,7 @@ Keep the five categories unless the client truly needs another:
 1. **Operations** — SOPs, BCP, Health & Safety  
 2. **Client Delivery** — SLA, Communication Plan  
 3. **People** — Handbook, Job Role Profiles, Onboarding, Performance Reviews  
-4. **Governance** — Org Chart, RACI, Managerial Role Descriptions  
+4. **Governance** — Org Chart, RACI, Manager Governance & Authority Charter  
 5. **Compliance** — Conduct, NDA, Data Privacy  
 
 Delete unused built-ins before handoff (**Remove** on the dashboard → **Save draft**). Tombstones persist so defaults do not resurrect.
@@ -41,7 +41,7 @@ Also available: **PDF** of the open document. Consultant-only: JSON vault dump, 
 ### Organize
 - Prefer the five categories; add a custom category only for a real domain (e.g. Finance)  
 - One Document Control owner per policy  
-- Align Org Chart → Managerial Roles → Job Role Profiles → SOPs after org changes  
+- Align Org Chart → Manager Governance & Authority Charter → Job Role Profiles → SOPs after org changes  
 
 ### Store
 - Daily/weekly work → **Save draft**  
@@ -54,7 +54,7 @@ Also available: **PDF** of the open document. Consultant-only: JSON vault dump, 
 |------|----|
 | **Monthly** | Owners refresh *Last reviewed* on anything that changed; clear the dashboard **Needs attention** queue |
 | **Quarterly** | Prune unused drafts; check RACI/DOA vs org chart; republish Vault |
-| **Org change** | Update Org Chart → Managerial Roles → Job Roles → affected SOPs, then Save + Publish |
+| **Org change** | Update Org Chart → Manager Governance & Authority Charter → Job Roles → affected SOPs, then Save + Publish |
 
 Name a **Policy Owner** (Ops/HR) and **Approver** (CEO/COO). Edits without an approver drift.
 
