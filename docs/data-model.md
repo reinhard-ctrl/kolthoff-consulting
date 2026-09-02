@@ -85,7 +85,7 @@ Controls which drafts appear in the Policy Studio dashboard and sidebar. Deletin
 | `categoryAssignments` | object | `{ [docKey]: categoryId }` overrides |
 | `collapsedCategories` | string[] | Optional UI collapse hints |
 
-**Recommended default categories:** Operations (SOPs, BCP, Health & Safety), Client Delivery (SLA, Communication Plan), People (Handbook, Job Role Profiles, Onboarding, Performance Reviews), Governance (Org Chart, RACI, Managerial Role Descriptions), Compliance (Conduct, NDA, Data Privacy).
+**Recommended default categories:** Operations (SOPs, BCP, Health & Safety), Client Delivery (SLA, Communication Plan), People (Handbook, Job Role Profiles, Onboarding, Performance Reviews), Governance (Org Chart, RACI, Manager Governance & Authority Charter), Compliance (Conduct, NDA, Data Privacy).
 
 ### Chaptered policy sections (`standardDocs.*.chapters`)
 
@@ -146,13 +146,13 @@ Published to Vault as `doc-communicationPlan`. Defines meeting cadence tiers and
 
 Compiled markdown order: (1) Meeting Cadence Tiers, (2) Tools & Channels, then `sections[]`. Missing tiers/channels are filled from defaults on merge.
 
-### `standardDocs.managerialRoles` (Managerial Role Descriptions Policy)
+### `standardDocs.managerialRoles` (Manager Governance & Authority Charter)
 
-Published to Vault as `doc-managerialRoles`. Formal managerial / executive role pack by division (reference: HR-JD style managerial JD documents).
+Published to Vault as `doc-managerialRoles`. Formal managerial / executive governance and authority pack by division (reference: HR-JD style managerial JD documents).
 
 | Field | Type | Notes |
 |-------|------|--------|
-| `title` | string | e.g. Managerial Role Descriptions & Executive Specifications |
+| `title` | string | e.g. Manager Governance & Authority Charter |
 | `documentRef` | string | e.g. HR-JD-2026-001 |
 | `docControl` | object | version, effectiveDate, lastReviewed, owner, approvedBy |
 | `introduction` | string | Policy narrative |

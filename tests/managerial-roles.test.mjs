@@ -1,5 +1,5 @@
 /**
- * Managerial Role Descriptions policy helpers.
+ * Manager Governance & Authority Charter policy helpers.
  * Run: node tests/managerial-roles.test.mjs
  */
 import assert from 'node:assert/strict';
@@ -17,7 +17,7 @@ assert.ok(MR);
 
 assert.equal(
   MR.DEFAULT_MANAGERIAL_ROLES.title,
-  'Managerial Role Descriptions & Executive Specifications',
+  'Manager Governance & Authority Charter',
 );
 assert.equal(MR.DEFAULT_MANAGERIAL_ROLES.documentRef, 'HR-JD-2026-001');
 assert.ok(MR.DEFAULT_MANAGERIAL_ROLES.divisions.length >= 6);
@@ -52,6 +52,14 @@ assert.equal(merged.divisions[0].roles[0].title, 'Managing Director');
 
 const fromEmpty = MR.mergeManagerialRoles(MR.DEFAULT_MANAGERIAL_ROLES, {});
 assert.ok(fromEmpty.divisions.length >= 6);
+
+const renamed = MR.mergeManagerialRoles(MR.DEFAULT_MANAGERIAL_ROLES, {
+  title: 'Managerial Role Descriptions & Executive Specifications',
+  divisions: [{ id: 'd1', number: '1', title: 'Leadership', roles: [{ title: 'MD' }] }],
+});
+assert.equal(renamed.title, 'Manager Governance & Authority Charter');
+assert.equal(MR.resolvePolicyTitle('Managerial Role Descriptions'), 'Manager Governance & Authority Charter');
+assert.equal(MR.resolvePolicyTitle('Client Custom Charter'), 'Client Custom Charter');
 
 const md = MR.compileManagerialRolesMarkdown(merged);
 assert.match(md, /^# Custom Managerial Roles/m);

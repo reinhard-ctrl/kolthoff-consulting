@@ -293,8 +293,8 @@
     <script src="../../shared/diagram-editor.js?v=20250806-raci-policy-v1"></script>
     <script src="../../shared/raci-policy.js?v=20250806-raci-doa-v1"></script>
     <script src="../../shared/communication-plan.js?v=20250806-comm-plan-v1"></script>
-    <script src="../../shared/managerial-roles.js?v=20250823-mgr-print-v1"></script>
-    <script src="../../shared/policy-catalog.js?v=20250813-catalog-v1"></script>
+    <script src="../../shared/managerial-roles.js?v=20250902-mgr-charter-v1"></script>
+    <script src="../../shared/policy-catalog.js?v=20250902-mgr-charter-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
     <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
@@ -581,7 +581,7 @@
                     channels: [],
                 })),
                 managerialRoles: JSON.parse(JSON.stringify(window.ManagerialRoles?.DEFAULT_MANAGERIAL_ROLES || {
-                    title: 'Managerial Role Descriptions & Executive Specifications',
+                    title: 'Manager Governance & Authority Charter',
                     documentRef: 'HR-JD-2026-001',
                     docControl: { version: '1.0', effectiveDate: '2026-08-11', lastReviewed: '2026-08-11', owner: 'HR Manager', approvedBy: 'Board of Directors & Chief Executive Officer' },
                     introduction: 'Managerial role descriptions by division with reporting lines, RACI rights, and key responsibilities.',
@@ -1875,7 +1875,7 @@
                     const mgrDoc = localPolicyData.standardDocs.managerialRoles;
                     policiesArray.push({
                         id: 'doc-managerialRoles',
-                        title: mgrDoc.title || 'Managerial Role Descriptions & Executive Specifications',
+                        title: mgrDoc.title || 'Manager Governance & Authority Charter',
                         content: window.ManagerialRoles.compileManagerialRolesMarkdown(mgrDoc),
                         lastUpdated: mgrDoc.docControl?.lastReviewed || defaultDate
                     });
@@ -3324,7 +3324,7 @@
                 if (activeMode === 'orgChart') return localPolicyData.standardDocs?.orgChart?.title || 'Organizational Structure & Reporting Policy';
                 if (activeMode === 'raci') return localPolicyData.standardDocs?.raci?.title || 'RACI & Decision Authority';
                 if (activeMode === 'communicationPlan') return localPolicyData.standardDocs?.communicationPlan?.title || 'Communication Plan';
-                if (activeMode === 'managerialRoles') return localPolicyData.standardDocs?.managerialRoles?.title || 'Managerial Role Descriptions & Executive Specifications';
+                if (activeMode === 'managerialRoles') return localPolicyData.standardDocs?.managerialRoles?.title || 'Manager Governance & Authority Charter';
                 return localPolicyData.standardDocs?.[activeMode]?.title || 'Document';
             };
 
@@ -3410,7 +3410,7 @@
                     if (window.ManagerialRoles?.compileManagerialRolesMarkdown) {
                         return window.ManagerialRoles.compileManagerialRolesMarkdown(mgrDoc);
                     }
-                    return `# ${mgrDoc.title || 'Managerial Role Descriptions'}\n\n${mgrDoc.introduction || ''}`;
+                    return `# ${mgrDoc.title || 'Manager Governance & Authority Charter'}\n\n${mgrDoc.introduction || ''}`;
                 }
                 if (localPolicyData.standardDocs?.[activeMode]) {
                     const doc = localPolicyData.standardDocs[activeMode];
@@ -3750,7 +3750,7 @@
                                 </li>
                             </ol>
                             <p className="text-[10px] text-slate-500 mt-3 leading-relaxed">
-                                Cadence: update owners monthly · prune unused drafts quarterly · on org change update Org Chart → Managerial Roles → Job Roles → affected SOPs.
+                                Cadence: update owners monthly · prune unused drafts quarterly · on org change update Org Chart → Manager Governance & Authority Charter → Job Roles → affected SOPs.
                             </p>
                         </section>
 

@@ -1,5 +1,5 @@
 /**
- * Managerial Role Descriptions & Executive Specifications policy.
+ * Manager Governance & Authority Charter policy.
  * Shape: {
  *   title, documentRef, docControl, introduction, sections[],
  *   divisions: [{
@@ -302,8 +302,14 @@
     }),
   ];
 
+  const POLICY_TITLE = 'Manager Governance & Authority Charter';
+  const LEGACY_POLICY_TITLES = [
+    'Managerial Role Descriptions & Executive Specifications',
+    'Managerial Role Descriptions',
+  ];
+
   const DEFAULT_MANAGERIAL_ROLES = {
-    title: 'Managerial Role Descriptions & Executive Specifications',
+    title: POLICY_TITLE,
     documentRef: 'HR-JD-2026-001',
     docControl: {
       version: '1.0',
@@ -313,7 +319,7 @@
       approvedBy: 'Board of Directors & Chief Executive Officer',
     },
     introduction:
-      'This policy defines managerial role descriptions and executive specifications by division — including reporting lines, role summaries, primary RACI accountabilities, approval limits, special authorities, and key responsibilities.',
+      'This charter defines managerial governance and authority by division — including reporting lines, role mandates, primary RACI accountabilities, approval limits, special authorities, and key responsibilities.',
     sections: [],
     divisions: DEFAULT_DIVISIONS.map((d) => createEmptyDivision(d)),
   };
@@ -326,17 +332,26 @@
     return base.map((d) => createEmptyDivision(d));
   }
 
+  function resolvePolicyTitle(loadedTitle, fallbackTitle) {
+    const fallback = fallbackTitle || POLICY_TITLE;
+    const title = loadedTitle != null ? String(loadedTitle).trim() : '';
+    if (!title || LEGACY_POLICY_TITLES.includes(title)) return fallback;
+    return title;
+  }
+
   function mergeManagerialRoles(defaultDoc, loadedDoc) {
     const base = JSON.parse(JSON.stringify(defaultDoc || DEFAULT_MANAGERIAL_ROLES));
     if (!loadedDoc || typeof loadedDoc !== 'object') {
       return {
         ...base,
+        title: resolvePolicyTitle(base.title, POLICY_TITLE),
         divisions: normalizeDivisions(base.divisions, DEFAULT_DIVISIONS),
       };
     }
     return {
       ...base,
       ...loadedDoc,
+      title: resolvePolicyTitle(loadedDoc.title, base.title || POLICY_TITLE),
       documentRef: loadedDoc.documentRef != null ? String(loadedDoc.documentRef) : (base.documentRef || ''),
       docControl: { ...base.docControl, ...(loadedDoc.docControl || {}) },
       sections: loadedDoc.sections?.length ? loadedDoc.sections : base.sections,
@@ -394,7 +409,7 @@
 
   function compileManagerialRolesMarkdown(doc) {
     const normalized = mergeManagerialRoles(DEFAULT_MANAGERIAL_ROLES, doc);
-    let md = `# ${normalized.title || 'Managerial Role Descriptions & Executive Specifications'}\n\n`;
+    let md = `# ${normalized.title || POLICY_TITLE}\n\n`;
     if (normalized.documentRef) md += `**Document Reference:** ${normalized.documentRef}\n\n`;
     const dc = normalized.docControl || {};
     const meta = [];
@@ -469,8 +484,11 @@
     createEmptyRole,
     createEmptyDivision,
     normalizeDivisions,
+    POLICY_TITLE,
+    LEGACY_POLICY_TITLES,
     DEFAULT_DIVISIONS,
     DEFAULT_MANAGERIAL_ROLES,
+    resolvePolicyTitle,
     mergeManagerialRoles,
     splitFieldItems,
     formatItemsAsMarkdownList,

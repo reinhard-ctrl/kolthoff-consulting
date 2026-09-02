@@ -53,7 +53,7 @@
     { key: 'performanceReview', title: 'Performance Reviews', blurb: 'Expectations, feedback, PIP', categoryId: 'people', kind: 'standard', storage: 'standardDocs' },
     { key: 'orgChart', title: 'Org Chart Policy', blurb: 'Reporting lines and roster', categoryId: 'governance', kind: 'structured', storage: 'standardDocs' },
     { key: 'raci', title: 'RACI Policy', blurb: 'Decision matrices by topic', categoryId: 'governance', kind: 'structured', storage: 'standardDocs' },
-    { key: 'managerialRoles', title: 'Managerial Role Descriptions', blurb: 'Executive specs by division', categoryId: 'governance', kind: 'structured', storage: 'standardDocs' },
+    { key: 'managerialRoles', title: 'Manager Governance & Authority Charter', blurb: 'Decision rights and authority by role', categoryId: 'governance', kind: 'structured', storage: 'standardDocs' },
     { key: 'conduct', title: 'Code of Conduct', blurb: 'Respect, ethics, workplace rules', categoryId: 'compliance', kind: 'standard', storage: 'standardDocs' },
     { key: 'nda', title: 'Non-Disclosure (NDA)', blurb: 'Protect confidential information', categoryId: 'compliance', kind: 'standard', storage: 'standardDocs' },
     { key: 'dataPrivacy', title: 'Data Privacy & IT', blurb: 'Systems, PII, breach reporting', categoryId: 'compliance', kind: 'standard', storage: 'standardDocs' },
