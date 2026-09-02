@@ -4970,8 +4970,12 @@
                                         const ordinal = roleOrdinal++;
                                         const isFirst = ordinal === 0;
                                         const roleNumber = role.number || `${div.number || divIdx + 1}.${roleIdx + 1}`;
+                                        const hasSummary = Boolean(String(role.summary || '').trim());
                                         const hasRaci = raciCells.some((c) => String(role[c.key] || '').trim());
-                                        const hasAuthority = String(role.specialAuthority || '').trim() || String(role.approvalLimits || '').trim();
+                                        const hasAuthority = Boolean(String(role.specialAuthority || '').trim() || String(role.approvalLimits || '').trim());
+                                        const hasResponsibilities = Boolean(String(role.responsibilities || '').trim());
+                                        let sectionNo = 0;
+                                        const nextBand = (title) => bandLabel(`${++sectionNo} · ${title}`);
                                         return (
                                             <tr key={role.id} className="block print:table-row">
                                                 <td className="block print:table-cell px-10 pt-6 pb-8 w-full align-top">
@@ -5004,16 +5008,16 @@
                                                         </header>
 
                                                         <div className="px-5 py-4 space-y-5">
-                                                            {String(role.summary || '').trim() && (
+                                                            {hasSummary && (
                                                                 <section className="mgr-role-brief-band" aria-label="Role summary">
-                                                                    {bandLabel('1 · Mandate')}
+                                                                    {nextBand('Mandate')}
                                                                     <p className="text-[14px] text-slate-800 leading-relaxed">{role.summary}</p>
                                                                 </section>
                                                             )}
 
                                                             {hasRaci && (
                                                                 <section className="mgr-role-brief-band" aria-label="Governance rights">
-                                                                    {bandLabel('2 · Governance Rights (RACI)')}
+                                                                    {nextBand('Governance Rights (RACI)')}
                                                                     <p className="text-[11px] text-slate-500 mb-3">A owns the outcome · R executes · C is consulted · I is informed</p>
                                                                     <div className="mgr-raci-grid grid grid-cols-1 sm:grid-cols-2 border border-slate-200">
                                                                         {raciCells.map((cell) => {
@@ -5037,7 +5041,7 @@
 
                                                             {hasAuthority && (
                                                                 <section className="mgr-role-brief-band" aria-label="Authority and limits">
-                                                                    {bandLabel('3 · Authority & Limits')}
+                                                                    {nextBand('Authority & Limits')}
                                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                                         {String(role.specialAuthority || '').trim() && (
                                                                             <div className="mgr-role-callout px-3 py-2.5">
@@ -5055,9 +5059,9 @@
                                                                 </section>
                                                             )}
 
-                                                            {String(role.responsibilities || '').trim() && (
+                                                            {hasResponsibilities && (
                                                                 <section className="mgr-role-brief-band" aria-label="Key responsibilities">
-                                                                    {bandLabel('4 · Key Responsibilities')}
+                                                                    {nextBand('Key Responsibilities')}
                                                                     {itemList(role.responsibilities, true)}
                                                                 </section>
                                                             )}
