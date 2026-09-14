@@ -126,4 +126,66 @@ const keepTitle = P.applyParsedToStandardDoc(
 );
 assert.equal(keepTitle.title, 'Keep Me');
 
+const chaptered = P.parsePolicyDocText(`# Workplace Policy
+
+Intro for the whole policy.
+
+## Conduct
+Opening note under conduct.
+
+### Dress code
+Business casual.
+
+### Harassment
+Zero tolerance.
+
+## Safety
+
+### Evacuation
+Use stairs.
+`);
+assert.equal(chaptered.title, 'Workplace Policy');
+assert.match(chaptered.introduction, /Intro for the whole/);
+assert.equal(chaptered.chapters.length, 2);
+assert.equal(chaptered.chapters[0].title, 'Conduct');
+assert.equal(chaptered.chapters[0].sections[0].title, 'Overview');
+assert.match(chaptered.chapters[0].sections[0].content, /Opening note/);
+assert.equal(chaptered.chapters[0].sections[1].title, 'Dress code');
+assert.equal(chaptered.chapters[1].title, 'Safety');
+assert.equal(chaptered.chapters[1].sections[0].title, 'Evacuation');
+
+const htmlStructured = P.parsePolicyDocText(`<html><body>
+<h1>Data Privacy</h1>
+<p>Protect personal data.</p>
+<h2>Collection</h2>
+<h3>What we collect</h3>
+<p>Name and email.</p>
+<table>
+  <tr><th>Field</th><th>Purpose</th></tr>
+  <tr><td>Email</td><td>Login</td></tr>
+</table>
+</body></html>`);
+assert.equal(htmlStructured.title, 'Data Privacy');
+assert.equal(htmlStructured.chapters.length, 1);
+assert.equal(htmlStructured.chapters[0].title, 'Collection');
+assert.ok(htmlStructured.chapters[0].sections.some((s) => s.title === 'What we collect'));
+const tableSec = htmlStructured.chapters[0].sections.find((s) => s.kind === 'table');
+assert.ok(tableSec);
+assert.equal(tableSec.table.headers.join('|'), 'Field|Purpose');
+assert.equal(tableSec.table.rows[0].cells[0], 'Email');
+
+const appliedChapters = P.applyParsedToStandardDoc(
+  { title: 'Old', docControl: { owner: 'Legal' }, introduction: '', sections: [] },
+  chaptered,
+  { updateTitle: true },
+);
+assert.equal(appliedChapters.title, 'Workplace Policy');
+assert.equal(appliedChapters.docControl.owner, 'Legal');
+assert.equal(appliedChapters.chapters.length, 2);
+assert.ok(appliedChapters.sections.length >= 3);
+
+const summary = P.summarizeParsed(htmlStructured);
+assert.equal(summary.chapterCount, 1);
+assert.ok(summary.tableCount >= 1);
+
 console.log('policy-doc-import.test.mjs: all assertions passed');

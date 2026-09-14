@@ -584,39 +584,51 @@ async function fetchGoogleDocPlainText(documentUrl: string): Promise<string> {
     );
   }
 
-  const exportUrls = [
-    `https://docs.google.com/document/d/${docId}/export?format=txt`,
-    `https://docs.google.com/feeds/download/documents/export/Export?id=${encodeURIComponent(docId)}&exportFormat=txt`,
+  // Prefer HTML so Policy Studio can rebuild chapters, sections, and tables from Doc structure.
+  // Fall back to plain text when HTML export is blocked or returns a sign-in page.
+  const exportAttempts: Array<{ url: string; kind: 'html' | 'txt' }> = [
+    { url: `https://docs.google.com/document/d/${docId}/export?format=html`, kind: 'html' },
+    { url: `https://docs.google.com/feeds/download/documents/export/Export?id=${encodeURIComponent(docId)}&exportFormat=html`, kind: 'html' },
+    { url: `https://docs.google.com/document/d/${docId}/export?format=txt`, kind: 'txt' },
+    { url: `https://docs.google.com/feeds/download/documents/export/Export?id=${encodeURIComponent(docId)}&exportFormat=txt`, kind: 'txt' },
   ];
   const fetchHeaders = {
     'User-Agent': 'Mozilla/5.0 (compatible; KolthoffPolicyStudio/1.0; +https://kolthoff-consulting.com)',
-    Accept: 'text/plain,text/*,*/*',
+    Accept: 'text/html,text/plain,text/*,*/*',
   };
 
   let lastStatus = 0;
-  let text = '';
-  for (const exportUrl of exportUrls) {
-    const res = await fetch(exportUrl, { redirect: 'follow', headers: fetchHeaders });
+  for (const attempt of exportAttempts) {
+    const res = await fetch(attempt.url, { redirect: 'follow', headers: fetchHeaders });
     lastStatus = res.status;
     if (!res.ok) continue;
-    text = await res.text();
-    const sample = text.trim().slice(0, 256).toLowerCase();
-    if (sample.startsWith('<!doctype html') || sample.startsWith('<html') || sample.includes('accounts.google.com')) {
+    const text = await res.text();
+    const sample = text.trim().slice(0, 512).toLowerCase();
+    if (sample.includes('accounts.google.com') || (sample.includes('sign in') && sample.includes('<html'))) {
       continue;
     }
+    if (attempt.kind === 'html') {
+      // Accept Google Docs HTML exports; reject empty/login shells.
+      if (!text.trim()) continue;
+      if (sample.startsWith('<!doctype html') || sample.startsWith('<html') || sample.includes('<h1') || sample.includes('<table')) {
+        return text;
+      }
+      continue;
+    }
+    if (sample.startsWith('<!doctype html') || sample.startsWith('<html')) continue;
     if (text.trim()) return text;
   }
 
   if (lastStatus && lastStatus !== 200) {
     throw new HttpsError(
       'failed-precondition',
-      'Could not fetch Google Doc. Share as Anyone with the link can view, or download as .txt / .md and upload it instead.',
+      'Could not fetch Google Doc. Share as Anyone with the link can view, or download as Web Page (.html) / Plain text (.txt) and upload it instead.',
     );
   }
 
   throw new HttpsError(
     'failed-precondition',
-    'Doc not accessible from the server. Share as Anyone with the link can view, or use File → Download → Plain text (.txt) and upload.',
+    'Doc not accessible from the server. Share as Anyone with the link can view, or use File → Download → Web Page (.html) and upload.',
   );
 }
 

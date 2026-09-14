@@ -33,6 +33,13 @@ Delete unused built-ins before handoff (**Remove** on the dashboard → **Save d
 
 Also available: **PDF** of the open document. Consultant-only: JSON vault dump, Google Doc Word export, template reset.
 
+### Import from Google Drive
+On chaptered policies (Conduct, NDA, Data Privacy, BCP, H&S, SLA, Onboarding, Performance Reviews), **Import Google Doc** accepts:
+1. A shareable Docs/Drive link (**Anyone with the link can view**), or  
+2. An uploaded **Web Page (.html)** export (best fidelity), or pasted text/HTML  
+
+Mapping: Heading 1 → title, Heading 2 → chapters, Heading 3 → sections, Doc tables → table sections. Document control fields are preserved; **Save draft** after apply.
+
 ### Create
 - **+ Add policy** — blank chaptered draft  
 - **Manage categories → Restore** — bring back a removed library default  
