@@ -297,7 +297,7 @@
     <script src="../../shared/policy-catalog.js?v=20250902-mgr-charter-v1"></script>
     <script src="../../shared/sop-sync.js?v=20250805-client-lean-v1"></script>
     <script src="../../shared/job-role-profile.js?v=20250805-role-struct-v1"></script>
-    <script src="../../shared/policy-doc-import.js?v=20250805-gdoc-import-v1"></script>
+    <script src="../../shared/policy-doc-import.js?v=20250914-gdoc-structure-v1"></script>
     <script src="../../shared/policy-chapters.js?v=20250813-table-fs-v2"></script>
     <script src="../../shared/markdown-format.js?v=20250805-md-toolbar-v1"></script>
     <script src="../../shared/google-doc-export.js?v=20250805-gdoc-export-v1"></script>
@@ -2645,12 +2645,21 @@
                 const parse = PDI().parsePolicyDocText;
                 if (!parse) throw new Error('Import parser not loaded. Refresh the page and try again.');
                 const parsed = parse(rawText, { idPrefix: `imp-${Date.now().toString(36)}` });
-                if (!String(parsed.introduction || '').trim() && !(parsed.sections || []).length) {
+                const summary = PDI().summarizeParsed?.(parsed) || {
+                    chapterCount: (parsed.chapters || []).length,
+                    sectionCount: (parsed.sections || []).length,
+                    tableCount: 0,
+                };
+                if (!String(parsed.introduction || '').trim() && !summary.sectionCount) {
                     throw new Error('No usable content found in the import.');
                 }
                 setDocImportPreview(parsed);
+                const parts = [];
+                if (summary.chapterCount) parts.push(`${summary.chapterCount} chapter${summary.chapterCount === 1 ? '' : 's'}`);
+                parts.push(`${summary.sectionCount} section${summary.sectionCount === 1 ? '' : 's'}`);
+                if (summary.tableCount) parts.push(`${summary.tableCount} table${summary.tableCount === 1 ? '' : 's'}`);
                 setDocImportStatus(
-                    `Parsed “${parsed.title || 'Untitled'}” · ${(parsed.sections || []).length} section(s). Review and apply.`
+                    `Parsed “${parsed.title || 'Untitled'}” · ${parts.join(' · ')}. Review structure and apply.`
                 );
                 return parsed;
             };
@@ -2799,7 +2808,7 @@
                     }
                     buildDocImportPreview(text);
                 } catch (err) {
-                    setDocImportStatus(err.message || 'Import failed — try File → Download → Plain text (.txt) and upload.');
+                    setDocImportStatus(err.message || 'Import failed — try File → Download → Web Page (.html) and upload.');
                 } finally {
                     setDocImportBusy(false);
                 }
@@ -2826,7 +2835,7 @@
                 if (!file) return;
                 const name = String(file.name || '').toLowerCase();
                 if (!/\.(txt|md|markdown|html?|htm)$/i.test(name) && file.type && !/text|html|markdown/i.test(file.type)) {
-                    setDocImportStatus('Upload a .txt, .md, or .html export (from Google Docs: File → Download).');
+                    setDocImportStatus('Upload a .html, .txt, or .md export (from Google Docs: File → Download → Web Page).');
                     return;
                 }
                 setDocImportBusy(true);
@@ -2865,16 +2874,20 @@
                     const applied = apply(docs[key] || {}, parsed, { updateTitle: docImportUpdateTitle });
                     let withChapters = applied;
                     if (usesChaptersForKey(key) && PC().normalizeStandardPolicyDoc) {
-                        const rebuilt = { ...applied, sections: applied.sections || [] };
-                        delete rebuilt.chapters; // force rebuild from imported sections (never undefined)
-                        withChapters = PC().normalizeStandardPolicyDoc(rebuilt);
+                        if (Array.isArray(applied.chapters) && applied.chapters.length) {
+                            withChapters = PC().normalizeStandardPolicyDoc(applied);
+                        } else {
+                            const rebuilt = { ...applied, sections: applied.sections || [] };
+                            delete rebuilt.chapters; // force rebuild from imported sections
+                            withChapters = PC().normalizeStandardPolicyDoc(rebuilt);
+                        }
                     }
                     return { ...docs, [key]: withChapters };
                 });
                 const label = (docImportUpdateTitle && parsed.title)
                     ? parsed.title
                     : (localPolicyData.standardDocs?.[key]?.title || key);
-                triggerToast(`📥 Imported into ${label}`);
+                triggerToast(`📥 Imported structure into ${label}`);
                 closeDocImportModal();
             };
 
@@ -6701,19 +6714,20 @@
                                 </div>
 
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    Replace the introduction and sections of <strong className="text-slate-200">{localPolicyData.standardDocs?.[docImportTargetKey]?.title || 'this policy'}</strong> with content from a Google Doc in your shared drive.
+                                    Bring a Google Doc from Drive into <strong className="text-slate-200">{localPolicyData.standardDocs?.[docImportTargetKey]?.title || 'this policy'}</strong>.
+                                    Policy Studio copies the Doc’s <strong className="text-slate-300">structure</strong>: Heading 1 → title, Heading 2 → chapters, Heading 3 → sections, and tables → table sections.
                                     Document control (version, dates, owner) is kept. Save to Cloud when ready.
                                 </p>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="doc-import-url" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Docs URL</label>
+                                    <label htmlFor="doc-import-url" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Google Drive / Docs link</label>
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <input
                                             id="doc-import-url"
                                             type="url"
                                             value={docImportUrl}
                                             onChange={(e) => setDocImportUrl(e.target.value)}
-                                            placeholder="https://docs.google.com/document/d/…"
+                                            placeholder="https://docs.google.com/document/d/… or drive.google.com/file/d/…"
                                             className="flex-1 bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-brandTeal-500"
                                             disabled={docImportBusy}
                                         />
@@ -6726,29 +6740,30 @@
                                             {docImportBusy ? 'Fetching…' : 'Fetch Doc'}
                                         </button>
                                     </div>
-                                    <p className="text-[10px] text-slate-500">Requires <strong className="text-slate-400">Anyone with the link can view</strong>. If Fetch Doc fails, use upload/paste below (File → Download → Plain text).</p>
+                                    <p className="text-[10px] text-slate-500">Requires <strong className="text-slate-400">Anyone with the link can view</strong>. Best results when the Doc uses Heading 1–3 styles. If Fetch fails, upload a Web Page (.html) export below.</p>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="doc-import-file" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or upload export (.txt / .md / .html)</label>
+                                    <label htmlFor="doc-import-file" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or upload from Drive export (.html preferred)</label>
                                     <input
                                         id="doc-import-file"
                                         type="file"
-                                        accept=".txt,.md,.markdown,.html,.htm,text/plain,text/markdown,text/html"
+                                        accept=".html,.htm,.txt,.md,.markdown,text/html,text/plain,text/markdown"
                                         onChange={(e) => handleDocImportFromFile(e.target.files?.[0])}
                                         disabled={docImportBusy}
                                         className="block w-full text-[11px] text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-brandNavy-800 file:text-brandTeal-400 hover:file:bg-brandNavy-700"
                                     />
+                                    <p className="text-[10px] text-slate-500">In Google Docs: <strong className="text-slate-400">File → Download → Web Page (.html, zipped)</strong> — unzip and upload the .html (keeps headings &amp; tables). Plain text / markdown also work.</p>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="doc-import-paste" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or paste text</label>
+                                    <label htmlFor="doc-import-paste" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Or paste text / HTML</label>
                                     <textarea
                                         id="doc-import-paste"
                                         value={docImportPaste}
                                         onChange={(e) => setDocImportPaste(e.target.value)}
                                         rows={5}
-                                        placeholder="# Code of Conduct&#10;&#10;Introduction…&#10;&#10;## Dress code&#10;…"
+                                        placeholder="# Policy title&#10;&#10;Introduction…&#10;&#10;## Chapter&#10;&#10;### Section&#10;…"
                                         className="w-full bg-brandNavy-900 border border-brandNavy-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-brandTeal-500 font-mono"
                                         disabled={docImportBusy}
                                     />
@@ -6768,17 +6783,38 @@
 
                                 {docImportPreview && (
                                     <div className="rounded-lg border border-brandNavy-700 bg-brandNavy-900/80 p-3 space-y-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Preview</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Structure preview</p>
                                         <p className="text-xs text-slate-200"><span className="text-slate-500">Title:</span> {docImportPreview.title || '(keep current)'}</p>
                                         <p className="text-[11px] text-slate-400 line-clamp-3 whitespace-pre-wrap">{docImportPreview.introduction || '(empty introduction)'}</p>
-                                        <ul className="text-[11px] text-slate-400 list-disc pl-4 space-y-0.5">
-                                            {(docImportPreview.sections || []).slice(0, 8).map((s) => (
-                                                <li key={s.id}>{s.title}</li>
-                                            ))}
-                                            {(docImportPreview.sections || []).length > 8 && (
-                                                <li>+{(docImportPreview.sections || []).length - 8} more…</li>
-                                            )}
-                                        </ul>
+                                        {(docImportPreview.chapters || []).length > 0 ? (
+                                            <ul className="text-[11px] text-slate-400 space-y-1.5">
+                                                {(docImportPreview.chapters || []).slice(0, 6).map((ch) => (
+                                                    <li key={ch.id}>
+                                                        <span className="text-slate-200 font-semibold">{ch.title}</span>
+                                                        <ul className="list-disc pl-4 mt-0.5 space-y-0.5">
+                                                            {(ch.sections || []).slice(0, 6).map((s) => (
+                                                                <li key={s.id}>{s.title}{s.kind === 'table' ? ' · table' : ''}</li>
+                                                            ))}
+                                                            {(ch.sections || []).length > 6 && (
+                                                                <li>+{(ch.sections || []).length - 6} more…</li>
+                                                            )}
+                                                        </ul>
+                                                    </li>
+                                                ))}
+                                                {(docImportPreview.chapters || []).length > 6 && (
+                                                    <li className="text-slate-500">+{(docImportPreview.chapters || []).length - 6} more chapters…</li>
+                                                )}
+                                            </ul>
+                                        ) : (
+                                            <ul className="text-[11px] text-slate-400 list-disc pl-4 space-y-0.5">
+                                                {(docImportPreview.sections || []).slice(0, 8).map((s) => (
+                                                    <li key={s.id}>{s.title}{s.kind === 'table' ? ' · table' : ''}</li>
+                                                ))}
+                                                {(docImportPreview.sections || []).length > 8 && (
+                                                    <li>+{(docImportPreview.sections || []).length - 8} more…</li>
+                                                )}
+                                            </ul>
+                                        )}
                                         <label className="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer pt-1">
                                             <input
                                                 type="checkbox"
