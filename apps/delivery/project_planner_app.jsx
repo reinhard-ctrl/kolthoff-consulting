@@ -1272,10 +1272,49 @@
         setAddenda((prev) => H.updateAddendumInList(prev, invoiceAddendumId, patch));
       }, [invoiceAddendumId]);
 
+      const prepareAddendumForInvoicing = useCallback((addendumId) => {
+        if (!addendumId) {
+          setInvoiceAddendumId(null);
+          return;
+        }
+        const target = (addenda || []).find((a) => a.id === addendumId);
+        if (!target) {
+          setInvoiceAddendumId(null);
+          return;
+        }
+        const economics = H.computeAddendumEconomics(target, {
+          includeTax,
+          frictionBuffer,
+          subscriptionMonths,
+          rates: hourlyRates,
+          principalToSeniorDelegate,
+          seniorToAssociateDelegate,
+          recoveryPotential,
+          staffCount,
+          monthlySalary,
+          wastedHours,
+          formatCurrency,
+        });
+        const milestones = economics?.billingMilestones || [];
+        const nextMilestone = H.suggestNextAddendumInvoiceMilestone(target, milestones)
+          || target.invoiceMilestone
+          || 'full';
+        const nextSuffix = H.suggestNextAddendumInvoiceSuffix(target, nextMilestone);
+        setAddenda((prev) => H.updateAddendumInList(prev, addendumId, {
+          invoiceMilestone: nextMilestone,
+          invoiceNumberSuffix: nextSuffix,
+        }));
+        setInvoiceAddendumId(addendumId);
+      }, [
+        addenda, includeTax, frictionBuffer, subscriptionMonths, hourlyRates,
+        principalToSeniorDelegate, seniorToAssociateDelegate, recoveryPotential,
+        staffCount, monthlySalary, wastedHours,
+      ]);
+
       useEffect(() => {
         if (!invoiceAddendumId) return;
         const target = (addenda || []).find((a) => a.id === invoiceAddendumId);
-        if (!target || target.status === 'invoiced') setInvoiceAddendumId(null);
+        if (!target) setInvoiceAddendumId(null);
       }, [addenda, invoiceAddendumId]);
 
       const patchActiveAddendum = useCallback((patch) => {
@@ -2040,10 +2079,12 @@
           await window.firestoreSetDoc(docRef, invoice);
 
           if (isAddendumInvoice && invoiceTargetAddendum) {
-            setAddenda((prev) => H.updateAddendumInList(prev, invoiceTargetAddendum.id, {
-              status: 'invoiced',
-              issuedAt: invoiceTargetAddendum.issuedAt || Date.now(),
-            }));
+            const issuePatch = H.buildAddendumInvoiceIssuePatch(
+              invoiceTargetAddendum,
+              invoiceTargetEconomics?.billingMilestones || [],
+              milestoneKey,
+            );
+            setAddenda((prev) => H.updateAddendumInList(prev, invoiceTargetAddendum.id, issuePatch));
           }
 
           if (portalAccessCode && window.PortalSync?.syncInvoicesToPortal) {
@@ -3208,7 +3249,7 @@
                   <button
                     type="button"
                     onClick={() => {
-                      setInvoiceAddendumId(activeAddendum.id);
+                      prepareAddendumForInvoicing(activeAddendum.id);
                       setView('invoice');
                     }}
                     className="w-full py-2.5 text-[10px] font-bold rounded-lg uppercase tracking-wider bg-brandNavy-800 hover:bg-brandNavy-750 text-brandTeal-300 border border-brandTeal-500/30"
@@ -3223,15 +3264,44 @@
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1">Invoice document</legend>
                   <select
                     value={invoiceAddendumId || ''}
-                    onChange={(e) => setInvoiceAddendumId(e.target.value || null)}
+                    onChange={(e) => {
+                      const nextId = e.target.value || null;
+                      if (!nextId) {
+                        setInvoiceAddendumId(null);
+                        return;
+                      }
+                      prepareAddendumForInvoicing(nextId);
+                    }}
                     className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-brandTeal-500"
                   >
                     <option value="">Main SOW — {quoteId}</option>
-                    {(addenda || []).map((item) => (
-                      <option key={item.id} value={item.id} disabled={item.status === 'invoiced'}>
-                        {item.ref} — {item.title}{item.status === 'invoiced' ? ' (invoiced)' : ''}
-                      </option>
-                    ))}
+                    {(addenda || []).map((item) => {
+                      const itemEconomics = H.computeAddendumEconomics(item, {
+                        includeTax,
+                        frictionBuffer,
+                        subscriptionMonths,
+                        rates: hourlyRates,
+                        principalToSeniorDelegate,
+                        seniorToAssociateDelegate,
+                        recoveryPotential,
+                        staffCount,
+                        monthlySalary,
+                        wastedHours,
+                        formatCurrency,
+                      });
+                      const remaining = H.hasRemainingAddendumInvoiceGates(item, itemEconomics?.billingMilestones || []);
+                      const invoicedCount = (H.getAddendumInvoicedMilestones(item) || []).length;
+                      const fullyInvoiced = item.status === 'invoiced' && !remaining;
+                      let statusNote = '';
+                      if (fullyInvoiced) statusNote = ' (fully invoiced)';
+                      else if (invoicedCount > 0) statusNote = ` (${invoicedCount} gate${invoicedCount === 1 ? '' : 's'} invoiced)`;
+                      else if (item.status === 'issued') statusNote = ' (issued)';
+                      return (
+                        <option key={item.id} value={item.id} disabled={fullyInvoiced}>
+                          {item.ref} — {item.title}{statusNote}
+                        </option>
+                      );
+                    })}
                   </select>
                   {isAddendumInvoiceMode && invoiceTargetAddendum && (
                     <p className="text-[9px] text-brandTeal-400/80 bg-brandTeal-500/5 border border-brandTeal-500/20 rounded p-2">
@@ -3320,21 +3390,43 @@
               {isInvoice && isAddendumInvoiceMode && invoiceTargetAddendum && (
                 <fieldset className="bg-brandNavy-955 border border-brandNavy-700 p-4 rounded-xl space-y-3 text-left">
                   <legend className="text-[10px] font-mono tracking-wider uppercase text-brandTeal-400 font-bold px-1 text-left font-sans">Addendum invoice gate</legend>
-                  <p className="text-[9px] text-slate-400 text-left font-sans -mt-1">Choose which addendum payment stage this invoice bills.</p>
+                  <p className="text-[9px] text-slate-400 text-left font-sans -mt-1">Choose which addendum payment stage this invoice bills. Issue each 50% gate as a separate invoice.</p>
                   <select
                     value={invoiceTargetAddendum.invoiceMilestone || 'full'}
-                    onChange={(e) => patchInvoiceTargetAddendum({ invoiceMilestone: e.target.value })}
+                    onChange={(e) => {
+                      const nextMilestone = e.target.value;
+                      patchInvoiceTargetAddendum({
+                        invoiceMilestone: nextMilestone,
+                        invoiceNumberSuffix: H.suggestNextAddendumInvoiceSuffix(invoiceTargetAddendum, nextMilestone),
+                      });
+                    }}
                     className="w-full bg-brandNavy-900 border border-brandNavy-750 rounded p-2 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-brandTeal-500"
                   >
-                    <option value="full">100% full addendum payment — {formatCurrency(Math.round(((invoiceTargetEconomics?.finalProjectCostBase || 0) + (invoiceTargetEconomics?.retainerCostTotalBase || 0)) * (includeTax ? 1.12 : 1)))}</option>
-                    {(invoiceTargetEconomics?.billingMilestones || []).map((m, idx) => (
-                      <option key={idx} value={`milestone_${idx}`}>{m.label} — {formatCurrency(m.amount)}</option>
-                    ))}
+                    <option
+                      value="full"
+                      disabled={(H.getAddendumInvoicedMilestones(invoiceTargetAddendum) || []).includes('full')}
+                    >
+                      100% full addendum payment — {formatCurrency(Math.round(((invoiceTargetEconomics?.finalProjectCostBase || 0) + (invoiceTargetEconomics?.retainerCostTotalBase || 0)) * (includeTax ? 1.12 : 1)))}
+                    </option>
+                    {(invoiceTargetEconomics?.billingMilestones || []).map((m, idx) => {
+                      const key = `milestone_${idx}`;
+                      const alreadyInvoiced = (H.getAddendumInvoicedMilestones(invoiceTargetAddendum) || []).includes(key);
+                      return (
+                        <option key={idx} value={key} disabled={alreadyInvoiced}>
+                          {m.label} — {formatCurrency(m.amount)}{alreadyInvoiced ? ' (already invoiced)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                   <div>
                     <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Invoice suffix</label>
-                    <input type="text" readOnly value={invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix} className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-400 font-mono text-xs" />
-                    <span className="text-[9px] text-slate-500 block mt-1 text-left font-sans">Preview: {quoteId.replace('KC', 'INV')}{invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix}</span>
+                    <input
+                      type="text"
+                      value={invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix || ''}
+                      onChange={(e) => patchInvoiceTargetAddendum({ invoiceNumberSuffix: e.target.value })}
+                      className="w-full bg-brandNavy-950 border border-brandNavy-700 rounded p-2 text-slate-200 font-mono text-xs focus:outline-none focus:border-brandTeal-500"
+                    />
+                    <span className="text-[9px] text-slate-500 block mt-1 text-left font-sans">Preview: {quoteId.replace('KC', 'INV')}{invoiceTargetAddendum.invoiceNumberSuffix || invoiceTargetAddendum.suffix} — change suffix for each gate so invoices do not overwrite.</span>
                   </div>
                   <div>
                     <label className="text-[10px] font-mono text-slate-400 uppercase block mb-1">Due date</label>

@@ -1329,6 +1329,7 @@
       invoiceNumberSuffix: suffix,
       invoiceDueDate: '',
       customInvoiceAmount: 0,
+      invoicedMilestones: [],
       useCustomInvoiceBillTo: false,
       invoiceBillToCompany: '',
       invoiceBillToRep: '',
@@ -1372,6 +1373,92 @@
   function canDeleteAddendum(addendum) {
     if (!addendum) return false;
     return addendum.status === 'draft' || addendum.status === 'issued';
+  }
+
+  function getAddendumInvoicedMilestones(addendum) {
+    if (!Array.isArray(addendum?.invoicedMilestones)) return [];
+    return addendum.invoicedMilestones.filter((key) => typeof key === 'string' && key.trim());
+  }
+
+  function suggestNextAddendumInvoiceMilestone(addendum, billingMilestones = []) {
+    const invoiced = new Set(getAddendumInvoicedMilestones(addendum));
+    const milestones = Array.isArray(billingMilestones) ? billingMilestones : [];
+
+    // Legacy: older builds flipped status to "invoiced" after the first gate without
+    // recording invoicedMilestones. Prefer the second gate when a multi-gate split remains.
+    if (addendum?.status === 'invoiced' && invoiced.size === 0 && milestones.length > 1) {
+      return 'milestone_1';
+    }
+
+    for (let i = 0; i < milestones.length; i += 1) {
+      const key = `milestone_${i}`;
+      if (!invoiced.has(key)) return key;
+    }
+    if (milestones.length === 0 && !invoiced.has('full')) return 'full';
+    return null;
+  }
+
+  function suggestNextAddendumInvoiceSuffix(addendum, milestoneKey) {
+    const base = String(addendum?.suffix || addendum?.invoiceNumberSuffix || 'A1').replace(/M\d+$/i, '');
+    if (!milestoneKey || milestoneKey === 'full') {
+      const invoiced = getAddendumInvoicedMilestones(addendum);
+      if (!invoiced.length) return base;
+      return `${base}F`;
+    }
+    if (String(milestoneKey).startsWith('milestone_')) {
+      const idx = parseInt(String(milestoneKey).split('_')[1], 10);
+      if (Number.isFinite(idx) && idx >= 0) return `${base}M${idx + 1}`;
+    }
+    if (milestoneKey === 'custom') return `${base}C`;
+    return `${base}X`;
+  }
+
+  function hasRemainingAddendumInvoiceGates(addendum, billingMilestones = []) {
+    const milestones = Array.isArray(billingMilestones) ? billingMilestones : [];
+    const invoiced = new Set(getAddendumInvoicedMilestones(addendum));
+
+    // Legacy invoiced addenda with no per-gate log still have remaining gates to bill.
+    if (addendum?.status === 'invoiced' && invoiced.size === 0 && milestones.length > 1) {
+      return true;
+    }
+
+    return suggestNextAddendumInvoiceMilestone(addendum, milestones) != null;
+  }
+
+  function resolveAddendumStatusAfterInvoice(addendum, billingMilestones, newlyInvoicedKey) {
+    const invoiced = new Set([
+      ...getAddendumInvoicedMilestones(addendum),
+      newlyInvoicedKey,
+    ].filter(Boolean));
+    if (newlyInvoicedKey === 'full' || newlyInvoicedKey === 'custom') return 'invoiced';
+    const milestones = Array.isArray(billingMilestones) ? billingMilestones : [];
+    if (milestones.length > 0) {
+      const allGatesDone = milestones.every((_, i) => invoiced.has(`milestone_${i}`));
+      return allGatesDone ? 'invoiced' : 'issued';
+    }
+    return invoiced.has('full') ? 'invoiced' : 'issued';
+  }
+
+  function buildAddendumInvoiceIssuePatch(addendum, billingMilestones, milestoneKey) {
+    const key = milestoneKey || addendum?.invoiceMilestone || 'full';
+    const invoicedMilestones = Array.from(new Set([
+      ...getAddendumInvoicedMilestones(addendum),
+      key,
+    ]));
+    const status = resolveAddendumStatusAfterInvoice(addendum, billingMilestones, key);
+    const nextMilestone = suggestNextAddendumInvoiceMilestone(
+      { ...addendum, invoicedMilestones },
+      billingMilestones,
+    );
+    return {
+      status,
+      issuedAt: addendum?.issuedAt || Date.now(),
+      invoicedMilestones,
+      invoiceMilestone: nextMilestone || key,
+      invoiceNumberSuffix: nextMilestone
+        ? suggestNextAddendumInvoiceSuffix({ ...addendum, invoicedMilestones }, nextMilestone)
+        : suggestNextAddendumInvoiceSuffix({ ...addendum, invoicedMilestones }, key),
+    };
   }
 
   function loadScriptOnce(src) {
@@ -1460,6 +1547,12 @@
     updateAddendumInList,
     removeAddendumFromList,
     canDeleteAddendum,
+    getAddendumInvoicedMilestones,
+    suggestNextAddendumInvoiceMilestone,
+    suggestNextAddendumInvoiceSuffix,
+    hasRemainingAddendumInvoiceGates,
+    resolveAddendumStatusAfterInvoice,
+    buildAddendumInvoiceIssuePatch,
     isCustomAddendumTask,
     createCustomAddendumTask,
     getAddendumScopeMode,

@@ -236,6 +236,38 @@ assert.equal(H.canDeleteAddendum({ status: 'draft' }), true);
 assert.equal(H.canDeleteAddendum({ status: 'issued' }), true);
 assert.equal(H.canDeleteAddendum({ status: 'invoiced' }), false);
 
+const fiftyFiftyMilestones = [
+  { label: '50% Kickoff', amount: 50000 },
+  { label: '50% Completion', amount: 50000 },
+];
+const partialAddendum = {
+  id: 'addendum-hris',
+  suffix: 'A1',
+  status: 'issued',
+  invoiceMilestone: 'milestone_0',
+  invoiceNumberSuffix: 'A1',
+  invoicedMilestones: ['milestone_0'],
+};
+assert.equal(H.suggestNextAddendumInvoiceMilestone(partialAddendum, fiftyFiftyMilestones), 'milestone_1');
+assert.equal(H.suggestNextAddendumInvoiceSuffix(partialAddendum, 'milestone_1'), 'A1M2');
+assert.equal(H.hasRemainingAddendumInvoiceGates(partialAddendum, fiftyFiftyMilestones), true);
+
+const afterSecondGate = H.buildAddendumInvoiceIssuePatch(partialAddendum, fiftyFiftyMilestones, 'milestone_1');
+assert.equal(afterSecondGate.status, 'invoiced');
+assert.equal(JSON.stringify([...afterSecondGate.invoicedMilestones]), JSON.stringify(['milestone_0', 'milestone_1']));
+assert.equal(afterSecondGate.invoiceNumberSuffix, 'A1M2');
+
+const legacyInvoicedAddendum = {
+  id: 'addendum-legacy',
+  suffix: 'A1',
+  status: 'invoiced',
+  invoiceMilestone: 'milestone_0',
+  invoiceNumberSuffix: 'A1',
+};
+assert.equal(H.suggestNextAddendumInvoiceMilestone(legacyInvoicedAddendum, fiftyFiftyMilestones), 'milestone_1');
+assert.equal(H.hasRemainingAddendumInvoiceGates(legacyInvoicedAddendum, fiftyFiftyMilestones), true);
+assert.equal(H.suggestNextAddendumInvoiceSuffix(legacyInvoicedAddendum, 'milestone_1'), 'A1M2');
+
 const sponsorDefaultAddendum = H.createAddendumRecord({
   parentQuoteId: 'KC-2026-APARRI',
   addenda: [],
